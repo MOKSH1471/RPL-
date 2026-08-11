@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Excluded project docs
+RPL-S9-PRD.md
+instructions.md
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Logs & OS noise
+*.log
+.DS_Store
+Thumbs.db
