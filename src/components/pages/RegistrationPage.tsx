@@ -1081,21 +1081,21 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-amber-50/90 rounded-3xl p-6 sm:p-8 border-2 border-amber-300 shadow-md space-y-6"
+                    className="bg-amber-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-amber-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-amber-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🏏</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Cricket Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-amber-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏏</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Cricket Questions
                           </h3>
-                          <p className="text-amber-800 text-xs font-semibold">
+                          <p className="text-amber-800 text-xs font-semibold mt-0.5">
                             Custom role, batting style, bowling variation & experience
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-amber-200 text-amber-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
@@ -1180,21 +1180,21 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-emerald-50/90 rounded-3xl p-6 sm:p-8 border-2 border-emerald-300 shadow-md space-y-6"
+                    className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-emerald-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">⚽</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Football Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-emerald-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">⚽</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Football Questions
                           </h3>
-                          <p className="text-emerald-800 text-xs font-semibold">
+                          <p className="text-emerald-800 text-xs font-semibold mt-0.5">
                             Tactical pitch position, preferred shooting foot & turf experience
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
@@ -1264,21 +1264,21 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-cyan-50/90 rounded-3xl p-6 sm:p-8 border-2 border-cyan-300 shadow-md space-y-6"
+                    className="bg-cyan-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-cyan-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-cyan-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🏸</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Badminton Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-cyan-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏸</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Badminton Questions
                           </h3>
-                          <p className="text-cyan-800 text-xs font-semibold">
+                          <p className="text-cyan-800 text-xs font-semibold mt-0.5">
                             Singles / doubles category, playing hand & match experience
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-cyan-200 text-cyan-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-cyan-200 text-cyan-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
@@ -1343,24 +1343,25 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-indigo-50/90 rounded-3xl p-6 sm:p-8 border-2 border-indigo-300 shadow-md space-y-6"
+                    className="bg-indigo-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-indigo-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-indigo-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🏓</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Table Tennis Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-indigo-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏓</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Table Tennis Questions
                           </h3>
-                          <p className="text-indigo-800 text-xs font-semibold">
+                          <p className="text-indigo-800 text-xs font-semibold mt-0.5">
                             Singles / doubles format, paddle grip & tournament level
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-indigo-200 text-indigo-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-indigo-200 text-indigo-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
+
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
@@ -1421,21 +1422,21 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-orange-50/90 rounded-3xl p-6 sm:p-8 border-2 border-orange-300 shadow-md space-y-6"
+                    className="bg-orange-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-orange-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-orange-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🎾</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Pickleball Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-orange-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🎾</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Pickleball Questions
                           </h3>
-                          <p className="text-orange-800 text-xs font-semibold">
+                          <p className="text-orange-800 text-xs font-semibold mt-0.5">
                             Skill rating, doubles division & partner details
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-orange-200 text-orange-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-orange-200 text-orange-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
@@ -1499,21 +1500,21 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-purple-50/90 rounded-3xl p-6 sm:p-8 border-2 border-purple-300 shadow-md space-y-6"
+                    className="bg-purple-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-purple-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-purple-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🏐</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Volleyball & Throwball Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-purple-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏐</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Volleyball & Throwball
                           </h3>
-                          <p className="text-purple-800 text-xs font-semibold">
+                          <p className="text-purple-800 text-xs font-semibold mt-0.5">
                             Net position, court specialty & experience
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-purple-200 text-purple-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-purple-200 text-purple-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
@@ -1564,24 +1565,25 @@ Submitted via Vitraag Vigyaan RPL Portal
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-pink-50/90 rounded-3xl p-6 sm:p-8 border-2 border-pink-300 shadow-md space-y-6"
+                    className="bg-pink-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-pink-300 shadow-md space-y-6"
                   >
-                    <div className="flex items-center justify-between border-b border-pink-200 pb-4">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">🏆</span>
-                        <div>
-                          <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900">
-                            Women's Championship Questions
+                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-pink-200 pb-4">
+                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏆</span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                            Women's League
                           </h3>
-                          <p className="text-pink-800 text-xs font-semibold">
+                          <p className="text-pink-800 text-xs font-semibold mt-0.5">
                             Select discipline (Cricket, Football, Throwball) & specific role
                           </p>
                         </div>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-pink-200 text-pink-900 font-bold text-xs">
+                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-pink-200 text-pink-900 font-bold text-[11px] sm:text-xs">
                         Active Sport
                       </span>
                     </div>
+
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
