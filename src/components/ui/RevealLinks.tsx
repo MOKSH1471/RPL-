@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 
-const DURATION = 0.3;
+const DURATION = 0.25;
 const STAGGER = 0.025;
 
 export interface FlipTextProps {
@@ -16,16 +16,17 @@ export const FlipText: React.FC<FlipTextProps> = ({
   isFlipped,
 }) => {
   return (
-    <div
-      className={`relative inline-block overflow-hidden whitespace-nowrap select-none ${className}`}
+    <span
+      className={`relative inline-block overflow-hidden whitespace-nowrap select-none pointer-events-none ${className}`}
       style={{
         lineHeight: 1.15,
       }}
     >
       {/* Top text layer moving up */}
-      <div className="block">
+      <span className="block pointer-events-none">
         {children.split("").map((l, i) => (
           <motion.span
+            key={i}
             variants={{
               initial: {
                 y: 0,
@@ -40,18 +41,18 @@ export const FlipText: React.FC<FlipTextProps> = ({
               ease: [0.33, 1, 0.68, 1],
               delay: STAGGER * i,
             }}
-            className="inline-block"
-            key={i}
+            className="inline-block pointer-events-none"
           >
             {l === " " ? "\u00A0" : l}
           </motion.span>
         ))}
-      </div>
+      </span>
 
       {/* Bottom text layer moving in */}
-      <div className="absolute inset-0">
+      <span className="absolute inset-0 pointer-events-none">
         {children.split("").map((l, i) => (
           <motion.span
+            key={i}
             variants={{
               initial: {
                 y: "110%",
@@ -66,14 +67,13 @@ export const FlipText: React.FC<FlipTextProps> = ({
               ease: [0.33, 1, 0.68, 1],
               delay: STAGGER * i,
             }}
-            className="inline-block"
-            key={i}
+            className="inline-block pointer-events-none"
           >
             {l === " " ? "\u00A0" : l}
           </motion.span>
         ))}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 };
 
@@ -94,31 +94,15 @@ export const FlipLink: React.FC<FlipLinkProps> = ({
   rel,
   onClick,
 }) => {
-  const [isTouched, setIsTouched] = useState(false);
-
-  // Trigger brief mobile preview wave on touch
-  const handleTouchStart = () => {
-    setIsTouched(true);
-  };
-
-  const handleTouchEnd = () => {
-    setTimeout(() => {
-      setIsTouched(false);
-    }, 600);
-  };
-
   return (
     <motion.a
-      initial="initial"
-      whileHover="hovered"
-      whileTap="hovered"
-      animate={isTouched ? "hovered" : "initial"}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       href={href}
       target={target}
       rel={rel}
       onClick={onClick}
+      initial="initial"
+      whileHover="hovered"
+      whileTap="hovered"
       className={`relative inline-block max-w-full overflow-hidden whitespace-nowrap font-black uppercase tracking-tight py-1 select-none cursor-pointer touch-manipulation active:opacity-90 ${className}`}
       style={{
         lineHeight: 1.15,

@@ -3,7 +3,12 @@ import { InView } from '@/components/ui/in-view';
 import { FlipLink } from '@/components/ui/RevealLinks';
 import { Trophy, MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onRegisterClick?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
+
   return (
     <footer className="relative z-10 border-t border-slate-200 bg-white py-10 sm:py-16 safe-bottom w-full max-w-full overflow-hidden">
       <InView
@@ -69,12 +74,19 @@ export const Footer: React.FC = () => {
               </span>
               <FlipLink
                 href="#register"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRegisterClick?.();
+                }}
                 className="text-slate-900 hover:text-amber-500 transition-colors text-2xl sm:text-3xl lg:text-4xl"
               >
-                Register
+                Register Now
               </FlipLink>
             </div>
           </div>
+
+
+
         </div>
 
 

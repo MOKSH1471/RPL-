@@ -20,6 +20,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const tickingRef = useRef(false);
 
+
+
   // Passive, throttled scroll observer for background blur state
   useEffect(() => {
     const handleScroll = () => {
@@ -172,10 +174,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             {/* Primary "Register Now" CTA with Character Flip Animation */}
             <motion.button
+
+              type="button"
               initial="initial"
               whileHover="hovered"
               whileTap="hovered"
-              type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
                 onRegisterClick();
@@ -184,6 +187,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <FlipText>Register Now</FlipText>
             </motion.button>
+
+
+
 
             {/* Mobile Hamburger Toggle */}
             <div className="md:hidden">

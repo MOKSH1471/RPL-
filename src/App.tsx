@@ -91,7 +91,8 @@ export function App() {
           )}
         </main>
 
-        <Footer />
+        <Footer onRegisterClick={handleRegisterClick} />
+
       </div>
     </div>
   );
