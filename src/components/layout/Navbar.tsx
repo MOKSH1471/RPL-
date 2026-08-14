@@ -101,6 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    setMobileMenuOpen(false);
     if (currentPage === 'register' && onNavigateHome) {
       onNavigateHome();
     } else {
@@ -110,30 +111,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 w-full max-w-full ${
+      className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 w-full max-w-full overflow-hidden ${
         isScrolled
-          ? 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-xs'
-          : 'bg-white/60 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none border-slate-200/50 sm:border-transparent'
+          ? 'bg-white/95 backdrop-blur-md border-slate-200/80 shadow-xs'
+          : 'bg-white/75 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none border-slate-200/50 sm:border-transparent'
       }`}
     >
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-20 gap-2">
+      <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-20 gap-1.5 sm:gap-2">
           {/* Logo & RPL Wordmark */}
           <a
             href="#"
             onClick={handleLogoClick}
-            className="flex items-center space-x-2 sm:space-x-3 group shrink-0 min-w-0"
+            className="flex items-center space-x-1.5 sm:space-x-3 group shrink-0 min-w-0"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 border border-slate-200 shadow-xs shrink-0">
-              <div className="w-full h-full bg-white rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
-                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 group-hover:scale-110 transition-transform" />
+            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 border border-slate-200 shadow-xs shrink-0">
+              <div className="w-full h-full bg-white rounded-[9px] sm:rounded-[14px] flex items-center justify-center">
+                <Trophy className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-amber-600 group-hover:scale-110 transition-transform" />
               </div>
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-display font-extrabold text-sm sm:text-xl text-slate-900 tracking-tight whitespace-nowrap">
+              <span className="font-display font-extrabold text-xs sm:text-lg text-slate-900 tracking-tight whitespace-nowrap">
                 RPL <span className="text-amber-600">Season 9</span>
               </span>
-              <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-0.5 whitespace-nowrap">
+              <span className="text-[7px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-0.5 whitespace-nowrap">
                 Vitraag Vigyaan
               </span>
             </div>
@@ -168,29 +169,31 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Right Action CTA & Mobile Controls */}
-          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             {/* Primary "Register Now" CTA with Character Flip Animation */}
             <motion.button
               initial="initial"
               whileHover="hovered"
               whileTap="hovered"
               type="button"
-              onClick={onRegisterClick}
-              className="py-2 px-3.5 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center min-h-[36px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onRegisterClick();
+              }}
+              className="py-1.5 px-2.5 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
             >
               <FlipText>Register Now</FlipText>
             </motion.button>
-
 
             {/* Mobile Hamburger Toggle */}
             <div className="md:hidden">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 shadow-xs min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation shrink-0"
+                className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 shadow-xs min-h-[34px] min-w-[34px] flex items-center justify-center touch-manipulation shrink-0 cursor-pointer"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -204,20 +207,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="md:hidden overflow-hidden"
+              className="md:hidden overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto pb-2"
             >
-              <div className="my-2 p-4 sm:p-5 rounded-3xl bg-white/95 border border-slate-200 shadow-xl backdrop-blur-xl space-y-2">
-                <nav className="flex flex-col space-y-1">
+              <div className="my-1.5 p-3 sm:p-4 rounded-2xl bg-white/95 border border-slate-200 shadow-xl backdrop-blur-xl space-y-1">
+                <nav className="flex flex-col space-y-0.5">
                   {navItems.map((item) => {
                     return (
                       <a
                         key={item.id}
                         href={item.href}
                         onClick={(e) => handleNavClick(item.href, e)}
-                        className="flex items-center justify-between p-3 rounded-xl font-bold text-sm sm:text-base text-slate-800 hover:bg-slate-50 transition-all min-h-[44px]"
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-50 transition-all min-h-[40px] active:bg-amber-50"
                       >
                         <span>{item.label}</span>
-                        <ArrowRight className="w-4 h-4 text-slate-400" />
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     );
                   })}

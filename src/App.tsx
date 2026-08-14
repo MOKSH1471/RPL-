@@ -16,18 +16,22 @@ export function App() {
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
 
-  // Sync hash routing on mount and hashchange
+  // Always start at landing page on fresh entry / reload
   useEffect(() => {
+    if (window.location.hash === '#/register' || window.location.hash === '#register') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    setCurrentPage('home');
+
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#/register' || hash === '#register') {
         setCurrentPage('register');
-      } else {
+      } else if (hash === '#/home' || hash === '#home' || hash === '') {
         setCurrentPage('home');
       }
     };
 
-    handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -94,4 +98,3 @@ export function App() {
 }
 
 export default App;
-
