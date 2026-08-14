@@ -989,8 +989,8 @@ Submitted via Vitraag Vigyaan RPL Portal
                       className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 space-y-3"
                     >
                       {/* Search & Actions Bar */}
-                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                        <div className="relative flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
+                        <div className="relative flex-1 min-w-0">
                           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                           <input
                             type="text"
@@ -1000,21 +1000,24 @@ Submitted via Vitraag Vigyaan RPL Portal
                             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-600 font-medium"
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleSelectAllSports}
-                          className="px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Select All
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleClearSports}
-                          className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        >
-                          Reset
-                        </button>
+                        <div className="flex items-center justify-end space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={handleSelectAllSports}
+                            className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleClearSports}
+                            className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          >
+                            Reset
+                          </button>
+                        </div>
                       </div>
+
 
                       {/* Sports Checkbox List */}
                       <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">

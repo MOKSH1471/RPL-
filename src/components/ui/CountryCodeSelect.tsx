@@ -78,7 +78,7 @@ export const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center space-x-1.5 px-3.5 py-3 bg-transparent hover:bg-slate-200/50 text-slate-900 font-bold text-sm min-h-[48px] transition-colors cursor-pointer rounded-l-2xl shrink-0 select-none"
+        className="inline-flex items-center space-x-1.5 px-3 py-3 bg-transparent hover:bg-slate-200/50 text-slate-900 font-bold text-sm min-h-[48px] transition-colors cursor-pointer rounded-l-2xl shrink-0 select-none"
       >
         <span className="text-base">{selectedCountry.flag}</span>
         <span className="font-mono text-xs sm:text-sm font-extrabold">{selectedCountry.code}</span>
@@ -97,7 +97,7 @@ export const CountryCodeSelect: React.FC<CountryCodeSelectProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute top-full left-0 mt-2 z-50 w-72 sm:w-80 p-3 bg-white rounded-2xl border border-slate-200 shadow-2xl space-y-2"
+            className="absolute top-full left-0 mt-2 z-50 w-[min(300px,calc(100vw-2.5rem))] max-w-[calc(100vw-2rem)] p-3 bg-white rounded-2xl border border-slate-200 shadow-2xl space-y-2 origin-top-left"
           >
             {/* Search Input */}
             <div className="relative">

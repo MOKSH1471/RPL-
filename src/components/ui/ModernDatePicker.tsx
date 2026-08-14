@@ -192,10 +192,11 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 p-4 bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-4 max-w-sm mx-auto sm:max-w-none"
+            className="absolute top-full left-0 right-0 mt-2 z-50 p-3 sm:p-4 bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-4 w-full max-w-full origin-top"
           >
             {/* Header: Month & Year Switchers */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+
               <div className="flex items-center space-x-1.5">
                 <button
                   type="button"

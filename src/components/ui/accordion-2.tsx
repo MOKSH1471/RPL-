@@ -55,18 +55,18 @@ export default function BasicDropdown({
   const buttonId = "dropdown-button"
 
   return (
-    <div ref={dropdownRef} className={`relative inline-block w-full ${className}`}>
+    <div ref={dropdownRef} className={`relative w-full min-w-0 max-w-full ${className}`}>
       <button
         type="button"
         id={buttonId}
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-900 shadow-xs transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer min-h-[48px]"
+        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-300 bg-white px-3.5 sm:px-4 py-3 sm:py-3.5 text-slate-900 shadow-xs transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer min-h-[48px] overflow-hidden"
       >
-        <span className="flex items-center gap-2 truncate font-medium text-sm">
+        <span className="flex items-center gap-2 truncate font-medium text-xs sm:text-sm min-w-0 flex-1 text-left">
           {selectedItem?.icon && <span className="shrink-0">{selectedItem.icon}</span>}
-          <span className={selectedItem ? "text-slate-900 font-bold" : "text-slate-500"}>
+          <span className={selectedItem ? "text-slate-900 font-bold truncate" : "text-slate-500 truncate"}>
             {selectedItem ? selectedItem.label : label}
           </span>
         </span>
@@ -82,7 +82,7 @@ export default function BasicDropdown({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute left-0 z-50 mt-1.5 w-full origin-top rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl overflow-hidden max-h-60 overflow-y-auto"
+            className="absolute left-0 right-0 z-50 mt-1.5 w-full origin-top rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl overflow-hidden max-h-60 overflow-y-auto min-w-0"
             initial={{ opacity: 0, y: -10, scaleY: 0.95 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: -8, scaleY: 0.95, transition: { duration: 0.15 } }}
@@ -91,7 +91,7 @@ export default function BasicDropdown({
             aria-orientation="vertical"
             aria-labelledby={buttonId}
           >
-            <ul className="py-1.5 space-y-0.5">
+            <ul className="py-1.5 space-y-0.5 min-w-0">
               {items.map((item) => {
                 const selected = selectedItem?.id === item.id
                 return (
@@ -102,13 +102,14 @@ export default function BasicDropdown({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -6 }}
                     transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                    className="min-w-0"
                   >
                     <button
                       type="button"
                       role="menuitem"
                       onClick={() => handleItemSelect(item)}
                       className={[
-                        "flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors cursor-pointer",
+                        "flex w-full items-center gap-2 px-3.5 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors cursor-pointer min-w-0 overflow-hidden",
                         "focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500",
                         selected
                           ? "bg-slate-100 text-slate-900 font-extrabold border-l-4 border-amber-600"
@@ -116,7 +117,7 @@ export default function BasicDropdown({
                       ].join(" ")}
                     >
                       {item.icon && <span className="shrink-0">{item.icon}</span>}
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate flex-1 min-w-0">{item.label}</span>
 
                       {selected && (
                         <motion.span
@@ -142,7 +143,6 @@ export default function BasicDropdown({
                         </motion.span>
                       )}
                     </button>
-
                   </motion.li>
                 )
               })}
