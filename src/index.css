@@ -16,14 +16,14 @@
 
   html {
     scroll-behavior: smooth;
-    touch-action: manipulation;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-x: none;
     -webkit-text-size-adjust: 100%;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
   }
+
 
   body {
     background-color: #F8FAFC;
