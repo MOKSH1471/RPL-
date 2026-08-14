@@ -13,8 +13,9 @@ export const HowItWorksSection: React.FC = () => {
       details: [
         'Select Cricket, Football, or Women’s Sports League',
         'Specify your playing role (Batter, Bowler, Striker, etc.)',
-        'Instant digital pass generated upon form submission',
+        'Instant confirmation & direct Gmail submission to organizers',
       ],
+
       icon: UserCheck,
       color: 'border-amber-400 text-amber-600 bg-amber-50',
     },
@@ -57,18 +58,18 @@ export const HowItWorksSection: React.FC = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 relative z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="py-16 md:py-24 relative z-10 w-full max-w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Section Header */}
         <InView
           viewOptions={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.55, ease: 'easeOut' }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-10 md:mb-16"
         >
           <span className="text-xs uppercase font-extrabold tracking-widest text-pink-600 block mb-3">
             ROAD TO GLORY
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 mb-6">
+          <h2 className="font-display font-extrabold text-slate-900 mb-4 md:mb-6" style={{ fontSize: 'clamp(1.5rem, 4vw + 0.25rem, 3.75rem)' }}>
             How RPL Season 9 <span className="text-gradient-magenta">Works</span>
           </h2>
           <p className="text-slate-700 text-base md:text-lg font-medium leading-relaxed">
@@ -91,7 +92,7 @@ export const HowItWorksSection: React.FC = () => {
                 >
                   <button
                     onClick={() => setActiveStep(idx)}
-                    className={`w-full p-5 rounded-2xl text-left transition-all flex items-center justify-between border ${
+                    className={`w-full p-4 sm:p-5 rounded-2xl text-left transition-all flex items-center justify-between border min-h-[56px] touch-manipulation ${
                       isActive
                         ? 'bg-white border-amber-400 shadow-md scale-[1.02]'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:border-slate-300'
@@ -121,7 +122,7 @@ export const HowItWorksSection: React.FC = () => {
           <InView
             viewOptions={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.55, delay: 0.2, ease: 'easeOut' }}
-            className="lg:col-span-7 bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl"
+            className="lg:col-span-7 bg-white p-6 sm:p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl"
           >
             <div className="flex items-center space-x-3 mb-4">
               <span className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-700">

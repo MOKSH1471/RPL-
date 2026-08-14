@@ -80,6 +80,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const generatedId = `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
+    const leagueVal = (data.league || 'cricket') as LeagueType;
 
     const fullData: RegistrationFormData = {
       recipientGmail: data.recipientGmail || 'rpl@vitraagvigyaan.org',
@@ -96,11 +97,12 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       tshirtSize: data.tshirtSize,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
-      league: data.league,
-      cricketRole: data.cricketRole,
+      selectedSports: [leagueVal as any],
+      league: leagueVal,
+      cricketRole: data.cricketRole as any,
       battingStyle: data.battingStyle,
-      footballPosition: data.footballPosition,
-      womensCategory: data.womensCategory,
+      footballPosition: data.footballPosition as any,
+      womensCategory: data.womensCategory as any,
       preferredTeamName: data.preferredTeamName,
     };
 
@@ -109,7 +111,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
 
     const targetEmail = data.recipientGmail || 'rpl@vitraagvigyaan.org';
     const cc = data.ccEmail ? `&cc=${encodeURIComponent(data.ccEmail)}` : '';
-    const subject = encodeURIComponent(`[RPL Season 9 Registration] ${data.fullName} - ${data.league.toUpperCase()}`);
+    const subject = encodeURIComponent(`[RPL Season 9 Registration] ${data.fullName} - ${leagueVal.toUpperCase()}`);
     const emailBodyText = `
 RAJ PREMIER LEAGUE (RPL SEASON 9) REGISTRATION DETAILS
 ------------------------------------------------------
@@ -126,16 +128,17 @@ Food Preference: ${data.foodPreference}
 Accommodation Required: ${data.accommodationRequired}
 
 LEAGUE SPECIFICS:
-League: ${data.league.toUpperCase()}
-${data.league === 'cricket' ? `Cricket Role: ${data.cricketRole}` : ''}
-${data.league === 'football' ? `Football Position: ${data.footballPosition}` : ''}
-${data.league === 'womens' ? `Women's Category: ${data.womensCategory}` : ''}
+League: ${leagueVal.toUpperCase()}
+${leagueVal === 'cricket' ? `Cricket Role: ${data.cricketRole}` : ''}
+${leagueVal === 'football' ? `Football Position: ${data.footballPosition}` : ''}
+${leagueVal === 'womens' ? `Women's Category: ${data.womensCategory}` : ''}
 Preferred Team Name: ${data.preferredTeamName || 'N/A'}
 ------------------------------------------------------
 Sent via Vitraag Vigyaan RPL Portal
     `.trim();
 
     const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}${cc}&su=${subject}&body=${encodeURIComponent(emailBodyText)}`;
+
 
     try {
       window.open(gmailComposeUrl, '_blank');
@@ -226,7 +229,7 @@ Sent via Vitraag Vigyaan RPL Portal
                           }}
                           className={`flex items-center justify-center space-x-1.5 py-3.5 px-3 min-h-[48px] rounded-xl font-bold text-xs sm:text-sm transition-all touch-manipulation ${
                             isActive
-                              ? 'bg-gradient-to-r from-amber-500 via-emerald-500 to-pink-500 text-white shadow-md scale-[1.02]'
+                              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md scale-[1.02]'
                               : 'text-slate-700 hover:text-slate-900 active:bg-white'
                           }`}
                         >
@@ -530,8 +533,9 @@ Sent via Vitraag Vigyaan RPL Portal
             <Step>
               <div className="space-y-6">
                 <h3 className="font-display text-lg sm:text-xl font-extrabold text-slate-900 mb-2">
-                  Step 5: {currentLeague.toUpperCase()} League Specifics
+                  Step 5: {(currentLeague || 'cricket').toUpperCase()} League Specifics
                 </h3>
+
 
                 {currentLeague === 'cricket' && (
                   <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">

@@ -74,14 +74,14 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
         <button
           onClick={handleEnter}
           onTouchStart={handleEnter}
-          className="w-full py-4 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-500 via-emerald-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-extrabold text-base md:text-lg transition-all shadow-md active:scale-95 flex items-center justify-center space-x-3 group min-h-[48px] touch-manipulation"
+          className="w-full py-4 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-base md:text-lg transition-all shadow-md active:scale-95 flex items-center justify-center space-x-3 group min-h-[48px] touch-manipulation"
         >
           <span>Enter Championship</span>
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
         <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 via-emerald-500 to-pink-500 h-full w-full animate-marquee" />
+          <div className="bg-gradient-to-r from-amber-400 to-amber-600 h-full w-full animate-marquee" />
         </div>
       </div>
     </div>

@@ -10,17 +10,58 @@
     --accent-womens: #DB2777;
   }
 
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   html {
     scroll-behavior: smooth;
     touch-action: manipulation;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    -webkit-text-size-adjust: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
     background-color: #F8FAFC;
     color: #0F172A;
     font-family: 'Plus Jakarta Sans', sans-serif;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Prevent iOS auto-zoom on form field focus (must be ≥ 16px) */
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 16px;
+  }
+
+  /* Mobile active-state tap feedback */
+  a:active,
+  button:active {
+    opacity: 0.85;
+  }
+
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+    content-visibility: auto;
   }
 }
 
@@ -53,33 +94,56 @@
   }
 
   .text-gradient-vibrant {
-    background: linear-gradient(135deg, #D97706 0%, #DB2777 50%, #059669 100%);
+    background: linear-gradient(135deg, #F59E0B 0%, #F97316 35%, #EC4899 70%, #F43F5E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FDE047 0%, #FBBF24 30%, #F59E0B 65%, #EA580C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-royal {
+    background: linear-gradient(135deg, #38BDF8 0%, #818CF8 45%, #EC4899 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-amber {
-    background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #EA580C 100%);
+    background: linear-gradient(135deg, #FDE047 0%, #FBBF24 30%, #F97316 70%, #FB7185 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-emerald {
-    background: linear-gradient(135deg, #047857 0%, #059669 50%, #0D9488 100%);
+    background: linear-gradient(135deg, #6EE7B7 0%, #34D399 35%, #10B981 70%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-magenta {
-    background: linear-gradient(135deg, #BE185D 0%, #DB2777 50%, #E11D48 100%);
+    background: linear-gradient(135deg, #FDA4AF 0%, #FB7185 30%, #F472B6 65%, #EC4899 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-cyan {
+    background: linear-gradient(135deg, #67E8F9 0%, #38BDF8 40%, #06B6D4 75%, #0284C7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Safe-area aware bottom padding utility */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
 /* Custom Sleek Light Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #F1F5F9;
@@ -90,4 +154,15 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+
+/* Hide scrollbar on mobile for horizontal scroll containers */
+@media (max-width: 640px) {
+  .mobile-hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

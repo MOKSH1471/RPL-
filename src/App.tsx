@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MeshGradient } from '@/components/ui/MeshGradient';
 import { IntroSplash } from '@/components/ui/IntroSplash';
 import { Navbar } from '@/components/layout/Navbar';
@@ -7,31 +7,52 @@ import { AboutSection } from '@/components/sections/AboutSection';
 import { LeaguesSection } from '@/components/sections/LeaguesSection';
 import { GallerySection } from '@/components/sections/GallerySection';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
-import { RegisterSection } from '@/components/sections/RegisterSection';
+import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { Footer } from '@/components/layout/Footer';
 import { LeagueType } from '@/types';
 
 export function App() {
+  const [currentPage, setCurrentPage] = useState<'home' | 'register'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
 
+  // Sync hash routing on mount and hashchange
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/register' || hash === '#register') {
+        setCurrentPage('register');
+      } else {
+        setCurrentPage('home');
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const handleSelectLeague = (league: LeagueType) => {
     setSelectedLeague(league);
-    const registerElement = document.getElementById('register');
-    if (registerElement) {
-      registerElement.scrollIntoView({ behavior: 'smooth' });
-    }
+    setCurrentPage('register');
+    window.location.hash = '/register';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleRegisterClick = () => {
-    const registerElement = document.getElementById('register');
-    if (registerElement) {
-      registerElement.scrollIntoView({ behavior: 'smooth' });
-    }
+    setCurrentPage('register');
+    window.location.hash = '/register';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToHome = () => {
+    setCurrentPage('home');
+    window.location.hash = '/home';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="relative min-h-screen text-slate-900 bg-slate-50 selection:bg-amber-400 selection:text-slate-950">
+    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden text-slate-900 bg-slate-50 selection:bg-amber-400 selection:text-slate-950">
       {/* Intro Splash Screen with TextMorph */}
       {showIntro && <IntroSplash onComplete={() => setShowIntro(false)} />}
 
@@ -39,19 +60,31 @@ export function App() {
       <MeshGradient activeLeague={selectedLeague} />
 
       {/* Main Page Layout Container */}
-      <div className="relative z-10">
-        <Navbar onRegisterClick={handleRegisterClick} />
-        
+      <div className="relative z-10 w-full max-w-full overflow-x-hidden">
+        <Navbar
+          onRegisterClick={handleRegisterClick}
+          currentPage={currentPage}
+          onNavigateHome={handleBackToHome}
+        />
+
         <main>
-          <HeroSection onSelectLeague={handleSelectLeague} />
-          <AboutSection />
-          <LeaguesSection onSelectLeague={handleSelectLeague} />
-          <GallerySection />
-          <HowItWorksSection />
-          <RegisterSection
-            selectedLeague={selectedLeague}
-            onLeagueTabChange={(league) => setSelectedLeague(league)}
-          />
+          {currentPage === 'register' ? (
+            <RegistrationPage
+              initialLeague={selectedLeague}
+              onBackToHome={handleBackToHome}
+            />
+          ) : (
+            <>
+              <HeroSection
+                onSelectLeague={handleSelectLeague}
+                onRegisterClick={handleRegisterClick}
+              />
+              <AboutSection />
+              <LeaguesSection onSelectLeague={handleSelectLeague} />
+              <GallerySection />
+              <HowItWorksSection />
+            </>
+          )}
         </main>
 
         <Footer />
@@ -61,3 +94,4 @@ export function App() {
 }
 
 export default App;
+

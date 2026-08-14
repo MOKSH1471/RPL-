@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Menu, X, ArrowRight } from 'lucide-react';
+import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
   onRegisterClick: () => void;
+  currentPage?: 'home' | 'register';
+  onNavigateHome?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onRegisterClick,
+  currentPage = 'home',
+  onNavigateHome,
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -74,6 +81,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
   const handleNavClick = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
     setMobileMenuOpen(false);
+    if (currentPage === 'register' && onNavigateHome) {
+      onNavigateHome();
+      setTimeout(() => {
+        const targetId = href.replace('#', '');
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      return;
+    }
     const targetId = href.replace('#', '');
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
@@ -81,35 +99,41 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
     }
   };
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (currentPage === 'register' && onNavigateHome) {
+      onNavigateHome();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 w-full max-w-full ${
         isScrolled
-          ? 'bg-white/85 backdrop-blur-md border-slate-200/80 shadow-sm'
-          : 'bg-transparent border-transparent'
+          ? 'bg-white/90 backdrop-blur-md border-slate-200/80 shadow-xs'
+          : 'bg-white/60 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none border-slate-200/50 sm:border-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-20 gap-2">
           {/* Logo & RPL Wordmark */}
           <a
             href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center space-x-3 group"
+            onClick={handleLogoClick}
+            className="flex items-center space-x-2 sm:space-x-3 group shrink-0 min-w-0"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-emerald-500 to-pink-500 p-0.5 border border-slate-200 shadow-sm">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 border border-slate-200 shadow-xs shrink-0">
+              <div className="w-full h-full bg-white rounded-[10px] sm:rounded-[14px] flex items-center justify-center">
                 <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 group-hover:scale-110 transition-transform" />
               </div>
             </div>
-            <div className="flex flex-col">
-              <span className="font-display font-extrabold text-lg sm:text-xl text-slate-900 tracking-wider">
+            <div className="flex flex-col min-w-0">
+              <span className="font-display font-extrabold text-sm sm:text-xl text-slate-900 tracking-tight whitespace-nowrap">
                 RPL <span className="text-amber-600">Season 9</span>
               </span>
-              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-1">
+              <span className="text-[8px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-0.5 whitespace-nowrap">
                 Vitraag Vigyaan
               </span>
             </div>
@@ -134,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
                   {isActive && (
                     <motion.div
                       layoutId="active-nav-indicator"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-pink-500 rounded-full"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -144,25 +168,29 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
           </nav>
 
           {/* Right Action CTA & Mobile Controls */}
-          <div className="flex items-center space-x-3">
-            {/* Primary "Register Now" CTA */}
-            <button
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            {/* Primary "Register Now" CTA with Character Flip Animation */}
+            <motion.button
+              initial="initial"
+              whileHover="hovered"
+              whileTap="hovered"
               type="button"
               onClick={onRegisterClick}
-              className="py-2.5 px-4 sm:px-6 rounded-full bg-gradient-to-r from-amber-500 via-emerald-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-extrabold text-xs uppercase tracking-widest shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center space-x-1.5 min-h-[40px] touch-manipulation"
+              className="py-2 px-3.5 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center min-h-[36px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
             >
-              <span>Register Now</span>
-            </button>
+              <FlipText>Register Now</FlipText>
+            </motion.button>
+
 
             {/* Mobile Hamburger Toggle */}
             <div className="md:hidden">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 shadow-sm min-h-[40px] touch-manipulation"
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-slate-900 shadow-xs min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation shrink-0"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -178,15 +206,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
               transition={{ duration: 0.25, ease: 'easeInOut' }}
               className="md:hidden overflow-hidden"
             >
-              <div className="my-2 p-5 rounded-3xl bg-white/95 border border-slate-200 shadow-2xl backdrop-blur-xl space-y-3">
-                <nav className="flex flex-col space-y-2">
+              <div className="my-2 p-4 sm:p-5 rounded-3xl bg-white/95 border border-slate-200 shadow-xl backdrop-blur-xl space-y-2">
+                <nav className="flex flex-col space-y-1">
                   {navItems.map((item) => {
                     return (
                       <a
                         key={item.id}
                         href={item.href}
                         onClick={(e) => handleNavClick(item.href, e)}
-                        className="flex items-center justify-between p-3 rounded-xl font-bold text-base text-slate-800 hover:bg-slate-50 transition-all"
+                        className="flex items-center justify-between p-3 rounded-xl font-bold text-sm sm:text-base text-slate-800 hover:bg-slate-50 transition-all min-h-[44px]"
                       >
                         <span>{item.label}</span>
                         <ArrowRight className="w-4 h-4 text-slate-400" />
@@ -202,3 +230,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onRegisterClick }) => {
     </header>
   );
 };
+
+export default Navbar;

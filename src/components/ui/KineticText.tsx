@@ -16,10 +16,10 @@ export const KineticText: React.FC<KineticTextProps> = ({
         {/* Render item list twice for seamless loop */}
         {[...items, ...items, ...items, ...items].map((item, idx) => (
           <div key={idx} className="flex items-center space-x-6 mx-4">
-            <span className="font-display text-lg md:text-xl font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 via-pink-400 to-emerald-400 bg-clip-text text-transparent">
+            <span className="font-display text-lg md:text-xl font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
               {item}
             </span>
-            <span className="w-2 h-2 rounded-full bg-pink-500/60 inline-block" />
+            <span className="w-2 h-2 rounded-full bg-amber-500/60 inline-block" />
           </div>
         ))}
       </div>

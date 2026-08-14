@@ -9,18 +9,18 @@ interface LeaguesSectionProps {
 
 export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }) => {
   return (
-    <section id="leagues" className="py-20 md:py-24 relative z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="leagues" className="py-16 md:py-24 relative z-10 w-full max-w-full overflow-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Section Header with InView */}
         <InView
           viewOptions={{ once: true, amount: 0.05 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="max-w-4xl mb-12 md:mb-16"
+          className="max-w-4xl mb-10 md:mb-16"
         >
           <span className="text-xs uppercase font-extrabold tracking-widest text-amber-600 block mb-3">
             CHAMPIONSHIP LEAGUES
           </span>
-          <h2 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 mb-4 sm:mb-6 tracking-tight">
+          <h2 className="font-display font-extrabold text-slate-900 mb-4 sm:mb-6 tracking-tight" style={{ fontSize: 'clamp(1.5rem, 4vw + 0.25rem, 3.75rem)' }}>
             Three Championship <span className="text-gradient-vibrant">Leagues</span>
           </h2>
           <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl">
@@ -38,8 +38,9 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
           >
             <div
               onClick={() => onSelectLeague('cricket')}
-              className="group cursor-pointer p-6 sm:p-8 md:p-10 rounded-3xl bg-[#FFFBEB] border-2 border-amber-300 hover:border-amber-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-lg touch-manipulation"
+              className="group cursor-pointer p-5 sm:p-8 md:p-10 rounded-3xl bg-[#FFFBEB] border-2 border-amber-300 hover:border-amber-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-lg touch-manipulation"
             >
+
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-700">
@@ -120,7 +121,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     e.stopPropagation();
                     onSelectLeague('football');
                   }}
-                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[44px]"
+                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
                 >
                   <span>Register for Football League</span>
                   <ArrowRight className="w-4 h-4" />
@@ -156,7 +157,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     e.stopPropagation();
                     onSelectLeague('womens');
                   }}
-                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[44px]"
+                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
                 >
                   <span>Register for Women's League</span>
                   <ArrowRight className="w-4 h-4" />
