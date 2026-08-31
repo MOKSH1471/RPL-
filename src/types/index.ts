@@ -132,4 +132,26 @@ export interface SubmissionResponse {
   data: RegistrationFormData;
 }
 
+export interface DynamicField {
+  id: string;
+  sport_id: string | null;
+  field_key: string;
+  label: string;
+  field_type: 'text' | 'number' | 'select' | 'multiselect' | 'date' | 'file';
+  options?: string[] | null;
+  validation_rules?: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    regex?: string;
+  } | null;
+  sort_order: number;
+}
+
+export interface DynamicSport {
+  id: string;
+  name: string;
+  is_active?: boolean;
+}
+
 

@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { registrationSchema, RegistrationSchemaType } from '@/lib/validation';
-import { SportType, RegistrationFormData } from '@/types';
+import { SportType, RegistrationFormData, DynamicField } from '@/types';
+import { uploadFileToDrive, submitRegistration, fetchRegistrationFields, lookupMumukshu } from '@/lib/api';
+import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
 import { RegistrationTicket } from '@/components/ui/RegistrationTicket';
 import { InView } from '@/components/ui/in-view';
 import BasicDropdown, { DropdownItem } from '@/components/ui/accordion-2';
@@ -31,6 +33,8 @@ import {
   ChevronDown,
   X,
   Search,
+  Loader2,
+  Copy,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -135,6 +139,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [registrationId, setRegistrationId] = useState<string>('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string>('');
+  const [photoDriveUrl, setPhotoDriveUrl] = useState<string>('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+  const [dbFields, setDbFields] = useState<DynamicField[]>([]);
+  const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
+  const [isLookingUpMumukshu, setIsLookingUpMumukshu] = useState(false);
+  const [mumukshuCardInfo, setMumukshuCardInfo] = useState<{ cardNo?: string; name?: string } | null>(null);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+
+  useEffect(() => {
+    fetchRegistrationFields().then((fields) => {
+      if (fields && fields.length > 0) {
+        setDbFields(fields);
+      }
+    });
+  }, []);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -210,6 +229,35 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentMobile = watch('mobileNumber');
   const currentEmail = watch('email');
   const currentDateOfBirth = watch('dateOfBirth');
+
+  // Auto-fetch Mumukshu details from card_db when mobile is entered
+  useEffect(() => {
+    const digits = (currentMobile || '').replace(/\D/g, '');
+    if (digits.length >= 10) {
+      setIsLookingUpMumukshu(true);
+      lookupMumukshu(digits).then((res) => {
+        setIsLookingUpMumukshu(false);
+        if (res.found && res.data) {
+          const d = res.data;
+          setMumukshuCardInfo({ cardNo: d.cardNo, name: d.fullName });
+          if (d.fullName) setValue('fullName', d.fullName, { shouldValidate: true });
+          if (d.email) setValue('email', d.email, { shouldValidate: true });
+          if (d.gender) setValue('gender', d.gender as any, { shouldValidate: true });
+          if (d.centre) setValue('centre', d.centre, { shouldValidate: true });
+          if (d.dateOfBirth) setValue('dateOfBirth', d.dateOfBirth, { shouldValidate: true });
+          setValue('existingRplFamily', 'Yes', { shouldValidate: true });
+          if (d.photoUrl && !photoPreview) {
+            setPhotoPreview(d.photoUrl);
+            setPhotoDriveUrl(d.photoUrl);
+          }
+        } else {
+          setMumukshuCardInfo(null);
+        }
+      });
+    } else {
+      setMumukshuCardInfo(null);
+    }
+  }, [currentMobile]);
 
 
   // Sport dynamic watches
@@ -321,7 +369,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     setValue('selectedSports', first, { shouldValidate: true });
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -334,12 +382,25 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Upload to Google Drive via backend API with Player's Name
+      try {
+        setIsUploadingPhoto(true);
+        const cleanName = (watch('fullName') || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
+        const driveUrl = await uploadFileToDrive(file, `${cleanName}_Photo`);
+        setPhotoDriveUrl(driveUrl);
+      } catch (err) {
+        console.warn('Direct upload notice (will use preview fallback):', err);
+      } finally {
+        setIsUploadingPhoto(false);
+      }
     }
   };
 
   const handleRemovePhoto = () => {
     setPhotoPreview(null);
     setPhotoName('');
+    setPhotoDriveUrl('');
   };
 
   const onSubmit = async (data: RegistrationSchemaType) => {
@@ -402,6 +463,29 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       localStorage.setItem('rpl_registrations', JSON.stringify([...existing, { id: generatedId, ...fullData }]));
     } catch {
       // LocalStorage fallback
+    }
+
+    // Submit to MySQL backend API
+    try {
+      const response = await submitRegistration({
+        sport_id: selectedSports[0] || 'cricket',
+        full_name: data.fullName.trim(),
+        email: data.email.trim(),
+        mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
+        answers: {
+          ...data,
+          ...dynamicAnswers,
+          selectedSports,
+          photoDriveUrl: photoDriveUrl || undefined,
+          photoDataUrl: photoPreview || undefined,
+        },
+      });
+      console.log('[RPL Frontend] Registration saved to MySQL database successfully:', response);
+    } catch (apiErr: any) {
+      console.error('[RPL Frontend Error] Failed to save to database:', apiErr);
+      alert(`⚠️ Registration Error: ${apiErr.message || 'Failed to save registration to database.'}`);
+      setIsSubmitting(false);
+      return;
     }
 
     // Prepare Gmail body
@@ -477,14 +561,6 @@ Additional Notes: ${data.additionalNotes || 'None'}
 Submitted via Vitraag Vigyaan RPL Portal
     `.trim();
 
-    const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}${cc}&su=${subject}&body=${encodeURIComponent(emailBodyText)}`;
-
-    try {
-      window.open(gmailComposeUrl, '_blank');
-    } catch {
-      // Fallback
-    }
-
     setIsSubmitting(false);
     setRegistrationId(generatedId);
     setSubmittedData(fullData);
@@ -508,6 +584,15 @@ Submitted via Vitraag Vigyaan RPL Portal
     setPhotoName('');
     reset();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const onInvalid = (formErrors: any) => {
+    console.error('[Registration Form Validation Errors]', formErrors);
+    const firstKey = Object.keys(formErrors)[0];
+    if (firstKey) {
+      const msg = formErrors[firstKey]?.message || `Please check: ${firstKey}`;
+      alert(`⚠️ Please complete the required field:\n${msg}`);
+    }
   };
 
   const filteredSports = AVAILABLE_SPORTS.filter(
@@ -587,7 +672,7 @@ Submitted via Vitraag Vigyaan RPL Portal
             onReset={handleReset}
           />
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
             {/* ========================================================================= */}
             {/* SECTION 1: BASIC / COMMON QUESTIONS (COMMON IN EVERY SPORT) */}
             {/* ========================================================================= */}
@@ -661,6 +746,18 @@ Submitted via Vitraag Vigyaan RPL Portal
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.mobileNumber.message}</span>
                     </p>
+                  )}
+                  {isLookingUpMumukshu && (
+                    <p className="mt-1.5 text-xs text-amber-600 font-semibold flex items-center space-x-1.5 animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Checking Ashram card record...</span>
+                    </p>
+                  )}
+                  {mumukshuCardInfo && (
+                    <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center space-x-2 text-emerald-800 text-xs font-bold shadow-sm">
+                      <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>✨ Mumukshu verified (Card #{mumukshuCardInfo.cardNo}). Details auto-filled!</span>
+                    </div>
                   )}
                 </div>
 
@@ -874,21 +971,35 @@ Submitted via Vitraag Vigyaan RPL Portal
                           />
                           <div className="text-left">
                             <span className="text-xs font-bold text-slate-900 block truncate max-w-[150px]">
-                              {photoName}
+                              {photoName || 'Player Photo'}
                             </span>
-                            <span className="text-[10px] text-emerald-600 font-bold">Photo Attached</span>
+                            <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                            </span>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemovePhoto();
-                          }}
-                          className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2 py-1 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer"
-                        >
-                          Remove
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
+                            Change
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png"
+                              onChange={handlePhotoChange}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemovePhoto();
+                            }}
+                            className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-1">
@@ -1170,6 +1281,19 @@ Submitted via Vitraag Vigyaan RPL Portal
                           onChange={(item) => setValue('cricketExperience', String(item.id), { shouldValidate: true })}
                         />
                       </div>
+
+                      {/* Dynamic Custom Questions for Cricket from Database */}
+                      {dbFields
+                        .filter((f) => f.sport_id === 'cricket' && !['cricket_role', 'batting_style', 'bowling_style', 'cricket_experience'].includes(f.field_key))
+                        .map((field) => (
+                          <div key={field.id} className="md:col-span-2">
+                            <DynamicFieldRenderer
+                              field={field}
+                              value={dynamicAnswers[field.field_key]}
+                              onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                            />
+                          </div>
+                        ))}
                     </div>
                   </motion.div>
                 )}
@@ -1702,7 +1826,104 @@ Submitted via Vitraag Vigyaan RPL Portal
             </InView>
 
             {/* ========================================================================= */}
-            {/* SUBMIT BUTTON & GMAIL CONFIRMATION CALLOUT */}
+            {/* PAYMENT VERIFICATION & RECEIPT UPLOAD (DYNAMIC FROM DATABASE) */}
+            {/* ========================================================================= */}
+            {dbFields.some((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr')) && (
+              <InView
+                viewOptions={{ once: true, amount: 0.05 }}
+                transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+                className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
+              >
+                <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-emerald-200 pb-4">
+                  <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                    <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">💳</span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
+                        Payment & Verification Proof
+                      </h3>
+                      <p className="text-emerald-800 text-xs font-semibold mt-0.5">
+                        Upload payment receipt screenshot and enter transaction reference for verification
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px] sm:text-xs">
+                    Verification
+                  </span>
+                </div>
+
+                {/* UPI QR Code Scanner Banner */}
+                <div className="p-5 sm:p-6 bg-white rounded-2xl border border-emerald-200 shadow-sm flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                  <div className="relative shrink-0 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm group">
+                    <img
+                      src="/rpl_upi_qr.png"
+                      alt="RPL UPI QR Code Scanner"
+                      className="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl"
+                    />
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-left space-y-2.5">
+                    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Official RPL Payment Gateway</span>
+                    </div>
+
+                    <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
+                      Scan QR Code to Pay via Any UPI App
+                    </h4>
+
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment, then enter the UTR / Transaction ID below.
+                    </p>
+
+                    <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 flex items-center space-x-2">
+                        <span>UPI ID:</span>
+                        <span className="text-amber-700">info.rplevents@okicici</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('info.rplevents@okicici');
+                          setCopiedUpi(true);
+                          setTimeout(() => setCopiedUpi(false), 2000);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
+                      >
+                        {copiedUpi ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-white" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy UPI ID</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {dbFields
+                    .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
+                    .map((field) => (
+                      <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
+                        <DynamicFieldRenderer
+                          field={field}
+                          value={dynamicAnswers[field.field_key]}
+                          onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                          contextName={watch('fullName') || 'Player'}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </InView>
+            )}
+
+            {/* ========================================================================= */}
+            {/* SUBMIT BUTTON & CONFIRMATION CALLOUT */}
             {/* ========================================================================= */}
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
@@ -1710,9 +1931,9 @@ Submitted via Vitraag Vigyaan RPL Portal
               className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-2 border-amber-300 shadow-md space-y-4 text-slate-800"
             >
               <div className="flex items-start space-x-3 text-slate-700">
-                <Mail className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
+                <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
                 <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                  Upon clicking <strong className="text-slate-900 font-extrabold">Submit Registration</strong>, your entry details will be recorded, and Gmail compose will launch with all your sport details pre-filled to send directly to the organizing team.
+                  Upon clicking <strong className="text-slate-900 font-extrabold">Submit Registration</strong>, your participant details and payment verification proof will be securely recorded in the database, and your official Digital Sports Pass will be generated instantly.
                 </p>
               </div>
 

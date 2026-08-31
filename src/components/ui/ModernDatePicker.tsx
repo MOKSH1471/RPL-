@@ -122,7 +122,14 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
 
   // Calculate age if selected
   const getAge = (dateStr: string) => {
-    const bday = new Date(dateStr);
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    let bday: Date;
+    if (parts.length === 3) {
+      bday = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      bday = new Date(dateStr);
+    }
     if (isNaN(bday.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - bday.getFullYear();
@@ -136,6 +143,16 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
   const age = value ? getAge(value) : null;
 
   const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const monthIdx = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(year) && !isNaN(monthIdx) && !isNaN(day) && monthIdx >= 0 && monthIdx < 12) {
+        return `${day} ${SHORT_MONTHS[monthIdx]} ${year}`;
+      }
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
