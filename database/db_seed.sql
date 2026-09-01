@@ -14,14 +14,18 @@ ON DUPLICATE KEY UPDATE name=VALUES(name), is_active=VALUES(is_active);
 
 -- 2. Seed Fields into rpl_registration_fields
 INSERT INTO rpl_registration_fields (id, sport_id, field_key, label, field_type, options, validation_rules, sort_order) VALUES
--- Common Fields
-('f_tshirt_size', NULL, 'tshirt_size', 'Jersey / T-Shirt Size', 'select', '["XS", "S", "M", "L", "XL", "XXL", "XXXL"]', '{"required": true}', 1),
-('f_date_of_birth', NULL, 'date_of_birth', 'Date of Birth', 'date', NULL, '{"required": true}', 2),
-('f_gender', NULL, 'gender', 'Gender', 'select', '["Male", "Female", "Other"]', '{"required": true}', 3),
+-- Common Fields (Identity & Logistics)
+('f_full_name', NULL, 'full_name', 'Full Name', 'text', NULL, '{"required": true, "min": 2, "max": 60}', 1),
+('f_mobile', NULL, 'mobile_number', 'Mobile Number', 'text', NULL, '{"required": true, "min": 7, "max": 16}', 2),
+('f_email', NULL, 'email', 'Email Address', 'text', NULL, '{"required": true}', 3),
 ('f_centre', NULL, 'centre', 'Centre Name', 'text', NULL, '{"required": true}', 4),
-('f_food_preference', NULL, 'food_preference', 'Food Preference', 'select', '["Jain", "Swaminarayan", "Regular Veg", "Special Diet"]', '{"required": true}', 5),
-('f_accommodation', NULL, 'accommodation_required', 'Accommodation Required', 'select', '["Yes", "No"]', '{"required": true}', 6),
-('f_rpl_family', NULL, 'existing_rpl_family', 'Existing RPL Family Member?', 'select', '["Yes", "No"]', '{"required": true}', 7),
+('f_tshirt_size', NULL, 'tshirt_size', 'Jersey / T-Shirt Size', 'select', '["XS", "S", "M", "L", "XL", "XXL", "XXXL"]', '{"required": true}', 5),
+('f_date_of_birth', NULL, 'date_of_birth', 'Date of Birth', 'date', NULL, '{"required": true}', 6),
+('f_gender', NULL, 'gender', 'Gender', 'select', '["Male", "Female", "Other"]', '{"required": true}', 7),
+('f_food_preference', NULL, 'food_preference', 'Food Preference', 'select', '["Jain", "Swaminarayan", "Regular Veg", "Special Diet"]', '{"required": true}', 8),
+('f_accommodation', NULL, 'accommodation_required', 'Accommodation Required', 'select', '["Yes", "No"]', '{"required": true}', 9),
+('f_rpl_family', NULL, 'existing_rpl_family', 'Existing RPL Family Member?', 'select', '["Yes", "No"]', '{"required": true}', 10),
+('f_photo', NULL, 'photo', 'Profile Photo (Passport / ID)', 'file', NULL, '{"required": false}', 11),
 
 -- Cricket Dynamic Fields
 ('f_cricket_role', 'cricket', 'cricket_role', 'Cricket Playing Role', 'select', '["Batter", "Bowler", "All-Rounder", "Wicketkeeper-Batter"]', '{"required": true}', 10),
