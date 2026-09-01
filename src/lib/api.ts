@@ -67,11 +67,19 @@ export async function submitRegistration(payload: RegistrationPayload): Promise<
     body: JSON.stringify(payload),
   });
 
-  const data = await res.json();
+  const contentType = res.headers.get('content-type') || '';
+  let data: any = {};
+  if (contentType.includes('application/json')) {
+    data = await res.json().catch(() => ({}));
+  } else {
+    const rawText = await res.text().catch(() => '');
+    data = { error: rawText.replace(/<[^>]*>/g, '').trim() || `Server error (${res.status})` };
+  }
+
   if (!res.ok) {
     throw new Error(
       data.error ||
-      (data.errors ? Object.values(data.errors).join(', ') : 'Failed to submit registration')
+      (data.errors ? Object.values(data.errors).join(', ') : `Failed to submit registration (Status ${res.status})`)
     );
   }
 

@@ -5,6 +5,7 @@ import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import db from './db.js';
 
 dotenv.config();
@@ -14,7 +15,22 @@ const port = process.env.PORT || 5005;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Health & Readiness Probes (Public, lightweight, outside rate limits)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/ready', async (req, res) => {
+  try {
+    await db.query('SELECT 1');
+    res.status(200).json({ status: 'ready', database: 'connected' });
+  } catch (err) {
+    res.status(503).json({ status: 'not_ready', database: 'disconnected' });
+  }
+});
 
 // Google Drive API Configuration
 const auth = new google.auth.JWT(
@@ -368,33 +384,113 @@ app.post('/api/register', async (req, res) => {
 
 
 
+// --- ADMIN AUTHENTICATION MIDDLEWARE (instructions.md Blueprint Compliant) ---
+
+// Timing-safe comparison to prevent timing attacks
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+const requireAdminAuth = (req, res, next) => {
+  const adminSecret = process.env.ADMIN_API_SECRET;
+
+  if (!adminSecret) {
+    console.error('[SECURITY FATAL] ADMIN_API_SECRET is not configured in server .env');
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_MISCONFIGURED',
+        message: 'Admin authorization is not configured on the server.',
+      },
+    });
+  }
+
+  const authHeader = req.headers.authorization;
+  const headerKey = req.headers['x-admin-key'];
+
+  let providedToken = '';
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    providedToken = authHeader.slice(7).trim();
+  } else if (headerKey) {
+    providedToken = String(headerKey).trim();
+  }
+
+  if (!providedToken || !safeCompare(providedToken, adminSecret)) {
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or missing admin authorization token.',
+      },
+    });
+  }
+
+  next();
+};
+
+// Protect all /api/admin/* routes
+app.use('/api/admin', requireAdminAuth);
+
 // 5. Admin Endpoint: List submissions
 app.get('/api/admin/registrations', async (req, res) => {
-  const { payment_status } = req.query;
+  const { sport_id, payment_status } = req.query;
   try {
     let query = 'SELECT * FROM rpl_registrations';
     const params = [];
+    const conditions = [];
 
     if (payment_status) {
-      query += ' WHERE payment_status = ?';
+      conditions.push('payment_status = ?');
       params.push(payment_status);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY submitted_at DESC';
 
     const [rows] = await db.query(query, params);
-    
-    // Parse JSON details for each registration
-    const formatted = rows.map((r) => ({
-      ...r,
-      general_details: typeof r.general_details === 'string' ? JSON.parse(r.general_details) : r.general_details,
-      sport_answers: typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers) : r.sport_answers,
-    }));
 
-    res.json(formatted);
+    // Parse JSON fields for each registration
+    const formatted = rows.map((r) => {
+      const parsedAnswers = typeof r.answers === 'string' ? JSON.parse(r.answers || '{}') : (r.answers || {});
+      const parsedGeneral = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
+      const parsedSport = typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers || '{}') : (r.sport_answers || {});
+
+      return {
+        ...r,
+        answers: { ...parsedGeneral, ...parsedSport, ...parsedAnswers },
+      };
+    });
+
+    // Optional in-memory filter by sport if sport_id is passed
+    const result = sport_id
+      ? formatted.filter(
+          (r) =>
+            r.sport_id === sport_id ||
+            r.answers?.primarySport === sport_id ||
+            (Array.isArray(r.answers?.selectedSports) && r.answers.selectedSports.includes(sport_id))
+        )
+      : formatted;
+
+    res.json({
+      success: true,
+      data: result,
+    });
   } catch (error) {
     console.error('Error fetching registrations:', error);
-    res.status(500).json({ error: 'Failed to fetch registrations' });
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'FETCH_ERROR',
+        message: 'Failed to fetch registrations',
+      },
+    });
   }
 });
 
