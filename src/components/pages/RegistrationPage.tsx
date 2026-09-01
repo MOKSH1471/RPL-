@@ -228,6 +228,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentCountryCode = watch('countryCode') || '+91';
   const currentMobile = watch('mobileNumber');
   const currentEmail = watch('email');
+
+  // Helper to dynamically read field labels from database fields (with fallback)
+  const getFieldLabel = (fieldKey: string, defaultLabel: string) => {
+    const field = dbFields.find((f) => f.field_key === fieldKey);
+    return field?.label || defaultLabel;
+  };
   const currentDateOfBirth = watch('dateOfBirth');
 
   // Auto-fetch Mumukshu details from card_db when mobile is entered
@@ -702,7 +708,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <User className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Full Name</span>
+                    <span>{getFieldLabel('full_name', 'Full Name')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <input
@@ -723,7 +729,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Phone className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Mobile Number</span>
+                    <span>{getFieldLabel('mobile_number', 'Mobile Number')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <div className="flex items-stretch rounded-2xl bg-slate-50 border border-slate-300 focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-200 focus-within:bg-white transition-all overflow-visible relative min-h-[48px]">
@@ -770,7 +776,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Mail className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Email Address</span>
+                    <span>{getFieldLabel('email', 'Email Address')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <input
@@ -792,7 +798,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <MapPin className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Centre Name</span>
+                    <span>{getFieldLabel('centre', 'Centre Name')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <BasicDropdown
@@ -822,7 +828,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
                   <span className="flex items-center space-x-1.5">
                     <Shirt className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Jersey / T-Shirt Size</span>
+                    <span>{getFieldLabel('tshirt_size', 'Jersey / T-Shirt Size')}</span>
                     <span className="text-pink-600">*</span>
                   </span>
                   <span className="text-slate-500 font-semibold text-[11px] normal-case">
@@ -851,7 +857,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Date of Birth</span>
+                    <span>{getFieldLabel('date_of_birth', 'Date of Birth')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <ModernDatePicker
@@ -871,7 +877,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <User className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Gender</span>
+                    <span>{getFieldLabel('gender', 'Gender')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <OptionSelector
@@ -891,7 +897,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Utensils className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Food Preference</span>
+                    <span>{getFieldLabel('food_preference', 'Food Preference')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <BasicDropdown
@@ -910,7 +916,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Home className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Accommodation Required</span>
+                    <span>{getFieldLabel('accommodation_required', 'Accommodation Required')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <OptionSelector
@@ -932,7 +938,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Existing RPL Family</span>
+                    <span>{getFieldLabel('existing_rpl_family', 'Existing RPL Family')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <OptionSelector
@@ -952,7 +958,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Upload className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Profile Photo (Passport / ID)</span>
+                    <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
                   </label>
                   <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-600 rounded-2xl p-4 text-center transition-all bg-slate-50 hover:bg-white min-h-[100px] flex items-center justify-center">
                     <input
@@ -1788,7 +1794,7 @@ Submitted via Vitraag Vigyaan RPL Portal
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Name on Back of Jersey <span className="text-slate-500 text-[10px]">(Optional)</span>
+                    {getFieldLabel('custom_jersey_name', 'Name on Back of Jersey')} <span className="text-slate-500 text-[10px]">(Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -1800,7 +1806,7 @@ Submitted via Vitraag Vigyaan RPL Portal
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Preferred Jersey Number <span className="text-slate-500 text-[10px]">(0-99, Optional)</span>
+                    {getFieldLabel('preferred_jersey_number', 'Preferred Jersey Number')} <span className="text-slate-500 text-[10px]">(0-99, Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -1813,7 +1819,7 @@ Submitted via Vitraag Vigyaan RPL Portal
 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Preferred Team / Squad Name <span className="text-slate-500 text-[10px]">(If registering alongside a squad)</span>
+                    {getFieldLabel('preferred_team_name', 'Preferred Team / Squad Name')} <span className="text-slate-500 text-[10px]">(If registering alongside a squad)</span>
                   </label>
                   <input
                     type="text"
