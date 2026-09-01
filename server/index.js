@@ -269,6 +269,18 @@ app.post('/api/register', async (req, res) => {
     const cleanPaymentUtr = payment_utr || sanitizedAnswers.payment_utr || null;
     const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt || null;
 
+    // Combined lookup object for dynamic validation
+    const lookupAnswers = {
+      full_name: cleanFullName,
+      fullName: cleanFullName,
+      email: cleanEmail,
+      mobile: cleanMobile,
+      mobile_number: cleanMobile,
+      mobileNumber: cleanMobile,
+      ...cleanGeneralDetails,
+      ...sanitizedAnswers,
+    };
+
     // A. Fetch rules for this registration
     const [fields] = await db.query(
       'SELECT field_key, field_type, label, options, validation_rules FROM rpl_registration_fields WHERE sport_id = ? OR sport_id IS NULL',
@@ -279,7 +291,7 @@ app.post('/api/register', async (req, res) => {
 
     // B. Run Dynamic Validation
     fields.forEach((field) => {
-      const value = getFieldValue(sanitizedAnswers, field.field_key);
+      const value = getFieldValue(lookupAnswers, field.field_key);
       const rules = typeof field.validation_rules === 'string' ? JSON.parse(field.validation_rules) : (field.validation_rules || {});
       const options = typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []);
 
@@ -331,11 +343,10 @@ app.post('/api/register', async (req, res) => {
     const id = uuidv4();
     await db.query(
       `INSERT INTO rpl_registrations 
-       (id, sport_id, full_name, email, mobile, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, answers) 
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+       (id, full_name, email, mobile, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
+       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
       [
         id,
-        activeSport,
         cleanFullName,
         cleanEmail,
         cleanMobile,
@@ -344,7 +355,6 @@ app.post('/api/register', async (req, res) => {
         cleanReceiptUrl,
         JSON.stringify(cleanGeneralDetails),
         JSON.stringify(cleanSportAnswers),
-        JSON.stringify(sanitizedAnswers),
       ]
     );
 
@@ -360,33 +370,25 @@ app.post('/api/register', async (req, res) => {
 
 // 5. Admin Endpoint: List submissions
 app.get('/api/admin/registrations', async (req, res) => {
-  const { sport_id, payment_status } = req.query;
+  const { payment_status } = req.query;
   try {
-    let query = 'SELECT r.*, s.name as sport_name FROM rpl_registrations r JOIN rpl_sports s ON r.sport_id = s.id';
+    let query = 'SELECT * FROM rpl_registrations';
     const params = [];
 
-    const conditions = [];
-    if (sport_id) {
-      conditions.push('r.sport_id = ?');
-      params.push(sport_id);
-    }
     if (payment_status) {
-      conditions.push('r.payment_status = ?');
+      query += ' WHERE payment_status = ?';
       params.push(payment_status);
     }
 
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += ' ORDER BY r.submitted_at DESC';
+    query += ' ORDER BY submitted_at DESC';
 
     const [rows] = await db.query(query, params);
     
-    // Parse JSON answers for each registration
-    const formatted = rows.map(r => ({
+    // Parse JSON details for each registration
+    const formatted = rows.map((r) => ({
       ...r,
-      answers: typeof r.answers === 'string' ? JSON.parse(r.answers) : r.answers
+      general_details: typeof r.general_details === 'string' ? JSON.parse(r.general_details) : r.general_details,
+      sport_answers: typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers) : r.sport_answers,
     }));
 
     res.json(formatted);

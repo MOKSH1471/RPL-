@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS rpl_registration_fields (
 -- 3. RPL Registrations (Submissions)
 CREATE TABLE IF NOT EXISTS rpl_registrations (
     id VARCHAR(36) PRIMARY KEY, -- UUID
-    sport_id VARCHAR(50) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     mobile VARCHAR(20) NOT NULL,
@@ -41,7 +40,5 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     payment_receipt_url VARCHAR(500) DEFAULT NULL, -- Clean Google Drive receipt URL
     general_details JSON DEFAULT NULL, -- Clean basic details & selected sports
     sport_answers JSON DEFAULT NULL, -- Sport-specific questionnaire grouped by sport
-    answers JSON NOT NULL, -- Consolidated responses
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sport_id) REFERENCES rpl_sports(id) ON DELETE RESTRICT
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
