@@ -35,8 +35,13 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     mobile VARCHAR(20) NOT NULL,
-    answers JSON NOT NULL, -- Stores all other dynamic responses
+    player_photo_url VARCHAR(500) DEFAULT NULL, -- Clean Google Drive or card_db photo URL
     payment_status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    payment_utr VARCHAR(50) DEFAULT NULL, -- 12-digit UPI UTR / Transaction Reference
+    payment_receipt_url VARCHAR(500) DEFAULT NULL, -- Clean Google Drive receipt URL
+    general_details JSON DEFAULT NULL, -- Clean basic details & selected sports
+    sport_answers JSON DEFAULT NULL, -- Sport-specific questionnaire grouped by sport
+    answers JSON NOT NULL, -- Consolidated responses
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sport_id) REFERENCES rpl_sports(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

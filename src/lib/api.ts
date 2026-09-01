@@ -45,13 +45,20 @@ export async function uploadFileToDrive(file: File, customName?: string): Promis
   return data.url;
 }
 
-export async function submitRegistration(payload: {
+export interface RegistrationPayload {
   sport_id: string;
   full_name: string;
   email: string;
   mobile: string;
+  player_photo_url?: string;
+  payment_utr?: string;
+  payment_receipt_url?: string;
+  general_details?: Record<string, any>;
+  sport_answers?: Record<string, any>;
   answers: Record<string, any>;
-}): Promise<{ success: boolean; message: string; registration_id: string }> {
+}
+
+export async function submitRegistration(payload: RegistrationPayload): Promise<{ success: boolean; message: string; registration_id: string }> {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: 'POST',
     headers: {

@@ -471,6 +471,104 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       // LocalStorage fallback
     }
 
+    // 1. Clean General Details
+    const generalDetails: Record<string, any> = {
+      centre: data.centre,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth,
+      tshirtSize: data.tshirtSize,
+      foodPreference: data.foodPreference,
+      accommodationRequired: data.accommodationRequired,
+      existingRplFamily: data.existingRplFamily,
+      cardNo: mumukshuCardInfo?.cardNo || undefined,
+      selectedSports,
+      customJerseyName: data.customJerseyName || undefined,
+      preferredJerseyNumber: data.preferredJerseyNumber || undefined,
+      preferredTeamName: data.preferredTeamName || undefined,
+      additionalNotes: data.additionalNotes || undefined,
+    };
+
+    // 2. Clean Sport-Specific Questionnaire (Grouped by Sport)
+    const sportAnswers: Record<string, any> = {};
+    if (selectedSports.includes('cricket')) {
+      sportAnswers.cricket = {
+        role: data.cricketRole,
+        battingStyle: data.battingStyle,
+        bowlingStyle: data.bowlingStyle,
+        experience: data.cricketExperience,
+      };
+    }
+    if (selectedSports.includes('football')) {
+      sportAnswers.football = {
+        position: data.footballPosition,
+        preferredFoot: data.preferredFoot,
+        experience: data.footballExperience,
+      };
+    }
+    if (selectedSports.includes('badminton')) {
+      sportAnswers.badminton = {
+        category: data.badmintonCategory,
+        playingHand: data.badmintonHand,
+        experience: data.badmintonExperience,
+      };
+    }
+    if (selectedSports.includes('table-tennis')) {
+      sportAnswers['table-tennis'] = {
+        category: data.ttCategory,
+        grip: data.ttGrip,
+        experience: data.ttExperience,
+      };
+    }
+    if (selectedSports.includes('pickleball')) {
+      sportAnswers.pickleball = {
+        category: data.pickleballCategory,
+        skillLevel: data.pickleballSkill,
+        partnerName: data.pickleballPartner,
+        experience: data.pickleballExperience,
+      };
+    }
+    if (selectedSports.includes('volleyball')) {
+      sportAnswers.volleyball = {
+        role: data.volleyballRole,
+        experience: data.volleyballExperience,
+      };
+    }
+    if (selectedSports.includes('womens-sports')) {
+      sportAnswers['womens-sports'] = {
+        category: data.womensCategory,
+        playingRole: data.womensPlayingRole,
+        experience: data.womensExperience,
+      };
+    }
+
+    // Add any other dynamic fields
+    Object.entries(dynamicAnswers).forEach(([k, v]) => {
+      if (k !== 'payment_utr' && k !== 'payment_receipt') {
+        const foundField = dbFields.find((f) => f.field_key === k);
+        if (foundField?.sport_id) {
+          if (!sportAnswers[foundField.sport_id]) sportAnswers[foundField.sport_id] = {};
+          sportAnswers[foundField.sport_id][k] = v;
+        } else {
+          generalDetails[k] = v;
+        }
+      }
+    });
+
+    const paymentUtr = (data as any).payment_utr || dynamicAnswers.payment_utr || undefined;
+    const paymentReceiptUrl = dynamicAnswers.payment_receipt || undefined;
+    const playerPhotoUrl = photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined);
+
+    // Consolidated answers WITHOUT raw base64 data URLs
+    const sanitizedAnswers = {
+      ...data,
+      ...dynamicAnswers,
+      selectedSports,
+      photoDriveUrl: photoDriveUrl || undefined,
+      payment_receipt: paymentReceiptUrl,
+      payment_utr: paymentUtr,
+    };
+    delete (sanitizedAnswers as any).photoDataUrl;
+
     // Submit to MySQL backend API
     try {
       const response = await submitRegistration({
@@ -478,13 +576,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         full_name: data.fullName.trim(),
         email: data.email.trim(),
         mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
-        answers: {
-          ...data,
-          ...dynamicAnswers,
-          selectedSports,
-          photoDriveUrl: photoDriveUrl || undefined,
-          photoDataUrl: photoPreview || undefined,
-        },
+        player_photo_url: playerPhotoUrl,
+        payment_utr: paymentUtr,
+        payment_receipt_url: paymentReceiptUrl,
+        general_details: generalDetails,
+        sport_answers: sportAnswers,
+        answers: sanitizedAnswers,
       });
       console.log('[RPL Frontend] Registration saved to MySQL database successfully:', response);
     } catch (apiErr: any) {

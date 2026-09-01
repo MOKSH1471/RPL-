@@ -227,14 +227,47 @@ function getFieldValue(answers, fieldKey) {
 
 // 4. Handle Registration (Dynamic Validation & Save)
 app.post('/api/register', async (req, res) => {
-  const { sport_id, full_name, email, mobile, answers } = req.body;
+  const {
+    sport_id,
+    full_name,
+    email,
+    mobile,
+    player_photo_url,
+    payment_utr,
+    payment_receipt_url,
+    general_details,
+    sport_answers,
+    answers,
+  } = req.body;
 
-  if (!full_name || !email || !mobile || !answers) {
+  if (!full_name || !email || !mobile) {
     return res.status(400).json({ error: 'Missing core registration fields.' });
   }
 
   try {
     const activeSport = sport_id || 'cricket';
+    const cleanFullName = full_name.trim();
+    const cleanEmail = email.trim();
+    const cleanMobile = mobile.trim();
+
+    // Prepare clean sanitized answers (Ensure no raw base64 data URLs enter MySQL)
+    const sanitizedAnswers = answers ? { ...answers } : {};
+    delete sanitizedAnswers.photoDataUrl;
+    if (typeof sanitizedAnswers.photoPreview === 'string' && sanitizedAnswers.photoPreview.startsWith('data:')) {
+      delete sanitizedAnswers.photoPreview;
+    }
+
+    const cleanGeneralDetails = general_details ? { ...general_details } : { ...sanitizedAnswers };
+    delete cleanGeneralDetails.photoDataUrl;
+    if (typeof cleanGeneralDetails.photoPreview === 'string' && cleanGeneralDetails.photoPreview.startsWith('data:')) {
+      delete cleanGeneralDetails.photoPreview;
+    }
+
+    const cleanSportAnswers = sport_answers || {};
+
+    const cleanPhotoUrl = player_photo_url || sanitizedAnswers.photoDriveUrl || null;
+    const cleanPaymentUtr = payment_utr || sanitizedAnswers.payment_utr || null;
+    const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt || null;
 
     // A. Fetch rules for this registration
     const [fields] = await db.query(
@@ -246,7 +279,7 @@ app.post('/api/register', async (req, res) => {
 
     // B. Run Dynamic Validation
     fields.forEach((field) => {
-      const value = getFieldValue(answers, field.field_key);
+      const value = getFieldValue(sanitizedAnswers, field.field_key);
       const rules = typeof field.validation_rules === 'string' ? JSON.parse(field.validation_rules) : (field.validation_rules || {});
       const options = typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []);
 
@@ -294,14 +327,28 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ success: false, errors: validationErrors });
     }
 
-    // C. Save to MySQL rpl_registrations
+    // C. Save to MySQL rpl_registrations with organized columns
     const id = uuidv4();
     await db.query(
-      'INSERT INTO rpl_registrations (id, sport_id, full_name, email, mobile, answers) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, activeSport, full_name, email, mobile, JSON.stringify(answers)]
+      `INSERT INTO rpl_registrations 
+       (id, sport_id, full_name, email, mobile, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, answers) 
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
+      [
+        id,
+        activeSport,
+        cleanFullName,
+        cleanEmail,
+        cleanMobile,
+        cleanPhotoUrl,
+        cleanPaymentUtr,
+        cleanReceiptUrl,
+        JSON.stringify(cleanGeneralDetails),
+        JSON.stringify(cleanSportAnswers),
+        JSON.stringify(sanitizedAnswers),
+      ]
     );
 
-    console.log(`[RPL Registration SUCCESS] Player "${full_name}" saved to rpl_registrations with ID: ${id}`);
+    console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id}`);
     res.json({ success: true, message: 'Registration submitted successfully', registration_id: id });
   } catch (error) {
     console.error('Registration processing error:', error);
