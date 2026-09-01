@@ -71,7 +71,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900">
                 Participant Summary
               </h3>
-              <p className="text-slate-500 text-xs font-semibold">Vitraag Vigyaan RPL S9</p>
+              <p className="text-slate-500 text-xs font-semibold">Raj Premier League Season 9</p>
             </div>
           </div>
 
@@ -88,12 +88,12 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Full Name
+              Player Name
             </span>
-            <span className="font-bold text-slate-900 text-base">{data.fullName}</span>
+            <span className="font-extrabold text-slate-900 text-base">{data.fullName}</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
@@ -132,6 +132,15 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             </span>
             <span className="font-bold text-slate-900 text-base">{data.foodPreference}</span>
           </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
+              Stay Dates
+            </span>
+            <span className="font-bold text-slate-900 text-sm font-mono">
+              {data.checkInDate || '2026-12-24'} → {data.checkOutDate || '2026-12-26'}
+            </span>
+          </div>
         </div>
 
         {/* Email Verification Callout Note */}
@@ -139,7 +148,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           <Mail className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
           <p className="leading-relaxed">
             A pre-filled Gmail compose window was launched to email your registration details to{' '}
-            <strong className="text-amber-950 font-bold">rpl@vitraagvigyaan.org</strong>. Please click "Send" in Gmail if prompted.
+            <strong className="text-amber-950 font-bold">rpl@rajpremierleague.com</strong>. Please click "Send" in Gmail if prompted.
           </p>
         </div>
 

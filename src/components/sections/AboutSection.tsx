@@ -28,7 +28,7 @@ export const AboutSection: React.FC = () => {
             Where Passion Meets <span className="text-gradient-vibrant">Purpose</span>
           </h2>
           <p className="text-slate-700 text-base md:text-lg font-medium leading-relaxed">
-            Raj Premier League (RPL) returns for Season 9 under Vitraag Vigyaan! Uniting players across regions to compete, excel, and build lifelong bonds through world-class sportsmanship.
+            Raj Premier League (RPL) returns for Season 9! Uniting players across regions to compete, excel, and build lifelong bonds through world-class sportsmanship.
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export const AboutSection: React.FC = () => {
               </div>
               <div>
                 <span className="text-[10px] sm:text-xs uppercase font-bold tracking-widest text-amber-700 block">Core Pillar</span>
-                <h3 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">Vitraag Vigyaan Community</h3>
+                <h3 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900">Community & Unity</h3>
               </div>
             </div>
             <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">

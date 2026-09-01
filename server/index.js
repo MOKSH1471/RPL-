@@ -283,7 +283,9 @@ app.post('/api/register', async (req, res) => {
 
     const cleanPhotoUrl = player_photo_url || sanitizedAnswers.photoDriveUrl || null;
     const cleanPaymentUtr = payment_utr || sanitizedAnswers.payment_utr || null;
-    const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt || null;
+    const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt_url || null;
+    const cleanCheckInDate = req.body.check_in_date || sanitizedAnswers.checkInDate || sanitizedAnswers.check_in_date || '2026-12-24';
+    const cleanCheckOutDate = req.body.check_out_date || sanitizedAnswers.checkOutDate || sanitizedAnswers.check_out_date || '2026-12-26';
 
     // Combined lookup object for dynamic validation
     const lookupAnswers = {
@@ -359,13 +361,15 @@ app.post('/api/register', async (req, res) => {
     const id = uuidv4();
     await db.query(
       `INSERT INTO rpl_registrations 
-       (id, full_name, email, mobile, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
-       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+       (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
       [
         id,
         cleanFullName,
         cleanEmail,
         cleanMobile,
+        cleanCheckInDate,
+        cleanCheckOutDate,
         cleanPhotoUrl,
         cleanPaymentUtr,
         cleanReceiptUrl,

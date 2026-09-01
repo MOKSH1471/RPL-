@@ -137,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 RPL <span className="text-amber-600">Season 9</span>
               </span>
               <span className="text-[7px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-0.5 whitespace-nowrap">
-                Vitraag Vigyaan
+                Sports Championship
               </span>
             </div>
           </a>

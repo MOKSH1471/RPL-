@@ -35,7 +35,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
         <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white border border-amber-300 shadow-sm">
           <Flame className="w-4 h-4 text-amber-600" />
           <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-700">
-            VITRAAG VIGYAAN
+            RAJ PREMIER LEAGUE
           </span>
         </div>
 

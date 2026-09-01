@@ -37,6 +37,8 @@ export const registrationSchema = z.object({
   accommodationRequired: z.enum(['Yes', 'No'], {
     required_error: 'Please select Accommodation Requirement',
   }),
+  checkInDate: z.string().optional(),
+  checkOutDate: z.string().optional(),
   existingRplFamily: z.enum(['Yes', 'No'], {
     required_error: 'Please select if you are existing RPL Family',
   }),

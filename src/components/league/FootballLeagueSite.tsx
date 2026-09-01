@@ -179,7 +179,7 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-200 mb-2">Vitraag Vigyaan Center *</label>
+                  <label className="block text-xs font-bold uppercase text-slate-200 mb-2">Center / City *</label>
                   <select
                     {...register('center')}
                     className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/15 text-white focus:outline-none focus:border-emerald-400"

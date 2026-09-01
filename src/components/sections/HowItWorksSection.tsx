@@ -24,7 +24,7 @@ export const HowItWorksSection: React.FC = () => {
       subtitle: 'Step 2 of 4',
       desc: 'Organizers and team captains evaluate player roles for balanced, competitive team formations.',
       details: [
-        'Fair player drafting across regional Vitraag Vigyaan centers',
+        'Fair player drafting across regional centers',
         'Balanced team composition for high-caliber competition',
         'Team captain & squad announcements',
       ],

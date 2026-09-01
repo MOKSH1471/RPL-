@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, Check, X, Sparkles } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Cake,
+} from 'lucide-react';
 
 interface ModernDatePickerProps {
   value?: string; // YYYY-MM-DD
@@ -9,6 +15,8 @@ interface ModernDatePickerProps {
   error?: string;
   minYear?: number;
   maxYear?: number;
+  defaultYear?: number;
+  isDOB?: boolean;
 }
 
 const MONTHS = [
@@ -22,23 +30,37 @@ const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
   value,
   onChange,
-  placeholder = 'Select date of birth',
+  placeholder = 'Select date',
   error,
   minYear = 1950,
-  maxYear = new Date().getFullYear() - 5,
+  maxYear = 2030,
+  defaultYear,
+  isDOB = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'month' | 'year'>('calendar');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Parse initial date or default to a reasonable adult/youth year (e.g., 2002)
-  const initialDate = value ? new Date(value) : new Date(2002, 0, 1);
-  const [currentYear, setCurrentYear] = useState<number>(
-    isNaN(initialDate.getFullYear()) ? 2002 : initialDate.getFullYear()
-  );
-  const [currentMonth, setCurrentMonth] = useState<number>(
-    isNaN(initialDate.getMonth()) ? 0 : initialDate.getMonth()
-  );
+  // Determine starting date
+  const getInitialYear = () => {
+    if (value) {
+      const parsed = parseInt(value.split('-')[0], 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    if (defaultYear) return defaultYear;
+    return isDOB ? 2002 : 2026;
+  };
+
+  const getInitialMonth = () => {
+    if (value) {
+      const parsed = parseInt(value.split('-')[1], 10) - 1;
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 11) return parsed;
+    }
+    return isDOB ? 0 : 11; // December for tournament stay
+  };
+
+  const [currentYear, setCurrentYear] = useState<number>(getInitialYear());
+  const [currentMonth, setCurrentMonth] = useState<number>(getInitialMonth());
 
   const selectedDateObj = value ? new Date(value) : null;
   const isSelectedValid = selectedDateObj && !isNaN(selectedDateObj.getTime());
@@ -55,13 +77,15 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update year/month view when value changes externally
+  // Sync external value changes
   useEffect(() => {
     if (value) {
-      const d = new Date(value);
-      if (!isNaN(d.getTime())) {
-        setCurrentYear(d.getFullYear());
-        setCurrentMonth(d.getMonth());
+      const parts = value.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y)) setCurrentYear(y);
+        if (!isNaN(m) && m >= 0 && m <= 11) setCurrentMonth(m);
       }
     }
   }, [value]);
@@ -99,30 +123,24 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
       setCurrentMonth(11);
-      setCurrentYear(prev => prev - 1);
+      setCurrentYear((prev) => prev - 1);
     } else {
-      setCurrentMonth(prev => prev - 1);
+      setCurrentMonth((prev) => prev - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (currentMonth === 11) {
       setCurrentMonth(0);
-      setCurrentYear(prev => prev + 1);
+      setCurrentYear((prev) => prev + 1);
     } else {
-      setCurrentMonth(prev => prev + 1);
+      setCurrentMonth((prev) => prev + 1);
     }
   };
 
-  // Generate Year Range
-  const years = [];
-  for (let y = maxYear; y >= minYear; y--) {
-    years.push(y);
-  }
-
-  // Calculate age if selected
+  // Calculate age if isDOB is true
   const getAge = (dateStr: string) => {
-    if (!dateStr) return null;
+    if (!dateStr || !isDOB) return null;
     const parts = dateStr.split('-');
     let bday: Date;
     if (parts.length === 3) {
@@ -158,18 +176,24 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
     return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   };
 
+  // Generate Year list
+  const yearsList = [];
+  for (let y = maxYear; y >= minYear; y--) {
+    yearsList.push(y);
+  }
+
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Trigger Button */}
+      {/* Clean, Modern Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-white border text-left flex items-center justify-between transition-all cursor-pointer shadow-xs ${
+        className={`w-full px-4 py-3 min-h-[48px] rounded-2xl bg-white border text-left flex items-center justify-between transition-all cursor-pointer shadow-xs ${
           isOpen
-            ? 'border-amber-500 ring-2 ring-amber-200'
+            ? 'border-amber-500 ring-2 ring-amber-400/20 shadow-sm'
             : error
-            ? 'border-pink-500'
-            : 'border-slate-300 hover:border-slate-400'
+            ? 'border-pink-500 ring-2 ring-pink-200'
+            : 'border-slate-300 hover:border-amber-500 hover:bg-slate-50/50'
         }`}
       >
         <div className="flex items-center space-x-3 min-w-0">
@@ -179,12 +203,13 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
           <div className="truncate">
             {isSelectedValid ? (
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-slate-900 text-sm">
+                <span className="font-bold text-slate-900 text-sm tracking-tight">
                   {formatDisplayDate(value!)}
                 </span>
                 {age !== null && (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 font-extrabold text-[10px] uppercase">
-                    {age} yrs
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 font-extrabold text-[10px] uppercase">
+                    <Cake className="w-3 h-3 text-amber-700 inline" />
+                    <span>{age} yrs</span>
                   </span>
                 )}
               </div>
@@ -208,19 +233,18 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 p-3 sm:p-4 bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-4 w-full max-w-full origin-top"
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="absolute top-full left-0 right-0 mt-2 z-50 p-3.5 sm:p-4 bg-white rounded-3xl border border-slate-200 shadow-2xl space-y-3 w-full max-w-full origin-top"
           >
             {/* Header: Month & Year Switchers */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center space-x-1.5">
                 <button
                   type="button"
                   onClick={() => setViewMode(viewMode === 'month' ? 'calendar' : 'month')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'month'
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-xs'
+                      ? 'bg-amber-500 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
                   }`}
                 >
@@ -229,9 +253,9 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewMode(viewMode === 'year' ? 'calendar' : 'year')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     viewMode === 'year'
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-xs'
+                      ? 'bg-amber-500 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
                   }`}
                 >
@@ -244,14 +268,16 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
                   <button
                     type="button"
                     onClick={handlePrevMonth}
-                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    aria-label="Previous Month"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={handleNextMonth}
-                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+                    aria-label="Next Month"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -261,7 +287,7 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
 
             {/* View Mode 1: Days Calendar Grid */}
             {viewMode === 'calendar' && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {/* Days of week */}
                 <div className="grid grid-cols-7 gap-1 text-center">
                   {DAYS_OF_WEEK.map((day) => (
@@ -291,7 +317,7 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
                         onClick={() => handleSelectDay(day)}
                         className={`h-9 w-full rounded-xl text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                           isCurrentSelected
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25 font-extrabold scale-105'
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/25 font-extrabold scale-105'
                             : 'text-slate-700 hover:bg-amber-50 hover:text-amber-700'
                         }`}
                       >
@@ -305,7 +331,7 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
 
             {/* View Mode 2: Month Grid Picker */}
             {viewMode === 'month' && (
-              <div className="grid grid-cols-3 gap-2 py-2">
+              <div className="grid grid-cols-3 gap-2 py-1.5">
                 {MONTHS.map((mName, mIdx) => {
                   const isSelected = currentMonth === mIdx;
                   return (
@@ -316,9 +342,9 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
                         setCurrentMonth(mIdx);
                         setViewMode('calendar');
                       }}
-                      className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
+                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                         isSelected
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25 font-extrabold'
+                          ? 'bg-amber-500 text-white shadow-xs font-extrabold'
                           : 'bg-slate-50 text-slate-700 hover:bg-amber-50 hover:text-amber-700 border border-slate-100'
                       }`}
                     >
@@ -329,10 +355,10 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
               </div>
             )}
 
-            {/* View Mode 3: Year Scroll Picker */}
+            {/* View Mode 3: Year Selector */}
             {viewMode === 'year' && (
-              <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto py-2 pr-1">
-                {years.map((y) => {
+              <div className="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto py-1 pr-1">
+                {yearsList.map((y) => {
                   const isSelected = currentYear === y;
                   return (
                     <button
@@ -344,7 +370,7 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
                       }}
                       className={`py-2 px-1 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                         isSelected
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25 font-extrabold'
+                          ? 'bg-amber-500 text-white shadow-xs font-extrabold'
                           : 'bg-slate-50 text-slate-700 hover:bg-amber-50 hover:text-amber-700 border border-slate-100'
                       }`}
                     >
@@ -357,14 +383,14 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
 
             {/* Footer helper */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span>Select month/year to jump fast</span>
+              <span>Click month or year to jump</span>
               <button
                 type="button"
                 onClick={() => {
                   onChange('');
                   setIsOpen(false);
                 }}
-                className="text-pink-600 font-bold hover:underline"
+                className="text-pink-600 font-bold hover:underline cursor-pointer"
               >
                 Clear
               </button>

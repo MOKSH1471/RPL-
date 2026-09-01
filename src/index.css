@@ -28,7 +28,7 @@
   body {
     background-color: #F8FAFC;
     color: #0F172A;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;

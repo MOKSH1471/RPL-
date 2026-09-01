@@ -106,19 +106,8 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               </span>
             </div>
             <p className="text-slate-600 text-sm font-medium max-w-md leading-relaxed">
-              Raj Premier League (RPL) is an annual community sports championship presented by Vitraag Vigyaan, bringing together athletes for Cricket, Football, Badminton, Table Tennis, Pickleball, Volleyball, and Women's sports leagues.
+              Raj Premier League (RPL) is an annual community sports championship, bringing together athletes for Cricket, Football, Badminton, Table Tennis, Pickleball, Volleyball, and Women's sports leagues.
             </p>
-            <div className="pt-2">
-              <a
-                href="https://vitraagvigyaan.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 text-xs font-bold text-amber-700 hover:text-amber-800 transition-colors"
-              >
-                <span>Visit Official Vitraag Vigyaan Website</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
           </div>
 
           {/* Column 2: Quick Links */}
@@ -167,7 +156,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-pink-600 shrink-0" />
-                <span>rpl@vitraagvigyaan.org</span>
+                <span>contact@rplseason9.com</span>
               </li>
             </ul>
           </div>
@@ -175,7 +164,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
         {/* Bottom Bar */}
         <div className="pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3 sm:gap-4">
-          <p>© 2026 Vitraag Vigyaan · Raj Premier League (RPL Season 9). All rights reserved.</p>
+          <p>© 2026 Raj Premier League (RPL Season 9). All rights reserved.</p>
           <p className="flex items-center space-x-1">
             <span>Crafted with passion for community sports</span>
             <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600 inline" />

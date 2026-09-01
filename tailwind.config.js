@@ -37,8 +37,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Syne', 'Outfit', 'sans-serif'],
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        display: ['"Bebas Neue"', 'Outfit', 'sans-serif'],
+        heading: ['Outfit', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',

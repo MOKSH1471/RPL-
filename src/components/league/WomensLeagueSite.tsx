@@ -83,7 +83,7 @@ export const WomensLeagueSite: React.FC<WomensLeagueSiteProps> = ({ onBackToHome
             </div>
             <div className="solid-card p-4 rounded-xl border border-pink-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Trophy</span>
-              <span className="font-display text-sm font-bold text-pink-400">Vitraag Vigyaan Shield</span>
+              <span className="font-display text-sm font-bold text-pink-400">Championship Shield</span>
             </div>
           </div>
         </div>
@@ -180,7 +180,7 @@ export const WomensLeagueSite: React.FC<WomensLeagueSiteProps> = ({ onBackToHome
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-200 mb-2">Vitraag Vigyaan Center *</label>
+                  <label className="block text-xs font-bold uppercase text-slate-200 mb-2">Center / City *</label>
                   <select
                     {...register('center')}
                     className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/15 text-white focus:outline-none focus:border-pink-400"

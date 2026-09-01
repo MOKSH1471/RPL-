@@ -28,7 +28,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'womens',
       image: 'https://images.unsplash.com/photo-1517649763962-0c623266010b?auto=format&fit=crop&w=800&q=80',
-      caption: "Vitraag Vigyaan Women's League trophy celebration moment.",
+      caption: "Women's League championship trophy celebration moment.",
     },
     {
       id: '4',
@@ -52,7 +52,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'womens',
       image: 'https://images.unsplash.com/photo-1526676037777-05a232554f77?auto=format&fit=crop&w=800&q=80',
-      caption: 'Teams gathering for the annual Vitraag Vigyaan RPL opening ceremony.',
+      caption: 'Teams gathering for the annual RPL opening ceremony.',
     },
   ];
 

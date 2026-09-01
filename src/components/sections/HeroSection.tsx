@@ -16,7 +16,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     'Cricket League',
     'Football League',
     "Women's Sports",
-    'Vitraag Vigyaan',
     'Season 9 Championship',
     'Register Now',
   ];
@@ -36,7 +35,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Subtitle Description */}
         <p className="max-w-2xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2">
-          The ultimate community sports championship presented by Vitraag Vigyaan. Three epic leagues —{' '}
+          The ultimate community sports championship. Three epic leagues —{' '}
           <span className="text-amber-600 font-bold">Cricket</span>,{' '}
           <span className="text-emerald-600 font-bold">Football</span>, and{' '}
           <span className="text-pink-600 font-bold">Women's Sports</span>. Step up and claim your glory.

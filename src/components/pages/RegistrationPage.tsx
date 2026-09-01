@@ -167,7 +167,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   } = useForm<RegistrationSchemaType>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      recipientGmail: 'rpl@vitraagvigyaan.org',
+      recipientGmail: 'rpl@rajpremierleague.com',
       ccEmail: '',
       fullName: '',
       countryCode: '+91',
@@ -179,6 +179,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: 'Male',
       foodPreference: 'Jain',
       accommodationRequired: 'No',
+      checkInDate: '2026-12-24',
+      checkOutDate: '2026-12-26',
       existingRplFamily: 'No',
       selectedSports: [mapInitialSport(initialLeague)],
       // Cricket Defaults
@@ -235,6 +237,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return field?.label || defaultLabel;
   };
   const currentDateOfBirth = watch('dateOfBirth');
+  const currentCheckInDate = watch('checkInDate') || '2026-12-24';
+  const currentCheckOutDate = watch('checkOutDate') || '2026-12-26';
 
   // Auto-fetch Mumukshu details from card_db when mobile is entered
   useEffect(() => {
@@ -416,7 +420,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     const generatedId = `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const fullData: RegistrationFormData = {
-      recipientGmail: data.recipientGmail || 'rpl@vitraagvigyaan.org',
+      recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
       countryCode: data.countryCode || '+91',
@@ -428,6 +432,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: data.gender,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
+      checkInDate: data.checkInDate || '2026-12-24',
+      checkOutDate: data.checkOutDate || '2026-12-26',
       existingRplFamily: data.existingRplFamily,
       photoName: photoName || undefined,
       photoDataUrl: photoPreview || undefined,
@@ -479,6 +485,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       tshirtSize: data.tshirtSize,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
+      checkInDate: data.checkInDate || '2026-12-24',
+      checkOutDate: data.checkOutDate || '2026-12-26',
       existingRplFamily: data.existingRplFamily,
       cardNo: mumukshuCardInfo?.cardNo || undefined,
       selectedSports,
@@ -576,6 +584,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         full_name: data.fullName.trim(),
         email: data.email.trim(),
         mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
+        check_in_date: data.checkInDate || '2026-12-24',
+        check_out_date: data.checkOutDate || '2026-12-26',
         player_photo_url: playerPhotoUrl,
         payment_utr: paymentUtr,
         payment_receipt_url: paymentReceiptUrl,
@@ -599,7 +609,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       })
       .join(', ');
 
-    const targetEmail = data.recipientGmail || 'rpl@vitraagvigyaan.org';
+    const targetEmail = data.recipientGmail || 'rpl@rajpremierleague.com';
     const cc = data.ccEmail ? `&cc=${encodeURIComponent(data.ccEmail)}` : '';
     const subject = encodeURIComponent(`[RPL Season 9 Registration] ${data.fullName} - ${selectedSports.join(', ').toUpperCase()}`);
 
@@ -661,7 +671,7 @@ Preferred Jersey Number: ${data.preferredJerseyNumber || 'N/A'}
 Preferred Team Name: ${data.preferredTeamName || 'N/A'}
 Additional Notes: ${data.additionalNotes || 'None'}
 ======================================================
-Submitted via Vitraag Vigyaan RPL Portal
+Submitted via RPL Official Registration Portal
     `.trim();
 
     setIsSubmitting(false);
@@ -962,6 +972,10 @@ Submitted via Vitraag Vigyaan RPL Portal
                     onChange={(val) => setValue('dateOfBirth', val, { shouldValidate: true })}
                     error={errors.dateOfBirth?.message}
                     placeholder="Select Date of Birth"
+                    isDOB={true}
+                    minYear={1950}
+                    maxYear={2020}
+                    defaultYear={2002}
                   />
                   {errors.dateOfBirth && (
                     <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
@@ -1027,6 +1041,55 @@ Submitted via Vitraag Vigyaan RPL Portal
                     activeColor="bg-slate-900"
                     activeTextColor="text-white"
                   />
+                </div>
+              </div>
+
+              {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Check-In Date</span>
+                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 24 Dec)</span>
+                  </label>
+                  <ModernDatePicker
+                    value={currentCheckInDate}
+                    onChange={(val) => setValue('checkInDate', val, { shouldValidate: true })}
+                    placeholder="Select Check-In Date"
+                    minYear={2026}
+                    maxYear={2028}
+                    defaultYear={2026}
+                    error={errors.checkInDate?.message}
+                  />
+                  {errors.checkInDate && (
+                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.checkInDate.message}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Check-Out Date</span>
+                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 26 Dec)</span>
+                  </label>
+                  <ModernDatePicker
+                    value={currentCheckOutDate}
+                    onChange={(val) => setValue('checkOutDate', val, { shouldValidate: true })}
+                    placeholder="Select Check-Out Date"
+                    minYear={2026}
+                    maxYear={2028}
+                    defaultYear={2026}
+                    error={errors.checkOutDate?.message}
+                  />
+                  {errors.checkOutDate && (
+                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.checkOutDate.message}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1920,7 +1983,7 @@ Submitted via Vitraag Vigyaan RPL Portal
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Vitraag Strikers, Mumbai Titans"
+                    placeholder="e.g. Royal Strikers, Mumbai Titans"
                     {...register('preferredTeamName')}
                     className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium"
                   />

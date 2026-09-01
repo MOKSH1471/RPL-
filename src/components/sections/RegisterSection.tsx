@@ -33,7 +33,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
   } = useForm<RegistrationSchemaType>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      recipientGmail: 'rpl@vitraagvigyaan.org',
+      recipientGmail: 'rpl@rajpremierleague.com',
       ccEmail: '',
       fullName: '',
       mobileNumber: '',
@@ -83,7 +83,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
     const leagueVal = (data.league || 'cricket') as LeagueType;
 
     const fullData: RegistrationFormData = {
-      recipientGmail: data.recipientGmail || 'rpl@vitraagvigyaan.org',
+      recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
       mobileNumber: data.mobileNumber,
@@ -109,7 +109,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
     const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
     localStorage.setItem('rpl_registrations', JSON.stringify([...existing, { id: generatedId, ...fullData }]));
 
-    const targetEmail = data.recipientGmail || 'rpl@vitraagvigyaan.org';
+    const targetEmail = data.recipientGmail || 'rpl@rajpremierleague.com';
     const cc = data.ccEmail ? `&cc=${encodeURIComponent(data.ccEmail)}` : '';
     const subject = encodeURIComponent(`[RPL Season 9 Registration] ${data.fullName} - ${leagueVal.toUpperCase()}`);
     const emailBodyText = `
@@ -134,7 +134,7 @@ ${leagueVal === 'football' ? `Football Position: ${data.footballPosition}` : ''}
 ${leagueVal === 'womens' ? `Women's Category: ${data.womensCategory}` : ''}
 Preferred Team Name: ${data.preferredTeamName || 'N/A'}
 ------------------------------------------------------
-Sent via Vitraag Vigyaan RPL Portal
+Sent via RPL Official Registration Portal
     `.trim();
 
     const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}${cc}&su=${subject}&body=${encodeURIComponent(emailBodyText)}`;

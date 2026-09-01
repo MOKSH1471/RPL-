@@ -1,6 +1,6 @@
 # Raj Premier League (RPL Season 9) — Registration Web Application
 
-> **Vitraag Vigyaan Community Sports Championship**  
+> **Annual Community Sports Championship**  
 > A high-performance, vibrant single-page web application featuring multi-league registration, interactive options stepper, Motion navigation, and auto-generated digital pass tickets.
 
 ---
@@ -120,4 +120,4 @@ npm run preview
 
 ---
 
-© 2026 Vitraag Vigyaan · Raj Premier League (RPL Season 9). All rights reserved.
+© 2026 Raj Premier League (RPL Season 9). All rights reserved.

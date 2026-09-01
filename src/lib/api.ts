@@ -50,6 +50,8 @@ export interface RegistrationPayload {
   full_name: string;
   email: string;
   mobile: string;
+  check_in_date?: string;
+  check_out_date?: string;
   player_photo_url?: string;
   payment_utr?: string;
   payment_receipt_url?: string;

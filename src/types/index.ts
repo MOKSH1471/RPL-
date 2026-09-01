@@ -56,6 +56,8 @@ export interface RegistrationFormData {
   gender: 'Male' | 'Female' | 'Other' | string;
   foodPreference: 'Jain' | 'Swaminarayan' | 'Regular Veg' | 'Special Diet' | string;
   accommodationRequired: 'Yes' | 'No' | string;
+  checkInDate?: string;
+  checkOutDate?: string;
   existingRplFamily: 'Yes' | 'No' | string;
   photoName?: string;
   photoDataUrl?: string;
