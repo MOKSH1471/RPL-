@@ -243,27 +243,40 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   // Auto-fetch Mumukshu details from card_db when mobile is entered
   useEffect(() => {
     const digits = (currentMobile || '').replace(/\D/g, '');
-    if (digits.length >= 10) {
+    if (digits.length >= 7) {
       setIsLookingUpMumukshu(true);
-      lookupMumukshu(digits).then((res) => {
-        setIsLookingUpMumukshu(false);
-        if (res.found && res.data) {
-          const d = res.data;
-          setMumukshuCardInfo({ cardNo: d.cardNo, name: d.fullName });
-          if (d.fullName) setValue('fullName', d.fullName, { shouldValidate: true });
-          if (d.email) setValue('email', d.email, { shouldValidate: true });
-          if (d.gender) setValue('gender', d.gender as any, { shouldValidate: true });
-          if (d.centre) setValue('centre', d.centre, { shouldValidate: true });
-          if (d.dateOfBirth) setValue('dateOfBirth', d.dateOfBirth, { shouldValidate: true });
-          setValue('existingRplFamily', 'Yes', { shouldValidate: true });
-        } else {
+      lookupMumukshu(digits)
+        .then((res) => {
+          setIsLookingUpMumukshu(false);
+          if (res.found && res.data) {
+            const d = res.data;
+            const cleanName = (d.fullName || '').trim();
+            const cleanEmail = (d.email || '').trim();
+            const cleanCentre = (d.centre || '').trim();
+            const cleanDob = (d.dateOfBirth || '').trim();
+            const cleanGender = d.gender === 'Female' ? 'Female' : 'Male';
+
+            setMumukshuCardInfo({ cardNo: d.cardNo, name: cleanName });
+            if (cleanName) setValue('fullName', cleanName, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanEmail) setValue('email', cleanEmail, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            setValue('existingRplFamily', 'Yes', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+          } else {
+            setMumukshuCardInfo(null);
+          }
+        })
+        .catch((err) => {
+          console.warn('Mumukshu lookup error:', err);
+          setIsLookingUpMumukshu(false);
           setMumukshuCardInfo(null);
-        }
-      });
+        });
     } else {
       setMumukshuCardInfo(null);
     }
   }, [currentMobile]);
+
 
 
   // Sport dynamic watches
@@ -912,6 +925,9 @@ Submitted via RPL Official Registration Portal
                       { id: 'Ahmedabad', label: 'Ahmedabad' },
                       { id: 'London', label: 'London (UK)' },
                       { id: 'USA / Canada', label: 'USA / Canada' },
+                      ...(currentCentre && !['Mumbai', 'Surat', 'Ahmedabad', 'London', 'USA / Canada', 'Other'].includes(currentCentre)
+                        ? [{ id: currentCentre, label: currentCentre }]
+                        : []),
                       { id: 'Other', label: 'Other Centre' },
                     ]}
                     value={currentCentre ? { id: currentCentre, label: currentCentre } : null}

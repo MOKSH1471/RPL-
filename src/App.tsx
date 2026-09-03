@@ -8,26 +8,35 @@ import { LeaguesSection } from '@/components/sections/LeaguesSection';
 import { GallerySection } from '@/components/sections/GallerySection';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
+import { AdminPortal } from '@/components/admin/AdminPortal';
 import { Footer } from '@/components/layout/Footer';
 import { LeagueType } from '@/types';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'admin'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
 
-  // Always start at landing page on fresh entry / reload
   useEffect(() => {
-    if (window.location.hash === '#/register' || window.location.hash === '#register') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    const hash = window.location.hash;
+    if (hash === '#/admin' || hash === '#admin') {
+      setCurrentPage('admin');
+      setShowIntro(false);
+    } else {
+      if (hash === '#/register' || hash === '#register') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      setCurrentPage('home');
     }
-    setCurrentPage('home');
 
     const handleHashChange = () => {
-      const hash = window.location.hash;
-      if (hash === '#/register' || hash === '#register') {
+      const currentHash = window.location.hash;
+      if (currentHash === '#/admin' || currentHash === '#admin') {
+        setCurrentPage('admin');
+        setShowIntro(false);
+      } else if (currentHash === '#/register' || currentHash === '#register') {
         setCurrentPage('register');
-      } else if (hash === '#/home' || hash === '#home' || hash === '') {
+      } else {
         setCurrentPage('home');
       }
     };
@@ -54,6 +63,10 @@ export function App() {
     window.location.hash = '/home';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (currentPage === 'admin') {
+    return <AdminPortal onBackToHome={handleBackToHome} />;
+  }
 
   return (
     <div className="relative min-h-screen w-full max-w-full overflow-x-hidden text-slate-900 bg-slate-50 selection:bg-amber-400 selection:text-slate-950">
@@ -92,7 +105,6 @@ export function App() {
         </main>
 
         <Footer onRegisterClick={handleRegisterClick} />
-
       </div>
     </div>
   );

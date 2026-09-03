@@ -141,6 +141,11 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                   Player Registration
                 </a>
               </li>
+              <li>
+                <a href="#/admin" className="text-amber-600 font-bold hover:underline">
+                  Admin Portal →
+                </a>
+              </li>
             </ul>
           </div>
 

@@ -101,15 +101,75 @@ export interface MumukshuData {
 
 export async function lookupMumukshu(mobile: string): Promise<{ found: boolean; data?: MumukshuData }> {
   try {
-    const cleanMobile = mobile.replace(/\D/g, '');
-    if (cleanMobile.length < 7) return { found: false };
-
-    const res = await fetch(`${API_BASE_URL}/mumukshu-lookup?mobile=${encodeURIComponent(cleanMobile)}`);
+    const res = await fetch(`${API_BASE_URL}/card/lookup?mobile=${encodeURIComponent(mobile)}`);
     if (!res.ok) return { found: false };
-
     return await res.json();
-  } catch (err) {
-    console.warn('Mumukshu lookup failed:', err);
+  } catch {
     return { found: false };
   }
+}
+
+// ==========================================
+// ADMIN API CLIENT METHODS
+// ==========================================
+
+export async function fetchAdminStats() {
+  const res = await fetch(`${API_BASE_URL}/admin/stats`);
+  if (!res.ok) throw new Error('Failed to load admin statistics');
+  return await res.json();
+}
+
+export async function fetchAdminRegistrations(params?: { payment_status?: string; search?: string; sport?: string }) {
+  const query = new URLSearchParams();
+  if (params?.payment_status) query.append('payment_status', params.payment_status);
+  if (params?.search) query.append('search', params.search);
+  if (params?.sport) query.append('sport', params.sport);
+
+  const res = await fetch(`${API_BASE_URL}/admin/registrations?${query.toString()}`);
+  if (!res.ok) throw new Error('Failed to load registrations');
+  return await res.json();
+}
+
+export async function updateRegistration(id: string, updates: Record<string, any>) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update registration');
+  return await res.json();
+}
+
+export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending') {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error('Failed to update payment status');
+  return await res.json();
+}
+
+export async function deleteRegistration(id: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete registration');
+  return await res.json();
+}
+
+export async function fetchAdminAccommodation() {
+  const res = await fetch(`${API_BASE_URL}/admin/accommodation`);
+  if (!res.ok) throw new Error('Failed to load accommodation stays');
+  return await res.json();
+}
+
+export async function assignRoomNumber(bookingid: string, roomno: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/accommodation/assign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bookingid, roomno }),
+  });
+  if (!res.ok) throw new Error('Failed to assign room number');
+  return await res.json();
 }

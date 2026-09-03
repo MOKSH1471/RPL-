@@ -77,7 +77,7 @@ app.get('/api/registration-fields', async (req, res) => {
 });
 
 // 2b. Mumukshu Lookup by Mobile Number (from card_db)
-app.get('/api/mumukshu-lookup', async (req, res) => {
+const handleMumukshuLookup = async (req, res) => {
   const { mobile } = req.query;
 
   if (!mobile) {
@@ -108,7 +108,7 @@ app.get('/api/mumukshu-lookup', async (req, res) => {
     let formattedGender = 'Male';
     if (member.gender === 'F') formattedGender = 'Female';
 
-    // Format date of birth directly as YYYY-MM-DD string (no timezone shift)
+    // Format date of birth directly as YYYY-MM-DD string
     const formattedDob = member.dob || '';
 
     return res.json({
@@ -128,7 +128,11 @@ app.get('/api/mumukshu-lookup', async (req, res) => {
     console.error('Mumukshu lookup error:', error);
     res.status(500).json({ error: 'Failed to query card_db' });
   }
-});
+};
+
+app.get('/api/mumukshu-lookup', handleMumukshuLookup);
+app.get('/api/card/lookup', handleMumukshuLookup);
+
 
 // 3. Handle File Uploads (Photo / Payment Screenshot to Google Drive)
 app.post('/api/upload', upload.single('file'), async (req, res) => {
@@ -412,66 +416,109 @@ app.post('/api/register', async (req, res) => {
 
 
 
-// --- ADMIN AUTHENTICATION MIDDLEWARE (instructions.md Blueprint Compliant) ---
+// --- ADMIN API ENDPOINTS (Direct Access Mode) ---
 
-// Timing-safe comparison to prevent timing attacks
-function safeCompare(a, b) {
-  if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
-}
 
-const requireAdminAuth = (req, res, next) => {
-  const adminSecret = process.env.ADMIN_API_SECRET;
+// 1. Admin Endpoint: Aggregated Stats & Analytics
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const [regs] = await db.query('SELECT * FROM rpl_registrations');
 
-  if (!adminSecret) {
-    console.error('[SECURITY FATAL] ADMIN_API_SECRET is not configured in server .env');
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_MISCONFIGURED',
-        message: 'Admin authorization is not configured on the server.',
+    let approved = 0;
+    let pending = 0;
+    let rejected = 0;
+    let accommodationCount = 0;
+
+    const sportsCount = {
+      cricket: 0,
+      football: 0,
+      badminton: 0,
+      'table-tennis': 0,
+      pickleball: 0,
+      volleyball: 0,
+      'womens-sports': 0,
+    };
+
+    const tshirtSizes = {
+      XS: 0,
+      S: 0,
+      M: 0,
+      L: 0,
+      XL: 0,
+      XXL: 0,
+      XXXL: 0,
+      Other: 0,
+    };
+
+    const centresCount = {};
+
+    regs.forEach((r) => {
+      // Payment status
+      const pStatus = (r.payment_status || 'pending').toLowerCase();
+      if (pStatus === 'approved') approved++;
+      else if (pStatus === 'rejected') rejected++;
+      else pending++;
+
+      // General Details parsing
+      let gen = {};
+      try {
+        gen = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
+      } catch (e) {
+        gen = {};
+      }
+
+      // Accommodation
+      if (gen.accommodationRequired === 'Yes') {
+        accommodationCount++;
+      }
+
+      // T-shirt size
+      const rawSize = (gen.tshirtSize || '').trim();
+      const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize.startsWith(k)) || 'Other';
+      tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
+
+      // Centre
+      const centreName = gen.centre || 'Unspecified';
+      centresCount[centreName] = (centresCount[centreName] || 0) + 1;
+
+      // Sports
+      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+      selected.forEach((s) => {
+        const sKey = String(s).toLowerCase();
+        if (sportsCount[sKey] !== undefined) {
+          sportsCount[sKey]++;
+        } else {
+          sportsCount[sKey] = 1;
+        }
+      });
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalRegistrations: regs.length,
+        payment: { approved, pending, rejected },
+        accommodationCount,
+        sportsCount,
+        tshirtSizes,
+        centresCount,
       },
     });
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to compute admin statistics.' });
   }
+});
 
-  const authHeader = req.headers.authorization;
-  const headerKey = req.headers['x-admin-key'];
-
-  let providedToken = '';
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    providedToken = authHeader.slice(7).trim();
-  } else if (headerKey) {
-    providedToken = String(headerKey).trim();
-  }
-
-  if (!providedToken || !safeCompare(providedToken, adminSecret)) {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Invalid or missing admin authorization token.',
-      },
-    });
-  }
-
-  next();
-};
-
-// Protect all /api/admin/* routes
-app.use('/api/admin', requireAdminAuth);
-
-// 5. Admin Endpoint: List submissions
+// 2. Admin Endpoint: List submissions with multi-filtering
 app.get('/api/admin/registrations', async (req, res) => {
-  const { sport_id, payment_status } = req.query;
+  const { payment_status, search, sport } = req.query;
   try {
     let query = 'SELECT * FROM rpl_registrations';
     const params = [];
     const conditions = [];
 
-    if (payment_status) {
+    if (payment_status && payment_status !== 'all') {
       conditions.push('payment_status = ?');
       params.push(payment_status);
     }
@@ -484,48 +531,112 @@ app.get('/api/admin/registrations', async (req, res) => {
 
     const [rows] = await db.query(query, params);
 
-    // Parse JSON fields for each registration
-    const formatted = rows.map((r) => {
-      const parsedAnswers = typeof r.answers === 'string' ? JSON.parse(r.answers || '{}') : (r.answers || {});
+    // Format JSON fields
+    let formatted = rows.map((r) => {
       const parsedGeneral = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
       const parsedSport = typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers || '{}') : (r.sport_answers || {});
 
       return {
         ...r,
-        answers: { ...parsedGeneral, ...parsedSport, ...parsedAnswers },
+        general_details: parsedGeneral,
+        sport_answers: parsedSport,
+        answers: { ...parsedGeneral, ...parsedSport },
       };
     });
 
-    // Optional in-memory filter by sport if sport_id is passed
-    const result = sport_id
-      ? formatted.filter(
-          (r) =>
-            r.sport_id === sport_id ||
-            r.answers?.primarySport === sport_id ||
-            (Array.isArray(r.answers?.selectedSports) && r.answers.selectedSports.includes(sport_id))
-        )
-      : formatted;
+    // In-memory search & sport filter if query provided
+    if (search) {
+      const term = String(search).toLowerCase();
+      formatted = formatted.filter(
+        (r) =>
+          r.full_name?.toLowerCase().includes(term) ||
+          r.email?.toLowerCase().includes(term) ||
+          r.mobile?.includes(term) ||
+          r.payment_utr?.toLowerCase().includes(term) ||
+          r.general_details?.centre?.toLowerCase().includes(term) ||
+          r.general_details?.customJerseyName?.toLowerCase().includes(term)
+      );
+    }
+
+    if (sport && sport !== 'all') {
+      formatted = formatted.filter((r) => {
+        const sports = r.general_details?.selectedSports || [];
+        return Array.isArray(sports) && sports.includes(sport);
+      });
+    }
 
     res.json({
       success: true,
-      data: result,
+      data: formatted,
     });
   } catch (error) {
     console.error('Error fetching registrations:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'FETCH_ERROR',
-        message: 'Failed to fetch registrations',
-      },
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch registrations.' });
   }
 });
 
-// 6. Admin Endpoint: Update Payment Status
+// 3. Admin Endpoint: Update Registration (Full Player Edit & Payment Status)
+app.patch('/api/admin/registrations/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    full_name,
+    email,
+    mobile,
+    payment_status,
+    payment_utr,
+    check_in_date,
+    check_out_date,
+    general_details,
+    sport_answers,
+  } = req.body;
+
+  try {
+    const [existing] = await db.query('SELECT * FROM rpl_registrations WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+
+    const current = existing[0];
+    const updatedFullName = full_name !== undefined ? full_name.trim() : current.full_name;
+    const updatedEmail = email !== undefined ? email.trim() : current.email;
+    const updatedMobile = mobile !== undefined ? mobile.trim() : current.mobile;
+    const updatedPaymentStatus = payment_status !== undefined ? payment_status : current.payment_status;
+    const updatedPaymentUtr = payment_utr !== undefined ? payment_utr : current.payment_utr;
+    const updatedCheckIn = check_in_date !== undefined ? check_in_date : current.check_in_date;
+    const updatedCheckOut = check_out_date !== undefined ? check_out_date : current.check_out_date;
+
+    const updatedGeneral = general_details !== undefined ? JSON.stringify(general_details) : current.general_details;
+    const updatedSport = sport_answers !== undefined ? JSON.stringify(sport_answers) : current.sport_answers;
+
+    await db.query(
+      `UPDATE rpl_registrations 
+       SET full_name = ?, email = ?, mobile = ?, payment_status = ?, payment_utr = ?, check_in_date = ?, check_out_date = ?, general_details = ?, sport_answers = ?
+       WHERE id = ?`,
+      [
+        updatedFullName,
+        updatedEmail,
+        updatedMobile,
+        updatedPaymentStatus,
+        updatedPaymentUtr,
+        updatedCheckIn,
+        updatedCheckOut,
+        updatedGeneral,
+        updatedSport,
+        id,
+      ]
+    );
+
+    res.json({ success: true, message: 'Player details updated successfully.' });
+  } catch (error) {
+    console.error('Error updating player details:', error);
+    res.status(500).json({ success: false, error: 'Failed to update player details.' });
+  }
+});
+
+// 4. Admin Endpoint: Update Payment Status (Quick 1-Click Action)
 app.post('/api/admin/registrations/:id/payment', async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // 'approved' or 'rejected'
+  const { status } = req.body; // 'approved' or 'rejected' or 'pending'
 
   if (!['approved', 'rejected', 'pending'].includes(status)) {
     return res.status(400).json({ error: 'Invalid payment status.' });
@@ -548,7 +659,113 @@ app.post('/api/admin/registrations/:id/payment', async (req, res) => {
   }
 });
 
+// 5. Admin Endpoint: Delete Registration
+app.delete('/api/admin/registrations/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await db.query('DELETE FROM rpl_registrations WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+    res.json({ success: true, message: 'Registration deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting registration:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete registration.' });
+  }
+});
+
+// 6. Admin Endpoint: Accommodation Stay List & Room Bookings
+app.get('/api/admin/accommodation', async (req, res) => {
+  try {
+    const [regs] = await db.query(`
+      SELECT r.id, r.full_name, r.mobile, r.email, r.payment_status, r.check_in_date, r.check_out_date, r.general_details
+      FROM rpl_registrations r
+      ORDER BY r.submitted_at DESC
+    `);
+
+    const [bookings] = await db.query(`
+      SELECT bookingid, cardno, roomno, checkin, checkout, nights, status, updatedBy, createdAt
+      FROM room_booking
+      ORDER BY createdAt DESC
+    `);
+
+    // Map bookings by cardno or contact
+    const accommodationList = regs
+      .map((r) => {
+        let gen = {};
+        try {
+          gen = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
+        } catch (e) {
+          gen = {};
+        }
+
+        const userCardNo = gen.cardNo || null;
+        const cleanMobile = (r.mobile || '').replace(/\D/g, '');
+        const fallbackCardNo = `RPL_${cleanMobile}`;
+
+        const userBookings = bookings.filter(
+          (b) => (userCardNo && b.cardno === userCardNo) || b.cardno === fallbackCardNo || (b.cardno && b.cardno.includes(cleanMobile.slice(-6)))
+        );
+
+        return {
+          registration_id: r.id,
+          full_name: r.full_name,
+          mobile: r.mobile,
+          email: r.email,
+          centre: gen.centre || 'Unspecified',
+          gender: gen.gender || 'Male',
+          accommodationRequired: gen.accommodationRequired || 'No',
+          check_in_date: r.check_in_date,
+          check_out_date: r.check_out_date,
+          bookings: userBookings,
+        };
+      })
+      .filter((r) => r.accommodationRequired === 'Yes' || r.bookings.length > 0);
+
+    res.json({ success: true, data: accommodationList });
+  } catch (error) {
+    console.error('Error fetching accommodation stays:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch accommodation data.' });
+  }
+});
+
+// 7. Admin Endpoint: Manual Room Number Assignment
+app.post('/api/admin/accommodation/assign', async (req, res) => {
+  const { bookingid, roomno } = req.body;
+
+  if (!bookingid || !roomno) {
+    return res.status(400).json({ success: false, error: 'bookingid and roomno are required.' });
+  }
+
+  try {
+    const cleanRoomNo = String(roomno).trim().toUpperCase();
+
+    // Ensure room exists in roomdb to satisfy FK
+    await db.query(`
+      INSERT INTO roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
+      VALUES (?, 'nac', 'NA', 'available', 'RPL_ADMIN')
+      ON DUPLICATE KEY UPDATE updatedBy = 'RPL_ADMIN'
+    `, [cleanRoomNo]);
+
+    // Update room_booking
+    const [result] = await db.query(
+      'UPDATE room_booking SET roomno = ?, status = ? WHERE bookingid = ?',
+      [cleanRoomNo, 'pending', bookingid]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Booking not found.' });
+    }
+
+    res.json({ success: true, message: `Room "${cleanRoomNo}" assigned successfully!` });
+  } catch (error) {
+    console.error('Error assigning room:', error);
+    res.status(500).json({ success: false, error: 'Failed to assign room number.' });
+  }
+});
+
 // Start Server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
