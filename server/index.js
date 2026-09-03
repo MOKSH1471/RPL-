@@ -289,8 +289,8 @@ app.post('/api/register', async (req, res) => {
     const cleanPhotoUrl = player_photo_url || sanitizedAnswers.photoDriveUrl || null;
     const cleanPaymentUtr = payment_utr || sanitizedAnswers.payment_utr || null;
     const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt_url || null;
-    const cleanCheckInDate = req.body.check_in_date || sanitizedAnswers.checkInDate || sanitizedAnswers.check_in_date || '2026-12-24';
-    const cleanCheckOutDate = req.body.check_out_date || sanitizedAnswers.checkOutDate || sanitizedAnswers.check_out_date || '2026-12-26';
+    const cleanCheckInDate = req.body.check_in_date || sanitizedAnswers.checkInDate || sanitizedAnswers.check_in_date || '2026-12-25';
+    const cleanCheckOutDate = req.body.check_out_date || sanitizedAnswers.checkOutDate || sanitizedAnswers.check_out_date || '2026-12-27';
 
     // Combined lookup object for dynamic validation
     const lookupAnswers = {
@@ -401,6 +401,47 @@ app.post('/api/register', async (req, res) => {
     if (accommodationResult.booked) {
       console.log(`[RPL Accommodation SUCCESS] Bookings and transactions created for "${cleanFullName}":`, accommodationResult.bookings);
     }
+
+    /*
+    // =========================================================================
+    // [COMMENTED OUT] AUTOMATIC FOOD BOOKING SEEDING FOR food_db
+    // =========================================================================
+    // When activated, this automatically creates daily meal entries (Breakfast,
+    // Lunch, Dinner) in 'food_db' under bookedBy='RPL' for the player's stay.
+    //
+    // To enable, simply uncomment this block:
+    //
+    // try {
+    //   const rawFoodPref = cleanGeneralDetails.foodPreference || sanitizedAnswers.foodPreference || 'Regular';
+    //   const isSpicy = rawFoodPref === 'Regular' ? 1 : 0; // 1 = Regular / Spicy, 0 = Non-Spicy
+    //   const targetCardNo = cleanGeneralDetails.cardNo || cleanGeneralDetails.card_no || cleanMobile;
+    //
+    //   const inStr = cleanCheckInDate || '2026-12-25';
+    //   const outStr = cleanCheckOutDate || '2026-12-27';
+    //
+    //   const curDate = new Date(`${inStr}T00:00:00Z`);
+    //   const endDate = new Date(`${outStr}T00:00:00Z`);
+    //
+    //   while (curDate <= endDate) {
+    //     const dateStr = curDate.toISOString().slice(0, 10);
+    //     const foodEntryId = uuidv4();
+    //
+    //     await db.query(
+    //       `INSERT INTO food_db 
+    //        (id, cardno, bookedBy, date, breakfast, breakfast_plate_issued, lunch, lunch_plate_issued, dinner, dinner_plate_issued, hightea, spicy, updatedBy, createdAt, updatedAt)
+    //        VALUES (?, ?, 'RPL', ?, 1, 0, 1, 0, 1, 0, 'NONE', ?, 'RPL', NOW(), NOW())
+    //        ON DUPLICATE KEY UPDATE 
+    //        breakfast=1, lunch=1, dinner=1, spicy=VALUES(spicy), updatedBy='RPL', updatedAt=NOW()`,
+    //       [foodEntryId, targetCardNo, dateStr, isSpicy]
+    //     );
+    //     curDate.setUTCDate(curDate.getUTCDate() + 1);
+    //   }
+    //   console.log(`[RPL food_db Booking] Seeded meals for player "${cleanFullName}" (Card/Mobile: ${targetCardNo}) from ${inStr} to ${outStr}`);
+    // } catch (foodErr) {
+    //   console.error('[RPL food_db Booking Error] Failed to create food_db entries:', foodErr);
+    // }
+    // =========================================================================
+    */
 
     res.json({
       success: true,

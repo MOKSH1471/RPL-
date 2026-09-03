@@ -31,8 +31,8 @@ export const registrationSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other'], {
     required_error: 'Please select Gender',
   }),
-  foodPreference: z.enum(['Jain', 'Swaminarayan', 'Regular Veg', 'Special Diet'], {
-    required_error: 'Please select Food Preference',
+  foodPreference: z.enum(['Regular', 'Non-Spicy'], {
+    required_error: 'Please select Food Preference (Spice Level)',
   }),
   accommodationRequired: z.enum(['Yes', 'No'], {
     required_error: 'Please select Accommodation Requirement',

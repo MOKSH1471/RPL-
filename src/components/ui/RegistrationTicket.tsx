@@ -138,7 +138,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               Stay Dates
             </span>
             <span className="font-bold text-slate-900 text-sm font-mono">
-              {data.checkInDate || '2026-12-24'} → {data.checkOutDate || '2026-12-26'}
+              {data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'}
             </span>
           </div>
         </div>

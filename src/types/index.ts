@@ -54,7 +54,7 @@ export interface RegistrationFormData {
   tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other' | string;
-  foodPreference: 'Jain' | 'Swaminarayan' | 'Regular Veg' | 'Special Diet' | string;
+  foodPreference: 'Regular' | 'Non-Spicy' | string;
   accommodationRequired: 'Yes' | 'No' | string;
   checkInDate?: string;
   checkOutDate?: string;

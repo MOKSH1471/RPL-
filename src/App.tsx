@@ -18,31 +18,29 @@ export function App() {
   const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash === '#/admin' || hash === '#admin') {
-      setCurrentPage('admin');
-      setShowIntro(false);
-    } else {
-      if (hash === '#/register' || hash === '#register') {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-      setCurrentPage('home');
-    }
+    const checkRoute = () => {
+      const path = (window.location.pathname || '').toLowerCase();
+      const hash = (window.location.hash || '').toLowerCase();
 
-    const handleHashChange = () => {
-      const currentHash = window.location.hash;
-      if (currentHash === '#/admin' || currentHash === '#admin') {
+      if (path === '/admin' || path.startsWith('/admin') || hash === '#/admin' || hash === '#admin') {
         setCurrentPage('admin');
         setShowIntro(false);
-      } else if (currentHash === '#/register' || currentHash === '#register') {
+      } else if (path === '/register' || path.startsWith('/register') || hash === '#/register' || hash === '#register') {
         setCurrentPage('register');
+        setShowIntro(false);
       } else {
         setCurrentPage('home');
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    checkRoute();
+
+    window.addEventListener('hashchange', checkRoute);
+    window.addEventListener('popstate', checkRoute);
+    return () => {
+      window.removeEventListener('hashchange', checkRoute);
+      window.removeEventListener('popstate', checkRoute);
+    };
   }, []);
 
   const handleSelectLeague = (league: LeagueType) => {
@@ -60,7 +58,10 @@ export function App() {
 
   const handleBackToHome = () => {
     setCurrentPage('home');
-    window.location.hash = '/home';
+    if (window.location.pathname !== '/' && window.location.pathname !== '') {
+      window.history.pushState(null, '', '/');
+    }
+    window.location.hash = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

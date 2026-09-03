@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     mobile VARCHAR(20) NOT NULL,
-    check_in_date DATE DEFAULT '2026-12-24',
-    check_out_date DATE DEFAULT '2026-12-26',
+    check_in_date DATE DEFAULT '2026-12-25',
+    check_out_date DATE DEFAULT '2026-12-27',
     player_photo_url VARCHAR(500) DEFAULT NULL, -- Clean Google Drive or card_db photo URL
     payment_status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     payment_utr VARCHAR(50) DEFAULT NULL, -- 12-digit UPI UTR / Transaction Reference

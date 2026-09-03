@@ -177,10 +177,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       tshirtSize: 'L',
       dateOfBirth: '',
       gender: 'Male',
-      foodPreference: 'Jain',
+      foodPreference: 'Regular',
       accommodationRequired: 'No',
-      checkInDate: '2026-12-24',
-      checkOutDate: '2026-12-26',
+      checkInDate: '2026-12-25',
+      checkOutDate: '2026-12-27',
       existingRplFamily: 'No',
       selectedSports: [mapInitialSport(initialLeague)],
       // Cricket Defaults
@@ -237,8 +237,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return field?.label || defaultLabel;
   };
   const currentDateOfBirth = watch('dateOfBirth');
-  const currentCheckInDate = watch('checkInDate') || '2026-12-24';
-  const currentCheckOutDate = watch('checkOutDate') || '2026-12-26';
+  const currentCheckInDate = watch('checkInDate') || '2026-12-25';
+  const currentCheckOutDate = watch('checkOutDate') || '2026-12-27';
 
   // Auto-fetch Mumukshu details from card_db when mobile is entered
   useEffect(() => {
@@ -441,8 +441,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: data.gender,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
-      checkInDate: data.checkInDate || '2026-12-24',
-      checkOutDate: data.checkOutDate || '2026-12-26',
+      checkInDate: data.checkInDate || '2026-12-25',
+      checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
       photoName: photoName || undefined,
       photoDataUrl: photoPreview || undefined,
@@ -494,8 +494,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       tshirtSize: data.tshirtSize,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
-      checkInDate: data.checkInDate || '2026-12-24',
-      checkOutDate: data.checkOutDate || '2026-12-26',
+      checkInDate: data.checkInDate || '2026-12-25',
+      checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
       cardNo: mumukshuCardInfo?.cardNo || undefined,
       selectedSports,
@@ -593,8 +593,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         full_name: data.fullName.trim(),
         email: data.email.trim(),
         mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
-        check_in_date: data.checkInDate || '2026-12-24',
-        check_out_date: data.checkOutDate || '2026-12-26',
+        check_in_date: data.checkInDate || '2026-12-25',
+        check_out_date: data.checkOutDate || '2026-12-27',
         player_photo_url: playerPhotoUrl,
         payment_utr: paymentUtr,
         payment_receipt_url: paymentReceiptUrl,
@@ -1015,24 +1015,24 @@ Submitted via RPL Official Registration Portal
               </div>
 
 
-              {/* Food Preference (with BasicDropdown) & Accommodation */}
+              {/* Food Preference (Spice Level) & Accommodation */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Utensils className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('food_preference', 'Food Preference')}</span>
+                    <span>{getFieldLabel('food_preference', 'Food Preference (Spice Level)')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
-                  <BasicDropdown
-                    label="Select Food Preference"
-                    items={[
-                      { id: 'Jain', label: 'Jain' },
-                      { id: 'Swaminarayan', label: 'Swaminarayan' },
-                      { id: 'Regular Veg', label: 'Regular Veg' },
-                      { id: 'Special Diet', label: 'Special Diet' },
+                  <OptionSelector
+                    options={[
+                      { value: 'Regular', label: 'Regular' },
+                      { value: 'Non-Spicy', label: 'Non-Spicy' },
                     ]}
-                    value={currentFood ? { id: currentFood, label: currentFood } : null}
-                    onChange={(item) => setValue('foodPreference', item.id as any, { shouldValidate: true })}
+                    value={currentFood || 'Regular'}
+                    onChange={(val) => setValue('foodPreference', val as any, { shouldValidate: true })}
+                    layoutId="food-indicator"
+                    activeColor="bg-slate-900"
+                    activeTextColor="text-white"
                   />
                 </div>
 
@@ -1062,7 +1062,7 @@ Submitted via RPL Official Registration Portal
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" />
                     <span>Check-In Date</span>
-                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 24 Dec)</span>
+                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 25 Dec)</span>
                   </label>
                   <ModernDatePicker
                     value={currentCheckInDate}
@@ -1088,7 +1088,7 @@ Submitted via RPL Official Registration Portal
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" />
                     <span>Check-Out Date</span>
-                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 26 Dec)</span>
+                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 27 Dec)</span>
                   </label>
                   <ModernDatePicker
                     value={currentCheckOutDate}

@@ -16,7 +16,7 @@
   - Step 1: Arena Choice & Gmail Dispatch Target Configuration
   - Step 2: Personal & Contact Information (+91 Mobile, Email, DOB, Centre)
   - Step 3: Photo Upload with Live Preview & RPL Identity
-  - Step 4: Apparel (XS–XXXL), Food Preference (Jain, Swaminarayan, Veg), Logistics
+  - Step 4: Apparel (XS–XXXL), Food Preference (Regular, Non-Spicy), Logistics
   - Step 5: League-Specific Position Questionnaire (Batter, Bowler, Striker, Category)
 - **Gmail Auto-Dispatch Integration**: Submitting the form automatically launches a pre-filled Gmail compose URL with structured registration details ready to send.
 - **Digital Sports Pass Ticket**: Generates an instant pass ticket complete with QR code entry badge and confetti celebration.

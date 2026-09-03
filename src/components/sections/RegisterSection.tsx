@@ -43,7 +43,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       existingRplFamily: 'No',
       gender: 'Male',
       tshirtSize: 'L',
-      foodPreference: 'Jain',
+      foodPreference: 'Regular',
       accommodationRequired: 'No',
       league: selectedLeague,
       cricketRole: 'Batter',
@@ -500,16 +500,14 @@ Sent via RPL Official Registration Portal
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      Food Preference <span className="text-pink-600">*</span>
+                      Food Preference (Spice Level) <span className="text-pink-600">*</span>
                     </label>
                     <select
                       {...register('foodPreference')}
                       className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 text-base sm:text-sm"
                     >
-                      <option value="Jain">Jain</option>
-                      <option value="Swaminarayan">Swaminarayan</option>
-                      <option value="Regular Veg">Regular Veg</option>
-                      <option value="Special Diet">Special Diet</option>
+                      <option value="Regular">Regular</option>
+                      <option value="Non-Spicy">Non-Spicy</option>
                     </select>
                   </div>
 
