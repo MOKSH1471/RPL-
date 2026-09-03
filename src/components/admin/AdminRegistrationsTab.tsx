@@ -17,6 +17,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import { updatePaymentStatus, deleteRegistration } from '@/lib/api';
+import { getDriveDirectImageUrl } from '@/lib/exportUtils';
+
 
 interface AdminRegistrationsTabProps {
   registrations: any[];
@@ -265,9 +267,13 @@ export function AdminRegistrationsTab({
                         <div className="flex items-center space-x-3">
                           {player.player_photo_url ? (
                             <img
-                              src={player.player_photo_url}
+                              src={getDriveDirectImageUrl(player.player_photo_url)}
                               alt={player.full_name}
-                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
+                              referrerPolicy="no-referrer"
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center font-bold shrink-0">
@@ -278,6 +284,7 @@ export function AdminRegistrationsTab({
                             <span className="font-extrabold text-slate-900 block group-hover:text-amber-600 transition-colors">
                               {player.full_name}
                             </span>
+
                             <span className="text-[10px] text-slate-400 font-mono">
                               {player.id.slice(0, 8)}...
                             </span>

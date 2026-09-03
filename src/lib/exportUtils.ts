@@ -20,6 +20,21 @@ function escapeCSV(val: any): string {
   return `"${str}"`;
 }
 
+// Convert Google Drive view URL to direct high-res image stream
+export function getDriveDirectImageUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed.includes('drive.google.com') && !trimmed.includes('googleusercontent.com')) return trimmed;
+
+  const match = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  }
+  return trimmed;
+}
+
+
+
 // 1. Export Master Registrations Sheet
 export function exportMasterRegistrations(registrations: any[]) {
   const headers = [

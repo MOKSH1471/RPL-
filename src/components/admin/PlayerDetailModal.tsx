@@ -21,6 +21,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { updateRegistration, updatePaymentStatus } from '@/lib/api';
+import { getDriveDirectImageUrl } from '@/lib/exportUtils';
+
 
 interface PlayerDetailModalProps {
   player: any;
@@ -251,11 +253,28 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               </div>
 
               {player.player_photo_url ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center max-h-48">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[160px] max-h-56 p-1">
                   <img
-                    src={player.player_photo_url}
+                    src={getDriveDirectImageUrl(player.player_photo_url)}
                     alt={player.full_name}
-                    className="max-h-48 w-full object-contain"
+                    referrerPolicy="no-referrer"
+                    className="max-h-52 w-full object-contain rounded-lg"
+                    onError={(e) => {
+                      // If Google Drive blocks embed, display a clean fallback button
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent && !parent.querySelector('.drive-fallback')) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'drive-fallback p-4 text-center space-y-2';
+                        fallback.innerHTML = `
+                          <p class="text-xs font-bold text-slate-700">Photo Attached on Google Drive</p>
+                          <a href="${player.player_photo_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 hover:bg-amber-100">
+                            <span>View Photo in Drive ↗</span>
+                          </a>
+                        `;
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 </div>
               ) : (
@@ -293,11 +312,27 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               </div>
 
               {player.payment_receipt_url ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center max-h-40">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[140px] max-h-56 p-1">
                   <img
-                    src={player.payment_receipt_url}
+                    src={getDriveDirectImageUrl(player.payment_receipt_url)}
                     alt="Payment Receipt"
-                    className="max-h-40 w-full object-contain"
+                    referrerPolicy="no-referrer"
+                    className="max-h-52 w-full object-contain rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent && !parent.querySelector('.drive-fallback')) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'drive-fallback p-4 text-center space-y-2';
+                        fallback.innerHTML = `
+                          <p class="text-xs font-bold text-slate-700">Receipt Attached on Google Drive</p>
+                          <a href="${player.payment_receipt_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100">
+                            <span>View Receipt in Drive ↗</span>
+                          </a>
+                        `;
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 </div>
               ) : (
