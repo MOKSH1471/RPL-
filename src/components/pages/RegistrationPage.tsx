@@ -1093,14 +1093,16 @@ Submitted via RPL Official Registration Portal
                 </div>
 
                 {/* Stay Billing / Policy Clarification */}
-                {currentAcc === 'Yes' && (
-                  <div className="md:col-span-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex items-start space-x-2.5 text-xs text-amber-950 font-medium">
-                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="leading-relaxed">
-                      <span className="font-bold text-amber-900">Accommodation Policy:</span> Official RPL tournament days (<strong>24–26 Dec 2026</strong>) are sponsored & <strong>Paid by RPL</strong> (room allocated by RPL Team). Any extended stay days before or after will be requested via the Ashram Desk and billed to your Aashray account upon room allocation.
-                    </div>
+                <div className={`md:col-span-2 p-3.5 rounded-2xl flex items-start space-x-2.5 text-xs transition-all duration-300 ${
+                  currentAcc === 'Yes' 
+                    ? 'bg-amber-50/95 border border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20' 
+                    : 'bg-slate-50 border border-slate-200/80 text-slate-700'
+                }`}>
+                  <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600 animate-pulse' : 'text-slate-400'}`} />
+                  <div className="leading-relaxed">
+                    <span className="font-bold text-slate-900">Accommodation Policy:</span> Official RPL tournament days (<strong>24–26 Dec 2026</strong>) are sponsored & <strong>Paid by RPL</strong> (room allocated by RPL Team). Any extended stay days before or after will be requested via the Ashram Room Desk and billed to your Aashray account upon room allocation.
                   </div>
-                )}
+                </div>
               </div>
 
               {/* RPL Family & Photo Upload */}
