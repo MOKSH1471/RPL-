@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import db from './db.js';
+import { processAccommodationBooking } from './services/roomBookingService.js';
 
 dotenv.config();
 
@@ -379,7 +380,30 @@ app.post('/api/register', async (req, res) => {
     );
 
     console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id}`);
-    res.json({ success: true, message: 'Registration submitted successfully', registration_id: id });
+
+    // D. Automatically process Room Booking & Transactions if accommodation is required
+    const accommodationResult = await processAccommodationBooking({
+      cardno: cleanGeneralDetails.cardNo || null,
+      fullName: cleanFullName,
+      email: cleanEmail,
+      mobile: cleanMobile,
+      centre: cleanGeneralDetails.centre || 'Mumbai',
+      gender: cleanGeneralDetails.gender || 'Male',
+      checkInDate: cleanCheckInDate,
+      checkOutDate: cleanCheckOutDate,
+      accommodationRequired: cleanGeneralDetails.accommodationRequired || 'No',
+    });
+
+    if (accommodationResult.booked) {
+      console.log(`[RPL Accommodation SUCCESS] Bookings and transactions created for "${cleanFullName}":`, accommodationResult.bookings);
+    }
+
+    res.json({
+      success: true,
+      message: 'Registration submitted successfully',
+      registration_id: id,
+      accommodation: accommodationResult,
+    });
   } catch (error) {
     console.error('Registration processing error:', error);
     res.status(500).json({ error: 'Failed to process registration.' });

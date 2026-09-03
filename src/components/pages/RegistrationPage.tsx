@@ -1091,6 +1091,16 @@ Submitted via RPL Official Registration Portal
                     </p>
                   )}
                 </div>
+
+                {/* Stay Billing / Policy Clarification */}
+                {currentAcc === 'Yes' && (
+                  <div className="md:col-span-2 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex items-start space-x-2.5 text-xs text-amber-950 font-medium">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <span className="font-bold text-amber-900">Accommodation Policy:</span> Official RPL tournament days (<strong>24–26 Dec 2026</strong>) are sponsored & <strong>Paid by RPL</strong> (room allocated by RPL Team). Any extended stay days before or after will be requested via the Ashram Desk and billed to your Aashray account upon room allocation.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* RPL Family & Photo Upload */}
