@@ -256,10 +256,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           if (d.centre) setValue('centre', d.centre, { shouldValidate: true });
           if (d.dateOfBirth) setValue('dateOfBirth', d.dateOfBirth, { shouldValidate: true });
           setValue('existingRplFamily', 'Yes', { shouldValidate: true });
-          if (d.photoUrl && !photoPreview) {
-            setPhotoPreview(d.photoUrl);
-            setPhotoDriveUrl(d.photoUrl);
-          }
         } else {
           setMumukshuCardInfo(null);
         }

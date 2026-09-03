@@ -120,7 +120,7 @@ app.get('/api/mumukshu-lookup', async (req, res) => {
         dateOfBirth: formattedDob,
         email: member.email || '',
         centre: member.center || '',
-        photoUrl: member.pfp || '',
+        photoUrl: '',
         isMumukshu: true,
       },
     });
