@@ -1054,7 +1054,10 @@ Submitted via RPL Official Registration Portal
                   </label>
                   <ModernDatePicker
                     value={currentCheckInDate}
-                    onChange={(val) => setValue('checkInDate', val, { shouldValidate: true })}
+                    onChange={(val) => {
+                      setValue('checkInDate', val, { shouldValidate: true });
+                      setValue('accommodationRequired', 'Yes', { shouldValidate: true });
+                    }}
                     placeholder="Select Check-In Date"
                     minYear={2026}
                     maxYear={2028}
@@ -1077,7 +1080,10 @@ Submitted via RPL Official Registration Portal
                   </label>
                   <ModernDatePicker
                     value={currentCheckOutDate}
-                    onChange={(val) => setValue('checkOutDate', val, { shouldValidate: true })}
+                    onChange={(val) => {
+                      setValue('checkOutDate', val, { shouldValidate: true });
+                      setValue('accommodationRequired', 'Yes', { shouldValidate: true });
+                    }}
                     placeholder="Select Check-Out Date"
                     minYear={2026}
                     maxYear={2028}
