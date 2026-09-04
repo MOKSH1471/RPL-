@@ -1,6 +1,8 @@
 import { DynamicField, DynamicSport } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+const rawBase = import.meta.env.VITE_API_URL || 'https://rpl-back.onrender.com/api';
+const cleanBase = String(rawBase).trim().replace(/\/+$/, '');
+const API_BASE_URL = cleanBase.endsWith('/api') ? cleanBase : `${cleanBase}/api`;
 
 export async function fetchSports(): Promise<DynamicSport[]> {
   try {
@@ -101,10 +103,18 @@ export interface MumukshuData {
 
 export async function lookupMumukshu(mobile: string): Promise<{ found: boolean; data?: MumukshuData }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/card/lookup?mobile=${encodeURIComponent(mobile)}`);
-    if (!res.ok) return { found: false };
-    return await res.json();
-  } catch {
+    const url = `${API_BASE_URL}/card/lookup?mobile=${encodeURIComponent(mobile)}`;
+    console.log(`[API] Looking up Mumukshu for: "${mobile}" via ${url}`);
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`[API] Mumukshu lookup response error (status ${res.status}) from ${url}`);
+      return { found: false };
+    }
+    const result = await res.json();
+    console.log('[API] Mumukshu lookup result:', result);
+    return result;
+  } catch (err) {
+    console.error('[API] Mumukshu lookup network error:', err);
     return { found: false };
   }
 }

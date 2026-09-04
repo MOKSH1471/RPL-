@@ -78,35 +78,56 @@ app.get('/api/registration-fields', async (req, res) => {
 
 // 2b. Mumukshu Lookup by Mobile Number (from card_db)
 const handleMumukshuLookup = async (req, res) => {
-  const { mobile } = req.query;
+  const { mobile, cardno, query: searchParam } = req.query;
+  const input = String(mobile || cardno || searchParam || '').trim();
 
-  if (!mobile) {
-    return res.status(400).json({ error: 'Mobile number is required' });
+  if (!input) {
+    return res.status(400).json({ error: 'Mobile number or Card number is required' });
   }
 
   try {
     // Strip non-digits (remove +91, spaces, hyphens)
-    const digitsOnly = String(mobile).replace(/\D/g, '');
+    const digitsOnly = input.replace(/\D/g, '');
     const cleanMobile = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
 
-    if (cleanMobile.length < 7) {
-      return res.json({ found: false, message: 'Invalid mobile number length' });
+    console.log(`[MUMUKSHU LOOKUP] Input: "${input}" | Digits: "${digitsOnly}" | Clean 10-digit: "${cleanMobile}"`);
+
+    if (cleanMobile.length < 5 && digitsOnly.length < 5) {
+      return res.json({ found: false, message: 'Search term too short' });
     }
 
+    // Flexible query: checks mobno (direct, with wildcards, stripped of spaces) AND cardno (with or without leading zeros)
     const [rows] = await db.query(
-      "SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp FROM card_db WHERE mobno = ? OR mobno LIKE ? LIMIT 1",
-      [cleanMobile, `%${cleanMobile}`]
+      `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
+       FROM card_db 
+       WHERE mobno = ? 
+          OR mobno LIKE ? 
+          OR REPLACE(REPLACE(REPLACE(REPLACE(mobno, ' ', ''), '-', ''), '+', ''), '(', '') LIKE ?
+          OR cardno = ?
+          OR cardno LIKE ?
+          OR LPAD(cardno, 10, '0') = LPAD(?, 10, '0')
+       LIMIT 1`,
+      [
+        cleanMobile, 
+        `%${cleanMobile}`, 
+        `%${cleanMobile}`, 
+        input, 
+        `%${digitsOnly}%`,
+        digitsOnly
+      ]
     );
 
     if (rows.length === 0) {
+      console.log(`[MUMUKSHU LOOKUP] Result: Not found for "${input}"`);
       return res.json({ found: false, message: 'Not found in card_db' });
     }
 
     const member = rows[0];
+    console.log(`[MUMUKSHU LOOKUP] Result: Found card #${member.cardno} for "${member.issuedto}"`);
 
     // Format gender
     let formattedGender = 'Male';
-    if (member.gender === 'F') formattedGender = 'Female';
+    if (member.gender === 'F' || member.gender === 'Female') formattedGender = 'Female';
 
     // Format date of birth directly as YYYY-MM-DD string
     const formattedDob = member.dob || '';
@@ -120,7 +141,7 @@ const handleMumukshuLookup = async (req, res) => {
         dateOfBirth: formattedDob,
         email: member.email || '',
         centre: member.center || '',
-        photoUrl: '',
+        photoUrl: member.pfp || '',
         isMumukshu: true,
       },
     });
@@ -130,8 +151,11 @@ const handleMumukshuLookup = async (req, res) => {
   }
 };
 
+// Mount endpoints with and without /api prefix for maximum reliability
 app.get('/api/mumukshu-lookup', handleMumukshuLookup);
 app.get('/api/card/lookup', handleMumukshuLookup);
+app.get('/mumukshu-lookup', handleMumukshuLookup);
+app.get('/card/lookup', handleMumukshuLookup);
 
 
 // 3. Handle File Uploads (Photo / Payment Screenshot to Google Drive)
