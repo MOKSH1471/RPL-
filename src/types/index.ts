@@ -108,6 +108,9 @@ export interface RegistrationFormData {
   preferredJerseyNumber?: string;
   preferredTeamName?: string;
   additionalNotes?: string;
+  payment_receipt?: string;
+  paymentReceiptUrl?: string;
+  payment_utr?: string;
 }
 
 export interface StatItem {

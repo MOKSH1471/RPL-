@@ -38,6 +38,13 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const gen = player.general_details || {};
   const sportAns = player.sport_answers || {};
 
+  const formatDateForInput = (d?: any) => {
+    if (!d) return '';
+    const str = String(d).trim();
+    if (str.includes('T')) return str.split('T')[0];
+    return str.slice(0, 10);
+  };
+
   // Editable form state
   const [formData, setFormData] = useState({
     full_name: player.full_name || '',
@@ -51,8 +58,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     preferredJerseyNumber: gen.preferredJerseyNumber || '',
     foodPreference: gen.foodPreference || 'Jain',
     accommodationRequired: gen.accommodationRequired || 'No',
-    check_in_date: player.check_in_date || gen.checkInDate || '2026-12-24',
-    check_out_date: player.check_out_date || gen.checkOutDate || '2026-12-26',
+    check_in_date: formatDateForInput(player.check_in_date || gen.checkInDate || '2026-12-24'),
+    check_out_date: formatDateForInput(player.check_out_date || gen.checkOutDate || '2026-12-26'),
     payment_status: player.payment_status || 'pending',
     payment_utr: player.payment_utr || '',
   });
@@ -82,8 +89,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         preferredJerseyNumber: formData.preferredJerseyNumber,
         foodPreference: formData.foodPreference,
         accommodationRequired: formData.accommodationRequired,
-        checkInDate: formData.check_in_date,
-        checkOutDate: formData.check_out_date,
+        checkInDate: formData.check_in_date || null,
+        checkOutDate: formData.check_out_date || null,
       };
 
       await updateRegistration(player.id, {
@@ -92,8 +99,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         mobile: formData.mobile,
         payment_status: formData.payment_status,
         payment_utr: formData.payment_utr,
-        check_in_date: formData.check_in_date,
-        check_out_date: formData.check_out_date,
+        check_in_date: formData.check_in_date || null,
+        check_out_date: formData.check_out_date || null,
         general_details: updatedGeneral,
       });
 

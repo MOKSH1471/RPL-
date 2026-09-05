@@ -1,6 +1,7 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, MessageCircle, User, Mail, Sparkles, ArrowLeft, Trophy } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Trophy, Mail } from 'lucide-react';
+import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
   data: RegistrationFormData;
@@ -10,8 +11,27 @@ interface RegistrationSuccessProps {
 
 export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
   data,
+  registrationId,
   onReset,
 }) => {
+  const receiptContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const scrollToDispenser = () => {
+      if (receiptContainerRef.current) {
+        const rect = receiptContainerRef.current.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        // Scroll so the dispenser is positioned comfortably right in front of user
+        const targetY = scrollTop + rect.top - 85;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+      }
+    };
+
+    scrollToDispenser();
+    const timer = setTimeout(scrollToDispenser, 120);
+    return () => clearTimeout(timer);
+  }, []);
+
   const sportsList =
     data.selectedSports && data.selectedSports.length > 0
       ? data.selectedSports
@@ -41,25 +61,33 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6 animate-fadeIn">
-      {/* Top Banner Confirmation */}
-      <div className="p-6 sm:p-8 rounded-3xl text-center border-2 border-emerald-300 bg-emerald-50/90 shadow-lg">
-        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-300 shadow-xs">
-          <CheckCircle2 className="w-10 h-10" />
+      {/* 3D THERMAL RECEIPT DISPENSER - HERO CENTERPIECE AT TOP */}
+      <div
+        ref={receiptContainerRef}
+        className="rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24"
+      >
+        <div className="flex flex-col items-center justify-center text-center mb-4">
+          <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>ENTRY RECORDED • OFFICIAL PASS DISPENSER</span>
+          </div>
+          <h2 className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+            Registration Confirmed!
+          </h2>
+          <p className="text-slate-600 text-xs sm:text-sm font-medium mt-0.5">
+            Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your official tournament pass is rolling out below:
+          </p>
         </div>
-        <span className="text-xs uppercase font-extrabold tracking-widest text-emerald-700 block mb-1">
-          ENTRY SUBMITTED
-        </span>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
-          Registration Confirmed!
-        </h2>
-        <p className="text-slate-700 text-sm sm:text-base font-medium max-w-lg mx-auto">
-          Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your entry for{' '}
-          <strong className="text-slate-950">Raj Premier League Season 9</strong> has been successfully recorded.
-        </p>
+
+        <ReceiptPrinter
+          data={data}
+          registrationId={registrationId}
+          autoPrint={true}
+        />
       </div>
 
-      {/* Summary Card */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-amber-200 bg-white shadow-md space-y-6">
+      {/* PARTICIPANT DETAILS SUMMARY CARD */}
+      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 shadow-xs">
@@ -69,7 +97,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             </div>
             <div>
               <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900">
-                Participant Summary
+                Participant Details
               </h3>
               <p className="text-slate-500 text-xs font-semibold">Raj Premier League Season 9</p>
             </div>
@@ -142,7 +170,10 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             </span>
           </div>
         </div>
+      </div>
 
+      {/* Bottom Information & Action Buttons */}
+      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4">
         {/* Email Verification Callout Note */}
         <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900">
           <Mail className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />

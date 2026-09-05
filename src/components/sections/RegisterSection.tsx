@@ -150,6 +150,9 @@ Sent via RPL Official Registration Portal
     setRegistrationId(generatedId);
     setSubmittedData(fullData);
 
+    // Scroll to registration ticket view
+    document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     try {
       confetti({
         particleCount: 120,

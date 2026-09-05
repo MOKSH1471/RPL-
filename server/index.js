@@ -640,6 +640,24 @@ app.get('/api/admin/registrations', async (req, res) => {
   }
 });
 
+// Helper to sanitize DATE values for MySQL (YYYY-MM-DD)
+function sanitizeDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return val.toISOString().slice(0, 10);
+  }
+  const str = String(val).trim();
+  if (!str) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    return str.slice(0, 10);
+  }
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
 // 3. Admin Endpoint: Update Registration (Full Player Edit & Payment Status)
 app.patch('/api/admin/registrations/:id', async (req, res) => {
   const { id } = req.params;
@@ -662,16 +680,27 @@ app.patch('/api/admin/registrations/:id', async (req, res) => {
     }
 
     const current = existing[0];
-    const updatedFullName = full_name !== undefined ? full_name.trim() : current.full_name;
-    const updatedEmail = email !== undefined ? email.trim() : current.email;
-    const updatedMobile = mobile !== undefined ? mobile.trim() : current.mobile;
+    const updatedFullName = full_name !== undefined ? String(full_name).trim() : current.full_name;
+    const updatedEmail = email !== undefined ? String(email).trim() : current.email;
+    const updatedMobile = mobile !== undefined ? String(mobile).trim() : current.mobile;
     const updatedPaymentStatus = payment_status !== undefined ? payment_status : current.payment_status;
     const updatedPaymentUtr = payment_utr !== undefined ? payment_utr : current.payment_utr;
-    const updatedCheckIn = check_in_date !== undefined ? check_in_date : current.check_in_date;
-    const updatedCheckOut = check_out_date !== undefined ? check_out_date : current.check_out_date;
+    const updatedCheckIn = sanitizeDate(check_in_date !== undefined ? check_in_date : current.check_in_date);
+    const updatedCheckOut = sanitizeDate(check_out_date !== undefined ? check_out_date : current.check_out_date);
 
-    const updatedGeneral = general_details !== undefined ? JSON.stringify(general_details) : current.general_details;
-    const updatedSport = sport_answers !== undefined ? JSON.stringify(sport_answers) : current.sport_answers;
+    let updatedGeneral = current.general_details;
+    if (general_details !== undefined) {
+      updatedGeneral = typeof general_details === 'object' && general_details !== null ? JSON.stringify(general_details) : general_details;
+    } else if (typeof updatedGeneral === 'object' && updatedGeneral !== null) {
+      updatedGeneral = JSON.stringify(updatedGeneral);
+    }
+
+    let updatedSport = current.sport_answers;
+    if (sport_answers !== undefined) {
+      updatedSport = typeof sport_answers === 'object' && sport_answers !== null ? JSON.stringify(sport_answers) : sport_answers;
+    } else if (typeof updatedSport === 'object' && updatedSport !== null) {
+      updatedSport = JSON.stringify(updatedSport);
+    }
 
     await db.query(
       `UPDATE rpl_registrations 
@@ -694,7 +723,7 @@ app.patch('/api/admin/registrations/:id', async (req, res) => {
     res.json({ success: true, message: 'Player details updated successfully.' });
   } catch (error) {
     console.error('Error updating player details:', error);
-    res.status(500).json({ success: false, error: 'Failed to update player details.' });
+    res.status(500).json({ success: false, error: error.message || 'Failed to update player details.' });
   }
 });
 

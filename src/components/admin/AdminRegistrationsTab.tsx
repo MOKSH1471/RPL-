@@ -15,9 +15,11 @@ import {
   ShieldCheck,
   Building2,
   Calendar,
+  Printer,
 } from 'lucide-react';
 import { updatePaymentStatus, deleteRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
+import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
 
 interface AdminRegistrationsTabProps {
@@ -38,6 +40,7 @@ export function AdminRegistrationsTab({
   const [sportFilter, setSportFilter] = useState('all');
   const [accFilter, setAccFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
   const rowsPerPage = 15;
 
   // Filter registrations
@@ -396,6 +399,19 @@ export function AdminRegistrationsTab({
                             </button>
                           )}
 
+                          {/* Print Receipt Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReceiptModalPlayer(player);
+                            }}
+                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                            title="Print RPL Receipt"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+
                           {/* View Detail Drawer */}
                           <button
                             type="button"
@@ -451,6 +467,31 @@ export function AdminRegistrationsTab({
           </div>
         </div>
       </div>
+
+      {/* 3D Thermal Receipt Modal */}
+      {receiptModalPlayer && (
+        <ReceiptPrinterModal
+          isOpen={Boolean(receiptModalPlayer)}
+          onClose={() => setReceiptModalPlayer(null)}
+          registrationId={receiptModalPlayer.registration_id || `RPL9-${receiptModalPlayer.id}`}
+          data={{
+            fullName: receiptModalPlayer.full_name,
+            mobileNumber: receiptModalPlayer.mobile,
+            email: receiptModalPlayer.email,
+            centre: receiptModalPlayer.general_details?.centre,
+            tshirtSize: receiptModalPlayer.general_details?.tshirtSize,
+            selectedSports: receiptModalPlayer.general_details?.selectedSports || [receiptModalPlayer.sport_id],
+            customJerseyName: receiptModalPlayer.general_details?.customJerseyName,
+            preferredJerseyNumber: receiptModalPlayer.general_details?.preferredJerseyNumber,
+            foodPreference: receiptModalPlayer.general_details?.foodPreference,
+            accommodationRequired: receiptModalPlayer.general_details?.accommodationRequired,
+            checkInDate: receiptModalPlayer.check_in_date,
+            checkOutDate: receiptModalPlayer.check_out_date,
+            payment_utr: receiptModalPlayer.payment_utr,
+            cardNo: receiptModalPlayer.general_details?.cardNo,
+          }}
+        />
+      )}
 
     </div>
   );

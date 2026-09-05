@@ -125,8 +125,9 @@ export async function lookupMumukshu(mobile: string): Promise<{ found: boolean; 
 
 export async function fetchAdminStats() {
   const res = await fetch(`${API_BASE_URL}/admin/stats`);
-  if (!res.ok) throw new Error('Failed to load admin statistics');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to load admin statistics (Status ${res.status})`);
+  return data;
 }
 
 export async function fetchAdminRegistrations(params?: { payment_status?: string; search?: string; sport?: string }) {
@@ -136,8 +137,9 @@ export async function fetchAdminRegistrations(params?: { payment_status?: string
   if (params?.sport) query.append('sport', params.sport);
 
   const res = await fetch(`${API_BASE_URL}/admin/registrations?${query.toString()}`);
-  if (!res.ok) throw new Error('Failed to load registrations');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to load registrations (Status ${res.status})`);
+  return data;
 }
 
 export async function updateRegistration(id: string, updates: Record<string, any>) {
@@ -146,8 +148,9 @@ export async function updateRegistration(id: string, updates: Record<string, any
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
-  if (!res.ok) throw new Error('Failed to update registration');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to update registration (Status ${res.status})`);
+  return data;
 }
 
 export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending') {
@@ -156,22 +159,25 @@ export async function updatePaymentStatus(id: string, status: 'approved' | 'reje
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error('Failed to update payment status');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to update payment status (Status ${res.status})`);
+  return data;
 }
 
 export async function deleteRegistration(id: string) {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error('Failed to delete registration');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to delete registration (Status ${res.status})`);
+  return data;
 }
 
 export async function fetchAdminAccommodation() {
   const res = await fetch(`${API_BASE_URL}/admin/accommodation`);
-  if (!res.ok) throw new Error('Failed to load accommodation stays');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to load accommodation stays (Status ${res.status})`);
+  return data;
 }
 
 export async function assignRoomNumber(bookingid: string, roomno: string) {
@@ -180,6 +186,7 @@ export async function assignRoomNumber(bookingid: string, roomno: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ bookingid, roomno }),
   });
-  if (!res.ok) throw new Error('Failed to assign room number');
-  return await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to assign room number (Status ${res.status})`);
+  return data;
 }
