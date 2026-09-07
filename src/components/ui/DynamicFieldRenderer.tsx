@@ -63,7 +63,9 @@ export function DynamicFieldRenderer({
       const cleanContext = (contextName || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
       const cleanField = (field.label || field.field_key).trim().replace(/[^a-zA-Z0-9]/g, '_');
       const customPrefix = `${cleanContext}_${cleanField}`;
-      const driveUrl = await uploadFileToDrive(file, customPrefix);
+      const isReceipt = field.field_key.includes('receipt') || field.field_key.includes('payment') || field.field_key.includes('utr');
+      const fileType = isReceipt ? 'receipt' : 'photo';
+      const driveUrl = await uploadFileToDrive(file, customPrefix, fileType);
       onChange(driveUrl);
     } catch (err) {
       console.warn('File upload fallback:', err);

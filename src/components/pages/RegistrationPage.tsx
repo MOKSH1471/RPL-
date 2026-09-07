@@ -523,7 +523,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       try {
         setIsUploadingPhoto(true);
         const cleanName = (watch('fullName') || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const driveUrl = await uploadFileToDrive(file, `${cleanName}_Photo`);
+        const driveUrl = await uploadFileToDrive(file, `${cleanName}_Photo`, 'photo');
         setPhotoDriveUrl(driveUrl);
       } catch (err) {
         console.warn('Direct upload notice (will use preview fallback):', err);

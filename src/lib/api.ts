@@ -26,12 +26,17 @@ export async function fetchRegistrationFields(): Promise<DynamicField[]> {
   }
 }
 
-export async function uploadFileToDrive(file: File, customName?: string): Promise<string> {
+export async function uploadFileToDrive(
+  file: File,
+  customName?: string,
+  fileType: 'photo' | 'receipt' = 'photo'
+): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
   if (customName) {
     formData.append('customName', customName);
   }
+  formData.append('fileType', fileType);
 
   const res = await fetch(`${API_BASE_URL}/upload`, {
     method: 'POST',

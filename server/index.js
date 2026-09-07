@@ -228,6 +228,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       ? req.file.originalname.substring(req.file.originalname.lastIndexOf('.'))
       : '.jpg';
     const finalFileName = `${cleanPrefix}_${Date.now()}${ext}`;
+    const fileType = req.body.fileType || (cleanPrefix.toLowerCase().includes('receipt') ? 'receipt' : 'photo');
 
     // A. Google Apps Script Webhook Upload (Easiest Method)
     if (process.env.GOOGLE_DRIVE_WEBHOOK_URL) {
@@ -239,6 +240,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
           base64: base64Data,
           mimeType: req.file.mimetype,
           fileName: finalFileName,
+          fileType: fileType,
+          uploadType: fileType,
         }),
       });
 
@@ -260,9 +263,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       bufferStream.push(req.file.buffer);
       bufferStream.push(null);
 
+      const targetFolder = fileType === 'receipt'
+        ? (process.env.GOOGLE_DRIVE_RECEIPT_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID)
+        : (process.env.GOOGLE_DRIVE_PHOTO_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID);
+
       const fileMetadata = {
         name: finalFileName,
-        parents: process.env.GOOGLE_DRIVE_FOLDER_ID ? [process.env.GOOGLE_DRIVE_FOLDER_ID] : [],
+        parents: targetFolder ? [targetFolder] : [],
       };
 
       const media = {
@@ -851,8 +858,21 @@ app.get('/api/admin/accommodation', async (req, res) => {
       ORDER BY createdAt DESC
     `);
 
-    // Map bookings by cardno or contact
-    const accommodationList = regs
+    // 1. Deduplicate registrations by phone (keep latest submitted)
+    const seenMobiles = new Set();
+    const uniqueRegs = [];
+    for (const r of regs) {
+      const rawDigits = (r.mobile || '').replace(/\D/g, '');
+      const key = rawDigits.length > 10 ? rawDigits.slice(-10) : rawDigits;
+      const lookupKey = key || r.id;
+      if (!seenMobiles.has(lookupKey)) {
+        seenMobiles.add(lookupKey);
+        uniqueRegs.push(r);
+      }
+    }
+
+    // 2. Map bookings by cardno or contact
+    const accommodationList = uniqueRegs
       .map((r) => {
         let gen = {};
         try {

@@ -147,7 +147,19 @@ export function AdminAccommodationTab({
 
   // 3. Filtered Participant List
   const filteredParticipants = useMemo(() => {
-    return accommodationList.filter((item) => {
+    const seenMobiles = new Set<string>();
+    const uniqueParticipants = [];
+
+    for (const item of accommodationList) {
+      const rawDigits = (item.mobile || '').replace(/\D/g, '');
+      const key = (rawDigits.length > 10 ? rawDigits.slice(-10) : rawDigits) || item.registration_id;
+      if (!seenMobiles.has(key)) {
+        seenMobiles.add(key);
+        uniqueParticipants.push(item);
+      }
+    }
+
+    return uniqueParticipants.filter((item) => {
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         const matchName = item.full_name?.toLowerCase().includes(term);
