@@ -49,6 +49,7 @@ interface RegistrationPageProps {
 interface SportOption {
   id: SportType;
   name: string;
+  shortName: string;
   category: string;
   emoji: string;
   colorBg: string;
@@ -60,6 +61,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'cricket',
     name: 'Cricket Championship',
+    shortName: 'Cricket',
     category: 'T20 Willow / Leather Ball Arena',
     emoji: '🏏',
     colorBg: 'bg-amber-50',
@@ -69,6 +71,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'football',
     name: 'Football Championship',
+    shortName: 'Football',
     category: '7-A-Side Turf Knockouts',
     emoji: '⚽',
     colorBg: 'bg-emerald-50',
@@ -78,6 +81,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'badminton',
     name: 'Badminton Championship',
+    shortName: 'Badminton',
     category: 'Singles, Doubles & Mixed Doubles',
     emoji: '🏸',
     colorBg: 'bg-cyan-50',
@@ -87,6 +91,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'table-tennis',
     name: 'Table Tennis Championship',
+    shortName: 'Table Tennis',
     category: 'Fast-Paced Speed & Spin Arena',
     emoji: '🏓',
     colorBg: 'bg-indigo-50',
@@ -96,6 +101,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'pickleball',
     name: 'Pickleball Championship',
+    shortName: 'Pickleball',
     category: 'Open Skill Divisions & Doubles',
     emoji: '🎾',
     colorBg: 'bg-orange-50',
@@ -105,6 +111,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'volleyball',
     name: 'Volleyball & Throwball',
+    shortName: 'Volleyball',
     category: 'Spikers Arena & Court Action',
     emoji: '🏐',
     colorBg: 'bg-purple-50',
@@ -114,6 +121,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'womens-sports',
     name: "Women's Multi-Sport League",
+    shortName: "Women's League",
     category: "Women's Cricket, Football & Throwball",
     emoji: '🏆',
     colorBg: 'bg-pink-50',
@@ -155,6 +163,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showDemoReceipt, setShowDemoReceipt] = useState(false);
+  const [isReceiptPrinting, setIsReceiptPrinting] = useState(false);
 
   // Dynamic fee calculation: Base ₹2,500 for first sport + ₹400 for each additional sport
   const sportsCount = Math.max(1, selectedSports.length);
@@ -873,7 +882,9 @@ Submitted via RPL Official Registration Portal
   );
 
   return (
-    <div className="min-h-screen pb-28 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20">
+    <div className={`min-h-screen pb-28 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative transition-all duration-300 ${
+      isReceiptPrinting ? 'z-[60]' : 'z-20'
+    }`}>
       <div className="max-w-4xl mx-auto">
         {/* Navigation Breadcrumb Bar with InView entrance */}
         <InView
@@ -953,6 +964,7 @@ Submitted via RPL Official Registration Portal
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
+            onPrintingChange={setIsReceiptPrinting}
           />
         ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
@@ -1422,55 +1434,84 @@ Submitted via RPL Official Registration Portal
 
               {/* Multi-Select Dropdown Container */}
               <div ref={dropdownRef} className="relative">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Championship Sports ({selectedSports.length} of {AVAILABLE_SPORTS.length} selected) <span className="text-pink-600">*</span>
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Championship Sports <span className="text-pink-600">*</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    {selectedSports.length} of {AVAILABLE_SPORTS.length} Selected
+                  </span>
+                </div>
 
                 {/* Dropdown Trigger Box */}
                 <div
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                  className={`w-full p-3 sm:p-3.5 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex flex-col gap-2.5 ${
                     dropdownOpen
-                      ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
-                      : 'border-slate-300 hover:border-slate-400'
+                      ? 'border-amber-600 ring-2 ring-amber-200 bg-white shadow-md'
+                      : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50/80 shadow-xs'
                   }`}
                 >
-                  <div className="flex flex-wrap items-center gap-1.5 flex-1">
-                    {selectedSports.map((sportId) => {
-                      const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                      if (!sport) return null;
-                      return (
-                        <span
-                          key={sport.id}
-                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 text-xs font-extrabold shadow-xs"
-                        >
-                          <span>{sport.emoji}</span>
-                          <span>{sport.name}</span>
-                          {selectedSports.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveSport(sport.id, e)}
-                              className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                  {/* Top Status & Trigger Row */}
+                  <div className="flex items-center justify-between gap-2 w-full select-none">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      {selectedSports.length === AVAILABLE_SPORTS.length ? (
+                        <div className="inline-flex items-center space-x-1.5 text-xs sm:text-sm font-extrabold text-amber-900 bg-amber-100/90 px-2.5 py-1 rounded-xl border border-amber-300">
+                          <span>🏆</span>
+                          <span>All 7 Sports Selected</span>
+                        </div>
+                      ) : selectedSports.length === 0 ? (
+                        <span className="text-xs sm:text-sm font-medium text-slate-400">
+                          Select championship sports...
                         </span>
-                      );
-                    })}
+                      ) : (
+                        <div className="flex items-center space-x-2 text-xs sm:text-sm font-extrabold text-slate-800">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>{selectedSports.length} {selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="text-[11px] font-extrabold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg">
+                        {selectedSports.length}/{AVAILABLE_SPORTS.length}
+                      </span>
+                      <div className={`w-7 h-7 rounded-lg bg-slate-200/80 flex items-center justify-center text-slate-700 transition-transform duration-200 ${
+                        dropdownOpen ? 'rotate-180 bg-amber-100 text-amber-700' : ''
+                      }`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
                   </div>
 
-
-                  <div className="flex items-center space-x-2 text-slate-500 shrink-0">
-                    <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-1 rounded-lg">
-                      {selectedSports.length} selected
-                    </span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-slate-600 transition-transform ${
-                        dropdownOpen ? 'rotate-180 text-amber-600' : ''
-                      }`}
-                    />
-                  </div>
+                  {/* Selected Sports Badges (Compact & Fluid Chips) */}
+                  {selectedSports.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/70">
+                      {selectedSports.map((sportId) => {
+                        const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+                        if (!sport) return null;
+                        return (
+                          <span
+                            key={sport.id}
+                            className="inline-flex items-center space-x-1 pl-2.5 pr-1.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[11px] sm:text-xs font-bold shadow-xs hover:brightness-105 transition-all"
+                          >
+                            <span>{sport.emoji}</span>
+                            <span>{sport.shortName || sport.name}</span>
+                            {selectedSports.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveSport(sport.id, e)}
+                                className="ml-1 p-0.5 hover:bg-black/25 rounded transition-colors cursor-pointer"
+                                title={`Remove ${sport.shortName || sport.name}`}
+                              >
+                                <X className="w-3 h-3 text-white" />
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Dropdown Popover Menu with AnimatePresence */}
@@ -1481,10 +1522,10 @@ Submitted via RPL Official Registration Portal
                       animate={{ opacity: 1, y: 0, scaleY: 1 }}
                       exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 space-y-3"
+                      className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 sm:p-4 space-y-3"
                     >
                       {/* Search & Actions Bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                         <div className="relative flex-1 min-w-0">
                           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                           <input
@@ -1492,62 +1533,61 @@ Submitted via RPL Official Registration Portal
                             placeholder="Search sports..."
                             value={sportSearch}
                             onChange={(e) => setSportSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-600 font-medium"
+                            className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-600 font-medium"
                           />
                         </div>
-                        <div className="flex items-center justify-end space-x-2 shrink-0">
+                        <div className="flex items-center space-x-1.5 shrink-0">
                           <button
                             type="button"
                             onClick={handleSelectAllSports}
-                            className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 text-[11px] sm:text-xs font-extrabold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer border border-amber-200"
                           >
-                            Select All
+                            All
                           </button>
                           <button
                             type="button"
                             onClick={handleClearSports}
-                            className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 text-[11px] sm:text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
                           >
                             Reset
                           </button>
                         </div>
                       </div>
 
-
                       {/* Sports Checkbox List */}
-                      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+                      <div className="max-h-64 sm:max-h-72 overflow-y-auto space-y-1.5 pr-1">
                         {filteredSports.map((sport) => {
                           const isChecked = selectedSports.includes(sport.id);
                           return (
                             <div
                               key={sport.id}
                               onClick={() => toggleSportSelection(sport.id)}
-                              className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                              className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                                 isChecked
                                   ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
                                   : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
                               }`}
                             >
-                              <div className="flex items-center space-x-3">
-                                <span className="text-2xl">{sport.emoji}</span>
-                                <div>
-                                  <span className="font-extrabold text-sm text-slate-900 block">
+                              <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                                <span className="text-xl sm:text-2xl shrink-0">{sport.emoji}</span>
+                                <div className="min-w-0">
+                                  <span className="font-extrabold text-xs sm:text-sm text-slate-900 block truncate">
                                     {sport.name}
                                   </span>
-                                  <span className="text-[11px] text-slate-500 font-medium">
+                                  <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">
                                     {sport.category}
                                   </span>
                                 </div>
                               </div>
 
                               <div
-                                className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${
+                                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center border transition-all shrink-0 ml-2 ${
                                   isChecked
                                     ? 'bg-slate-900 border-slate-900 text-amber-300'
                                     : 'border-slate-300 bg-white'
                                 }`}
                               >
-                                {isChecked && <Check className="w-4 h-4" />}
+                                {isChecked && <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                               </div>
                             </div>
                           );
@@ -2160,10 +2200,10 @@ Submitted via RPL Official Registration Portal
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
-                    Jersey Print & Team Squad Notes (Optional)
+                    Jersey Print & Customization (Optional)
                   </h2>
                   <p className="text-slate-600 text-xs sm:text-sm font-medium">
-                    Personalize your tournament jersey and squad preferences
+                    Personalize your tournament jersey preferences
                   </p>
                 </div>
               </div>
@@ -2194,18 +2234,6 @@ Submitted via RPL Official Registration Portal
                     className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium font-mono"
                   />
                 </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    {getFieldLabel('preferred_team_name', 'Preferred Team / Squad Name')} <span className="text-slate-500 text-[10px]">(If registering alongside a squad)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Royal Strikers, Mumbai Titans"
-                    {...register('preferredTeamName')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium"
-                  />
-                </div>
               </div>
             </InView>
 
@@ -2218,25 +2246,26 @@ Submitted via RPL Official Registration Portal
                 transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
                 className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
               >
-                <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-emerald-200 pb-4">
-                  <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                    <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">💳</span>
-                    <div className="min-w-0 flex-1">
+                <div className="border-b border-emerald-200/80 pb-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                      <span className="text-2xl sm:text-3xl shrink-0">💳</span>
                       <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
                         Payment & Verification Proof
                       </h3>
-                      <p className="text-emerald-800 text-xs font-semibold mt-0.5">
-                        Either Transaction UTR or Payment Screenshot is sufficient for verification (Optional on initial registration — you can always return later to pay)
-                      </p>
                     </div>
+                    <span className={`shrink-0 px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs ${
+                      existingPaymentStatus === 'approved'
+                        ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                        : 'bg-emerald-100 text-emerald-900 border border-emerald-300/60'
+                    }`}>
+                      {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
+                    </span>
                   </div>
-                  <span className={`shrink-0 px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs ${
-                    existingPaymentStatus === 'approved'
-                      ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                      : 'bg-emerald-100 text-emerald-900'
-                  }`}>
-                    {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
-                  </span>
+
+                  <p className="text-emerald-800 text-xs font-semibold leading-relaxed sm:pl-11">
+                    Either Transaction UTR or Payment Screenshot is sufficient for verification (Optional on initial registration — you can always return later to pay).
+                  </p>
                 </div>
 
                 {/* Dynamic Registration Fee Calculation & Summary Card */}

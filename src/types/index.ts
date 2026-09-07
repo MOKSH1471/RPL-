@@ -131,7 +131,7 @@ export interface GalleryItem {
   id: string;
   title: string;
   season: string;
-  category: 'cricket' | 'football' | 'womens' | 'moments';
+  category: 'cricket' | 'football' | 'womens' | 'ceremony' | string;
   image: string;
   caption: string;
 }

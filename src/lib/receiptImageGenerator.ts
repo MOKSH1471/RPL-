@@ -24,8 +24,8 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   const width = 640;
   const scale = 2; // Retina 2x resolution
   
-  // Calculate dynamic height based on sports
-  const baseHeight = 840 + (params.sportsList.length * 28);
+  // Calculate dynamic height based on sports (without barcode/regId)
+  const baseHeight = 720 + (params.sportsList.length * 28);
   const height = baseHeight;
 
   const canvas = document.createElement('canvas');
@@ -68,15 +68,10 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   ctx.font = 'bold 20px "JetBrains Mono", monospace';
   ctx.fillText('RAJ PREMIER LEAGUE', padX, y);
 
-  y += 22;
+  y += 24;
   ctx.fillStyle = '#92400e';
-  ctx.font = 'bold 13px "JetBrains Mono", monospace';
+  ctx.font = 'bold 14px "JetBrains Mono", monospace';
   ctx.fillText('SEASON 9 • TOURNAMENT PASS', padX, y);
-
-  y += 18;
-  ctx.fillStyle = '#6b7280';
-  ctx.font = '11px "JetBrains Mono", monospace';
-  ctx.fillText(`REG ID: ${params.registrationId}`, padX, y);
 
   // Gold emblem box on top right
   const badgeSize = 52;
@@ -94,7 +89,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   ctx.fillText('🏆', width - padX - badgeSize / 2, 62);
   ctx.textAlign = 'left';
 
-  y += 24;
+  y += 32;
 
   // 4. Payment Status Badge Box
   const badgeH = 50;
@@ -245,53 +240,31 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   ctx.fillText(params.hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE', width - padX, y);
   ctx.textAlign = 'left';
 
-  y += 30;
-
-  // 5. Barcode Graphic
-  const barcodeHeight = 36;
-  const barcodeStart = padX + 30;
-  const barcodeWidth = contentWidth - 60;
-  
-  ctx.fillStyle = '#111827';
-  // Draw simulated barcode stripes
-  const stripeWeights = [3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 1, 3, 4, 1, 2, 1, 3, 2, 4, 1, 3, 1, 2, 4, 2, 1, 3, 4, 1, 2, 3];
-  let curX = barcodeStart;
-  let isBar = true;
-  stripeWeights.forEach((w) => {
-    if (isBar && curX < barcodeStart + barcodeWidth) {
-      ctx.fillRect(curX, y, w * 2.8, barcodeHeight);
-    }
-    curX += (w * 2.8) + 3;
-    isBar = !isBar;
-  });
-
-  y += barcodeHeight + 14;
-  ctx.fillStyle = '#4b5563';
-  ctx.font = 'bold 11px "JetBrains Mono", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(params.registrationId || 'TXN-RPL9-884920', width / 2, y);
-
-  y += 22;
+  y += 24;
   drawDashedLine(y);
-  y += 18;
+  y += 20;
 
   // Footer Greeting
   ctx.fillStyle = '#111827';
-  ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  ctx.font = 'bold 12px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
   ctx.fillText('★ PLAY WITH PASSION • WIN WITH GRACE ★', width / 2, y);
 
-  y += 16;
+  y += 18;
   ctx.fillStyle = '#6b7280';
-  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
   ctx.fillText('RPL S9 ORGANIZING COMMITTEE', width / 2, y);
 
-  // 6. Direct PNG Download Trigger
+  // 5. Direct PNG Download Named as Person's Name
   canvas.toBlob((blob) => {
     if (blob) {
       const blobUrl = URL.createObjectURL(blob);
       const downloadAnchor = document.createElement('a');
       downloadAnchor.href = blobUrl;
-      downloadAnchor.download = `RPL-Season-9-Pass-${params.registrationId || 'Receipt'}.png`;
+      const personName = params.fullName?.trim()
+        ? params.fullName.trim().replace(/[/\\?%*:|"<>]/g, '')
+        : 'Participant';
+      downloadAnchor.download = `rpl 9 pass ${personName}.png`;
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       document.body.removeChild(downloadAnchor);

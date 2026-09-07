@@ -165,6 +165,8 @@ Sent via RPL Official Registration Portal
     }
   };
 
+  const [isReceiptPrinting, setIsReceiptPrinting] = useState(false);
+
   const handleReset = () => {
     setSubmittedData(null);
     setRegistrationId('');
@@ -174,7 +176,7 @@ Sent via RPL Official Registration Portal
   };
 
   return (
-    <section id="register" className="py-20 md:py-24 relative z-10">
+    <section id="register" className={`py-20 md:py-24 relative transition-all duration-300 ${isReceiptPrinting ? 'z-[60]' : 'z-10'}`}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 md:mb-12">
@@ -194,6 +196,7 @@ Sent via RPL Official Registration Portal
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
+            onPrintingChange={setIsReceiptPrinting}
           />
         ) : (
           <Stepper

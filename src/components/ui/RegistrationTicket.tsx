@@ -1,22 +1,32 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, MessageCircle, Trophy, Mail } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Mail } from 'lucide-react';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
   data: RegistrationFormData;
   registrationId: string;
   onReset: () => void;
+  onPrintingChange?: (isPrinting: boolean) => void;
 }
 
 export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
   data,
   registrationId,
   onReset,
+  onPrintingChange,
 }) => {
   const receiptContainerRef = React.useRef<HTMLDivElement>(null);
+  const [isPrinting, setIsPrinting] = React.useState(true);
+
+  const handlePrintingState = (printing: boolean) => {
+    setIsPrinting(printing);
+    if (onPrintingChange) onPrintingChange(printing);
+  };
 
   React.useEffect(() => {
+    if (onPrintingChange) onPrintingChange(true);
+
     const scrollToDispenser = () => {
       if (receiptContainerRef.current) {
         const rect = receiptContainerRef.current.getBoundingClientRect();
@@ -32,39 +42,22 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const sportsList =
-    data.selectedSports && data.selectedSports.length > 0
-      ? data.selectedSports
-      : [data.league || 'cricket'];
-
-  const formatSportName = (sport: string) => {
-    switch (sport) {
-      case 'cricket':
-        return 'Cricket';
-      case 'football':
-        return 'Football';
-      case 'badminton':
-        return 'Badminton';
-      case 'table-tennis':
-        return 'Table Tennis';
-      case 'pickleball':
-        return 'Pickleball';
-      case 'volleyball':
-        return 'Volleyball / Throwball';
-      case 'womens-sports':
-      case 'womens':
-        return "Women's League";
-      default:
-        return sport;
-    }
-  };
-
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6 animate-fadeIn">
-      {/* 3D THERMAL RECEIPT DISPENSER - HERO CENTERPIECE AT TOP */}
+    <div className="w-full max-w-2xl mx-auto space-y-6 relative">
+      {/* Full-Screen Cinema Blur Backdrop - covers entire screen at z-40 */}
+      <div
+        className={`fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md transition-all duration-500 pointer-events-none ${
+          isPrinting ? 'opacity-100' : 'opacity-0'
+        }`}
+        aria-hidden="true"
+      />
+
+      {/* 3D THERMAL RECEIPT DISPENSER - Sits at z-50 in FRONT of blur overlay, 100% UNBLURRED */}
       <div
         ref={receiptContainerRef}
-        className="rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24"
+        className={`rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24 relative transition-all duration-500 ${
+          isPrinting ? 'z-50 ring-4 ring-amber-400/80 shadow-2xl scale-[1.01]' : 'z-10'
+        }`}
       >
         <div className="flex flex-col items-center justify-center text-center mb-4">
           <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
@@ -83,117 +76,16 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           data={data}
           registrationId={registrationId}
           autoPrint={true}
+          onPrintingChange={handlePrintingState}
         />
       </div>
 
-      {/* PARTICIPANT DETAILS SUMMARY CARD */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 shadow-xs">
-              <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-amber-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900">
-                Participant Details
-              </h3>
-              <p className="text-slate-500 text-xs font-semibold">Raj Premier League Season 9</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5 justify-end">
-            {sportsList.map((sport) => (
-              <span
-                key={sport}
-                className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-300 text-amber-900"
-              >
-                {formatSportName(sport)}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Player Name
-            </span>
-            <span className="font-extrabold text-slate-900 text-base">{data.fullName}</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Contact Number
-            </span>
-            <span className="font-bold text-slate-900 text-base font-mono">
-              {data.countryCode || '+91'} {data.mobileNumber}
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Centre
-            </span>
-            <span className="font-bold text-slate-900 text-base">{data.centre}</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Jersey Size
-            </span>
-            <span className="font-bold text-amber-700 text-base font-mono">{data.tshirtSize}</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Email Address
-            </span>
-            <span className="font-semibold text-slate-800 text-sm truncate block">{data.email}</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Food Preference
-            </span>
-            <span className="font-bold text-slate-900 text-base">{data.foodPreference}</span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Stay Dates
-            </span>
-            <span className="font-bold text-slate-900 text-sm font-mono">
-              {data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'}
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
-                  Registration Fee ({sportsList.length} {sportsList.length === 1 ? 'Sport' : 'Sports'})
-                </span>
-                <span className="text-[11px] text-amber-800 font-medium">
-                  {sportsList.length > 1
-                    ? `Base ₹2,500 + ₹${(sportsList.length - 1) * 400} (${sportsList.length - 1} extra ${sportsList.length - 1 === 1 ? 'sport' : 'sports'})`
-                    : 'Base Registration Fee (Single Sport)'}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (2500 + Math.max(0, sportsList.length - 1) * 400)).toLocaleString('en-IN')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Information & Action Buttons */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4">
+      {/* Bottom Information & Action Buttons - Sits behind z-40 while printing */}
+      <div
+        className={`rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 relative transition-all duration-500 ${
+          isPrinting ? 'z-30 opacity-40' : 'z-10'
+        }`}
+      >
         {/* Email Verification Callout Note */}
         <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900">
           <Mail className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />

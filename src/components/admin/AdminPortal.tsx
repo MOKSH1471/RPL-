@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy,
   LayoutDashboard,
@@ -27,10 +28,12 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
 
-  const loadData = async () => {
+  const loadData = async (isInitial = false) => {
     setLoading(true);
+    const startTime = Date.now();
     try {
       const [statsRes, regsRes, accRes] = await Promise.all([
         fetchAdminStats().catch(() => ({ stats: null })),
@@ -44,21 +47,30 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 1600 - elapsed);
+        setTimeout(() => {
+          setLoading(false);
+          setIsInitialLoading(false);
+        }, remaining);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true);
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 selection:bg-amber-400 selection:text-slate-950 font-sans">
-      
+
       {/* Top Admin Sticky Navigation Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          
+
           {/* Logo & Brand */}
           <div className="flex items-center space-x-3">
             <button
@@ -94,7 +106,7 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
           <div className="flex items-center space-x-3">
             <button
               type="button"
-              onClick={loadData}
+              onClick={() => loadData(false)}
               disabled={loading}
               className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
             >
@@ -112,15 +124,14 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
 
         {/* Tab Navigation Ribbon */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100 flex items-center space-x-2 overflow-x-auto py-2">
-          
+
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-              activeTab === 'dashboard'
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'dashboard'
                 ? 'bg-slate-900 text-amber-300 shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <LayoutDashboard className="w-4 h-4" />
             <span>Overview Dashboard</span>
@@ -129,11 +140,10 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
           <button
             type="button"
             onClick={() => setActiveTab('registrations')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-              activeTab === 'registrations'
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'registrations'
                 ? 'bg-slate-900 text-amber-300 shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <Users className="w-4 h-4" />
             <span>Master Registrations</span>
@@ -145,11 +155,10 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
           <button
             type="button"
             onClick={() => setActiveTab('accommodation')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-              activeTab === 'accommodation'
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'accommodation'
                 ? 'bg-slate-900 text-amber-300 shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <Bed className="w-4 h-4" />
             <span>Room Allotment</span>
@@ -161,11 +170,10 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
           <button
             type="button"
             onClick={() => setActiveTab('exports')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-              activeTab === 'exports'
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'exports'
                 ? 'bg-slate-900 text-amber-300 shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
-            }`}
+              }`}
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>1-Click Exports</span>
@@ -176,7 +184,7 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
 
       {/* Main Admin Content Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        
+
         {activeTab === 'dashboard' && (
           <AdminDashboardTab stats={stats} loading={loading} />
         )}

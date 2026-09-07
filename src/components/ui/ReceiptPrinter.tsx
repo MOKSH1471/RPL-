@@ -41,6 +41,7 @@ export interface ReceiptPrinterProps {
   registrationId?: string;
   autoPrint?: boolean;
   onTearComplete?: () => void;
+  onPrintingChange?: (isPrinting: boolean) => void;
   className?: string;
 }
 
@@ -49,6 +50,7 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
   registrationId = 'RPL9-884920',
   autoPrint = true,
   onTearComplete,
+  onPrintingChange,
   className = '',
 }) => {
   // Mode is strictly smooth fluid per requirements
@@ -126,6 +128,7 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
     setIsPrinting(true);
     setIsPrinted(false);
     setIsTearing(false);
+    if (onPrintingChange) onPrintingChange(true);
 
     const animDuration = 2500;
     printerAudio.playPrinterSound('smooth', animDuration);
@@ -138,6 +141,7 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       }
       setIsPrinting(false);
       setIsPrinted(true);
+      // Keep blur active while pass is dispensed waiting to be torn
     }, animDuration);
   };
 
@@ -147,6 +151,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
 
     setIsTearing(true);
     printerAudio.playTearSound();
+    // Blur dissolves as soon as tear begins
+    if (onPrintingChange) onPrintingChange(false);
 
     if (cutterFlashRef.current) {
       cutterFlashRef.current.classList.add('active');
@@ -166,6 +172,7 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       }
       setIsPrinted(false);
       setIsTearing(false);
+      if (onPrintingChange) onPrintingChange(false);
       if (onTearComplete) onTearComplete();
     }, 550);
   };
@@ -218,7 +225,8 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
   };
 
   return (
-    <div className={`w-full flex flex-col items-center select-none ${className}`}>
+    <div className={`w-full flex flex-col items-center select-none relative ${className}`}>
+
       {/* Centered Controls Bar ABOVE the Machine */}
       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-full border border-amber-200 shadow-sm z-40 max-w-full">
         {/* Re-Print / Print Button located ABOVE the machine */}
@@ -270,7 +278,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       </div>
 
       {/* Main 3D Metallic Dispenser Stage */}
-      <div className="rpl-printer-stage">
+      <div className={`rpl-printer-stage relative transition-all duration-500 ${isPrinting ? 'z-50 scale-[1.01]' : 'z-10'}`}>
         <div className="rpl-machine-unit">
           {/* Top 3D Metallic Hood Bar */}
           <div className="rpl-machine-hood-top">
@@ -301,52 +309,41 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
               }}
               title={isPrinted ? 'Click with pointer to tear off receipt!' : undefined}
             >
-              {/* Pointer Tear Hint Badge */}
-              {isPrinted && !isPrinting && !isTearing && (
-                <div className="absolute top-2 right-2.5 z-20 flex items-center space-x-1 px-2 py-0.5 rounded-full bg-slate-900/80 text-amber-300 text-[8px] font-mono shadow-xs backdrop-blur-xs transition-transform group-hover:scale-105 pointer-events-none">
-                  <Scissors className="w-2.5 h-2.5 text-amber-400" />
-                  <span>Click to tear</span>
-                </div>
-              )}
-
               {/* Receipt Content */}
               <div className="rpl-receipt-content">
                 {/* Header & RPL Emblem */}
-                <div className="flex items-start justify-between gap-2 border-b border-dashed border-neutral-400/80 pb-2.5 mb-2">
+                <div className="flex items-start justify-between gap-3 border-b-2 border-dashed border-neutral-400/80 pb-3 mb-3">
                   <div>
-                    <div className="text-[11px] font-extrabold tracking-wider text-slate-950 uppercase">
+                    <div className="text-sm sm:text-base font-black tracking-wider text-slate-950 uppercase">
                       RAJ PREMIER LEAGUE
                     </div>
-                    <div className="text-[9px] font-bold text-amber-800 tracking-wider">
+                    <div className="text-xs sm:text-[13px] font-extrabold text-amber-800 tracking-wide mt-0.5">
                       SEASON 9 • TOURNAMENT PASS
                     </div>
-                    <div className="text-[8px] text-neutral-500 font-mono mt-0.5">
-                      {registrationId}
-                    </div>
                   </div>
-                  <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
-                    <Trophy className="w-5 h-5 text-amber-600" />
+                  <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-center p-1.5 shrink-0 shadow-xs">
+                    <Trophy className="w-6 h-6 text-amber-600" />
                   </div>
                 </div>
 
                 {/* DYNAMIC PAYMENT STATUS BADGE */}
                 {hasPaymentProof ? (
-                  <div className="my-2 text-center bg-emerald-50 border-2 border-emerald-500/80 p-2 rounded-lg shadow-xs">
-                    <div className="text-xs font-black tracking-widest text-emerald-800 uppercase flex items-center justify-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <div className="my-3 text-center bg-emerald-50 border-2 border-emerald-500/80 p-2.5 rounded-xl shadow-xs">
+                    <div className="text-xs sm:text-sm font-black tracking-widest text-emerald-800 uppercase flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>PAYMENT SUCCESSFUL</span>
                     </div>
-                    <div className="text-[8px] text-emerald-700 font-semibold tracking-wider uppercase mt-0.5">
+                    <div className="text-[10px] sm:text-[11px] text-emerald-700 font-bold tracking-wider uppercase mt-1">
                       VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE
                     </div>
                   </div>
                 ) : (
-                  <div className="my-2 text-center bg-amber-50 border-2 border-amber-500/80 p-2 rounded-lg shadow-xs">
-                    <div className="text-xs font-black tracking-widest text-amber-800 uppercase flex items-center justify-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                  <div className="my-3 text-center bg-amber-50 border-2 border-amber-500/80 p-2.5 rounded-xl shadow-xs">
+                    <div className="text-xs sm:text-sm font-black tracking-widest text-amber-800 uppercase flex items-center justify-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>PAYMENT DUE</span>
                     </div>
-                    <div className="text-[8px] text-amber-700 font-semibold tracking-wider uppercase mt-0.5">
+                    <div className="text-[10px] sm:text-[11px] text-amber-700 font-bold tracking-wider uppercase mt-1">
                       ATTACH PROOF AT DESK • RESEARCH CENTRE
                     </div>
                   </div>
@@ -355,48 +352,48 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 <div className="rpl-receipt-divider" />
 
                 {/* Participant Details Rows */}
-                <div className="space-y-1 text-[9.5px]">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PLAYER:</span>
-                    <span className="font-extrabold text-slate-950 text-right max-w-[190px] truncate">
+                <div className="space-y-2 text-xs sm:text-[13px]">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">PLAYER:</span>
+                    <span className="font-black text-slate-950 text-right max-w-[220px] truncate text-sm sm:text-[15px]">
                       {data.fullName || 'RPL Athlete'}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">CONTACT:</span>
-                    <span className="font-mono text-slate-800 font-semibold">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">CONTACT:</span>
+                    <span className="font-mono text-slate-900 font-bold">
                       {data.countryCode || '+91'} {data.mobileNumber || '9876543210'}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">CENTRE:</span>
-                    <span className="font-bold text-slate-900">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">CENTRE:</span>
+                    <span className="font-bold text-slate-900 text-right">
                       {data.centre || 'Mumbai'}
                       {data.cardNo ? ` (${data.cardNo})` : ''}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">JERSEY:</span>
-                    <span className="font-mono font-bold text-amber-800">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">JERSEY:</span>
+                    <span className="font-mono font-bold text-amber-900 text-right">
                       SIZE {data.tshirtSize || 'L'}
                       {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
                       {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
-                    <span className="font-medium text-slate-800 text-[8.5px]">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">HOSPITALITY:</span>
+                    <span className="font-semibold text-slate-800 text-right max-w-[220px]">
                       {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : 'Self-Arranged'} • {data.foodPreference || 'Regular'}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PROOF:</span>
-                    <span className={`font-mono font-bold text-[8.5px] truncate max-w-[190px] ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
+                  <div className="flex justify-between items-baseline gap-2">
+                    <span className="text-neutral-500 font-bold uppercase text-[11px] sm:text-xs shrink-0">PROOF:</span>
+                    <span className={`font-mono font-bold truncate max-w-[220px] text-right ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {data.payment_utr && (data.payment_receipt || data.paymentReceiptUrl)
                         ? `UTR: ${data.payment_utr} (SS ATTACHED)`
                         : data.payment_utr
@@ -411,17 +408,17 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 <div className="rpl-receipt-divider" />
 
                 {/* Registered Sports */}
-                <div className="mb-2">
-                  <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    CHAMPIONSHIP ARENAS (1X INCLUDED)
+                <div className="mb-2.5">
+                  <div className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-neutral-500 mb-1.5">
+                    CHAMPIONSHIP ARENAS
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {sportsList.map((sport, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-[9px]">
-                        <span className="font-bold text-slate-900 flex items-center gap-1">
-                          <span>•</span> {formatSportName(sport)}
+                      <div key={idx} className="flex justify-between items-center text-xs sm:text-[13px]">
+                        <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <span className="text-amber-600 font-black">•</span> {formatSportName(sport)}
                         </span>
-                        <span className="font-mono font-semibold text-emerald-700">INCLUDED</span>
+                        <span className="font-mono font-extrabold text-emerald-700 text-xs">INCLUDED</span>
                       </div>
                     ))}
                   </div>
@@ -430,37 +427,29 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 <div className="rpl-receipt-divider-solid" />
 
                 {/* Status / Total breakdown */}
-                <div className="space-y-0.5 text-[9px] mb-2">
-                  <div className="flex justify-between text-neutral-600 font-medium">
+                <div className="space-y-1 text-xs sm:text-[13px] mb-3">
+                  <div className="flex justify-between text-neutral-700 font-medium">
                     <span>Tournament Registration</span>
-                    <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
+                    <span className="font-mono font-bold">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
-                  <div className="flex justify-between text-neutral-600 font-medium">
+                  <div className="flex justify-between text-neutral-700 font-medium">
                     <span>Player Kit & Pass</span>
-                    <span className="font-mono">INCLUDED</span>
+                    <span className="font-mono font-bold">INCLUDED</span>
                   </div>
-                  <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">
+                  <div className="flex justify-between items-center text-slate-950 font-black text-sm sm:text-base pt-2 border-t-2 border-neutral-400 mt-2">
                     <span>TOTAL STATUS</span>
-                    <span className={`font-mono ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    <span className={`font-mono font-black ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                     </span>
                   </div>
                 </div>
 
-                {/* Authentic Barcode Graphic & Number */}
-                <div className="rpl-barcode-graphic">
-                  <div className="rpl-barcode-lines" />
-                  <div className="text-[8px] font-mono tracking-widest text-neutral-600 font-bold">
-                    {registrationId || 'TXN-RPL9-884920'}
-                  </div>
-                </div>
-
                 {/* Footer Greeting */}
-                <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
-                  <div className="text-[8px] font-black text-slate-900 tracking-wider uppercase">
+                <div className="text-center mt-3 pt-2.5 border-t border-dashed border-neutral-300">
+                  <div className="text-[10px] sm:text-xs font-black text-slate-900 tracking-wider uppercase">
                     ★ PLAY WITH PASSION • WIN WITH GRACE ★
                   </div>
-                  <div className="text-[7.5px] text-neutral-500 uppercase tracking-widest mt-0.5 font-semibold">
+                  <div className="text-[9px] sm:text-[10px] text-neutral-500 uppercase tracking-widest mt-1 font-bold">
                     RPL S9 ORGANIZING COMMITTEE
                   </div>
                 </div>
@@ -469,14 +458,28 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
           </div>
         </div>
 
-        {/* Minimal Pointer Tear Helper Text */}
-        <p className="text-[11px] text-slate-500 font-medium text-center mt-3">
-          {isPrinting
-            ? 'Rolling out your official RPL Season 9 pass...'
-            : isPrinted
-            ? 'Official pass dispensed. Click the receipt with your pointer to tear it off!'
-            : 'Pass ready in dispenser.'}
-        </p>
+        {/* Clean Pointer Tear Action Button & Helper Text */}
+        <div className="flex flex-col items-center justify-center mt-3 gap-2">
+          {isPrinted && !isPrinting && !isTearing && (
+            <button
+              type="button"
+              onClick={triggerTear}
+              className="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-mono font-bold shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              title="Click here or on the receipt to tear"
+            >
+              <Scissors className="w-3.5 h-3.5 text-amber-400" />
+              <span>Click to Tear Pass</span>
+            </button>
+          )}
+
+          <p className="text-[11px] text-slate-500 font-medium text-center">
+            {isPrinting
+              ? 'Rolling out your official RPL Season 9 pass...'
+              : isPrinted
+              ? 'Official pass dispensed. Click the receipt or button above to tear it off!'
+              : 'Pass ready in dispenser.'}
+          </p>
+        </div>
       </div>
     </div>
   );
