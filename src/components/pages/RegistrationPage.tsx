@@ -1036,14 +1036,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       onChange={(code) => setValue('countryCode', code, { shouldValidate: true })}
                     />
                     <div className="w-[1px] bg-slate-300 my-2.5 shrink-0" />
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="Enter phone number"
-                      {...register('mobileNumber')}
-                      className="w-full px-4 py-3.5 bg-transparent border-0 text-slate-900 placeholder-slate-400 focus:outline-none text-sm font-medium flex-1 min-w-0"
-                    />
+                    <div className="flex-1 min-w-0 flex items-stretch rounded-r-2xl overflow-hidden">
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        placeholder="Enter phone number"
+                        {...register('mobileNumber')}
+                        className="w-full px-4 py-3.5 bg-transparent border-0 text-slate-900 placeholder-slate-400 focus:outline-none text-sm font-medium rounded-r-2xl"
+                      />
+                    </div>
                   </div>
                   {errors.mobileNumber && (
                     <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
