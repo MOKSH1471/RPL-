@@ -320,9 +320,6 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                     <div className="text-[9px] font-bold text-amber-800 tracking-wider">
                       SEASON 9 • TOURNAMENT PASS
                     </div>
-                    <div className="text-[8px] text-neutral-500 font-mono mt-0.5">
-                      {registrationId}
-                    </div>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
                     <Trophy className="w-5 h-5 text-amber-600" />
@@ -447,13 +444,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
                 </div>
 
-                {/* Authentic Barcode Graphic & Number */}
-                <div className="rpl-barcode-graphic">
-                  <div className="rpl-barcode-lines" />
-                  <div className="text-[8px] font-mono tracking-widest text-neutral-600 font-bold">
-                    {registrationId || 'TXN-RPL9-884920'}
-                  </div>
-                </div>
+
 
                 {/* Footer Greeting */}
                 <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
