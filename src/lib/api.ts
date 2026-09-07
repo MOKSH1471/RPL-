@@ -29,7 +29,8 @@ export async function fetchRegistrationFields(): Promise<DynamicField[]> {
 export async function uploadFileToDrive(
   file: File,
   customName?: string,
-  fileType: 'photo' | 'receipt' = 'photo'
+  fileType: 'photo' | 'receipt' = 'photo',
+  receiptIndex?: number
 ): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
@@ -37,6 +38,9 @@ export async function uploadFileToDrive(
     formData.append('customName', customName);
   }
   formData.append('fileType', fileType);
+  if (receiptIndex) {
+    formData.append('receiptIndex', String(receiptIndex));
+  }
 
   const res = await fetch(`${API_BASE_URL}/upload`, {
     method: 'POST',
@@ -118,6 +122,10 @@ export interface ExistingRegistrationData {
   paymentStatus: string;
   paymentUtr?: string;
   paymentReceiptUrl?: string;
+  receiptList?: string[];
+  utrList?: string[];
+  previouslyPaidSportsCount?: number;
+  hasPreviouslyPaid?: boolean;
   generalDetails: Record<string, any>;
   sportAnswers: Record<string, any>;
   cardNo?: string;

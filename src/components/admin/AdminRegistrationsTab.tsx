@@ -258,6 +258,16 @@ export function AdminRegistrationsTab({
                   const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
                   const waUrl = `https://wa.me/${waPhone}`;
 
+                  const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
+                  const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
+                    ? gen.paymentReceipts
+                    : String(rawReceipts).split(',').map((s) => s.trim()).filter(Boolean);
+
+                  const rawUtrs = player.payment_utr || gen.payment_utr || '';
+                  const utrList: string[] = Array.isArray(gen.paymentUtrs) && gen.paymentUtrs.length > 0
+                    ? gen.paymentUtrs
+                    : String(rawUtrs).split(',').map((s) => s.trim()).filter(Boolean);
+
                   return (
                     <tr
                       key={player.id}
@@ -358,24 +368,25 @@ export function AdminRegistrationsTab({
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            {player.payment_utr && (
-                              <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[110px]">
-                                UTR: {player.payment_utr}
+                            {utrList.length > 0 && (
+                              <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[120px]" title={utrList.join(', ')}>
+                                UTR: {utrList.join(', ')}
                               </span>
                             )}
-                            {player.payment_receipt_url && (
+                            {receiptList.map((url, rIdx) => (
                               <a
-                                href={player.payment_receipt_url}
+                                key={rIdx}
+                                href={url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
                                 className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100 transition-colors"
-                                title="Open Payment Screenshot in Google Drive"
+                                title={`Open Payment Receipt #${rIdx + 1} in Google Drive`}
                               >
-                                <span>🧾 Receipt</span>
+                                <span>🧾 {receiptList.length > 1 ? `Receipt ${rIdx + 1}` : 'Receipt'}</span>
                                 <ExternalLink className="w-2.5 h-2.5" />
                               </a>
-                            )}
+                            ))}
                           </div>
                         </div>
                       </td>

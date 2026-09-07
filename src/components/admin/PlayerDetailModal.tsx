@@ -47,6 +47,16 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const calculatedFee = gen.totalAmount || (2500 + Math.max(0, calculatedSportsCount - 1) * 400);
 
+  const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
+  const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
+    ? gen.paymentReceipts
+    : String(rawReceipts).split(',').map((s) => s.trim()).filter(Boolean);
+
+  const rawUtrs = player.payment_utr || gen.payment_utr || '';
+  const utrList: string[] = Array.isArray(gen.paymentUtrs) && gen.paymentUtrs.length > 0
+    ? gen.paymentUtrs
+    : String(rawUtrs).split(',').map((s) => s.trim()).filter(Boolean);
+
   const formatDateForInput = (d?: any) => {
     if (!d) return '';
     const str = String(d).trim();
@@ -301,16 +311,16 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               )}
             </div>
 
-            {/* Payment Proof Card */}
+            {/* Payment Proof Card (Supports Multi-Receipts & Multi-UTRs for Multi-Sport Returning Players) */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center space-x-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Payment Proof (Receipt)</span>
+                  <span>Payment Proof ({receiptList.length > 1 ? `${receiptList.length} Receipts` : 'Receipt'})</span>
                 </span>
-                {player.payment_receipt_url && (
+                {receiptList.length === 1 && (
                   <a
-                    href={player.payment_receipt_url}
+                    href={receiptList[0]}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
@@ -328,36 +338,71 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-600">UTR / Ref:</span>
-                <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                  {player.payment_utr || 'Not Provided'}
-                </span>
+              {/* UTR Badges */}
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <span className="font-semibold text-slate-600 block">Transaction UTR / Ref:</span>
+                {utrList.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {utrList.map((utr, idx) => (
+                      <span
+                        key={idx}
+                        className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px] inline-flex items-center space-x-1"
+                      >
+                        {utrList.length > 1 && <span className="text-amber-700 font-extrabold mr-1">#{idx + 1}:</span>}
+                        <span>{utr}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="font-mono text-slate-400 italic">Not Provided</span>
+                )}
               </div>
 
-              {player.payment_receipt_url ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[140px] max-h-56 p-1">
-                  <img
-                    src={getDriveDirectImageUrl(player.payment_receipt_url)}
-                    alt="Payment Receipt"
-                    referrerPolicy="no-referrer"
-                    className="max-h-52 w-full object-contain rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const parent = e.currentTarget.parentElement;
-                      if (parent && !parent.querySelector('.drive-fallback')) {
-                        const fallback = document.createElement('div');
-                        fallback.className = 'drive-fallback p-4 text-center space-y-2';
-                        fallback.innerHTML = `
-                          <p class="text-xs font-bold text-slate-700">Receipt Attached on Google Drive</p>
-                          <a href="${player.payment_receipt_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100">
-                            <span>View Receipt in Drive ↗</span>
-                          </a>
-                        `;
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                  />
+              {/* Multi-Receipt Preview Cards */}
+              {receiptList.length > 0 ? (
+                <div className={`grid ${receiptList.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-2.5 pt-1`}>
+                  {receiptList.map((receiptUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-2 space-y-2 flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                        <span>🧾 Receipt #{idx + 1}</span>
+                        <a
+                          href={receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-700 hover:text-emerald-800 flex items-center space-x-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]"
+                        >
+                          <span>Drive ↗</span>
+                        </a>
+                      </div>
+
+                      <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-white flex items-center justify-center min-h-[120px] max-h-48 p-1">
+                        <img
+                          src={getDriveDirectImageUrl(receiptUrl)}
+                          alt={`Payment Receipt #${idx + 1}`}
+                          referrerPolicy="no-referrer"
+                          className="max-h-44 w-full object-contain rounded-md"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent && !parent.querySelector('.drive-fallback')) {
+                              const fallback = document.createElement('div');
+                              fallback.className = 'drive-fallback p-3 text-center space-y-1.5';
+                              fallback.innerHTML = `
+                                <p class="text-[11px] font-bold text-slate-700">Receipt #${idx + 1} on Drive</p>
+                                <a href="${receiptUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-100">
+                                  <span>View in Drive ↗</span>
+                                </a>
+                              `;
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400">

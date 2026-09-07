@@ -21,6 +21,7 @@ interface DynamicFieldRendererProps {
   disabled?: boolean;
   contextName?: string;
   onUploadingChange?: (uploading: boolean) => void;
+  receiptIndex?: number;
 }
 
 export function DynamicFieldRenderer({
@@ -31,6 +32,7 @@ export function DynamicFieldRenderer({
   disabled = false,
   contextName,
   onUploadingChange,
+  receiptIndex,
 }: DynamicFieldRendererProps) {
   const [fileUploading, setFileUploading] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -65,10 +67,14 @@ export function DynamicFieldRenderer({
       onUploadingChange?.(true);
       const cleanContext = (contextName || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
       const cleanField = (field.label || field.field_key).trim().replace(/[^a-zA-Z0-9]/g, '_');
-      const customPrefix = `${cleanContext}_${cleanField}`;
       const isReceipt = field.field_key.includes('receipt') || field.field_key.includes('payment') || field.field_key.includes('utr');
       const fileType = isReceipt ? 'receipt' : 'photo';
-      const driveUrl = await uploadFileToDrive(file, customPrefix, fileType);
+      
+      let customPrefix = isReceipt
+        ? `${cleanContext}_Payment_Receipt${receiptIndex && receiptIndex > 1 ? `_(${receiptIndex})` : ''}`
+        : `${cleanContext}_${cleanField}`;
+
+      const driveUrl = await uploadFileToDrive(file, customPrefix, fileType, receiptIndex);
       onChange(driveUrl);
     } catch (err) {
       console.warn('File upload fallback:', err);

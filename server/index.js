@@ -117,6 +117,23 @@ const handlePlayerLookup = async (req, res) => {
         parsedSportAnswers = {};
       }
 
+      const rawReceipts = reg.payment_receipt_url || parsedGeneralDetails.payment_receipt_url || parsedGeneralDetails.payment_receipt || '';
+      const receiptList = Array.isArray(parsedGeneralDetails.paymentReceipts) && parsedGeneralDetails.paymentReceipts.length > 0
+        ? parsedGeneralDetails.paymentReceipts
+        : String(rawReceipts).split(',').map((s) => s.trim()).filter(Boolean);
+
+      const rawUtrs = reg.payment_utr || parsedGeneralDetails.payment_utr || '';
+      const utrList = Array.isArray(parsedGeneralDetails.paymentUtrs) && parsedGeneralDetails.paymentUtrs.length > 0
+        ? parsedGeneralDetails.paymentUtrs
+        : String(rawUtrs).split(',').map((s) => s.trim()).filter(Boolean);
+
+      const savedSports = Array.isArray(parsedGeneralDetails.selectedSports)
+        ? parsedGeneralDetails.selectedSports
+        : Object.keys(parsedSportAnswers);
+
+      const previouslyPaidSportsCount = Math.max(1, savedSports.length);
+      const hasPreviouslyPaid = (reg.payment_status || '').toLowerCase() === 'approved' || receiptList.length > 0 || utrList.length > 0;
+
       return res.json({
         found: true,
         isExistingRegistration: true,
@@ -131,6 +148,10 @@ const handlePlayerLookup = async (req, res) => {
           paymentStatus: reg.payment_status,
           paymentUtr: reg.payment_utr,
           paymentReceiptUrl: reg.payment_receipt_url,
+          receiptList,
+          utrList,
+          previouslyPaidSportsCount,
+          hasPreviouslyPaid,
           generalDetails: parsedGeneralDetails,
           sportAnswers: parsedSportAnswers,
           cardNo: parsedGeneralDetails.cardNo || null,
@@ -219,11 +240,17 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Construct player-branded filename (e.g. Purvit_Shah_Photo.jpg or Vatsal_Shah_Payment_Receipt.jpg)
+    // Construct player-branded filename (e.g. Vatsal_Shah_Photo.jpg or Vatsal_Shah_Payment_Receipt_(2).jpg)
     const customName = req.body.customName;
-    const cleanPrefix = customName
-      ? String(customName).trim().replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_')
+    const receiptIndex = req.body.receiptIndex ? Number(req.body.receiptIndex) : null;
+    let cleanPrefix = customName
+      ? String(customName).trim().replace(/[^a-zA-Z0-9_() -]/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_')
       : 'RPL';
+
+    if (receiptIndex && receiptIndex > 1 && !cleanPrefix.includes(`(${receiptIndex})`)) {
+      cleanPrefix = `${cleanPrefix}_(${receiptIndex})`;
+    }
+
     const ext = req.file.originalname.includes('.')
       ? req.file.originalname.substring(req.file.originalname.lastIndexOf('.'))
       : '.jpg';
@@ -516,14 +543,53 @@ app.post('/api/register', async (req, res) => {
       ]));
       mergedGeneralDetails.selectedSports = allSelectedSports;
       const computedSportsCount = Math.max(1, allSelectedSports.length);
+      const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
+      const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
       const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
+
+      // Merge UTRs (Append new distinct UTR with comma separation)
+      const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const newUtrs = String(cleanPaymentUtr || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const mergedUtrList = Array.from(new Set([...prevUtrs, ...newUtrs]));
+      const finalPaymentUtr = mergedUtrList.length > 0 ? mergedUtrList.join(', ') : null;
+
+      // Merge Receipts (Append new distinct receipt URL with comma separation)
+      const prevReceipts = String(prevRow.payment_receipt_url || prevGeneral.payment_receipt_url || prevGeneral.payment_receipt || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const newReceipts = String(cleanReceiptUrl || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const mergedReceiptList = Array.from(new Set([...prevReceipts, ...newReceipts]));
+      const finalReceiptUrl = mergedReceiptList.length > 0 ? mergedReceiptList.join(', ') : null;
+
+      const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
+      const incrementalFee = isAlreadyPaid ? newlyAddedSportsCount * 400 : computedFee;
+
       mergedGeneralDetails.totalAmount = computedFee;
       mergedGeneralDetails.calculatedFee = computedFee;
+      mergedGeneralDetails.incrementalFee = incrementalFee;
+      mergedGeneralDetails.paymentReceipts = mergedReceiptList;
+      mergedGeneralDetails.paymentUtrs = mergedUtrList;
+      mergedGeneralDetails.payment_receipt = finalReceiptUrl;
+      mergedGeneralDetails.payment_receipt_url = finalReceiptUrl;
+      mergedGeneralDetails.paymentReceiptUrl = finalReceiptUrl;
+      mergedGeneralDetails.payment_utr = finalPaymentUtr;
       finalGeneralDetails = mergedGeneralDetails;
 
       const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
-      const finalPaymentUtr = cleanPaymentUtr || prevRow.payment_utr || null;
-      const finalReceiptUrl = cleanReceiptUrl || prevRow.payment_receipt_url || null;
       const finalPaymentStatus = prevRow.payment_status === 'approved' ? 'approved' : 'pending';
 
       await db.query(

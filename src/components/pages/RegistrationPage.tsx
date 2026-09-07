@@ -172,14 +172,37 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [isExistingPlayerRegistration, setIsExistingPlayerRegistration] = useState(false);
   const [existingRegistrationId, setExistingRegistrationId] = useState<string | null>(null);
   const [existingPaymentStatus, setExistingPaymentStatus] = useState<string | null>(null);
+  const [previouslyPaidSportsCount, setPreviouslyPaidSportsCount] = useState<number>(0);
+  const [previousReceiptUrls, setPreviousReceiptUrls] = useState<string[]>([]);
+  const [previousUtrs, setPreviousUtrs] = useState<string[]>([]);
+  const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showDemoReceipt, setShowDemoReceipt] = useState(false);
 
-  // Dynamic fee calculation: Base ₹2,500 for first sport + ₹400 for each additional sport
-  const sportsCount = Math.max(1, selectedSports.length);
-  const extraSportsCount = Math.max(0, sportsCount - 1);
-  const totalPayableFee = 2500 + extraSportsCount * 400;
+  // Dynamic fee calculation:
+  // 1. Returning Paid Participant Adding New Sports:
+  //    - Base fee already paid for previouslyPaidSportsCount
+  //    - Newly added sports count = max(0, totalSports - previouslyPaidSportsCount)
+  //    - Amount Due Now: newlyAddedSportsCount * 400 (If 0 new sports, fee is 0)
+  // 2. Unpaid or Brand New Registration:
+  //    - Standard fee: 2,500 for first sport + 400 for each additional sport
+  const totalSportsCount = Math.max(1, selectedSports.length);
+  const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
+  const newlyAddedSportsCount = isReturningPaidUser
+    ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
+    : 0;
+
+  const totalPayableFee = isReturningPaidUser
+    ? newlyAddedSportsCount * 400
+    : 2500 + Math.max(0, totalSportsCount - 1) * 400;
+
+  const cumulativeTotalFee = 2500 + Math.max(0, totalSportsCount - 1) * 400;
+  const previousPaidAmount = isReturningPaidUser
+    ? 2500 + Math.max(0, previouslyPaidSportsCount - 1) * 400
+    : 0;
+
+  const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
   const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
 
   useEffect(() => {
@@ -325,6 +348,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 }
               }
 
+              // Track previous payment data & receipts
+              const rawReceiptList = reg.receiptList || (reg.paymentReceiptUrl ? String(reg.paymentReceiptUrl).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+              const rawUtrList = reg.utrList || (reg.paymentUtr ? String(reg.paymentUtr).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+              const isPaid = Boolean(
+                reg.hasPreviouslyPaid ||
+                ['approved', 'completed', 'paid', 'success'].includes((reg.paymentStatus || '').toLowerCase()) ||
+                rawReceiptList.length > 0 ||
+                rawUtrList.length > 0
+              );
+
+              setPreviouslyPaidSportsCount(reg.previouslyPaidSportsCount || (Array.isArray(savedSports) ? savedSports.length : 1));
+              setPreviousReceiptUrls(rawReceiptList);
+              setPreviousUtrs(rawUtrList);
+              setHasPreviouslyPaid(isPaid);
+
               // Restore sport answers
               if (sports.cricket) {
                 if (sports.cricket.role) setValue('cricketRole', sports.cricket.role);
@@ -369,10 +407,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 setPhotoPreview(reg.playerPhotoUrl);
               }
 
-              // Restore dynamic answers & payment fields
+              // Restore dynamic answers & payment fields (cleared if already paid so user can enter fresh UTR / receipt for additional sports)
               const restoredDyn: Record<string, any> = { ...gen };
-              if (reg.paymentUtr) restoredDyn.payment_utr = reg.paymentUtr;
-              if (reg.paymentReceiptUrl) restoredDyn.payment_receipt = reg.paymentReceiptUrl;
+              if (!isPaid) {
+                if (reg.paymentUtr) restoredDyn.payment_utr = reg.paymentUtr;
+                if (reg.paymentReceiptUrl) restoredDyn.payment_receipt = reg.paymentReceiptUrl;
+              } else {
+                delete restoredDyn.payment_utr;
+                delete restoredDyn.payment_receipt;
+                delete restoredDyn.paymentReceipt;
+                delete restoredDyn.paymentReceiptUrl;
+              }
               setDynamicAnswers(restoredDyn);
             } else if (res.data) {
               // -------------------------------------------------------------
@@ -381,6 +426,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               setIsExistingPlayerRegistration(false);
               setExistingRegistrationId(null);
               setExistingPaymentStatus(null);
+              setPreviouslyPaidSportsCount(0);
+              setPreviousReceiptUrls([]);
+              setPreviousUtrs([]);
+              setHasPreviouslyPaid(false);
               const d = res.data;
               const cleanName = (d.fullName || '').trim();
               const cleanEmail = (d.email || '').trim();
@@ -400,6 +449,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             setIsExistingPlayerRegistration(false);
             setExistingRegistrationId(null);
             setExistingPaymentStatus(null);
+            setPreviouslyPaidSportsCount(0);
+            setPreviousReceiptUrls([]);
+            setPreviousUtrs([]);
+            setHasPreviouslyPaid(false);
             setMumukshuCardInfo(null);
           }
         })
@@ -408,11 +461,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setIsLookingUpMumukshu(false);
           setIsExistingPlayerRegistration(false);
           setExistingRegistrationId(null);
+          setPreviouslyPaidSportsCount(0);
+          setPreviousReceiptUrls([]);
+          setPreviousUtrs([]);
+          setHasPreviouslyPaid(false);
           setMumukshuCardInfo(null);
         });
     } else {
       setIsExistingPlayerRegistration(false);
       setExistingRegistrationId(null);
+      setPreviouslyPaidSportsCount(0);
+      setPreviousReceiptUrls([]);
+      setPreviousUtrs([]);
+      setHasPreviouslyPaid(false);
       setMumukshuCardInfo(null);
     }
   }, [currentMobile]);
@@ -632,7 +693,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: data.preferredJerseyNumber,
       preferredTeamName: data.preferredTeamName,
       additionalNotes: data.additionalNotes,
-      totalAmount: totalPayableFee,
+      totalAmount: cumulativeTotalFee,
       calculatedFee: totalPayableFee,
       payment_receipt: paymentReceiptUrl,
       paymentReceiptUrl: paymentReceiptUrl,
@@ -656,8 +717,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: data.preferredJerseyNumber || undefined,
       preferredTeamName: data.preferredTeamName || undefined,
       additionalNotes: data.additionalNotes || undefined,
-      totalAmount: totalPayableFee,
+      totalAmount: cumulativeTotalFee,
+      incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
+      previouslyPaidSportsCount,
+      hasPreviouslyPaid,
       payment_receipt: paymentReceiptUrl,
       payment_receipt_url: paymentReceiptUrl,
       paymentReceiptUrl: paymentReceiptUrl,
@@ -737,7 +801,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ...data,
       ...dynamicAnswers,
       selectedSports,
-      totalAmount: totalPayableFee,
+      totalAmount: cumulativeTotalFee,
+      incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
       photoDriveUrl: photoDriveUrl || undefined,
       payment_receipt: paymentReceiptUrl,
@@ -2286,21 +2351,53 @@ Submitted via RPL Official Registration Portal
                       </div>
                       <div>
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                          Registration Fee Breakdown
+                          {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
                         </span>
                         <h4 className="text-sm font-extrabold text-slate-900">
-                          {selectedSports.length} {selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)
+                          {isReturningPaidUser ? (
+                            newlyAddedSportsCount > 0 ? (
+                              `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
+                            ) : (
+                              `All ${selectedSports.length} Sports Previously Paid (No Payment Required)`
+                            )
+                          ) : (
+                            `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)`
+                          )}
                         </h4>
                       </div>
                     </div>
 
                     <div className="flex items-baseline space-x-1.5 self-start sm:self-auto bg-white px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-xs">
-                      <span className="text-xs font-semibold text-slate-500">Total Payable:</span>
-                      <span className="text-xl sm:text-2xl font-black text-amber-800 font-display">
+                      <span className="text-xs font-semibold text-slate-500">
+                        {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
+                      </span>
+                      <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
                         ₹{totalPayableFee.toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
+
+                  {/* Returning User Notification Callout */}
+                  {isReturningPaidUser && (
+                    <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${
+                      newlyAddedSportsCount > 0
+                        ? 'bg-amber-100/70 border-amber-300 text-amber-950'
+                        : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
+                    }`}>
+                      <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                      <div>
+                        {newlyAddedSportsCount > 0 ? (
+                          <span>
+                            <strong>Incremental Multi-Sport Registration:</strong> You previously paid <strong>₹{previousPaidAmount.toLocaleString('en-IN')}</strong> for {previouslyPaidSportsCount} sport(s). For the <strong>{newlyAddedSportsCount}</strong> newly selected sport(s), only <strong>₹{totalPayableFee.toLocaleString('en-IN')}</strong> (₹400 × {newlyAddedSportsCount}) is required. Please pay ₹{totalPayableFee} and upload Receipt #{nextReceiptIndex}.
+                          </span>
+                        ) : (
+                          <span>
+                            <strong>Zero Additional Payment:</strong> Your registration for these {selectedSports.length} sport(s) has already been verified (₹{previousPaidAmount.toLocaleString('en-IN')}). You can edit your player profile, jersey specs, or accommodation dates without paying again.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sport Breakdown List */}
                   <div className="space-y-2">
@@ -2310,26 +2407,43 @@ Submitted via RPL Official Registration Portal
                     <div className="flex flex-wrap gap-2">
                       {selectedSports.map((sportId, idx) => {
                         const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                        const isPrimary = idx === 0;
+                        const isPreviouslyCovered = isReturningPaidUser && idx < previouslyPaidSportsCount;
+                        const isNewlyAdded = isReturningPaidUser && idx >= previouslyPaidSportsCount;
+                        const isPrimary = !isReturningPaidUser && idx === 0;
+
                         return (
                           <div
                             key={sportId}
                             className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
-                              isPrimary
+                              isPreviouslyCovered
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                                : isNewlyAdded
+                                ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
+                                : isPrimary
                                 ? 'bg-amber-100/80 border-amber-300 text-amber-900'
-                                : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                                : 'bg-slate-50 border-slate-300 text-slate-800'
                             }`}
                           >
                             <span>{sportObj?.emoji || '🏅'}</span>
                             <span>{sportObj?.name || sportId}</span>
                             <span
                               className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                isPrimary
+                                isPreviouslyCovered
+                                  ? 'bg-emerald-200 text-emerald-950'
+                                  : isNewlyAdded
+                                  ? 'bg-amber-300 text-amber-950'
+                                  : isPrimary
                                   ? 'bg-amber-200 text-amber-950'
-                                  : 'bg-emerald-200 text-emerald-950'
+                                  : 'bg-slate-200 text-slate-900'
                               }`}
                             >
-                              {isPrimary ? 'Base: ₹2,500' : '+₹400'}
+                              {isPreviouslyCovered
+                                ? 'Paid'
+                                : isNewlyAdded
+                                ? '+₹400 Due'
+                                : isPrimary
+                                ? 'Base: ₹2,500'
+                                : '+₹400'}
                             </span>
                           </div>
                         );
@@ -2337,119 +2451,136 @@ Submitted via RPL Official Registration Portal
                     </div>
                   </div>
 
-                  {/* 1-Click Pay & Copy Actions */}
-                  <div className="pt-2 flex flex-wrap items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(String(totalPayableFee));
-                        setCopiedAmount(true);
-                        setTimeout(() => setCopiedAmount(false), 2000);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer"
-                    >
-                      {copiedAmount ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-700 font-extrabold">Amount Copied (₹{totalPayableFee})!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Copy Amount (₹{totalPayableFee})</span>
-                        </>
-                      )}
-                    </button>
-
-                    <a
-                      href={upiPaymentUri}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95"
-                    >
-                      <Zap className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Pay ₹{totalPayableFee} via UPI App</span>
-                      <ExternalLink className="w-3 h-3 text-white/80" />
-                    </a>
-                  </div>
-                </div>
-
-                {/* UPI QR Code Scanner Banner */}
-                <div className="p-5 sm:p-6 bg-white rounded-2xl border border-emerald-200 shadow-sm flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-                  <div className="relative shrink-0 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm group">
-                    <img
-                      src="/rpl_upi_qr.png"
-                      alt="RPL UPI QR Code Scanner"
-                      className="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl"
-                    />
-                  </div>
-
-                  <div className="flex-1 text-center sm:text-left space-y-2.5">
-                    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Official RPL Payment Gateway</span>
-                    </div>
-
-                    <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
-                      Scan QR Code to Pay ₹{totalPayableFee.toLocaleString('en-IN')} via Any UPI App
-                    </h4>
-
-                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for <strong className="text-slate-900 font-extrabold">₹{totalPayableFee}</strong> ({selectedSports.length} {selectedSports.length === 1 ? 'sport' : 'sports'}), then provide either your UTR / Transaction ID or upload the payment screenshot below. If not paying right now, you can submit and return later using your phone number.
-                    </p>
-
-                    <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                      <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 flex items-center space-x-2">
-                        <span>UPI ID:</span>
-                        <span className="text-amber-700">info.rplevents@okicici</span>
-                      </div>
+                  {/* 1-Click Pay & Copy Actions (Only when totalPayableFee > 0) */}
+                  {totalPayableFee > 0 && (
+                    <div className="pt-2 flex flex-wrap items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText('info.rplevents@okicici');
-                          setCopiedUpi(true);
-                          setTimeout(() => setCopiedUpi(false), 2000);
+                          navigator.clipboard.writeText(String(totalPayableFee));
+                          setCopiedAmount(true);
+                          setTimeout(() => setCopiedAmount(false), 2000);
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
+                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer"
                       >
-                        {copiedUpi ? (
+                        {copiedAmount ? (
                           <>
-                            <Check className="w-3.5 h-3.5 text-white" />
-                            <span>Copied!</span>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700 font-extrabold">Amount Copied (₹{totalPayableFee})!</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy UPI ID</span>
+                            <Copy className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Copy Amount (₹{totalPayableFee})</span>
                           </>
                         )}
                       </button>
+
+                      <a
+                        href={upiPaymentUri}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Pay ₹{totalPayableFee} via UPI App</span>
+                        <ExternalLink className="w-3 h-3 text-white/80" />
+                      </a>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {dbFields
-                    .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
-                    .map((field) => {
-                      const isEitherOptional = {
-                        ...field,
-                        validation_rules: {
-                          ...field.validation_rules,
-                          required: false, // Either UTR or Screenshot is sufficient
-                        },
-                      };
-                      return (
-                        <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
-                          <DynamicFieldRenderer
-                            field={isEitherOptional}
-                            value={dynamicAnswers[field.field_key]}
-                            onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
-                            onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
-                            contextName={watch('fullName') || 'Player'}
-                          />
+                {/* UPI QR Code Scanner Banner */}
+                {totalPayableFee > 0 ? (
+                  <div className="p-5 sm:p-6 bg-white rounded-2xl border border-emerald-200 shadow-sm flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                    <div className="relative shrink-0 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm group">
+                      <img
+                        src="/rpl_upi_qr.png"
+                        alt="RPL UPI QR Code Scanner"
+                        className="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl"
+                      />
+                    </div>
+
+                    <div className="flex-1 text-center sm:text-left space-y-2.5">
+                      <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Official RPL Payment Gateway</span>
+                      </div>
+
+                      <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
+                        Scan QR Code to Pay ₹{totalPayableFee.toLocaleString('en-IN')} via Any UPI App
+                      </h4>
+
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        {isReturningPaidUser
+                          ? `Open Google Pay, PhonePe, Paytm, or BHIM UPI and scan the QR code to complete payment for ₹${totalPayableFee} for the ${newlyAddedSportsCount} additional sport(s). Enter your new UTR or upload the screenshot (Receipt #${nextReceiptIndex}) below.`
+                          : `Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for ₹${totalPayableFee} (${selectedSports.length} ${selectedSports.length === 1 ? 'sport' : 'sports'}), then provide either your UTR or upload the screenshot below.`}
+                      </p>
+
+                      <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 flex items-center space-x-2">
+                          <span>UPI ID:</span>
+                          <span className="text-amber-700">info.rplevents@okicici</span>
                         </div>
-                      );
-                    })}
-                </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('info.rplevents@okicici');
+                            setCopiedUpi(true);
+                            setTimeout(() => setCopiedUpi(false), 2000);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
+                        >
+                          {copiedUpi ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-white" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy UPI ID</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                    <div className="text-xs font-semibold leading-relaxed">
+                      <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment or receipt upload is required. Click <strong>Update Registration & Save</strong> below to save any changes.
+                    </div>
+                  </div>
+                )}
+
+                {/* Dynamic UTR & Receipt Screenshot Upload Fields */}
+                {totalPayableFee > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {dbFields
+                      .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
+                      .map((field) => {
+                        const isEitherOptional = {
+                          ...field,
+                          validation_rules: {
+                            ...field.validation_rules,
+                            required: false, // Either UTR or Screenshot is sufficient
+                          },
+                        };
+                        return (
+                          <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
+                            <DynamicFieldRenderer
+                              field={isEitherOptional}
+                              value={dynamicAnswers[field.field_key]}
+                              onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                              onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
+                              contextName={watch('fullName') || 'Player'}
+                              receiptIndex={nextReceiptIndex}
+                            />
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </InView>
             )}
 
