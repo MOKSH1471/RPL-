@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db.js';
 
-const RPL_START_DATE = '2026-12-24';
-const RPL_END_DATE = '2026-12-26';
+const RPL_START_DATE = '2026-12-25';
+const RPL_END_DATE = '2026-12-27';
 
 function calculateNights(startDateStr, endDateStr) {
   const start = new Date(startDateStr);
@@ -93,7 +93,7 @@ export async function processAccommodationBooking({
 
   try {
     // -------------------------------------------------------------
-    // Window 1: Pre-RPL Stay (e.g. 22 Dec -> 24 Dec)
+    // Window 1: Pre-RPL Stay (e.g. 23 Dec -> 25 Dec)
     // -------------------------------------------------------------
     if (checkInDate < RPL_START_DATE) {
       const preNights = calculateNights(checkInDate, RPL_START_DATE);
@@ -174,7 +174,7 @@ export async function processAccommodationBooking({
     }
 
     // -------------------------------------------------------------
-    // Window 2: Official RPL Tournament Stay (24 Dec -> 26 Dec)
+    // Window 2: Official RPL Tournament Stay (25 Dec -> 27 Dec)
     // -------------------------------------------------------------
     const rplNights = 2;
     const [existingRpl] = await db.query(
@@ -248,7 +248,7 @@ export async function processAccommodationBooking({
     }
 
     // -------------------------------------------------------------
-    // Window 3: Post-RPL Stay (e.g. 26 Dec -> 28 Dec)
+    // Window 3: Post-RPL Stay (e.g. 27 Dec -> 29 Dec)
     // -------------------------------------------------------------
     if (checkOutDate > RPL_END_DATE) {
       const postNights = calculateNights(RPL_END_DATE, checkOutDate);
