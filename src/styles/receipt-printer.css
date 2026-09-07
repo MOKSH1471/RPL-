@@ -1,0 +1,420 @@
+/* ==========================================================================
+   RPL Season 9 - 3D Thermal Receipt Printer & Tournament Pass Styling
+   ========================================================================== */
+
+:root {
+  --rpl-paper-bg: #fafaf8;
+  --rpl-paper-ink: #1e1e24;
+  --rpl-paper-subtle: #5f6368;
+  --rpl-paper-border: #dcdcdc;
+  --rpl-font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --rpl-shadow-slot: inset 0 6px 12px rgba(25, 12, 2, 0.95), inset 0 -1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   Dispenser Machine Unit
+   ========================================================================== */
+.rpl-printer-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.rpl-machine-unit {
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 30;
+}
+
+/* Top 3D Metallic Hood (Gold/Amber Champion finish) */
+.rpl-machine-hood-top {
+  width: 100%;
+  max-width: 420px;
+  height: 46px;
+  border-radius: 16px 16px 4px 4px;
+  background: linear-gradient(180deg, 
+    #ffffff 0%, 
+    #fbf4e8 15%, 
+    #e9cf9f 45%, 
+    #d19e54 75%, 
+    #b37f35 100%
+  );
+  box-shadow: 
+    0 -2px 6px rgba(255, 255, 255, 0.9),
+    0 10px 20px rgba(179, 127, 53, 0.28),
+    inset 0 2px 2px rgba(255, 255, 255, 0.9),
+    inset 0 -2px 4px rgba(105, 68, 16, 0.45);
+  position: relative;
+  overflow: hidden;
+  z-index: 25;
+}
+
+.rpl-hood-highlight {
+  position: absolute;
+  top: 3px;
+  left: 5%;
+  width: 90%;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
+  border-radius: 999px;
+  filter: blur(1px);
+}
+
+/* Dark Slit Opening where receipt emerges */
+.rpl-machine-slot-slit {
+  width: 90%;
+  max-width: 370px;
+  height: 12px;
+  margin-top: -6px;
+  background: #0f0a03;
+  border-radius: 2px;
+  box-shadow: var(--rpl-shadow-slot);
+  position: relative;
+  z-index: 5;
+}
+
+/* Cutter blade flash effect */
+.rpl-cutter-blade-flash {
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 370px;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%);
+  box-shadow: 0 0 12px #ffffff;
+  z-index: 35;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rpl-cutter-blade-flash.active {
+  animation: rplCutterFlash 0.35s ease-out forwards;
+}
+
+@keyframes rplCutterFlash {
+  0% { opacity: 0; transform: translateX(-50%) scaleX(0.1); }
+  50% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+  100% { opacity: 0; transform: translateX(-50%) scaleX(1); }
+}
+
+/* Bottom Machine Lip */
+.rpl-machine-hood-bottom {
+  width: 100%;
+  max-width: 420px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(180deg, #9e6d2b 0%, #d8b478 40%, #fff7ea 100%);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 10;
+}
+
+.rpl-hood-shadow {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 100%);
+}
+
+/* ==========================================================================
+   Paper Viewport & Authentic Thermal Receipt Paper
+   ========================================================================== */
+.rpl-paper-viewport {
+  position: absolute;
+  top: 41px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 380px;
+  clip-path: inset(0px -60px -1500px -60px);
+  z-index: 8;
+  padding-bottom: 24px;
+  pointer-events: none;
+  perspective: 1200px;
+  perspective-origin: 50% 0%;
+  filter: drop-shadow(0 18px 36px rgba(20, 15, 5, 0.16)) drop-shadow(0 4px 12px rgba(20, 15, 5, 0.08));
+}
+
+.rpl-receipt-paper-wrapper {
+  width: 90%;
+  max-width: 340px;
+  margin: 0 auto;
+  background-color: var(--rpl-paper-bg);
+  position: relative;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  user-select: none;
+  pointer-events: auto;
+  /* Authentic POS Thermal Cutter Serrated Teeth Edge at Bottom */
+  clip-path: polygon(
+    0% 0%, 100% 0%,
+    100% calc(100% - 10px),
+    98.33% 100%, 96.67% calc(100% - 10px),
+    95.00% 100%, 93.33% calc(100% - 10px),
+    91.67% 100%, 90.00% calc(100% - 10px),
+    88.33% 100%, 86.67% calc(100% - 10px),
+    85.00% 100%, 83.33% calc(100% - 10px),
+    81.67% 100%, 80.00% calc(100% - 10px),
+    78.33% 100%, 76.67% calc(100% - 10px),
+    75.00% 100%, 73.33% calc(100% - 10px),
+    71.67% 100%, 70.00% calc(100% - 10px),
+    68.33% 100%, 66.67% calc(100% - 10px),
+    65.00% 100%, 63.33% calc(100% - 10px),
+    61.67% 100%, 60.00% calc(100% - 10px),
+    58.33% 100%, 56.67% calc(100% - 10px),
+    55.00% 100%, 53.33% calc(100% - 10px),
+    51.67% 100%, 50.00% calc(100% - 10px),
+    48.33% 100%, 46.67% calc(100% - 10px),
+    45.00% 100%, 43.33% calc(100% - 10px),
+    41.67% 100%, 40.00% calc(100% - 10px),
+    38.33% 100%, 36.67% calc(100% - 10px),
+    35.00% 100%, 33.33% calc(100% - 10px),
+    31.67% 100%, 30.00% calc(100% - 10px),
+    28.33% 100%, 26.67% calc(100% - 10px),
+    25.00% 100%, 23.33% calc(100% - 10px),
+    21.67% 100%, 20.00% calc(100% - 10px),
+    18.33% 100%, 16.67% calc(100% - 10px),
+    15.00% 100%, 13.33% calc(100% - 10px),
+    11.67% 100%, 10.00% calc(100% - 10px),
+    8.33% 100%, 6.67% calc(100% - 10px),
+    5.00% 100%, 3.33% calc(100% - 10px),
+    1.67% 100%, 0% calc(100% - 10px)
+  );
+}
+
+/* Subtle thermal paper texture overlay */
+.rpl-receipt-paper-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 3D Paper Light Reflection Sheen */
+.rpl-receipt-paper-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 35%,
+    rgba(0, 0, 0, 0.02) 75%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Paper States */
+.rpl-receipt-paper-wrapper.retracted {
+  transform: translateY(-93%) rotateX(-16deg) translateZ(-25px);
+}
+
+.rpl-receipt-paper-wrapper.printed {
+  transform: translateY(0%) rotateX(0deg) translateZ(0px);
+}
+
+/* 1. Classic Mechanical Stepper 3D Animation (2.5s) */
+.rpl-receipt-paper-wrapper.printing-classic {
+  animation: rplPrintMechanical3D 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes rplPrintMechanical3D {
+  0% {
+    transform: translateY(-93%) rotateX(-16deg) translateZ(-25px);
+    opacity: 0.6;
+  }
+  15% {
+    transform: translateY(-78%) rotateX(-12deg) translateZ(14px);
+    opacity: 0.85;
+  }
+  35% {
+    transform: translateY(-56%) rotateX(-8deg) translateZ(22px);
+    opacity: 0.95;
+  }
+  60% {
+    transform: translateY(-30%) rotateX(-5deg) translateZ(18px);
+    opacity: 1;
+  }
+  82% {
+    transform: translateY(-8%) rotateX(-2deg) translateZ(8px);
+  }
+  100% {
+    transform: translateY(0%) rotateX(0deg) translateZ(0px);
+    opacity: 1;
+  }
+}
+
+/* 2. Smooth Fluid Easing 3D Animation (2.5s) */
+.rpl-receipt-paper-wrapper.printing-smooth {
+  animation: rplPrintSmooth3D 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes rplPrintSmooth3D {
+  0% {
+    transform: translateY(-93%) rotateX(-18deg) translateZ(-30px) scale(0.97);
+    opacity: 0.4;
+  }
+  20% {
+    transform: translateY(-70%) rotateX(-12deg) translateZ(20px) scale(0.985);
+    opacity: 0.85;
+  }
+  45% {
+    transform: translateY(-40%) rotateX(-6deg) translateZ(26px) scale(0.995);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-12%) rotateX(-2deg) translateZ(10px) scale(1);
+  }
+  90% {
+    transform: translateY(1%) rotateX(0.8deg) translateZ(2px) scale(1);
+  }
+  100% {
+    transform: translateY(0%) rotateX(0deg) translateZ(0px) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Micro-vibration effect during classic mode */
+.rpl-receipt-paper-wrapper.vibrating {
+  animation: rplReceiptVibrate 0.05s infinite alternate ease-in-out;
+}
+
+@keyframes rplReceiptVibrate {
+  0% { transform: translateX(-0.4px); }
+  100% { transform: translateX(0.4px); }
+}
+
+/* Authentic Hand-Tear Tear-Away Animation (0.55s) */
+.rpl-receipt-paper-wrapper.tearing {
+  animation: rplPaperTearAway 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  pointer-events: none;
+  transform-origin: top right;
+}
+
+@keyframes rplPaperTearAway {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(6px) translateX(18px) rotate(-3deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(14px) translateX(55px) rotate(-8deg) scale(0.98);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(22px) translateX(110px) rotate(-14deg) scale(0.94);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   Receipt Inner Content Styling (JetBrains Mono)
+   ========================================================================== */
+.rpl-receipt-content {
+  padding: 1.4rem 1.25rem 2.2rem 1.25rem;
+  font-family: var(--rpl-font-mono);
+  color: var(--rpl-paper-ink);
+  position: relative;
+  z-index: 2;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.rpl-receipt-divider {
+  width: 100%;
+  height: 0;
+  border-bottom: 1px dashed #c0c0c0;
+  margin: 0.85rem 0;
+}
+
+.rpl-receipt-divider-solid {
+  width: 100%;
+  height: 0;
+  border-bottom: 1px solid #c8c8c8;
+  margin: 0.85rem 0;
+}
+
+.rpl-barcode-graphic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.rpl-barcode-lines {
+  width: 100%;
+  height: 38px;
+  background: repeating-linear-gradient(
+    90deg,
+    #111 0px,
+    #111 2px,
+    transparent 2px,
+    transparent 4px,
+    #111 4px,
+    #111 7px,
+    transparent 7px,
+    transparent 9px,
+    #111 9px,
+    #111 10px,
+    transparent 10px,
+    transparent 13px,
+    #111 13px,
+    #111 16px,
+    transparent 16px,
+    transparent 17px,
+    #111 17px,
+    #111 21px,
+    transparent 21px,
+    transparent 24px,
+    #111 24px,
+    #111 25px,
+    transparent 25px,
+    transparent 28px
+  );
+  opacity: 0.95;
+}
+
+/* ==========================================================================
+   Clean Print-Media Styles (for window.print / PDF export)
+   ========================================================================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .rpl-receipt-paper-wrapper,
+  .rpl-receipt-paper-wrapper * {
+    visibility: visible;
+  }
+  .rpl-receipt-paper-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important;
+    margin: 0;
+    box-shadow: none !important;
+    clip-path: none !important;
+    transform: none !important;
+  }
+}

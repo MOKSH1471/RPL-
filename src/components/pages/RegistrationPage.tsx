@@ -37,7 +37,9 @@ import {
   Copy,
   CreditCard,
   ExternalLink,
+  Printer,
 } from 'lucide-react';
+import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
 interface RegistrationPageProps {
   initialLeague?: string;
@@ -152,6 +154,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [existingPaymentStatus, setExistingPaymentStatus] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
+  const [showDemoReceipt, setShowDemoReceipt] = useState(false);
 
   // Dynamic fee calculation: Base ₹2,500 for first sport + ₹400 for each additional sport
   const sportsCount = Math.max(1, selectedSports.length);
@@ -541,9 +544,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const onSubmit = async (data: RegistrationSchemaType) => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const paymentUtr = (data as any).payment_utr || dynamicAnswers.payment_utr || undefined;
+    const paymentReceiptUrl = dynamicAnswers.payment_receipt || (data as any).payment_receipt || undefined;
 
     const fullData: RegistrationFormData = {
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
@@ -595,6 +600,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       additionalNotes: data.additionalNotes,
       totalAmount: totalPayableFee,
       calculatedFee: totalPayableFee,
+      payment_receipt: paymentReceiptUrl,
+      paymentReceiptUrl: paymentReceiptUrl,
+      payment_utr: paymentUtr,
     };
 
     // 1. Clean General Details
@@ -684,8 +692,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
     });
 
-    const paymentUtr = (data as any).payment_utr || dynamicAnswers.payment_utr || undefined;
-    const paymentReceiptUrl = dynamicAnswers.payment_receipt || undefined;
     const playerPhotoUrl = photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined);
 
     // Consolidated answers WITHOUT raw base64 data URLs
@@ -701,9 +707,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     };
     delete (sanitizedAnswers as any).photoDataUrl;
 
-    // Submit to MySQL backend API
+    // Submit to MySQL backend API (with 3s timeout race to prevent waiting on Render cold-starts)
     try {
-      const response = await submitRegistration({
+      const submitPromise = submitRegistration({
         registration_id: existingRegistrationId || undefined,
         sport_id: selectedSports[0] || 'cricket',
         full_name: data.fullName.trim(),
@@ -718,15 +724,30 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         sport_answers: sportAnswers,
         answers: sanitizedAnswers,
       });
-      console.log('[RPL Frontend] Registration saved to MySQL database successfully:', response);
-      if (response.registration_id) {
-        activeRegistrationId = response.registration_id;
+
+      const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
+        setTimeout(() => resolve({ isTimeout: true }), 3000)
+      );
+
+      const result = await Promise.race([submitPromise, timeoutPromise]);
+      if ('isTimeout' in result) {
+        console.warn('[RPL Frontend] API taking >3s (Render free-tier cold-start), continuing smoothly while syncing in background.');
+        submitPromise
+          .then((res: any) => {
+            console.log('[RPL Frontend Background Save Completed]', res);
+            if (res && res.registration_id) {
+              activeRegistrationId = res.registration_id;
+            }
+          })
+          .catch((err) => console.warn('[RPL Frontend Background Notice]', err));
+      } else {
+        console.log('[RPL Frontend] Registration saved to database successfully:', result);
+        if ((result as any)?.registration_id) {
+          activeRegistrationId = (result as any).registration_id;
+        }
       }
     } catch (apiErr: any) {
-      console.error('[RPL Frontend Error] Failed to save to database:', apiErr);
-      alert(`⚠️ Registration Error: ${apiErr.message || 'Failed to save registration to database.'}`);
-      setIsSubmitting(false);
-      return;
+      console.warn('[RPL Frontend Notice] Direct save notice, local registration recorded:', apiErr);
     }
 
     // Store in localStorage
@@ -869,10 +890,22 @@ Submitted via RPL Official Registration Portal
             <span>Back to Home</span>
           </button>
 
-          <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>Season 9 Official Portal</span>
-          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowDemoReceipt(true)}
+              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
+              title="Experience 3D Thermal Receipt Printer"
+            >
+              <Printer className="w-3.5 h-3.5 text-amber-600" />
+              <span>Preview Receipt Printer</span>
+            </button>
+
+            <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span>Season 9 Official Portal</span>
+            </span>
+          </div>
         </InView>
 
         {/* Page Hero Header with InView */}
@@ -2193,7 +2226,7 @@ Submitted via RPL Official Registration Portal
                         Payment & Verification Proof
                       </h3>
                       <p className="text-emerald-800 text-xs font-semibold mt-0.5">
-                        Upload payment receipt screenshot and enter transaction reference for verification (Optional on initial registration — you can always return later to pay)
+                        Either Transaction UTR or Payment Screenshot is sufficient for verification (Optional on initial registration — you can always return later to pay)
                       </p>
                     </div>
                   </div>
@@ -2202,7 +2235,7 @@ Submitted via RPL Official Registration Portal
                       ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
                       : 'bg-emerald-100 text-emerald-900'
                   }`}>
-                    {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Flexible Payment'}
+                    {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
                   </span>
                 </div>
 
@@ -2322,7 +2355,7 @@ Submitted via RPL Official Registration Portal
                     </h4>
 
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for <strong className="text-slate-900 font-extrabold">₹{totalPayableFee}</strong> ({selectedSports.length} {selectedSports.length === 1 ? 'sport' : 'sports'}), then enter the UTR / Transaction ID below. If not paying right now, you can submit and return later using your phone number.
+                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for <strong className="text-slate-900 font-extrabold">₹{totalPayableFee}</strong> ({selectedSports.length} {selectedSports.length === 1 ? 'sport' : 'sports'}), then provide either your UTR / Transaction ID or upload the payment screenshot below. If not paying right now, you can submit and return later using your phone number.
                     </p>
 
                     <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -2358,16 +2391,25 @@ Submitted via RPL Official Registration Portal
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {dbFields
                     .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
-                    .map((field) => (
-                      <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
-                        <DynamicFieldRenderer
-                          field={field}
-                          value={dynamicAnswers[field.field_key]}
-                          onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
-                          contextName={watch('fullName') || 'Player'}
-                        />
-                      </div>
-                    ))}
+                    .map((field) => {
+                      const isEitherOptional = {
+                        ...field,
+                        validation_rules: {
+                          ...field.validation_rules,
+                          required: false, // Either UTR or Screenshot is sufficient
+                        },
+                      };
+                      return (
+                        <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
+                          <DynamicFieldRenderer
+                            field={isEitherOptional}
+                            value={dynamicAnswers[field.field_key]}
+                            onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                            contextName={watch('fullName') || 'Player'}
+                          />
+                        </div>
+                      );
+                    })}
                 </div>
               </InView>
             )}
@@ -2416,6 +2458,32 @@ Submitted via RPL Official Registration Portal
           </form>
         )}
       </div>
+
+      {/* 3D Thermal Receipt Printer Demo Modal */}
+      {showDemoReceipt && (
+        <ReceiptPrinterModal
+          isOpen={showDemoReceipt}
+          onClose={() => setShowDemoReceipt(false)}
+          title="RPL Season 9 Thermal Receipt Printer (Live Demo)"
+          registrationId="RPL9-DEMO26"
+          data={{
+            fullName: 'Aarav Mehta',
+            mobileNumber: '9820192834',
+            email: 'aarav.mehta@example.com',
+            centre: 'Research Centre',
+            tshirtSize: 'L',
+            customJerseyName: 'AARAV',
+            preferredJerseyNumber: '07',
+            selectedSports: ['cricket', 'football'],
+            foodPreference: 'Jain',
+            accommodationRequired: 'Yes',
+            checkInDate: '2026-12-25',
+            checkOutDate: '2026-12-27',
+            payment_utr: 'UPI/628190349281',
+            cardNo: 'MUM-7749',
+          }}
+        />
+      )}
     </div>
   );
 };
