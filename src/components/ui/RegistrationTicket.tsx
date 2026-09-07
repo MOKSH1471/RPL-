@@ -141,6 +141,26 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               {data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'}
             </span>
           </div>
+
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
+                  Registration Fee ({sportsList.length} {sportsList.length === 1 ? 'Sport' : 'Sports'})
+                </span>
+                <span className="text-[11px] text-amber-800 font-medium">
+                  {sportsList.length > 1
+                    ? `Base ₹2,500 + ₹${(sportsList.length - 1) * 400} (${sportsList.length - 1} extra ${sportsList.length - 1 === 1 ? 'sport' : 'sports'})`
+                    : 'Base Registration Fee (Single Sport)'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
+                  ₹{(data.totalAmount || (2500 + Math.max(0, sportsList.length - 1) * 400)).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Email Verification Callout Note */}

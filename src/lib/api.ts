@@ -48,6 +48,7 @@ export async function uploadFileToDrive(file: File, customName?: string): Promis
 }
 
 export interface RegistrationPayload {
+  registration_id?: string;
   sport_id: string;
   full_name: string;
   email: string;
@@ -62,7 +63,7 @@ export interface RegistrationPayload {
   answers: Record<string, any>;
 }
 
-export async function submitRegistration(payload: RegistrationPayload): Promise<{ success: boolean; message: string; registration_id: string }> {
+export async function submitRegistration(payload: RegistrationPayload): Promise<{ success: boolean; isUpdate?: boolean; message: string; registration_id: string }> {
   const res = await fetch(`${API_BASE_URL}/register`, {
     method: 'POST',
     headers: {
@@ -101,23 +102,49 @@ export interface MumukshuData {
   isMumukshu: boolean;
 }
 
-export async function lookupMumukshu(mobile: string): Promise<{ found: boolean; data?: MumukshuData }> {
+export interface ExistingRegistrationData {
+  id: string;
+  fullName: string;
+  email: string;
+  mobile: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  playerPhotoUrl?: string;
+  paymentStatus: string;
+  paymentUtr?: string;
+  paymentReceiptUrl?: string;
+  generalDetails: Record<string, any>;
+  sportAnswers: Record<string, any>;
+  cardNo?: string;
+}
+
+export interface PlayerLookupResponse {
+  found: boolean;
+  isExistingRegistration?: boolean;
+  registration?: ExistingRegistrationData;
+  data?: MumukshuData;
+  message?: string;
+}
+
+export async function lookupMumukshu(mobile: string): Promise<PlayerLookupResponse> {
   try {
-    const url = `${API_BASE_URL}/card/lookup?mobile=${encodeURIComponent(mobile)}`;
-    console.log(`[API] Looking up Mumukshu for: "${mobile}" via ${url}`);
+    const url = `${API_BASE_URL}/player-lookup?mobile=${encodeURIComponent(mobile)}`;
+    console.log(`[API] Looking up player/Mumukshu for: "${mobile}" via ${url}`);
     const res = await fetch(url);
     if (!res.ok) {
-      console.warn(`[API] Mumukshu lookup response error (status ${res.status}) from ${url}`);
+      console.warn(`[API] Lookup response error (status ${res.status}) from ${url}`);
       return { found: false };
     }
     const result = await res.json();
-    console.log('[API] Mumukshu lookup result:', result);
+    console.log('[API] Lookup result:', result);
     return result;
   } catch (err) {
-    console.error('[API] Mumukshu lookup network error:', err);
+    console.error('[API] Lookup network error:', err);
     return { found: false };
   }
 }
+
+export const lookupPlayer = lookupMumukshu;
 
 // ==========================================
 // ADMIN API CLIENT METHODS

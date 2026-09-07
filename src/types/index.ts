@@ -108,6 +108,10 @@ export interface RegistrationFormData {
   preferredJerseyNumber?: string;
   preferredTeamName?: string;
   additionalNotes?: string;
+
+  // Pricing
+  totalAmount?: number;
+  calculatedFee?: number;
 }
 
 export interface StatItem {

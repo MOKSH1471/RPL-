@@ -38,6 +38,15 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const gen = player.general_details || {};
   const sportAns = player.sport_answers || {};
 
+  const selectedSportsList: string[] =
+    (Array.isArray(gen.selectedSports) && gen.selectedSports.length > 0)
+      ? gen.selectedSports
+      : Object.keys(sportAns).length > 0
+      ? Object.keys(sportAns)
+      : [player.sport_id || 'cricket'];
+  const calculatedSportsCount = Math.max(1, selectedSportsList.length);
+  const calculatedFee = gen.totalAmount || (2500 + Math.max(0, calculatedSportsCount - 1) * 400);
+
   // Editable form state
   const [formData, setFormData] = useState({
     full_name: player.full_name || '',
@@ -302,6 +311,13 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
+                <span className="font-semibold text-amber-900">Expected Fee ({calculatedSportsCount} {calculatedSportsCount === 1 ? 'Sport' : 'Sports'}):</span>
+                <span className="font-mono font-black text-amber-900 bg-amber-100/90 px-2.5 py-0.5 rounded border border-amber-300 text-xs">
+                  ₹{calculatedFee.toLocaleString('en-IN')}
+                </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">

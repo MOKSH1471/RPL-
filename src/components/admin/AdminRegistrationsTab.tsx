@@ -338,17 +338,22 @@ export function AdminRegistrationsTab({
                       {/* 6. Payment Status & Proof */}
                       <td className="py-3.5 px-4">
                         <div className="space-y-1">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                              player.payment_status === 'approved'
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : player.payment_status === 'rejected'
-                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                : 'bg-amber-100 text-amber-800 border border-amber-300'
-                            }`}
-                          >
-                            {player.payment_status || 'pending'}
-                          </span>
+                          <div className="flex items-center space-x-1.5">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                player.payment_status === 'approved'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : player.payment_status === 'rejected'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-300'
+                              }`}
+                            >
+                              {player.payment_status || 'pending'}
+                            </span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
+                              ₹{(gen.totalAmount || (2500 + Math.max(0, (sports.length || 1) - 1) * 400)).toLocaleString('en-IN')}
+                            </span>
+                          </div>
                           {player.payment_utr && (
                             <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[110px]">
                               UTR: {player.payment_utr}

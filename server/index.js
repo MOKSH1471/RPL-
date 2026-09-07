@@ -76,8 +76,8 @@ app.get('/api/registration-fields', async (req, res) => {
   }
 });
 
-// 2b. Mumukshu Lookup by Mobile Number (from card_db)
-const handleMumukshuLookup = async (req, res) => {
+// 2b. Player / Mumukshu Lookup by Mobile Number (First from rpl_registrations, then fallback to card_db)
+const handlePlayerLookup = async (req, res) => {
   const { mobile, cardno, query: searchParam } = req.query;
   const input = String(mobile || cardno || searchParam || '').trim();
 
@@ -90,13 +90,65 @@ const handleMumukshuLookup = async (req, res) => {
     const digitsOnly = input.replace(/\D/g, '');
     const cleanMobile = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
 
-    console.log(`[MUMUKSHU LOOKUP] Input: "${input}" | Digits: "${digitsOnly}" | Clean 10-digit: "${cleanMobile}"`);
+    console.log(`[PLAYER / MUMUKSHU LOOKUP] Input: "${input}" | Digits: "${digitsOnly}" | Clean 10-digit: "${cleanMobile}"`);
 
     if (cleanMobile.length < 5 && digitsOnly.length < 5) {
       return res.json({ found: false, message: 'Search term too short' });
     }
 
-    // Flexible query: checks mobno (direct, with wildcards, stripped of spaces) AND cardno (with or without leading zeros)
+    // 1. First priority: Check if this player ALREADY has a registration in rpl_registrations
+    const [regRows] = await db.query(
+      "SELECT id, full_name, email, mobile, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date, DATE_FORMAT(check_out_date, '%Y-%m-%d') as check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, submitted_at FROM rpl_registrations WHERE mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1",
+      [cleanMobile, `%${cleanMobile}`]
+    );
+
+    if (regRows.length > 0) {
+      const reg = regRows[0];
+      let parsedGeneralDetails = {};
+      let parsedSportAnswers = {};
+      try {
+        parsedGeneralDetails = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details) : (reg.general_details || {});
+      } catch (e) {
+        parsedGeneralDetails = {};
+      }
+      try {
+        parsedSportAnswers = typeof reg.sport_answers === 'string' ? JSON.parse(reg.sport_answers) : (reg.sport_answers || {});
+      } catch (e) {
+        parsedSportAnswers = {};
+      }
+
+      return res.json({
+        found: true,
+        isExistingRegistration: true,
+        registration: {
+          id: reg.id,
+          fullName: reg.full_name,
+          email: reg.email,
+          mobile: reg.mobile,
+          checkInDate: reg.check_in_date,
+          checkOutDate: reg.check_out_date,
+          playerPhotoUrl: reg.player_photo_url,
+          paymentStatus: reg.payment_status,
+          paymentUtr: reg.payment_utr,
+          paymentReceiptUrl: reg.payment_receipt_url,
+          generalDetails: parsedGeneralDetails,
+          sportAnswers: parsedSportAnswers,
+          cardNo: parsedGeneralDetails.cardNo || null,
+        },
+        data: {
+          cardNo: parsedGeneralDetails.cardNo || null,
+          fullName: reg.full_name,
+          gender: parsedGeneralDetails.gender || 'Male',
+          dateOfBirth: parsedGeneralDetails.dateOfBirth || '',
+          email: reg.email,
+          centre: parsedGeneralDetails.centre || '',
+          photoUrl: reg.player_photo_url || '',
+          isMumukshu: !!parsedGeneralDetails.cardNo,
+        },
+      });
+    }
+
+    // 2. Second priority: If no registration yet, query card_db for Mumukshu auto-fill
     const [rows] = await db.query(
       `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
        FROM card_db 
@@ -119,7 +171,7 @@ const handleMumukshuLookup = async (req, res) => {
 
     if (rows.length === 0) {
       console.log(`[MUMUKSHU LOOKUP] Result: Not found for "${input}"`);
-      return res.json({ found: false, message: 'Not found in card_db' });
+      return res.json({ found: false, message: 'Not found in rpl_registrations or card_db' });
     }
 
     const member = rows[0];
@@ -134,6 +186,7 @@ const handleMumukshuLookup = async (req, res) => {
 
     return res.json({
       found: true,
+      isExistingRegistration: false,
       data: {
         cardNo: member.cardno,
         fullName: member.issuedto || '',
@@ -146,16 +199,17 @@ const handleMumukshuLookup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Mumukshu lookup error:', error);
-    res.status(500).json({ error: 'Failed to query card_db' });
+    console.error('Player lookup error:', error);
+    res.status(500).json({ error: 'Failed to query player data' });
   }
 };
 
 // Mount endpoints with and without /api prefix for maximum reliability
-app.get('/api/mumukshu-lookup', handleMumukshuLookup);
-app.get('/api/card/lookup', handleMumukshuLookup);
-app.get('/mumukshu-lookup', handleMumukshuLookup);
-app.get('/card/lookup', handleMumukshuLookup);
+app.get('/api/player-lookup', handlePlayerLookup);
+app.get('/api/mumukshu-lookup', handlePlayerLookup);
+app.get('/api/card/lookup', handlePlayerLookup);
+app.get('/mumukshu-lookup', handlePlayerLookup);
+app.get('/card/lookup', handlePlayerLookup);
 
 
 // 3. Handle File Uploads (Photo / Payment Screenshot to Google Drive)
@@ -386,90 +440,133 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ success: false, errors: validationErrors });
     }
 
-    // C. Save to MySQL rpl_registrations with organized columns
-    const id = uuidv4();
-    await db.query(
-      `INSERT INTO rpl_registrations 
-       (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
-      [
-        id,
-        cleanFullName,
-        cleanEmail,
-        cleanMobile,
-        cleanCheckInDate,
-        cleanCheckOutDate,
-        cleanPhotoUrl,
-        cleanPaymentUtr,
-        cleanReceiptUrl,
-        JSON.stringify(cleanGeneralDetails),
-        JSON.stringify(cleanSportAnswers),
-      ]
+    // C. Save or Update in MySQL rpl_registrations
+    const rawMobileDigits = cleanMobile.replace(/\D/g, '');
+    const mobile10 = rawMobileDigits.length > 10 ? rawMobileDigits.slice(-10) : rawMobileDigits;
+
+    const [existingRegs] = await db.query(
+      "SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1",
+      [req.body.registration_id || '', cleanMobile, `%${mobile10}`]
     );
 
-    console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id}`);
+    let id;
+    let isUpdate = false;
+    let finalGeneralDetails = cleanGeneralDetails;
+
+    if (existingRegs.length > 0) {
+      isUpdate = true;
+      const prevRow = existingRegs[0];
+      id = prevRow.id;
+
+      let prevGeneral = {};
+      let prevSports = {};
+      try {
+        prevGeneral = typeof prevRow.general_details === 'string' ? JSON.parse(prevRow.general_details) : (prevRow.general_details || {});
+      } catch (e) {
+        prevGeneral = {};
+      }
+      try {
+        prevSports = typeof prevRow.sport_answers === 'string' ? JSON.parse(prevRow.sport_answers) : (prevRow.sport_answers || {});
+      } catch (e) {
+        prevSports = {};
+      }
+
+      // Merge sport answers (preserving all sports)
+      const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
+
+      // Merge general details
+      const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
+      const allSelectedSports = Array.from(new Set([
+        ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
+        ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
+        ...Object.keys(mergedSportAnswers),
+      ]));
+      mergedGeneralDetails.selectedSports = allSelectedSports;
+      const computedSportsCount = Math.max(1, allSelectedSports.length);
+      const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
+      mergedGeneralDetails.totalAmount = computedFee;
+      mergedGeneralDetails.calculatedFee = computedFee;
+      finalGeneralDetails = mergedGeneralDetails;
+
+      const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
+      const finalPaymentUtr = cleanPaymentUtr || prevRow.payment_utr || null;
+      const finalReceiptUrl = cleanReceiptUrl || prevRow.payment_receipt_url || null;
+      const finalPaymentStatus = prevRow.payment_status === 'approved' ? 'approved' : 'pending';
+
+      await db.query(
+        `UPDATE rpl_registrations 
+         SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
+             player_photo_url = ?, payment_status = ?, payment_utr = ?, payment_receipt_url = ?, 
+             general_details = ?, sport_answers = ?, submitted_at = NOW() 
+         WHERE id = ?`,
+        [
+          cleanFullName,
+          cleanEmail,
+          cleanMobile,
+          cleanCheckInDate,
+          cleanCheckOutDate,
+          finalPhotoUrl,
+          finalPaymentStatus,
+          finalPaymentUtr,
+          finalReceiptUrl,
+          JSON.stringify(mergedGeneralDetails),
+          JSON.stringify(mergedSportAnswers),
+          id,
+        ]
+      );
+
+      console.log(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
+    } else {
+      // New record
+      id = uuidv4();
+      const newSportsCount = Math.max(1, Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.length : 1);
+      const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
+      cleanGeneralDetails.totalAmount = newFee;
+      cleanGeneralDetails.calculatedFee = newFee;
+
+      await db.query(
+        `INSERT INTO rpl_registrations 
+         (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+        [
+          id,
+          cleanFullName,
+          cleanEmail,
+          cleanMobile,
+          cleanCheckInDate,
+          cleanCheckOutDate,
+          cleanPhotoUrl,
+          cleanPaymentUtr,
+          cleanReceiptUrl,
+          JSON.stringify(cleanGeneralDetails),
+          JSON.stringify(cleanSportAnswers),
+        ]
+      );
+
+      console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Fee: ₹${newFee})`);
+    }
 
     // D. Automatically process Room Booking & Transactions if accommodation is required
     const accommodationResult = await processAccommodationBooking({
-      cardno: cleanGeneralDetails.cardNo || null,
+      cardno: finalGeneralDetails.cardNo || null,
       fullName: cleanFullName,
       email: cleanEmail,
       mobile: cleanMobile,
-      centre: cleanGeneralDetails.centre || 'Mumbai',
-      gender: cleanGeneralDetails.gender || 'Male',
+      centre: finalGeneralDetails.centre || 'Mumbai',
+      gender: finalGeneralDetails.gender || 'Male',
       checkInDate: cleanCheckInDate,
       checkOutDate: cleanCheckOutDate,
-      accommodationRequired: cleanGeneralDetails.accommodationRequired || 'No',
+      accommodationRequired: finalGeneralDetails.accommodationRequired || 'No',
     });
 
     if (accommodationResult.booked) {
-      console.log(`[RPL Accommodation SUCCESS] Bookings and transactions created for "${cleanFullName}":`, accommodationResult.bookings);
+      console.log(`[RPL Accommodation SUCCESS] Bookings and transactions created/synced for "${cleanFullName}":`, accommodationResult.bookings);
     }
-
-    /*
-    // =========================================================================
-    // [COMMENTED OUT] AUTOMATIC FOOD BOOKING SEEDING FOR food_db
-    // =========================================================================
-    // When activated, this automatically creates daily meal entries (Breakfast,
-    // Lunch, Dinner) in 'food_db' under bookedBy='RPL' for the player's stay.
-    //
-    // To enable, simply uncomment this block:
-    //
-    // try {
-    //   const rawFoodPref = cleanGeneralDetails.foodPreference || sanitizedAnswers.foodPreference || 'Regular';
-    //   const isSpicy = rawFoodPref === 'Regular' ? 1 : 0; // 1 = Regular / Spicy, 0 = Non-Spicy
-    //   const targetCardNo = cleanGeneralDetails.cardNo || cleanGeneralDetails.card_no || cleanMobile;
-    //
-    //   const inStr = cleanCheckInDate || '2026-12-25';
-    //   const outStr = cleanCheckOutDate || '2026-12-27';
-    //
-    //   const curDate = new Date(`${inStr}T00:00:00Z`);
-    //   const endDate = new Date(`${outStr}T00:00:00Z`);
-    //
-    //   while (curDate <= endDate) {
-    //     const dateStr = curDate.toISOString().slice(0, 10);
-    //     const foodEntryId = uuidv4();
-    //
-    //     await db.query(
-    //       `INSERT INTO food_db 
-    //        (id, cardno, bookedBy, date, breakfast, breakfast_plate_issued, lunch, lunch_plate_issued, dinner, dinner_plate_issued, hightea, spicy, updatedBy, createdAt, updatedAt)
-    //        VALUES (?, ?, 'RPL', ?, 1, 0, 1, 0, 1, 0, 'NONE', ?, 'RPL', NOW(), NOW())
-    //        ON DUPLICATE KEY UPDATE 
-    //        breakfast=1, lunch=1, dinner=1, spicy=VALUES(spicy), updatedBy='RPL', updatedAt=NOW()`,
-    //       [foodEntryId, targetCardNo, dateStr, isSpicy]
-    //     );
-    //     curDate.setUTCDate(curDate.getUTCDate() + 1);
-    //   }
-    //   console.log(`[RPL food_db Booking] Seeded meals for player "${cleanFullName}" (Card/Mobile: ${targetCardNo}) from ${inStr} to ${outStr}`);
-    // } catch (foodErr) {
-    //   console.error('[RPL food_db Booking Error] Failed to create food_db entries:', foodErr);
-    // }
-    // =========================================================================
-    */
 
     res.json({
       success: true,
-      message: 'Registration submitted successfully',
+      isUpdate,
+      message: isUpdate ? 'Registration updated successfully' : 'Registration submitted successfully',
       registration_id: id,
       accommodation: accommodationResult,
     });

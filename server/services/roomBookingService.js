@@ -98,56 +98,78 @@ export async function processAccommodationBooking({
     if (checkInDate < RPL_START_DATE) {
       const preNights = calculateNights(checkInDate, RPL_START_DATE);
       if (preNights > 0) {
-        const preBookingId = uuidv4();
-        await db.query(
-          `INSERT INTO room_booking 
-           (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            preBookingId,
-            validCardNo,
-            validCardNo,
-            'UNASSIGNED',
-            checkInDate,
-            RPL_START_DATE,
-            preNights,
-            'nac',
-            'waiting',
-            mappedGender,
-            'RPL_APP',
-            now,
-            now,
-          ]
+        const [existingPre] = await db.query(
+          "SELECT bookingid FROM room_booking WHERE cardno = ? AND checkout = ? LIMIT 1",
+          [validCardNo, RPL_START_DATE]
         );
 
-        await db.query(
-          `INSERT INTO transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            validCardNo,
-            preBookingId,
-            'room',
-            0,
-            0,
-            'NA',
-            `Pre-RPL Extended Stay (${checkInDate} to ${RPL_START_DATE}) - Ashram Allocation Pending`,
-            'pending',
-            'RPL_APP',
-            now,
-            now,
-          ]
-        );
+        if (existingPre.length > 0) {
+          const preBookingId = existingPre[0].bookingid;
+          await db.query(
+            `UPDATE room_booking SET checkin = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
+            [checkInDate, preNights, now, preBookingId]
+          );
+          bookingsCreated.push({
+            type: 'pre_rpl_extended',
+            bookingid: preBookingId,
+            checkin: checkInDate,
+            checkout: RPL_START_DATE,
+            nights: preNights,
+            status: 'waiting (Ashram Desk Allocation)',
+            paidBy: 'User (Via Aashray App)',
+          });
+        } else {
+          const preBookingId = uuidv4();
+          await db.query(
+            `INSERT INTO room_booking 
+             (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              preBookingId,
+              validCardNo,
+              validCardNo,
+              'UNASSIGNED',
+              checkInDate,
+              RPL_START_DATE,
+              preNights,
+              'nac',
+              'waiting',
+              mappedGender,
+              'RPL_APP',
+              now,
+              now,
+            ]
+          );
 
-        bookingsCreated.push({
-          type: 'pre_rpl_extended',
-          bookingid: preBookingId,
-          checkin: checkInDate,
-          checkout: RPL_START_DATE,
-          nights: preNights,
-          status: 'waiting (Ashram Desk Allocation)',
-          paidBy: 'User (Via Aashray App)',
-        });
+          await db.query(
+            `INSERT INTO transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              validCardNo,
+              preBookingId,
+              'room',
+              0,
+              0,
+              'NA',
+              `Pre-RPL Extended Stay (${checkInDate} to ${RPL_START_DATE}) - Ashram Allocation Pending`,
+              'pending',
+              'RPL_APP',
+              now,
+              now,
+            ]
+          );
+
+          bookingsCreated.push({
+            type: 'pre_rpl_extended',
+            bookingid: preBookingId,
+            checkin: checkInDate,
+            checkout: RPL_START_DATE,
+            nights: preNights,
+            status: 'waiting (Ashram Desk Allocation)',
+            paidBy: 'User (Via Aashray App)',
+          });
+        }
       }
     }
 
@@ -155,57 +177,75 @@ export async function processAccommodationBooking({
     // Window 2: Official RPL Tournament Stay (24 Dec -> 26 Dec)
     // -------------------------------------------------------------
     const rplNights = 2;
-    const rplBookingId = uuidv4();
-
-    await db.query(
-      `INSERT INTO room_booking 
-       (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        rplBookingId,
-        validCardNo,
-        validCardNo,
-        'RPL_UNASSIGNED',
-        RPL_START_DATE,
-        RPL_END_DATE,
-        rplNights,
-        'nac',
-        'pending',
-        mappedGender,
-        'RPL_TEAM',
-        now,
-        now,
-      ]
+    const [existingRpl] = await db.query(
+      "SELECT bookingid FROM room_booking WHERE cardno = ? AND (checkin = ? AND checkout = ?) LIMIT 1",
+      [validCardNo, RPL_START_DATE, RPL_END_DATE]
     );
 
-    await db.query(
-      `INSERT INTO transactions 
-       (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        validCardNo,
-        rplBookingId,
-        'room',
-        0,
-        0,
-        'NA',
-        'Paid by RPL',
-        'completed',
-        'RPL',
-        now,
-        now,
-      ]
-    );
+    let rplBookingId;
+    if (existingRpl.length > 0) {
+      rplBookingId = existingRpl[0].bookingid;
+      bookingsCreated.push({
+        type: 'official_rpl_stay',
+        bookingid: rplBookingId,
+        checkin: RPL_START_DATE,
+        checkout: RPL_END_DATE,
+        nights: rplNights,
+        status: 'pending (RPL Team Allocation)',
+        paidBy: 'Paid by RPL',
+      });
+    } else {
+      rplBookingId = uuidv4();
+      await db.query(
+        `INSERT INTO room_booking 
+         (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          rplBookingId,
+          validCardNo,
+          validCardNo,
+          'RPL_UNASSIGNED',
+          RPL_START_DATE,
+          RPL_END_DATE,
+          rplNights,
+          'nac',
+          'pending',
+          mappedGender,
+          'RPL_TEAM',
+          now,
+          now,
+        ]
+      );
 
-    bookingsCreated.push({
-      type: 'official_rpl_stay',
-      bookingid: rplBookingId,
-      checkin: RPL_START_DATE,
-      checkout: RPL_END_DATE,
-      nights: rplNights,
-      status: 'pending (RPL Team Allocation)',
-      paidBy: 'Paid by RPL',
-    });
+      await db.query(
+        `INSERT INTO transactions 
+         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          validCardNo,
+          rplBookingId,
+          'room',
+          0,
+          0,
+          'NA',
+          'Paid by RPL',
+          'completed',
+          'RPL',
+          now,
+          now,
+        ]
+      );
+
+      bookingsCreated.push({
+        type: 'official_rpl_stay',
+        bookingid: rplBookingId,
+        checkin: RPL_START_DATE,
+        checkout: RPL_END_DATE,
+        nights: rplNights,
+        status: 'pending (RPL Team Allocation)',
+        paidBy: 'Paid by RPL',
+      });
+    }
 
     // -------------------------------------------------------------
     // Window 3: Post-RPL Stay (e.g. 26 Dec -> 28 Dec)
@@ -213,56 +253,78 @@ export async function processAccommodationBooking({
     if (checkOutDate > RPL_END_DATE) {
       const postNights = calculateNights(RPL_END_DATE, checkOutDate);
       if (postNights > 0) {
-        const postBookingId = uuidv4();
-        await db.query(
-          `INSERT INTO room_booking 
-           (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            postBookingId,
-            validCardNo,
-            validCardNo,
-            'UNASSIGNED',
-            RPL_END_DATE,
-            checkOutDate,
-            postNights,
-            'nac',
-            'waiting',
-            mappedGender,
-            'RPL_APP',
-            now,
-            now,
-          ]
+        const [existingPost] = await db.query(
+          "SELECT bookingid FROM room_booking WHERE cardno = ? AND checkin = ? LIMIT 1",
+          [validCardNo, RPL_END_DATE]
         );
 
-        await db.query(
-          `INSERT INTO transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            validCardNo,
-            postBookingId,
-            'room',
-            0,
-            0,
-            'NA',
-            `Post-RPL Extended Stay (${RPL_END_DATE} to ${checkOutDate}) - Ashram Allocation Pending`,
-            'pending',
-            'RPL_APP',
-            now,
-            now,
-          ]
-        );
+        if (existingPost.length > 0) {
+          const postBookingId = existingPost[0].bookingid;
+          await db.query(
+            `UPDATE room_booking SET checkout = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
+            [checkOutDate, postNights, now, postBookingId]
+          );
+          bookingsCreated.push({
+            type: 'post_rpl_extended',
+            bookingid: postBookingId,
+            checkin: RPL_END_DATE,
+            checkout: checkOutDate,
+            nights: postNights,
+            status: 'waiting (Ashram Desk Allocation)',
+            paidBy: 'User (Via Aashray App)',
+          });
+        } else {
+          const postBookingId = uuidv4();
+          await db.query(
+            `INSERT INTO room_booking 
+             (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              postBookingId,
+              validCardNo,
+              validCardNo,
+              'UNASSIGNED',
+              RPL_END_DATE,
+              checkOutDate,
+              postNights,
+              'nac',
+              'waiting',
+              mappedGender,
+              'RPL_APP',
+              now,
+              now,
+            ]
+          );
 
-        bookingsCreated.push({
-          type: 'post_rpl_extended',
-          bookingid: postBookingId,
-          checkin: RPL_END_DATE,
-          checkout: checkOutDate,
-          nights: postNights,
-          status: 'waiting (Ashram Desk Allocation)',
-          paidBy: 'User (Via Aashray App)',
-        });
+          await db.query(
+            `INSERT INTO transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              validCardNo,
+              postBookingId,
+              'room',
+              0,
+              0,
+              'NA',
+              `Post-RPL Extended Stay (${RPL_END_DATE} to ${checkOutDate}) - Ashram Allocation Pending`,
+              'pending',
+              'RPL_APP',
+              now,
+              now,
+            ]
+          );
+
+          bookingsCreated.push({
+            type: 'post_rpl_extended',
+            bookingid: postBookingId,
+            checkin: RPL_END_DATE,
+            checkout: checkOutDate,
+            nights: postNights,
+            status: 'waiting (Ashram Desk Allocation)',
+            paidBy: 'User (Via Aashray App)',
+          });
+        }
       }
     }
 

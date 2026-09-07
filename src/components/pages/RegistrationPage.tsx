@@ -35,6 +35,8 @@ import {
   Search,
   Loader2,
   Copy,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -145,7 +147,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [isLookingUpMumukshu, setIsLookingUpMumukshu] = useState(false);
   const [mumukshuCardInfo, setMumukshuCardInfo] = useState<{ cardNo?: string; name?: string } | null>(null);
+  const [isExistingPlayerRegistration, setIsExistingPlayerRegistration] = useState(false);
+  const [existingRegistrationId, setExistingRegistrationId] = useState<string | null>(null);
+  const [existingPaymentStatus, setExistingPaymentStatus] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [copiedAmount, setCopiedAmount] = useState(false);
+
+  // Dynamic fee calculation: Base ₹2,500 for first sport + ₹400 for each additional sport
+  const sportsCount = Math.max(1, selectedSports.length);
+  const extraSportsCount = Math.max(0, sportsCount - 1);
+  const totalPayableFee = 2500 + extraSportsCount * 400;
+  const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
 
   useEffect(() => {
     fetchRegistrationFields().then((fields) => {
@@ -240,7 +252,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentCheckInDate = watch('checkInDate') || '2026-12-25';
   const currentCheckOutDate = watch('checkOutDate') || '2026-12-27';
 
-  // Auto-fetch Mumukshu details from card_db when mobile is entered
+  // Auto-fetch Player / Mumukshu details from database when mobile is entered
   useEffect(() => {
     const digits = (currentMobile || '').replace(/\D/g, '');
     if (digits.length >= 7) {
@@ -248,31 +260,136 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       lookupMumukshu(digits)
         .then((res) => {
           setIsLookingUpMumukshu(false);
-          if (res.found && res.data) {
-            const d = res.data;
-            const cleanName = (d.fullName || '').trim();
-            const cleanEmail = (d.email || '').trim();
-            const cleanCentre = (d.centre || '').trim();
-            const cleanDob = (d.dateOfBirth || '').trim();
-            const cleanGender = d.gender === 'Female' ? 'Female' : 'Male';
+          if (res.found) {
+            if (res.isExistingRegistration && res.registration) {
+              // -------------------------------------------------------------
+              // 1. EXISTING RPL REGISTRATION FOUND - FULL AUTO-FILL
+              // -------------------------------------------------------------
+              const reg = res.registration;
+              const gen = reg.generalDetails || {};
+              const sports = reg.sportAnswers || {};
 
-            setMumukshuCardInfo({ cardNo: d.cardNo, name: cleanName });
-            if (cleanName) setValue('fullName', cleanName, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            if (cleanEmail) setValue('email', cleanEmail, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-            setValue('existingRplFamily', 'Yes', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              setIsExistingPlayerRegistration(true);
+              setExistingRegistrationId(reg.id);
+              setExistingPaymentStatus(reg.paymentStatus || 'pending');
+              setMumukshuCardInfo({ cardNo: reg.cardNo || gen.cardNo, name: reg.fullName });
+
+              // Core fields
+              if (reg.fullName) setValue('fullName', reg.fullName, { shouldValidate: true, shouldDirty: true });
+              if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
+              if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
+              if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+              if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
+              if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
+              if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
+              if (gen.accommodationRequired) setValue('accommodationRequired', gen.accommodationRequired as any, { shouldValidate: true, shouldDirty: true });
+              if (reg.checkInDate || gen.checkInDate) setValue('checkInDate', reg.checkInDate || gen.checkInDate, { shouldValidate: true, shouldDirty: true });
+              if (reg.checkOutDate || gen.checkOutDate) setValue('checkOutDate', reg.checkOutDate || gen.checkOutDate, { shouldValidate: true, shouldDirty: true });
+              if (gen.existingRplFamily) setValue('existingRplFamily', gen.existingRplFamily as any, { shouldValidate: true, shouldDirty: true });
+
+              // Customizations
+              if (gen.customJerseyName) setValue('customJerseyName', gen.customJerseyName, { shouldValidate: true });
+              if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
+              if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
+              if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+
+              // Restore selected sports
+              const savedSports = gen.selectedSports || Object.keys(sports);
+              if (Array.isArray(savedSports) && savedSports.length > 0) {
+                const validSports = savedSports.filter((s: string) => AVAILABLE_SPORTS.some((as) => as.id === s)) as SportType[];
+                if (validSports.length > 0) {
+                  setSelectedSports(validSports);
+                }
+              }
+
+              // Restore sport answers
+              if (sports.cricket) {
+                if (sports.cricket.role) setValue('cricketRole', sports.cricket.role);
+                if (sports.cricket.battingStyle) setValue('battingStyle', sports.cricket.battingStyle);
+                if (sports.cricket.bowlingStyle) setValue('bowlingStyle', sports.cricket.bowlingStyle);
+                if (sports.cricket.experience) setValue('cricketExperience', sports.cricket.experience);
+              }
+              if (sports.football) {
+                if (sports.football.position) setValue('footballPosition', sports.football.position);
+                if (sports.football.preferredFoot) setValue('preferredFoot', sports.football.preferredFoot);
+                if (sports.football.experience) setValue('footballExperience', sports.football.experience);
+              }
+              if (sports.badminton) {
+                if (sports.badminton.category) setValue('badmintonCategory', sports.badminton.category);
+                if (sports.badminton.playingHand) setValue('badmintonHand', sports.badminton.playingHand);
+                if (sports.badminton.experience) setValue('badmintonExperience', sports.badminton.experience);
+              }
+              if (sports['table-tennis']) {
+                if (sports['table-tennis'].category) setValue('ttCategory', sports['table-tennis'].category);
+                if (sports['table-tennis'].grip) setValue('ttGrip', sports['table-tennis'].grip);
+                if (sports['table-tennis'].experience) setValue('ttExperience', sports['table-tennis'].experience);
+              }
+              if (sports.pickleball) {
+                if (sports.pickleball.category) setValue('pickleballCategory', sports.pickleball.category);
+                if (sports.pickleball.skillLevel) setValue('pickleballSkill', sports.pickleball.skillLevel);
+                if (sports.pickleball.partnerName) setValue('pickleballPartner', sports.pickleball.partnerName);
+                if (sports.pickleball.experience) setValue('pickleballExperience', sports.pickleball.experience);
+              }
+              if (sports.volleyball) {
+                if (sports.volleyball.role) setValue('volleyballRole', sports.volleyball.role);
+                if (sports.volleyball.experience) setValue('volleyballExperience', sports.volleyball.experience);
+              }
+              if (sports['womens-sports']) {
+                if (sports['womens-sports'].category) setValue('womensCategory', sports['womens-sports'].category);
+                if (sports['womens-sports'].playingRole) setValue('womensPlayingRole', sports['womens-sports'].playingRole);
+                if (sports['womens-sports'].experience) setValue('womensExperience', sports['womens-sports'].experience);
+              }
+
+              // Profile Photo Preview
+              if (reg.playerPhotoUrl) {
+                setPhotoDriveUrl(reg.playerPhotoUrl);
+                setPhotoPreview(reg.playerPhotoUrl);
+              }
+
+              // Restore dynamic answers & payment fields
+              const restoredDyn: Record<string, any> = { ...gen };
+              if (reg.paymentUtr) restoredDyn.payment_utr = reg.paymentUtr;
+              if (reg.paymentReceiptUrl) restoredDyn.payment_receipt = reg.paymentReceiptUrl;
+              setDynamicAnswers(restoredDyn);
+            } else if (res.data) {
+              // -------------------------------------------------------------
+              // 2. UNREGISTERED MUMUKSHU FROM ASHRAM CARD_DB
+              // -------------------------------------------------------------
+              setIsExistingPlayerRegistration(false);
+              setExistingRegistrationId(null);
+              setExistingPaymentStatus(null);
+              const d = res.data;
+              const cleanName = (d.fullName || '').trim();
+              const cleanEmail = (d.email || '').trim();
+              const cleanCentre = (d.centre || '').trim();
+              const cleanDob = (d.dateOfBirth || '').trim();
+              const cleanGender = d.gender === 'Female' ? 'Female' : 'Male';
+
+              setMumukshuCardInfo({ cardNo: d.cardNo, name: cleanName });
+              if (cleanName) setValue('fullName', cleanName, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              if (cleanEmail) setValue('email', cleanEmail, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              setValue('existingRplFamily', 'Yes', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            }
           } else {
+            setIsExistingPlayerRegistration(false);
+            setExistingRegistrationId(null);
+            setExistingPaymentStatus(null);
             setMumukshuCardInfo(null);
           }
         })
         .catch((err) => {
-          console.warn('Mumukshu lookup error:', err);
+          console.warn('Player lookup error:', err);
           setIsLookingUpMumukshu(false);
+          setIsExistingPlayerRegistration(false);
+          setExistingRegistrationId(null);
           setMumukshuCardInfo(null);
         });
     } else {
+      setIsExistingPlayerRegistration(false);
+      setExistingRegistrationId(null);
       setMumukshuCardInfo(null);
     }
   }, [currentMobile]);
@@ -426,7 +543,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const generatedId = `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
+    let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const fullData: RegistrationFormData = {
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
@@ -476,15 +593,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: data.preferredJerseyNumber,
       preferredTeamName: data.preferredTeamName,
       additionalNotes: data.additionalNotes,
+      totalAmount: totalPayableFee,
+      calculatedFee: totalPayableFee,
     };
-
-    // Store in localStorage
-    try {
-      const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
-      localStorage.setItem('rpl_registrations', JSON.stringify([...existing, { id: generatedId, ...fullData }]));
-    } catch {
-      // LocalStorage fallback
-    }
 
     // 1. Clean General Details
     const generalDetails: Record<string, any> = {
@@ -503,6 +614,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: data.preferredJerseyNumber || undefined,
       preferredTeamName: data.preferredTeamName || undefined,
       additionalNotes: data.additionalNotes || undefined,
+      totalAmount: totalPayableFee,
+      calculatedFee: totalPayableFee,
     };
 
     // 2. Clean Sport-Specific Questionnaire (Grouped by Sport)
@@ -580,6 +693,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ...data,
       ...dynamicAnswers,
       selectedSports,
+      totalAmount: totalPayableFee,
+      calculatedFee: totalPayableFee,
       photoDriveUrl: photoDriveUrl || undefined,
       payment_receipt: paymentReceiptUrl,
       payment_utr: paymentUtr,
@@ -589,6 +704,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     // Submit to MySQL backend API
     try {
       const response = await submitRegistration({
+        registration_id: existingRegistrationId || undefined,
         sport_id: selectedSports[0] || 'cricket',
         full_name: data.fullName.trim(),
         email: data.email.trim(),
@@ -603,11 +719,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         answers: sanitizedAnswers,
       });
       console.log('[RPL Frontend] Registration saved to MySQL database successfully:', response);
+      if (response.registration_id) {
+        activeRegistrationId = response.registration_id;
+      }
     } catch (apiErr: any) {
       console.error('[RPL Frontend Error] Failed to save to database:', apiErr);
       alert(`⚠️ Registration Error: ${apiErr.message || 'Failed to save registration to database.'}`);
       setIsSubmitting(false);
       return;
+    }
+
+    // Store in localStorage
+    try {
+      const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
+      const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
+      localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
+    } catch {
+      // LocalStorage fallback
     }
 
     // Prepare Gmail body
@@ -648,7 +776,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     const emailBodyText = `
 RAJ PREMIER LEAGUE (RPL SEASON 9) - OFFICIAL REGISTRATION
 ======================================================
-Registration ID: ${generatedId}
+Registration ID: ${activeRegistrationId}
 Date of Registration: ${new Date().toLocaleString()}
 
 1. COMMON PARTICIPANT DETAILS:
@@ -684,7 +812,7 @@ Submitted via RPL Official Registration Portal
     `.trim();
 
     setIsSubmitting(false);
-    setRegistrationId(generatedId);
+    setRegistrationId(activeRegistrationId);
     setSubmittedData(fullData);
 
     try {
@@ -817,31 +945,34 @@ Submitted via RPL Official Registration Portal
                 </div>
               </div>
 
-
-
-              {/* Full Name & Mobile Number */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <User className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('full_name', 'Full Name')}</span>
-                    <span className="text-pink-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Enter your full name"
-                    {...register('fullName')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium"
-                  />
-                  {errors.fullName && (
-                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{errors.fullName.message}</span>
-                    </p>
-                  )}
+              {/* Existing Registration Alert Banner */}
+              {isExistingPlayerRegistration && (
+                <div className="p-4 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 border-2 border-amber-400/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm animate-fadeIn">
+                  <div className="flex items-start sm:items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
+                      ✨
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
+                        <span>Existing Registration Found ({existingRegistrationId?.slice(0, 8)})</span>
+                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          existingPaymentStatus === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}>
+                          {existingPaymentStatus === 'approved' ? '✅ Payment Verified' : '⏳ Payment Pending / Edit Mode'}
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        Your previous entries have been auto-filled. You can update any fields, register for additional sports, or upload payment proof below.
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              )}
 
+              {/* Mobile Number & Full Name */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Phone className="w-3.5 h-3.5 text-slate-600" />
@@ -872,18 +1003,42 @@ Submitted via RPL Official Registration Portal
                   {isLookingUpMumukshu && (
                     <p className="mt-1.5 text-xs text-amber-600 font-semibold flex items-center space-x-1.5 animate-pulse">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Checking Ashram card record...</span>
+                      <span>Checking registration & Ashram records...</span>
                     </p>
                   )}
-                  {mumukshuCardInfo && (
+                  {isExistingPlayerRegistration ? (
+                    <div className="mt-2 p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border border-amber-300 rounded-xl flex items-center space-x-2 text-slate-800 text-xs font-bold shadow-sm">
+                      <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>✨ Existing player found! All previous entries & sports auto-filled.</span>
+                    </div>
+                  ) : mumukshuCardInfo ? (
                     <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center space-x-2 text-emerald-800 text-xs font-bold shadow-sm">
                       <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>✨ Mumukshu verified (Card #{mumukshuCardInfo.cardNo}). Details auto-filled!</span>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
-
+                <div>
+                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    <User className="w-3.5 h-3.5 text-slate-600" />
+                    <span>{getFieldLabel('full_name', 'Full Name')}</span>
+                    <span className="text-pink-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Enter your full name"
+                    {...register('fullName')}
+                    className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium"
+                  />
+                  {errors.fullName && (
+                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.fullName.message}</span>
+                    </p>
+                  )}
+                </div>
               </div>
 
 
@@ -2038,13 +2193,112 @@ Submitted via RPL Official Registration Portal
                         Payment & Verification Proof
                       </h3>
                       <p className="text-emerald-800 text-xs font-semibold mt-0.5">
-                        Upload payment receipt screenshot and enter transaction reference for verification
+                        Upload payment receipt screenshot and enter transaction reference for verification (Optional on initial registration — you can always return later to pay)
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px] sm:text-xs">
-                    Verification
+                  <span className={`shrink-0 px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs ${
+                    existingPaymentStatus === 'approved'
+                      ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                      : 'bg-emerald-100 text-emerald-900'
+                  }`}>
+                    {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Flexible Payment'}
                   </span>
+                </div>
+
+                {/* Dynamic Registration Fee Calculation & Summary Card */}
+                <div className="p-5 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                        ₹
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                          Registration Fee Breakdown
+                        </span>
+                        <h4 className="text-sm font-extrabold text-slate-900">
+                          {selectedSports.length} {selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="flex items-baseline space-x-1.5 self-start sm:self-auto bg-white px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-xs">
+                      <span className="text-xs font-semibold text-slate-500">Total Payable:</span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-800 font-display">
+                        ₹{totalPayableFee.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sport Breakdown List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                      Selected Sports & Rate Applied:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSports.map((sportId, idx) => {
+                        const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+                        const isPrimary = idx === 0;
+                        return (
+                          <div
+                            key={sportId}
+                            className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
+                              isPrimary
+                                ? 'bg-amber-100/80 border-amber-300 text-amber-900'
+                                : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                            }`}
+                          >
+                            <span>{sportObj?.emoji || '🏅'}</span>
+                            <span>{sportObj?.name || sportId}</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                                isPrimary
+                                  ? 'bg-amber-200 text-amber-950'
+                                  : 'bg-emerald-200 text-emerald-950'
+                              }`}
+                            >
+                              {isPrimary ? 'Base: ₹2,500' : '+₹400'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 1-Click Pay & Copy Actions */}
+                  <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(totalPayableFee));
+                        setCopiedAmount(true);
+                        setTimeout(() => setCopiedAmount(false), 2000);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer"
+                    >
+                      {copiedAmount ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700 font-extrabold">Amount Copied (₹{totalPayableFee})!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Copy Amount (₹{totalPayableFee})</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      href={upiPaymentUri}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Pay ₹{totalPayableFee} via UPI App</span>
+                      <ExternalLink className="w-3 h-3 text-white/80" />
+                    </a>
+                  </div>
                 </div>
 
                 {/* UPI QR Code Scanner Banner */}
@@ -2064,11 +2318,11 @@ Submitted via RPL Official Registration Portal
                     </div>
 
                     <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
-                      Scan QR Code to Pay via Any UPI App
+                      Scan QR Code to Pay ₹{totalPayableFee.toLocaleString('en-IN')} via Any UPI App
                     </h4>
 
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment, then enter the UTR / Transaction ID below.
+                      Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for <strong className="text-slate-900 font-extrabold">₹{totalPayableFee}</strong> ({selectedSports.length} {selectedSports.length === 1 ? 'sport' : 'sports'}), then enter the UTR / Transaction ID below. If not paying right now, you can submit and return later using your phone number.
                     </p>
 
                     <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -2129,14 +2383,14 @@ Submitted via RPL Official Registration Portal
               <div className="flex items-start space-x-3 text-slate-700">
                 <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
                 <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                  Upon clicking <strong className="text-slate-900 font-extrabold">Submit Registration</strong>, your participant details and payment verification proof will be securely recorded in the database, and your official Digital Sports Pass will be generated instantly.
+                  Upon clicking <strong className="text-slate-900 font-extrabold">{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</strong>, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be updated instantly.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-amber-200/80">
                 <div className="flex items-center space-x-2 text-xs font-bold text-slate-700">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Verified RPL Season 9 Multi-Sport Entry</span>
+                  <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
                 </div>
 
                 <button
@@ -2145,10 +2399,10 @@ Submitted via RPL Official Registration Portal
                   className="w-full sm:w-auto px-10 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                 >
                   {isSubmitting ? (
-                    <span>Submitting Registration...</span>
+                    <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Submitting Registration...'}</span>
                   ) : (
                     <>
-                      <span>Submit Registration</span>
+                      <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</span>
                       <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                     </>
                   )}
