@@ -2392,52 +2392,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {dbFields
-                    .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
-                    .map((field) => {
-                      const isEitherOptional = {
-                        ...field,
-                        validation_rules: {
-                          ...field.validation_rules,
-                          required: false, // Either UTR or Screenshot is sufficient
-                        },
-                      };
-                      return (
-                        <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
-                          <DynamicFieldRenderer
-                            field={isEitherOptional}
-                            value={dynamicAnswers[field.field_key]}
-                            onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
-                            onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
-                            contextName={watch('fullName') || 'Player'}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('info.rplevents@okicici');
-                            setCopiedUpi(true);
-                            setTimeout(() => setCopiedUpi(false), 2000);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
-                        >
-                          {copiedUpi ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-white" />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy UPI ID</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+                {totalPayableFee === 0 && (
                   <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
                     <div className="text-xs font-semibold leading-relaxed">
