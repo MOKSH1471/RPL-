@@ -145,7 +145,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [photoName, setPhotoName] = useState<string>('');
   const [photoDriveUrl, setPhotoDriveUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
-  const [dbFields, setDbFields] = useState<DynamicField[]>([]);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState<boolean>(false);
+  const [dbFields, setDbFields] = useState<DynamicField[]>([
+    {
+      id: 'f_payment_utr',
+      sport_id: null,
+      field_key: 'payment_utr',
+      label: 'Payment UTR / Transaction ID',
+      field_type: 'text',
+      validation_rules: { required: false },
+      sort_order: 90,
+    },
+    {
+      id: 'f_payment_receipt',
+      sport_id: null,
+      field_key: 'payment_receipt',
+      label: 'Upload Payment Receipt Screenshot',
+      field_type: 'file',
+      validation_rules: { required: false },
+      sort_order: 91,
+    },
+  ]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [isLookingUpMumukshu, setIsLookingUpMumukshu] = useState(false);
   const [mumukshuCardInfo, setMumukshuCardInfo] = useState<{ cardNo?: string; name?: string } | null>(null);
@@ -547,8 +567,22 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const paymentUtr = (data as any).payment_utr || dynamicAnswers.payment_utr || undefined;
-    const paymentReceiptUrl = dynamicAnswers.payment_receipt || (data as any).payment_receipt || undefined;
+    const paymentUtr = 
+      (data as any).payment_utr || 
+      (data as any).paymentUtr || 
+      dynamicAnswers.payment_utr || 
+      dynamicAnswers.paymentUtr || 
+      undefined;
+
+    const paymentReceiptUrl = 
+      dynamicAnswers.payment_receipt || 
+      dynamicAnswers.payment_receipt_url || 
+      dynamicAnswers.paymentReceiptUrl || 
+      dynamicAnswers.paymentReceipt || 
+      (data as any).payment_receipt || 
+      (data as any).payment_receipt_url || 
+      (data as any).paymentReceiptUrl || 
+      undefined;
 
     const fullData: RegistrationFormData = {
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
@@ -624,6 +658,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       additionalNotes: data.additionalNotes || undefined,
       totalAmount: totalPayableFee,
       calculatedFee: totalPayableFee,
+      payment_receipt: paymentReceiptUrl,
+      payment_receipt_url: paymentReceiptUrl,
+      paymentReceiptUrl: paymentReceiptUrl,
+      payment_utr: paymentUtr,
     };
 
     // 2. Clean Sport-Specific Questionnaire (Grouped by Sport)
@@ -2405,6 +2443,7 @@ Submitted via RPL Official Registration Portal
                             field={isEitherOptional}
                             value={dynamicAnswers[field.field_key]}
                             onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                            onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
                             contextName={watch('fullName') || 'Player'}
                           />
                         </div>
@@ -2437,10 +2476,14 @@ Submitted via RPL Official Registration Portal
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt}
                   className="w-full sm:w-auto px-10 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                 >
-                  {isSubmitting ? (
+                  {isUploadingReceipt ? (
+                    <span>Uploading Payment Receipt to Drive...</span>
+                  ) : isUploadingPhoto ? (
+                    <span>Uploading Player Photo to Drive...</span>
+                  ) : isSubmitting ? (
                     <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Submitting Registration...'}</span>
                   ) : (
                     <>

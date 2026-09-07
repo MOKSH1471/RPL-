@@ -371,9 +371,35 @@ app.post('/api/register', async (req, res) => {
 
     const cleanSportAnswers = sport_answers || {};
 
-    const cleanPhotoUrl = player_photo_url || sanitizedAnswers.photoDriveUrl || null;
-    const cleanPaymentUtr = payment_utr || sanitizedAnswers.payment_utr || null;
-    const cleanReceiptUrl = payment_receipt_url || sanitizedAnswers.payment_receipt_url || null;
+    const cleanPhotoUrl = 
+      player_photo_url || 
+      sanitizedAnswers.photoDriveUrl || 
+      sanitizedAnswers.player_photo_url || 
+      cleanGeneralDetails.player_photo_url || 
+      cleanGeneralDetails.photoDriveUrl || 
+      cleanGeneralDetails.photoUrl || 
+      null;
+
+    const cleanPaymentUtr = 
+      payment_utr || 
+      sanitizedAnswers.payment_utr || 
+      sanitizedAnswers.paymentUtr || 
+      cleanGeneralDetails.payment_utr || 
+      cleanGeneralDetails.paymentUtr || 
+      null;
+
+    const cleanReceiptUrl = 
+      payment_receipt_url || 
+      req.body.payment_receipt || 
+      sanitizedAnswers.payment_receipt_url || 
+      sanitizedAnswers.payment_receipt || 
+      sanitizedAnswers.paymentReceiptUrl || 
+      sanitizedAnswers.paymentReceipt || 
+      cleanGeneralDetails.payment_receipt_url || 
+      cleanGeneralDetails.payment_receipt || 
+      cleanGeneralDetails.paymentReceiptUrl || 
+      cleanGeneralDetails.paymentReceipt || 
+      null;
     const cleanCheckInDate = req.body.check_in_date || sanitizedAnswers.checkInDate || sanitizedAnswers.check_in_date || '2026-12-25';
     const cleanCheckOutDate = req.body.check_out_date || sanitizedAnswers.checkOutDate || sanitizedAnswers.check_out_date || '2026-12-27';
 
@@ -705,8 +731,32 @@ app.get('/api/admin/registrations', async (req, res) => {
       const parsedGeneral = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
       const parsedSport = typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers || '{}') : (r.sport_answers || {});
 
+      const paymentReceiptUrl = 
+        r.payment_receipt_url || 
+        parsedGeneral.payment_receipt_url || 
+        parsedGeneral.payment_receipt || 
+        parsedGeneral.paymentReceiptUrl || 
+        parsedGeneral.paymentReceipt || 
+        null;
+
+      const playerPhotoUrl = 
+        r.player_photo_url || 
+        parsedGeneral.player_photo_url || 
+        parsedGeneral.photoDriveUrl || 
+        parsedGeneral.photoUrl || 
+        null;
+
+      const paymentUtr = 
+        r.payment_utr || 
+        parsedGeneral.payment_utr || 
+        parsedGeneral.paymentUtr || 
+        null;
+
       return {
         ...r,
+        player_photo_url: playerPhotoUrl,
+        payment_receipt_url: paymentReceiptUrl,
+        payment_utr: paymentUtr,
         general_details: parsedGeneral,
         sport_answers: parsedSport,
         answers: { ...parsedGeneral, ...parsedSport },

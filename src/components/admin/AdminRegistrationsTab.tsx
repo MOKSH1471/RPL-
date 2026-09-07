@@ -357,11 +357,26 @@ export function AdminRegistrationsTab({
                               ₹{(gen.totalAmount || (2500 + Math.max(0, (sports.length || 1) - 1) * 400)).toLocaleString('en-IN')}
                             </span>
                           </div>
-                          {player.payment_utr && (
-                            <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[110px]">
-                              UTR: {player.payment_utr}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            {player.payment_utr && (
+                              <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[110px]">
+                                UTR: {player.payment_utr}
+                              </span>
+                            )}
+                            {player.payment_receipt_url && (
+                              <a
+                                href={player.payment_receipt_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                                title="Open Payment Screenshot in Google Drive"
+                              >
+                                <span>🧾 Receipt</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </td>
 
