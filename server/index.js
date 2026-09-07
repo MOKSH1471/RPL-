@@ -907,15 +907,99 @@ app.post('/api/admin/registrations/:id/payment', async (req, res) => {
   }
 });
 
-// 5. Admin Endpoint: Delete Registration
+// 5. Admin Endpoint: Delete Registration (Cascaded Deletion: rpl_registrations, room_booking, transactions)
 app.delete('/api/admin/registrations/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const [result] = await db.query('DELETE FROM rpl_registrations WHERE id = ?', [id]);
-    if (result.affectedRows === 0) {
+    // 1. Fetch player registration details before deletion
+    const [existing] = await db.query('SELECT * FROM rpl_registrations WHERE id = ?', [id]);
+    if (existing.length === 0) {
       return res.status(404).json({ success: false, error: 'Registration not found.' });
     }
-    res.json({ success: true, message: 'Registration deleted successfully.' });
+
+    const reg = existing[0];
+    let gen = {};
+    try {
+      gen = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details || '{}') : (reg.general_details || {});
+    } catch (e) {
+      gen = {};
+    }
+
+    // 2. Collect card numbers associated with this registration/player
+    const cardNos = new Set();
+    if (gen.cardNo) cardNos.add(String(gen.cardNo).trim());
+
+    const cleanMobile = (reg.mobile || '').replace(/\D/g, '');
+    const mob10 = cleanMobile.length > 10 ? cleanMobile.slice(-10) : cleanMobile;
+
+    if (mob10) {
+      const [cards] = await db.query(
+        'SELECT cardno FROM card_db WHERE mobno = ? OR mobno LIKE ? OR LPAD(cardno, 10, "0") = LPAD(?, 10, "0")',
+        [mob10, `%${mob10}`, gen.cardNo || '']
+      );
+      cards.forEach((c) => cardNos.add(String(c.cardno)));
+    }
+
+    const cardList = Array.from(cardNos).filter(Boolean);
+    let deletedBookingsCount = 0;
+    let deletedTransactionsCount = 0;
+
+    // 3. Delete room bookings and ledger transactions associated with this player
+    if (cardList.length > 0) {
+      const [bookings] = await db.query(
+        `SELECT bookingid FROM room_booking 
+         WHERE cardno IN (?) 
+           AND (updatedBy IN ('RPL_TEAM', 'RPL_APP') OR roomno IN ('RPL_UNASSIGNED', 'UNASSIGNED') OR (checkin >= '2026-12-20' AND checkin <= '2026-12-30'))`,
+        [cardList]
+      );
+
+      const bookingIds = bookings.map((b) => b.bookingid);
+
+      if (bookingIds.length > 0) {
+        // Delete related transactions
+        const [txRes] = await db.query(
+          `DELETE FROM transactions 
+           WHERE bookingid IN (?) OR (cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%'))`,
+          [bookingIds, cardList]
+        );
+        deletedTransactionsCount = txRes.affectedRows;
+
+        // Delete room bookings
+        const [bookRes] = await db.query(
+          'DELETE FROM room_booking WHERE bookingid IN (?)',
+          [bookingIds]
+        );
+        deletedBookingsCount = bookRes.affectedRows;
+      } else {
+        const [txRes] = await db.query(
+          `DELETE FROM transactions 
+           WHERE cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%')`,
+          [cardList]
+        );
+        deletedTransactionsCount = txRes.affectedRows;
+      }
+
+      // Clean up any temporary guest card created strictly for RPL
+      await db.query(
+        "DELETE FROM card_db WHERE cardno IN (?) AND (cardno LIKE 'GUEST_%' OR updatedBy = 'RPL_REGISTRATION')",
+        [cardList]
+      );
+    }
+
+    // 4. Finally delete the registration record
+    const [result] = await db.query('DELETE FROM rpl_registrations WHERE id = ?', [id]);
+
+    console.log(`[RPL DELETE] Registration "${reg.full_name}" (${id}) deleted alongside ${deletedBookingsCount} room booking(s) and ${deletedTransactionsCount} transaction(s).`);
+
+    res.json({
+      success: true,
+      message: `Registration and all associated accommodation records for "${reg.full_name}" deleted successfully.`,
+      deleted: {
+        registrations: result.affectedRows,
+        room_bookings: deletedBookingsCount,
+        transactions: deletedTransactionsCount,
+      },
+    });
   } catch (error) {
     console.error('Error deleting registration:', error);
     res.status(500).json({ success: false, error: 'Failed to delete registration.' });
