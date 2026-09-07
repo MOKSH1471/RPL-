@@ -39,7 +39,6 @@ import {
   ExternalLink,
   Printer,
 } from 'lucide-react';
-import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
 interface RegistrationPageProps {
   initialLeague?: string;
@@ -178,7 +177,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
-  const [showDemoReceipt, setShowDemoReceipt] = useState(false);
 
   // Dynamic fee calculation:
   // 1. Returning Paid Participant Adding New Sports:
@@ -720,8 +718,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       totalAmount: cumulativeTotalFee,
       incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
-      previouslyPaidSportsCount,
-      hasPreviouslyPaid,
       payment_receipt: paymentReceiptUrl,
       payment_receipt_url: paymentReceiptUrl,
       paymentReceiptUrl: paymentReceiptUrl,
@@ -862,78 +858,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       // LocalStorage fallback
     }
 
-    // Prepare Gmail body
-    const sportsFormatted = selectedSports
-      .map((s) => {
-        const info = AVAILABLE_SPORTS.find((item) => item.id === s);
-        return info ? `${info.emoji} ${info.name}` : s;
-      })
-      .join(', ');
 
-    const targetEmail = data.recipientGmail || 'rpl@rajpremierleague.com';
-    const cc = data.ccEmail ? `&cc=${encodeURIComponent(data.ccEmail)}` : '';
-    const subject = encodeURIComponent(`[RPL Season 9 Registration] ${data.fullName} - ${selectedSports.join(', ').toUpperCase()}`);
-
-    const sportSpecificSummaries: string[] = [];
-    if (selectedSports.includes('cricket')) {
-      sportSpecificSummaries.push(`[CRICKET] Role: ${data.cricketRole} | Batting: ${data.battingStyle || 'Right-hand'} | Bowling: ${data.bowlingStyle || 'N/A'} | Experience: ${data.cricketExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('football')) {
-      sportSpecificSummaries.push(`[FOOTBALL] Position: ${data.footballPosition} | Foot: ${data.preferredFoot || 'Right foot'} | Experience: ${data.footballExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('badminton')) {
-      sportSpecificSummaries.push(`[BADMINTON] Category: ${data.badmintonCategory} | Hand: ${data.badmintonHand || 'Right-handed'} | Experience: ${data.badmintonExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('table-tennis')) {
-      sportSpecificSummaries.push(`[TABLE TENNIS] Category: ${data.ttCategory} | Grip: ${data.ttGrip || 'Shakehand'} | Experience: ${data.ttExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('pickleball')) {
-      sportSpecificSummaries.push(`[PICKLEBALL] Category: ${data.pickleballCategory} | Skill: ${data.pickleballSkill} | Partner: ${data.pickleballPartner || 'None'} | Experience: ${data.pickleballExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('volleyball')) {
-      sportSpecificSummaries.push(`[VOLLEYBALL / THROWBALL] Role: ${data.volleyballRole} | Experience: ${data.volleyballExperience || 'N/A'}`);
-    }
-    if (selectedSports.includes('womens-sports')) {
-      sportSpecificSummaries.push(`[WOMEN'S LEAGUE] Category: ${data.womensCategory} | Role: ${data.womensPlayingRole || 'All-Rounder'} | Experience: ${data.womensExperience || 'N/A'}`);
-    }
-
-    const emailBodyText = `
-RAJ PREMIER LEAGUE (RPL SEASON 9) - OFFICIAL REGISTRATION
-======================================================
-Registration ID: ${activeRegistrationId}
-Date of Registration: ${new Date().toLocaleString()}
-
-1. COMMON PARTICIPANT DETAILS:
-------------------------------------------------------
-Full Name: ${data.fullName}
-Mobile Number: ${data.countryCode || '+91'} ${data.mobileNumber}
-
-Email Address: ${data.email}
-Centre: ${data.centre}
-Jersey / T-Shirt Size: ${data.tshirtSize}
-Date of Birth: ${data.dateOfBirth}
-Gender: ${data.gender}
-Food Preference: ${data.foodPreference}
-Accommodation Required: ${data.accommodationRequired}
-Existing RPL Family: ${data.existingRplFamily}
-
-2. SELECTED SPORTS:
-------------------------------------------------------
-Registered Sports: ${sportsFormatted}
-
-3. SPORT-SPECIFIC QUESTIONNAIRE DETAILS:
-------------------------------------------------------
-${sportSpecificSummaries.join('\n')}
-
-4. APPAREL & TEAM CUSTOMIZATION:
-------------------------------------------------------
-Custom Jersey Name: ${data.customJerseyName || data.fullName}
-Preferred Jersey Number: ${data.preferredJerseyNumber || 'N/A'}
-Preferred Team Name: ${data.preferredTeamName || 'N/A'}
-Additional Notes: ${data.additionalNotes || 'None'}
-======================================================
-Submitted via RPL Official Registration Portal
-    `.trim();
 
     setIsSubmitting(false);
     setRegistrationId(activeRegistrationId);
@@ -994,16 +919,6 @@ Submitted via RPL Official Registration Portal
           </button>
 
           <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => setShowDemoReceipt(true)}
-              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-xs transition-all shadow-xs active:scale-95 cursor-pointer"
-              title="Experience 3D Thermal Receipt Printer"
-            >
-              <Printer className="w-3.5 h-3.5 text-amber-600" />
-              <span>Preview Receipt Printer</span>
-            </button>
-
             <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               <span>Season 9 Official Portal</span>
@@ -2263,10 +2178,10 @@ Submitted via RPL Official Registration Portal
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
-                    Jersey Print & Team Squad Notes (Optional)
+                    Jersey Print & Customization (Optional)
                   </h2>
                   <p className="text-slate-600 text-xs sm:text-sm font-medium">
-                    Personalize your tournament jersey and squad preferences
+                    Personalize your tournament jersey preferences
                   </p>
                 </div>
               </div>
@@ -2298,17 +2213,6 @@ Submitted via RPL Official Registration Portal
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    {getFieldLabel('preferred_team_name', 'Preferred Team / Squad Name')} <span className="text-slate-500 text-[10px]">(If registering alongside a squad)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Royal Strikers, Mumbai Titans"
-                    {...register('preferredTeamName')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium"
-                  />
-                </div>
               </div>
             </InView>
 
@@ -2488,37 +2392,26 @@ Submitted via RPL Official Registration Portal
                   )}
                 </div>
 
-                {/* UPI QR Code Scanner Banner */}
-                {totalPayableFee > 0 ? (
-                  <div className="p-5 sm:p-6 bg-white rounded-2xl border border-emerald-200 shadow-sm flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-                    <div className="relative shrink-0 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm group">
-                      <img
-                        src="/rpl_upi_qr.png"
-                        alt="RPL UPI QR Code Scanner"
-                        className="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl"
-                      />
-                    </div>
-
-                    <div className="flex-1 text-center sm:text-left space-y-2.5">
-                      <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Official RPL Payment Gateway</span>
-                      </div>
-
-                      <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
-                        Scan QR Code to Pay ₹{totalPayableFee.toLocaleString('en-IN')} via Any UPI App
-                      </h4>
-
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        {isReturningPaidUser
-                          ? `Open Google Pay, PhonePe, Paytm, or BHIM UPI and scan the QR code to complete payment for ₹${totalPayableFee} for the ${newlyAddedSportsCount} additional sport(s). Enter your new UTR or upload the screenshot (Receipt #${nextReceiptIndex}) below.`
-                          : `Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to complete payment for ₹${totalPayableFee} (${selectedSports.length} ${selectedSports.length === 1 ? 'sport' : 'sports'}), then provide either your UTR or upload the screenshot below.`}
-                      </p>
-
-                      <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                        <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 flex items-center space-x-2">
-                          <span>UPI ID:</span>
-                          <span className="text-amber-700">info.rplevents@okicici</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {dbFields
+                    .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
+                    .map((field) => {
+                      const isEitherOptional = {
+                        ...field,
+                        validation_rules: {
+                          ...field.validation_rules,
+                          required: false, // Either UTR or Screenshot is sufficient
+                        },
+                      };
+                      return (
+                        <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
+                          <DynamicFieldRenderer
+                            field={isEitherOptional}
+                            value={dynamicAnswers[field.field_key]}
+                            onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                            onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
+                            contextName={watch('fullName') || 'Player'}
+                          />
                         </div>
                         <button
                           type="button"
@@ -2632,32 +2525,6 @@ Submitted via RPL Official Registration Portal
           </form>
         )}
       </div>
-
-      {/* 3D Thermal Receipt Printer Demo Modal */}
-      {showDemoReceipt && (
-        <ReceiptPrinterModal
-          isOpen={showDemoReceipt}
-          onClose={() => setShowDemoReceipt(false)}
-          title="RPL Season 9 Thermal Receipt Printer (Live Demo)"
-          registrationId="RPL9-DEMO26"
-          data={{
-            fullName: 'Aarav Mehta',
-            mobileNumber: '9820192834',
-            email: 'aarav.mehta@example.com',
-            centre: 'Research Centre',
-            tshirtSize: 'L',
-            customJerseyName: 'AARAV',
-            preferredJerseyNumber: '07',
-            selectedSports: ['cricket', 'football'],
-            foodPreference: 'Jain',
-            accommodationRequired: 'Yes',
-            checkInDate: '2026-12-25',
-            checkOutDate: '2026-12-27',
-            payment_utr: 'UPI/628190349281',
-            cardNo: 'MUM-7749',
-          }}
-        />
-      )}
     </div>
   );
 };

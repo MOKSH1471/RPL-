@@ -132,7 +132,6 @@ League: ${leagueVal.toUpperCase()}
 ${leagueVal === 'cricket' ? `Cricket Role: ${data.cricketRole}` : ''}
 ${leagueVal === 'football' ? `Football Position: ${data.footballPosition}` : ''}
 ${leagueVal === 'womens' ? `Women's Category: ${data.womensCategory}` : ''}
-Preferred Team Name: ${data.preferredTeamName || 'N/A'}
 ------------------------------------------------------
 Sent via RPL Official Registration Portal
     `.trim();
@@ -620,17 +619,6 @@ Sent via RPL Official Registration Portal
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Preferred Team Name <span className="text-slate-500 text-[10px]">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="If registering alongside a squad"
-                    {...register('preferredTeamName')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-500 transition-all text-base sm:text-sm"
-                  />
-                </div>
               </div>
             </Step>
           </Stepper>

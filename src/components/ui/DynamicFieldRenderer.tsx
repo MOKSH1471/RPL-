@@ -21,7 +21,6 @@ interface DynamicFieldRendererProps {
   disabled?: boolean;
   contextName?: string;
   onUploadingChange?: (uploading: boolean) => void;
-  receiptIndex?: number;
 }
 
 export function DynamicFieldRenderer({
@@ -32,7 +31,6 @@ export function DynamicFieldRenderer({
   disabled = false,
   contextName,
   onUploadingChange,
-  receiptIndex,
 }: DynamicFieldRendererProps) {
   const [fileUploading, setFileUploading] = useState(false);
   const [fileName, setFileName] = useState('');

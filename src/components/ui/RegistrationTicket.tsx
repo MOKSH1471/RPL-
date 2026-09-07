@@ -1,6 +1,6 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, MessageCircle, Trophy, Mail } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Trophy } from 'lucide-react';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
@@ -194,12 +194,11 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
       {/* Bottom Information & Action Buttons */}
       <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4">
-        {/* Email Verification Callout Note */}
-        <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900">
-          <Mail className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+        {/* Official Registration Confirmation Note */}
+        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-start space-x-3 text-xs text-emerald-900">
+          <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
           <p className="leading-relaxed">
-            A pre-filled Gmail compose window was launched to email your registration details to{' '}
-            <strong className="text-amber-950 font-bold">rpl@rajpremierleague.com</strong>. Please click "Send" in Gmail if prompted.
+            Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
           </p>
         </div>
 
