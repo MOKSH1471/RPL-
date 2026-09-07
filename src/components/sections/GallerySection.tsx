@@ -4,10 +4,97 @@ import { InView } from '@/components/ui/in-view';
 import { GalleryItem } from '@/types';
 import { X, ChevronLeft, ChevronRight, Maximize2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+interface GalleryCardProps {
+  item: GalleryItem;
+  idx: number;
+  onSelect: (idx: number) => void;
+}
+
+const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
+  const [loaded, setLoaded] = useState(false);
+
+  const getCategoryBadge = (category: string) => {
+    switch (category) {
+      case 'cricket':
+        return { label: 'Cricket', icon: '🏏', bg: 'bg-amber-600 text-white' };
+      case 'football':
+        return { label: 'Football', icon: '⚽', bg: 'bg-emerald-700 text-white' };
+      case 'womens':
+        return { label: "Women's", icon: '🏆', bg: 'bg-pink-600 text-white' };
+      case 'ceremony':
+        return { label: 'Ceremony', icon: '✨', bg: 'bg-purple-700 text-white' };
+      default:
+        return { label: 'Highlight', icon: '🏅', bg: 'bg-slate-800 text-white' };
+    }
+  };
+  const catInfo = getCategoryBadge(item.category);
+
+  return (
+    <div
+      onClick={() => onSelect(idx)}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '320px' }}
+      className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu"
+    >
+      {/* Image Container with Consistent 4:3 Aspect Ratio */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
+        {!loaded && (
+          <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+        )}
+        <img
+          src={item.thumbnail || item.image}
+          alt={item.title}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
+
+        {/* Top Badges (Solid high-contrast with ZERO GPU backdrop-filter overhead) */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+          <span className="font-display text-[10px] sm:text-[11px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full bg-slate-950/85 text-amber-300 border border-amber-400/30 shadow-xs">
+            {item.season}
+          </span>
+          <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full border border-white/20 shadow-xs ${catInfo.bg}`}>
+            {catInfo.icon} {catInfo.label}
+          </span>
+        </div>
+
+        {/* Expand Zoom Indicator */}
+        <div className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-full bg-slate-950/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md">
+          <Maximize2 className="w-3.5 h-3.5" />
+        </div>
+      </div>
+
+      {/* Card Content */}
+      <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
+        <div>
+          <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1 line-clamp-1">
+            {item.title}
+          </h3>
+          <p className="text-slate-600 text-xs font-medium leading-relaxed line-clamp-2">
+            {item.caption}
+          </p>
+        </div>
+
+        <div className="pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-600 group-hover:text-amber-700">
+          <span className="flex items-center space-x-1">
+            <Maximize2 className="w-3 h-3" />
+            <span>View full photo</span>
+          </span>
+          <span className="group-hover:translate-x-1 transition-transform font-mono">→</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const GallerySection: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'cricket' | 'football' | 'womens' | 'ceremony'>('all');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const galleryItems: GalleryItem[] = [
     {
@@ -16,6 +103,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-12.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-12.jpg',
       caption: 'Auditorium opening ceremony with team captains, dignitaries, LED stadium stage, and official flag bearers.',
     },
     {
@@ -24,6 +112,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-21.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-21.jpg',
       caption: 'The winning cricket squad lifting the championship cup in the divine presence of Pujya Pappaji and Pujya Nileshbhai.',
     },
     {
@@ -32,6 +121,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'football',
       image: '/rpl-photos/rpl-4.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-4.jpg',
       caption: 'Intense sprint and counter-attack during the floodlit knockout turf football matches.',
     },
     {
@@ -40,6 +130,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-2.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-2.jpg',
       caption: "Pinpoint bowling delivery and tense batting duel during the Women's Cricket Championship clash.",
     },
     {
@@ -48,6 +139,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-5.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-5.jpg',
       caption: 'The champion team proudly celebrating and lifting the prestigious RPL championship trophy with Pujya Nileshbhai.',
     },
     {
@@ -56,6 +148,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'football',
       image: '/rpl-photos/rpl-7.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-7.jpg',
       caption: 'Mid-air strike on the turf arena during a crucial league-stage encounter.',
     },
     {
@@ -64,6 +157,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-1.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-1.jpg',
       caption: 'Cricket batsman acknowledging cheers from the stands after steering his squad into the finals.',
     },
     {
@@ -72,6 +166,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-6.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-6.jpg',
       caption: 'Participants posing in themed celebratory attires, highlighting friendship, energy, and sportsmanship.',
     },
     {
@@ -80,6 +175,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-10.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-10.jpg',
       caption: 'Custom gold-plated trophies awarded to the Best Batsman, Best Bowler, and Tournament MVP.',
     },
     {
@@ -88,6 +184,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-20.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-20.jpg',
       caption: 'Commemorative RPL medals crafted for podium finishers and individual milestone performers.',
     },
     {
@@ -96,6 +193,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-15.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-15.jpg',
       caption: 'Energetic synchronized community warm-up and dance kickstarting the tournament opening day.',
     },
     {
@@ -104,6 +202,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-8.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-8.jpg',
       caption: 'Squad captains pledging commitment to humility, team unity, and pure sporting spirit with team flags.',
     },
     {
@@ -112,6 +211,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-18.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-18.jpg',
       caption: 'Thrilling interactive challenge matches engaging youth and families across the Ashram courtyard.',
     },
     {
@@ -120,6 +220,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-3.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-3.jpg',
       caption: 'Celebrating high-intensity sporting excellence with silver honors and camaraderie.',
     },
     {
@@ -128,6 +229,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 7',
       category: 'ceremony',
       image: '/rpl-photos/rpl-19.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-19.jpg',
       caption: 'Athletes marching into the arena under sunny skies with victory hand signs and high spirits.',
     },
     {
@@ -136,6 +238,7 @@ export const GallerySection: React.FC = () => {
       season: 'Season 7',
       category: 'ceremony',
       image: '/rpl-photos/rpl-23.jpg',
+      thumbnail: '/rpl-photos/thumbs/rpl-23.jpg',
       caption: 'Supporters waving team banners and flags from the sidelines during championship matches.',
     },
   ];
@@ -243,85 +346,35 @@ export const GallerySection: React.FC = () => {
           ))}
         </InView>
 
-        {/* Gallery Grid - Balanced 4-column layout for 16 items (4x4) */}
+        {/* Gallery Grid - Balanced 4-column layout for items */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-          {filteredItems.map((item, idx) => {
-            const getCategoryBadge = (category: string) => {
-              switch (category) {
-                case 'cricket':
-                  return { label: 'Cricket', icon: '🏏', bg: 'bg-amber-500/90 text-white' };
-                case 'football':
-                  return { label: 'Football', icon: '⚽', bg: 'bg-emerald-600/90 text-white' };
-                case 'womens':
-                  return { label: "Women's", icon: '🏆', bg: 'bg-pink-600/90 text-white' };
-                case 'ceremony':
-                  return { label: 'Ceremony', icon: '✨', bg: 'bg-purple-600/90 text-white' };
-                default:
-                  return { label: 'Highlight', icon: '🏅', bg: 'bg-slate-700/90 text-white' };
-              }
-            };
-            const catInfo = getCategoryBadge(item.category);
-
-            return (
-              <InView
-                key={item.id}
-                viewOptions={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.45, delay: Math.min(idx * 0.03, 0.2), ease: 'easeOut' }}
-              >
-                <div
-                  onClick={() => setSelectedPhotoIndex(idx)}
-                  className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-xl transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full"
-                >
-                  {/* Image Container with Consistent 4:3 Aspect Ratio */}
-                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 group-hover:from-black/50 transition-colors" />
-
-                    {/* Top Badges */}
-                    <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-                      <span className="font-display text-[10px] sm:text-[11px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
-                        {item.season}
-                      </span>
-                      <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full backdrop-blur-md border border-white/20 shadow-xs ${catInfo.bg}`}>
-                        {catInfo.icon} {catInfo.label}
-                      </span>
-                    </div>
-
-                    {/* Expand Zoom Indicator */}
-                    <div className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md">
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
-                    <div>
-                      <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1 line-clamp-1">
-                        {item.title}
-                      </h3>
-                      <p className="text-slate-600 text-xs font-medium leading-relaxed line-clamp-2">
-                        {item.caption}
-                      </p>
-                    </div>
-
-                    <div className="pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-600 group-hover:text-amber-700">
-                      <span className="flex items-center space-x-1">
-                        <Maximize2 className="w-3 h-3" />
-                        <span>View full photo</span>
-                      </span>
-                      <span className="group-hover:translate-x-1 transition-transform font-mono">→</span>
-                    </div>
-                  </div>
-                </div>
-              </InView>
-            );
-          })}
+          {(activeFilter === 'all' && !showAll ? filteredItems.slice(0, 8) : filteredItems).map((item) => (
+            <GalleryCard
+              key={item.id}
+              item={item}
+              idx={filteredItems.findIndex((fi) => fi.id === item.id)}
+              onSelect={(idx) => setSelectedPhotoIndex(idx)}
+            />
+          ))}
         </div>
+
+        {/* Show More / Show Less Button for "All" tab */}
+        {activeFilter === 'all' && filteredItems.length > 8 && (
+          <div className="mt-8 sm:mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              className="inline-flex items-center space-x-2 px-6 py-3 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-slate-800 hover:text-amber-700 font-extrabold text-xs sm:text-sm border border-slate-200 hover:border-amber-300 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation"
+            >
+              <span>
+                {showAll
+                  ? 'Show Fewer Photos'
+                  : `View All ${filteredItems.length} Highlights (${filteredItems.length - 8} more)`}
+              </span>
+              <span className="text-amber-600 font-bold">{showAll ? '▲' : '▼'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* High-Resolution Photo Lightbox Modal (Portal to body, Light RPL Theme, 100% Uncropped) */}
@@ -336,7 +389,7 @@ export const GallerySection: React.FC = () => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+                  className="fixed inset-0 bg-slate-950/75"
                   onClick={() => setSelectedPhotoIndex(null)}
                 />
 
@@ -378,6 +431,7 @@ export const GallerySection: React.FC = () => {
                       key={currentPhoto.image}
                       src={currentPhoto.image}
                       alt={currentPhoto.title}
+                      decoding="async"
                       style={{
                         maxHeight: 'min(60vh, 580px)',
                         maxWidth: '100%',

@@ -20,6 +20,7 @@ interface DynamicFieldRendererProps {
   error?: string;
   disabled?: boolean;
   contextName?: string;
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 export function DynamicFieldRenderer({
@@ -29,6 +30,7 @@ export function DynamicFieldRenderer({
   error,
   disabled = false,
   contextName,
+  onUploadingChange,
 }: DynamicFieldRendererProps) {
   const [fileUploading, setFileUploading] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -60,6 +62,7 @@ export function DynamicFieldRenderer({
 
     try {
       setFileUploading(true);
+      onUploadingChange?.(true);
       const cleanContext = (contextName || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
       const cleanField = (field.label || field.field_key).trim().replace(/[^a-zA-Z0-9]/g, '_');
       const customPrefix = `${cleanContext}_${cleanField}`;
@@ -81,6 +84,7 @@ export function DynamicFieldRenderer({
       }
     } finally {
       setFileUploading(false);
+      onUploadingChange?.(false);
     }
   };
 

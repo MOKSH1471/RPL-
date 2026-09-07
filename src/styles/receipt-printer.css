@@ -20,14 +20,14 @@
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   margin: 0 auto;
   position: relative;
 }
 
 .rpl-machine-unit {
   width: 100%;
-  max-width: 460px;
+  max-width: 420px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -38,8 +38,8 @@
 /* Top 3D Metallic Hood (Gold/Amber Champion finish) */
 .rpl-machine-hood-top {
   width: 100%;
-  max-width: 460px;
-  height: 48px;
+  max-width: 420px;
+  height: 46px;
   border-radius: 16px 16px 4px 4px;
   background: linear-gradient(180deg, 
     #ffffff 0%, 
@@ -71,8 +71,8 @@
 
 /* Dark Slit Opening where receipt emerges */
 .rpl-machine-slot-slit {
-  width: 92%;
-  max-width: 420px;
+  width: 90%;
+  max-width: 370px;
   height: 12px;
   margin-top: -6px;
   background: #0f0a03;
@@ -85,11 +85,11 @@
 /* Cutter blade flash effect */
 .rpl-cutter-blade-flash {
   position: absolute;
-  top: 44px;
+  top: 42px;
   left: 50%;
   transform: translateX(-50%);
-  width: 92%;
-  max-width: 420px;
+  width: 90%;
+  max-width: 370px;
   height: 3px;
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%);
   box-shadow: 0 0 12px #ffffff;
@@ -111,7 +111,7 @@
 /* Bottom Machine Lip */
 .rpl-machine-hood-bottom {
   width: 100%;
-  max-width: 460px;
+  max-width: 420px;
   height: 14px;
   margin-top: -4px;
   border-radius: 0 0 14px 14px;
@@ -132,11 +132,11 @@
    ========================================================================== */
 .rpl-paper-viewport {
   position: absolute;
-  top: 43px;
+  top: 41px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 425px;
+  max-width: 380px;
   clip-path: inset(0px -60px -1500px -60px);
   z-index: 8;
   padding-bottom: 24px;
@@ -147,8 +147,8 @@
 }
 
 .rpl-receipt-paper-wrapper {
-  width: 94%;
-  max-width: 390px;
+  width: 90%;
+  max-width: 340px;
   margin: 0 auto;
   background-color: var(--rpl-paper-bg);
   position: relative;
@@ -332,13 +332,13 @@
    Receipt Inner Content Styling (JetBrains Mono)
    ========================================================================== */
 .rpl-receipt-content {
-  padding: 1.5rem 1.4rem 2.4rem 1.4rem;
+  padding: 1.4rem 1.25rem 2.2rem 1.25rem;
   font-family: var(--rpl-font-mono);
   color: var(--rpl-paper-ink);
   position: relative;
   z-index: 2;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .rpl-receipt-divider {

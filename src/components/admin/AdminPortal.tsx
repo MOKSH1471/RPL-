@@ -67,7 +67,68 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 selection:bg-amber-400 selection:text-slate-950 font-sans">
 
+      {/* ── Admin Fullscreen Loading Screen (rpl-14.jpg) ── */}
+      <div
+        className={`fixed inset-0 z-[200] flex flex-col items-center justify-between overflow-hidden transition-opacity duration-700 ${
+          isInitialLoading ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!isInitialLoading}
+      >
+        {/* Warm dark fallback visible before image decodes */}
+        <div className="absolute inset-0 bg-[#1a1209]" />
+
+        {/* Fullscreen rpl-14.jpg */}
+        <img
+          src="/rpl-photos/rpl-14.jpg"
+          alt=""
+          loading="eager"
+          decoding="sync"
+          className="absolute inset-0 w-full h-full object-cover object-[center_28%] select-none"
+        />
+
+        {/* Cinematic overlays */}
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/60" />
+
+        {/* Top badge */}
+        <div className="relative z-10 w-full flex justify-between items-center max-w-7xl mx-auto px-5 pt-6">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-black/60 border border-amber-400/50">
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-amber-300">
+              RPL Admin Portal
+            </span>
+          </div>
+          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-black/60 border border-white/15">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <span className="text-[11px] font-bold text-white/80 uppercase tracking-wider">Loading Data…</span>
+          </div>
+        </div>
+
+        {/* Center copy */}
+        <div className="relative z-10 text-center px-6" style={{ filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.9))' }}>
+          <p className="text-amber-300 text-[11px] font-extrabold uppercase tracking-[0.25em] mb-3">
+            Raj Premier League · Season 9
+          </p>
+          <h1 className="text-white font-extrabold text-3xl sm:text-5xl leading-tight tracking-tight mb-4"
+            style={{ fontFamily: 'Syne, sans-serif' }}>
+            Admin Command<br />Centre
+          </h1>
+          <p className="text-white/60 text-sm font-medium max-w-xs mx-auto">
+            Connecting to database and fetching live registration data…
+          </p>
+        </div>
+
+        {/* Bottom spinner */}
+        <div className="relative z-10 w-full max-w-xs mx-auto mb-8 px-6 space-y-3">
+          <div className="w-full bg-white/15 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 h-full animate-marquee" />
+          </div>
+          <p className="text-center text-white/40 text-[11px] font-medium">Please wait…</p>
+        </div>
+      </div>
+
       {/* Top Admin Sticky Navigation Bar */}
+
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
 

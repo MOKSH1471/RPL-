@@ -133,6 +133,7 @@ export interface GalleryItem {
   season: string;
   category: 'cricket' | 'football' | 'womens' | 'ceremony' | string;
   image: string;
+  thumbnail?: string;
   caption: string;
 }
 

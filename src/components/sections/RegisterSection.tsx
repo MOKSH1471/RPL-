@@ -132,7 +132,6 @@ League: ${leagueVal.toUpperCase()}
 ${leagueVal === 'cricket' ? `Cricket Role: ${data.cricketRole}` : ''}
 ${leagueVal === 'football' ? `Football Position: ${data.footballPosition}` : ''}
 ${leagueVal === 'womens' ? `Women's Category: ${data.womensCategory}` : ''}
-Preferred Team Name: ${data.preferredTeamName || 'N/A'}
 ------------------------------------------------------
 Sent via RPL Official Registration Portal
     `.trim();
@@ -165,8 +164,6 @@ Sent via RPL Official Registration Portal
     }
   };
 
-  const [isReceiptPrinting, setIsReceiptPrinting] = useState(false);
-
   const handleReset = () => {
     setSubmittedData(null);
     setRegistrationId('');
@@ -176,7 +173,7 @@ Sent via RPL Official Registration Portal
   };
 
   return (
-    <section id="register" className={`py-20 md:py-24 relative transition-all duration-300 ${isReceiptPrinting ? 'z-[60]' : 'z-10'}`}>
+    <section id="register" className="py-20 md:py-24 relative z-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 md:mb-12">
@@ -196,7 +193,6 @@ Sent via RPL Official Registration Portal
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
-            onPrintingChange={setIsReceiptPrinting}
           />
         ) : (
           <Stepper
@@ -623,17 +619,6 @@ Sent via RPL Official Registration Portal
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Preferred Team Name <span className="text-slate-500 text-[10px]">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="If registering alongside a squad"
-                    {...register('preferredTeamName')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-500 transition-all text-base sm:text-sm"
-                  />
-                </div>
               </div>
             </Step>
           </Stepper>
