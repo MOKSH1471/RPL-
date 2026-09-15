@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db.js';
 
+const AASHRAY_DB = process.env.AASHRAY_DB || 'aashray';
 const RPL_START_DATE = '2026-12-25';
 const RPL_END_DATE = '2026-12-27';
 
@@ -18,7 +19,7 @@ function calculateNights(startDateStr, endDateStr) {
 async function ensurePlaceholderRooms() {
   try {
     await db.query(`
-      INSERT INTO roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
+      INSERT INTO ${AASHRAY_DB}.roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
       VALUES 
         ('RPL_UNASSIGNED', 'nac', 'NA', 'available', 'RPL_TEAM'),
         ('UNASSIGNED', 'nac', 'NA', 'available', 'RPL_APP')
@@ -38,23 +39,23 @@ async function ensureCardRecord({ cardno, fullName, mobile, gender, email, centr
   const mobNum = Number(cleanMobDigits.slice(-10)) || 9999999999;
   const mappedGender = gender === 'Female' ? 'F' : 'M';
 
-  // 1. If cardno provided, check if exists
+  // 1. If cardno provided, check if exists in central Aashray card_db
   if (cardno) {
-    const [existing] = await db.query('SELECT cardno FROM card_db WHERE cardno = ?', [cardno]);
+    const [existing] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE cardno = ?`, [cardno]);
     if (existing.length > 0) return cardno;
   }
 
-  // 2. Try looking up by mobile
+  // 2. Try looking up by mobile in central Aashray card_db
   if (cleanMobDigits.length >= 10) {
-    const [byMob] = await db.query('SELECT cardno FROM card_db WHERE mobno = ?', [mobNum]);
+    const [byMob] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ?`, [mobNum]);
     if (byMob.length > 0) return byMob[0].cardno;
   }
 
-  // 3. Create a Guest Card in card_db if not found
+  // 3. Create a Guest Card in central Aashray card_db if not found
   const guestCardNo = cardno || `GUEST_${cleanMobDigits.slice(-6) || Math.floor(100000 + Math.random() * 900000)}`;
   try {
     await db.query(
-      `INSERT INTO card_db 
+      `INSERT INTO ${AASHRAY_DB}.card_db 
        (cardno, issuedto, gender, mobno, email, center, active, status, res_status, updatedBy, password, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, ?, 1, 'offprem', 'GUEST', 'RPL_REGISTRATION', 'rpl_guest', ?, ?)
        ON DUPLICATE KEY UPDATE issuedto = VALUES(issuedto)`,
@@ -99,14 +100,14 @@ export async function processAccommodationBooking({
       const preNights = calculateNights(checkInDate, RPL_START_DATE);
       if (preNights > 0) {
         const [existingPre] = await db.query(
-          "SELECT bookingid FROM room_booking WHERE cardno = ? AND checkout = ? LIMIT 1",
+          `SELECT bookingid FROM ${AASHRAY_DB}.room_booking WHERE cardno = ? AND checkout = ? LIMIT 1`,
           [validCardNo, RPL_START_DATE]
         );
 
         if (existingPre.length > 0) {
           const preBookingId = existingPre[0].bookingid;
           await db.query(
-            `UPDATE room_booking SET checkin = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
+            `UPDATE ${AASHRAY_DB}.room_booking SET checkin = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
             [checkInDate, preNights, now, preBookingId]
           );
           bookingsCreated.push({
@@ -121,7 +122,7 @@ export async function processAccommodationBooking({
         } else {
           const preBookingId = uuidv4();
           await db.query(
-            `INSERT INTO room_booking 
+            `INSERT INTO ${AASHRAY_DB}.room_booking 
              (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -142,7 +143,7 @@ export async function processAccommodationBooking({
           );
 
           await db.query(
-            `INSERT INTO transactions 
+            `INSERT INTO ${AASHRAY_DB}.transactions 
              (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -178,7 +179,7 @@ export async function processAccommodationBooking({
     // -------------------------------------------------------------
     const rplNights = 2;
     const [existingRpl] = await db.query(
-      "SELECT bookingid FROM room_booking WHERE cardno = ? AND (checkin = ? AND checkout = ?) LIMIT 1",
+      `SELECT bookingid FROM ${AASHRAY_DB}.room_booking WHERE cardno = ? AND (checkin = ? AND checkout = ?) LIMIT 1`,
       [validCardNo, RPL_START_DATE, RPL_END_DATE]
     );
 
@@ -197,7 +198,7 @@ export async function processAccommodationBooking({
     } else {
       rplBookingId = uuidv4();
       await db.query(
-        `INSERT INTO room_booking 
+        `INSERT INTO ${AASHRAY_DB}.room_booking 
          (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -218,7 +219,7 @@ export async function processAccommodationBooking({
       );
 
       await db.query(
-        `INSERT INTO transactions 
+        `INSERT INTO ${AASHRAY_DB}.transactions 
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -254,14 +255,14 @@ export async function processAccommodationBooking({
       const postNights = calculateNights(RPL_END_DATE, checkOutDate);
       if (postNights > 0) {
         const [existingPost] = await db.query(
-          "SELECT bookingid FROM room_booking WHERE cardno = ? AND checkin = ? LIMIT 1",
+          `SELECT bookingid FROM ${AASHRAY_DB}.room_booking WHERE cardno = ? AND checkin = ? LIMIT 1`,
           [validCardNo, RPL_END_DATE]
         );
 
         if (existingPost.length > 0) {
           const postBookingId = existingPost[0].bookingid;
           await db.query(
-            `UPDATE room_booking SET checkout = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
+            `UPDATE ${AASHRAY_DB}.room_booking SET checkout = ?, nights = ?, updatedAt = ? WHERE bookingid = ?`,
             [checkOutDate, postNights, now, postBookingId]
           );
           bookingsCreated.push({
@@ -276,7 +277,7 @@ export async function processAccommodationBooking({
         } else {
           const postBookingId = uuidv4();
           await db.query(
-            `INSERT INTO room_booking 
+            `INSERT INTO ${AASHRAY_DB}.room_booking 
              (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -297,7 +298,7 @@ export async function processAccommodationBooking({
           );
 
           await db.query(
-            `INSERT INTO transactions 
+            `INSERT INTO ${AASHRAY_DB}.transactions 
              (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [

@@ -4,15 +4,20 @@ import multer from 'multer';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
-import dotenv from 'dotenv';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 import db from './db.js';
 import { processAccommodationBooking } from './services/roomBookingService.js';
 
-dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 5005;
+const AASHRAY_DB = process.env.AASHRAY_DB || 'aashray';
 
 // Middleware
 app.use(cors());
@@ -172,7 +177,7 @@ const handlePlayerLookup = async (req, res) => {
     // 2. Second priority: If no registration yet, query card_db for Mumukshu auto-fill
     const [rows] = await db.query(
       `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
-       FROM card_db 
+       FROM ${AASHRAY_DB}.card_db 
        WHERE mobno = ? 
           OR mobno LIKE ? 
           OR REPLACE(REPLACE(REPLACE(REPLACE(mobno, ' ', ''), '-', ''), '+', ''), '(', '') LIKE ?
@@ -1000,7 +1005,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 
     if (mob10) {
       const [cards] = await db.query(
-        'SELECT cardno FROM card_db WHERE mobno = ? OR mobno LIKE ? OR LPAD(cardno, 10, "0") = LPAD(?, 10, "0")',
+        `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno LIKE ? OR LPAD(cardno, 10, "0") = LPAD(?, 10, "0")`,
         [mob10, `%${mob10}`, gen.cardNo || '']
       );
       cards.forEach((c) => cardNos.add(String(c.cardno)));
@@ -1013,7 +1018,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
     // 3. Delete room bookings and ledger transactions associated with this player
     if (cardList.length > 0) {
       const [bookings] = await db.query(
-        `SELECT bookingid FROM room_booking 
+        `SELECT bookingid FROM ${AASHRAY_DB}.room_booking 
          WHERE cardno IN (?) 
            AND (updatedBy IN ('RPL_TEAM', 'RPL_APP') OR roomno IN ('RPL_UNASSIGNED', 'UNASSIGNED') OR (checkin >= '2026-12-20' AND checkin <= '2026-12-30'))`,
         [cardList]
@@ -1024,7 +1029,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
       if (bookingIds.length > 0) {
         // Delete related transactions
         const [txRes] = await db.query(
-          `DELETE FROM transactions 
+          `DELETE FROM ${AASHRAY_DB}.transactions 
            WHERE bookingid IN (?) OR (cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%'))`,
           [bookingIds, cardList]
         );
@@ -1032,13 +1037,13 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 
         // Delete room bookings
         const [bookRes] = await db.query(
-          'DELETE FROM room_booking WHERE bookingid IN (?)',
+          `DELETE FROM ${AASHRAY_DB}.room_booking WHERE bookingid IN (?)`,
           [bookingIds]
         );
         deletedBookingsCount = bookRes.affectedRows;
       } else {
         const [txRes] = await db.query(
-          `DELETE FROM transactions 
+          `DELETE FROM ${AASHRAY_DB}.transactions 
            WHERE cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%')`,
           [cardList]
         );
@@ -1047,7 +1052,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 
       // Clean up any temporary guest card created strictly for RPL
       await db.query(
-        "DELETE FROM card_db WHERE cardno IN (?) AND (cardno LIKE 'GUEST_%' OR updatedBy = 'RPL_REGISTRATION')",
+        `DELETE FROM ${AASHRAY_DB}.card_db WHERE cardno IN (?) AND (cardno LIKE 'GUEST_%' OR updatedBy = 'RPL_REGISTRATION')`,
         [cardList]
       );
     }
@@ -1083,7 +1088,7 @@ app.get('/api/admin/accommodation', async (req, res) => {
 
     const [bookings] = await db.query(`
       SELECT bookingid, cardno, roomno, checkin, checkout, nights, status, updatedBy, createdAt
-      FROM room_booking
+      FROM ${AASHRAY_DB}.room_booking
       ORDER BY createdAt DESC
     `);
 
@@ -1153,14 +1158,14 @@ app.post('/api/admin/accommodation/assign', async (req, res) => {
 
     // Ensure room exists in roomdb to satisfy FK
     await db.query(`
-      INSERT INTO roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
+      INSERT INTO ${AASHRAY_DB}.roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
       VALUES (?, 'nac', 'NA', 'available', 'RPL_ADMIN')
       ON DUPLICATE KEY UPDATE updatedBy = 'RPL_ADMIN'
     `, [cleanRoomNo]);
 
     // Update room_booking
     const [result] = await db.query(
-      'UPDATE room_booking SET roomno = ?, status = ? WHERE bookingid = ?',
+      `UPDATE ${AASHRAY_DB}.room_booking SET roomno = ?, status = ? WHERE bookingid = ?`,
       [cleanRoomNo, 'pending', bookingid]
     );
 

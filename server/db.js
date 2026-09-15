@@ -1,7 +1,10 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Create connection pool
 const pool = mysql.createPool({
@@ -9,7 +12,7 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'rpl_db',
+  database: process.env.DB_NAME || 'RPL',
   ssl: {
     rejectUnauthorized: false
   },
