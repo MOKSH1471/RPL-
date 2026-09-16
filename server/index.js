@@ -17,6 +17,7 @@ import { processAccommodationBooking } from './services/roomBookingService.js';
 
 const app = express();
 const port = process.env.PORT || 5005;
+const RPL_DB = (process.env.DB_NAME && process.env.DB_NAME.toLowerCase() !== 'aashray') ? process.env.DB_NAME : 'RPL';
 const AASHRAY_DB = process.env.AASHRAY_DB || 'aashray';
 
 // Middleware
@@ -56,7 +57,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 1. Get all active sports
 app.get('/api/sports', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT id, name FROM rpl_sports WHERE is_active = TRUE');
+    const [rows] = await db.query(`SELECT id, name FROM ${RPL_DB}.rpl_sports WHERE is_active = TRUE`);
     res.json(rows);
   } catch (error) {
     console.error('Error fetching sports:', error);
@@ -67,7 +68,7 @@ app.get('/api/sports', async (req, res) => {
 // 2. Get all registration fields (questions)
 app.get('/api/registration-fields', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM rpl_registration_fields ORDER BY sort_order ASC');
+    const [rows] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registration_fields ORDER BY sort_order ASC`);
     // Parse JSON columns in MySQL (some drivers return them parsed, others return them as strings/buffers)
     const fields = rows.map(field => ({
       ...field,
@@ -103,7 +104,7 @@ const handlePlayerLookup = async (req, res) => {
 
     // 1. First priority: Check if this player ALREADY has a registration in rpl_registrations
     const [regRows] = await db.query(
-      "SELECT id, full_name, email, mobile, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date, DATE_FORMAT(check_out_date, '%Y-%m-%d') as check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, submitted_at FROM rpl_registrations WHERE mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1",
+      `SELECT id, full_name, email, mobile, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date, DATE_FORMAT(check_out_date, '%Y-%m-%d') as check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, submitted_at FROM ${RPL_DB}.rpl_registrations WHERE mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
       [cleanMobile, `%${cleanMobile}`]
     );
 
@@ -449,7 +450,7 @@ app.post('/api/register', async (req, res) => {
 
     // A. Fetch rules for this registration
     const [fields] = await db.query(
-      'SELECT field_key, field_type, label, options, validation_rules FROM rpl_registration_fields WHERE sport_id = ? OR sport_id IS NULL',
+      `SELECT field_key, field_type, label, options, validation_rules FROM ${RPL_DB}.rpl_registration_fields WHERE sport_id = ? OR sport_id IS NULL`,
       [activeSport]
     );
 
@@ -510,7 +511,7 @@ app.post('/api/register', async (req, res) => {
     const mobile10 = rawMobileDigits.length > 10 ? rawMobileDigits.slice(-10) : rawMobileDigits;
 
     const [existingRegs] = await db.query(
-      "SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1",
+      `SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM ${RPL_DB}.rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
       [req.body.registration_id || '', cleanMobile, `%${mobile10}`]
     );
 
@@ -598,7 +599,7 @@ app.post('/api/register', async (req, res) => {
       const finalPaymentStatus = prevRow.payment_status === 'approved' ? 'approved' : 'pending';
 
       await db.query(
-        `UPDATE rpl_registrations 
+        `UPDATE ${RPL_DB}.rpl_registrations 
          SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
              player_photo_url = ?, payment_status = ?, payment_utr = ?, payment_receipt_url = ?, 
              general_details = ?, sport_answers = ?, submitted_at = NOW() 
@@ -629,7 +630,7 @@ app.post('/api/register', async (req, res) => {
       cleanGeneralDetails.calculatedFee = newFee;
 
       await db.query(
-        `INSERT INTO rpl_registrations 
+        `INSERT INTO ${RPL_DB}.rpl_registrations 
          (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
          VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
         [
@@ -688,7 +689,7 @@ app.post('/api/register', async (req, res) => {
 // 1. Admin Endpoint: Aggregated Stats & Analytics
 app.get('/api/admin/stats', async (req, res) => {
   try {
-    const [regs] = await db.query('SELECT * FROM rpl_registrations');
+    const [regs] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations`);
 
     let approved = 0;
     let pending = 0;
@@ -780,7 +781,7 @@ app.get('/api/admin/stats', async (req, res) => {
 app.get('/api/admin/registrations', async (req, res) => {
   const { payment_status, search, sport } = req.query;
   try {
-    let query = 'SELECT * FROM rpl_registrations';
+    let query = `SELECT * FROM ${RPL_DB}.rpl_registrations`;
     const params = [];
     const conditions = [];
 
@@ -899,7 +900,7 @@ app.patch('/api/admin/registrations/:id', async (req, res) => {
   } = req.body;
 
   try {
-    const [existing] = await db.query('SELECT * FROM rpl_registrations WHERE id = ?', [id]);
+    const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, error: 'Registration not found.' });
     }
@@ -928,7 +929,7 @@ app.patch('/api/admin/registrations/:id', async (req, res) => {
     }
 
     await db.query(
-      `UPDATE rpl_registrations 
+      `UPDATE ${RPL_DB}.rpl_registrations 
        SET full_name = ?, email = ?, mobile = ?, payment_status = ?, payment_utr = ?, check_in_date = ?, check_out_date = ?, general_details = ?, sport_answers = ?
        WHERE id = ?`,
       [
@@ -963,7 +964,7 @@ app.post('/api/admin/registrations/:id/payment', async (req, res) => {
 
   try {
     const [result] = await db.query(
-      'UPDATE rpl_registrations SET payment_status = ? WHERE id = ?',
+      `UPDATE ${RPL_DB}.rpl_registrations SET payment_status = ? WHERE id = ?`,
       [status, id]
     );
 
@@ -983,7 +984,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
   const { id } = req.params;
   try {
     // 1. Fetch player registration details before deletion
-    const [existing] = await db.query('SELECT * FROM rpl_registrations WHERE id = ?', [id]);
+    const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, error: 'Registration not found.' });
     }
@@ -1058,7 +1059,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
     }
 
     // 4. Finally delete the registration record
-    const [result] = await db.query('DELETE FROM rpl_registrations WHERE id = ?', [id]);
+    const [result] = await db.query(`DELETE FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
 
     console.log(`[RPL DELETE] Registration "${reg.full_name}" (${id}) deleted alongside ${deletedBookingsCount} room booking(s) and ${deletedTransactionsCount} transaction(s).`);
 
@@ -1082,7 +1083,7 @@ app.get('/api/admin/accommodation', async (req, res) => {
   try {
     const [regs] = await db.query(`
       SELECT r.id, r.full_name, r.mobile, r.email, r.payment_status, r.check_in_date, r.check_out_date, r.general_details
-      FROM rpl_registrations r
+      FROM ${RPL_DB}.rpl_registrations r
       ORDER BY r.submitted_at DESC
     `);
 
