@@ -14,6 +14,7 @@ interface ReceiptImageParams {
   customJerseyName?: string;
   preferredJerseyNumber?: string;
   accommodationRequired?: string;
+  stayingRoomNumber?: string;
   foodPreference?: string;
   sportsList: string[];
   hasPaymentProof: boolean;
@@ -172,7 +173,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   );
   drawRow(
     'HOSPITALITY:',
-    `${params.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : 'Self-Arranged'} • ${params.foodPreference || 'Regular'}`
+    `${params.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (params.stayingRoomNumber ? `Self (${params.stayingRoomNumber})` : 'Self-Arranged')} • ${params.foodPreference || 'Regular'}`
   );
   drawRow(
     'PROOF:',

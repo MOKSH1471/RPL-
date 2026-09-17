@@ -82,6 +82,7 @@ export const registrationSchema = z
     accommodationRequired: z.enum(['Yes', 'No'], {
       required_error: 'Please select Accommodation Requirement',
     }),
+    stayingRoomNumber: z.string().optional(),
     checkInDate: z.string().optional(),
     checkOutDate: z.string().optional(),
     existingRplFamily: z.enum(['Yes', 'No'], {
@@ -188,6 +189,16 @@ export const registrationSchema = z
           code: z.ZodIssueCode.custom,
           path: ['referrerMobile'],
           message: 'Referrer USA phone number must be 10 digits starting with 2–9',
+        });
+      }
+    }
+
+    if (data.accommodationRequired === 'No') {
+      if (!data.stayingRoomNumber || !data.stayingRoomNumber.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stayingRoomNumber'],
+          message: 'Please specify which room you are staying in',
         });
       }
     }

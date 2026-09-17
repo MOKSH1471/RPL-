@@ -51,6 +51,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Preferred Jersey Number',
     'Food Preference',
     'Accommodation Required',
+    'Staying Room (Self)',
     'Check-In Date',
     'Check-Out Date',
     'Referrer Name',
@@ -80,10 +81,11 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(gen.preferredJerseyNumber || ''),
       escapeCSV(gen.foodPreference || ''),
       escapeCSV(gen.accommodationRequired || 'No'),
+      escapeCSV(gen.stayingRoomNumber || ''),
       escapeCSV(r.check_in_date || gen.checkInDate || ''),
       escapeCSV(r.check_out_date || gen.checkOutDate || ''),
       escapeCSV(gen.referrerName || ''),
-      escapeCSV(gen.referrerMobile || ''),
+      escapeCSV(gen.referrerMobile ? `${gen.referrerCountryCode || '+91'} ${gen.referrerMobile}` : ''),
       escapeCSV(gen.referrerCardNo || ''),
       escapeCSV((r.payment_status || 'pending').toUpperCase()),
       escapeCSV(r.payment_utr || ''),
@@ -183,8 +185,9 @@ export function exportAccommodationGateList(accommodationList: any[]) {
 
   const rows = accommodationList.map((item, idx) => {
     const mainBooking = item.bookings?.[0] || {};
-    const roomNumber = mainBooking.roomno || 'PENDING_ALLOCATION';
-    const status = mainBooking.status || 'pending';
+    const gen = item.general_details || {};
+    const roomNumber = mainBooking.roomno || (gen.stayingRoomNumber ? `Self (${gen.stayingRoomNumber})` : 'PENDING_ALLOCATION');
+    const status = mainBooking.status || (gen.stayingRoomNumber ? 'SELF_STAY' : 'pending');
 
     return [
       idx + 1,

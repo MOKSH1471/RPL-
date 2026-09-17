@@ -56,6 +56,7 @@ export interface RegistrationFormData {
   gender: 'Male' | 'Female' | 'Other' | string;
   foodPreference: 'Regular' | 'Non-Spicy' | string;
   accommodationRequired: 'Yes' | 'No' | string;
+  stayingRoomNumber?: string;
   checkInDate?: string;
   checkOutDate?: string;
   existingRplFamily: 'Yes' | 'No' | string;

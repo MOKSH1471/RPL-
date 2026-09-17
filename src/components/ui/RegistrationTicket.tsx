@@ -163,10 +163,14 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Stay Dates
+              Accommodation & Stay
             </span>
-            <span className="font-bold text-slate-900 text-sm font-mono">
-              {data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'}
+            <span className="font-bold text-slate-900 text-sm">
+              {data.accommodationRequired === 'Yes' ? (
+                <span>RPL Stay ({data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'})</span>
+              ) : (
+                <span>Self-Arranged {data.stayingRoomNumber ? `• ${data.stayingRoomNumber}` : ''}</span>
+              )}
             </span>
           </div>
 

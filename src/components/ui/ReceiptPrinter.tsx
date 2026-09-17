@@ -28,6 +28,7 @@ export interface ReceiptPrinterProps {
     league?: string;
     foodPreference?: string;
     accommodationRequired?: string;
+    stayingRoomNumber?: string;
     checkInDate?: string;
     checkOutDate?: string;
     customJerseyName?: string;
@@ -188,7 +189,7 @@ Registration ID: ${registrationId}
 Player: ${data.fullName || 'Participant'}
 Sports: ${sportsList.map(formatSportName).join(', ')}
 Centre: ${data.centre || 'Mumbai'}
-Stay: ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : 'Self-Arranged'}
+Stay: ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}
 Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
     `.trim();
 
@@ -210,6 +211,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       customJerseyName: data.customJerseyName,
       preferredJerseyNumber: data.preferredJerseyNumber,
       accommodationRequired: data.accommodationRequired,
+      stayingRoomNumber: data.stayingRoomNumber,
       foodPreference: data.foodPreference,
       sportsList: sportsList.map(formatSportName),
       hasPaymentProof,
@@ -387,7 +389,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : 'Self-Arranged'} • {data.foodPreference || 'Regular'}
+                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference || 'Regular'}
                     </span>
                   </div>
 

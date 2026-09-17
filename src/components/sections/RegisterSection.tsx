@@ -47,6 +47,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       tshirtSize: 'L',
       foodPreference: 'Regular',
       accommodationRequired: 'No',
+      stayingRoomNumber: '',
       league: selectedLeague,
       cricketRole: 'Batter',
       footballPosition: 'Forward',
@@ -101,6 +102,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       tshirtSize: data.tshirtSize,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
+      stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
       selectedSports: [leagueVal as any],
       league: leagueVal,
       cricketRole: data.cricketRole as any,
@@ -553,10 +555,26 @@ Sent via RPL Official Registration Portal
                       {...register('accommodationRequired')}
                       className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 text-base sm:text-sm"
                     >
-                      <option value="No">No</option>
-                      <option value="Yes">Yes</option>
+                      <option value="No">No, Self-Arranged</option>
+                      <option value="Yes">Yes, Needed</option>
                     </select>
                   </div>
+
+                  {watch('accommodationRequired') === 'No' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        In Which Room Are You Staying? <span className="text-pink-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        {...register('stayingRoomNumber')}
+                        className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 text-base sm:text-sm"
+                      />
+                      {errors.stayingRoomNumber && (
+                        <p className="mt-1 text-xs text-pink-600 font-semibold">{errors.stayingRoomNumber.message}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </Step>

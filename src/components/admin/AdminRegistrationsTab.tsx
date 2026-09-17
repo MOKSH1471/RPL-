@@ -516,6 +516,7 @@ export function AdminRegistrationsTab({
             preferredJerseyNumber: receiptModalPlayer.general_details?.preferredJerseyNumber,
             foodPreference: receiptModalPlayer.general_details?.foodPreference,
             accommodationRequired: receiptModalPlayer.general_details?.accommodationRequired,
+            stayingRoomNumber: receiptModalPlayer.general_details?.stayingRoomNumber,
             checkInDate: receiptModalPlayer.check_in_date,
             checkOutDate: receiptModalPlayer.check_out_date,
             payment_utr: receiptModalPlayer.payment_utr,

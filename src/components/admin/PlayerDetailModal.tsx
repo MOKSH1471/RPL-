@@ -78,6 +78,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     preferredJerseyNumber: gen.preferredJerseyNumber || '',
     foodPreference: gen.foodPreference || 'Jain',
     accommodationRequired: gen.accommodationRequired || 'No',
+    stayingRoomNumber: gen.stayingRoomNumber || '',
     check_in_date: formatDateForInput(player.check_in_date || gen.checkInDate || '2026-12-24'),
     check_out_date: formatDateForInput(player.check_out_date || gen.checkOutDate || '2026-12-26'),
     payment_status: player.payment_status || 'pending',
@@ -109,6 +110,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         preferredJerseyNumber: formData.preferredJerseyNumber,
         foodPreference: formData.foodPreference,
         accommodationRequired: formData.accommodationRequired,
+        stayingRoomNumber: formData.accommodationRequired === 'No' ? (formData.stayingRoomNumber?.trim() || null) : null,
         checkInDate: formData.check_in_date || null,
         checkOutDate: formData.check_out_date || null,
       };
@@ -473,7 +475,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       </div>
                       {gen.referrerMobile && (
                         <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100/80 px-2.5 py-1 rounded-md border border-amber-300/60">
-                          +91 {gen.referrerMobile}
+                          {gen.referrerCountryCode || '+91'} {gen.referrerMobile}
                         </span>
                       )}
                     </div>
@@ -529,11 +531,19 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Accommodation & Stay
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div>
-                    <span className="text-slate-400 font-medium block">Accommodation Needed</span>
+                    <span className="text-slate-400 font-medium block">Accommodation</span>
                     <span className="font-bold text-slate-900">{gen.accommodationRequired || 'No'}</span>
                   </div>
+                  {gen.stayingRoomNumber && (
+                    <div>
+                      <span className="text-slate-400 font-medium block">Staying Room (Self)</span>
+                      <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block mt-0.5">
+                        {gen.stayingRoomNumber}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-slate-400 font-medium block">Check-In Date</span>
                     <span className="font-bold text-slate-900">{player.check_in_date || '2026-12-24'}</span>
@@ -684,6 +694,18 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <option value="Yes">Yes, Needed</option>
                   </select>
                 </div>
+
+                {formData.accommodationRequired === 'No' && (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Staying In Room (Self)</label>
+                    <input
+                      type="text"
+                      value={formData.stayingRoomNumber}
+                      onChange={(e) => setFormData({ ...formData, stayingRoomNumber: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-amber-200/80">

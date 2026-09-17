@@ -29,6 +29,7 @@ import {
   Calendar,
   Utensils,
   Home,
+  DoorOpen,
   Check,
   Zap,
   ChevronDown,
@@ -293,6 +294,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     handleSubmit,
     setValue,
     watch,
+    clearErrors,
     formState: { errors },
     reset,
   } = useForm<RegistrationSchemaType>({
@@ -310,6 +312,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: initialGender,
       foodPreference: 'Regular',
       accommodationRequired: 'No',
+      stayingRoomNumber: '',
       checkInDate: '2026-12-25',
       checkOutDate: '2026-12-27',
       existingRplFamily: 'No',
@@ -548,6 +551,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
               if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
               if (gen.accommodationRequired) setValue('accommodationRequired', gen.accommodationRequired as any, { shouldValidate: true, shouldDirty: true });
+              if (gen.stayingRoomNumber) setValue('stayingRoomNumber', gen.stayingRoomNumber, { shouldValidate: true, shouldDirty: true });
               if (reg.checkInDate || gen.checkInDate) setValue('checkInDate', reg.checkInDate || gen.checkInDate, { shouldValidate: true, shouldDirty: true });
               if (reg.checkOutDate || gen.checkOutDate) setValue('checkOutDate', reg.checkOutDate || gen.checkOutDate, { shouldValidate: true, shouldDirty: true });
               if (gen.existingRplFamily) setValue('existingRplFamily', gen.existingRplFamily as any, { shouldValidate: true, shouldDirty: true });
@@ -1030,6 +1034,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: data.gender,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
+      stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
       checkInDate: data.checkInDate || '2026-12-25',
       checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
@@ -1084,6 +1089,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       tshirtSize: data.tshirtSize,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
+      stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
       checkInDate: data.checkInDate || '2026-12-25',
       checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
@@ -1808,12 +1814,53 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       { value: 'Yes', label: 'Yes, Needed' },
                     ]}
                     value={currentAcc}
-                    onChange={(accOption) => setValue('accommodationRequired', accOption as any, { shouldValidate: true })}
+                    onChange={(accOption) => {
+                      setValue('accommodationRequired', accOption as any, { shouldValidate: true });
+                      if (accOption === 'Yes') {
+                        clearErrors('stayingRoomNumber');
+                      }
+                    }}
                     layoutId="accommodation-indicator"
                     activeColor="bg-slate-900"
                     activeTextColor="text-white"
                   />
                 </div>
+
+                {/* Conditional: In which room are you staying? (When accommodation is 'No') */}
+                <AnimatePresence>
+                  {currentAcc === 'No' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -8 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -8 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden md:col-span-2"
+                    >
+                      <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 border-2 border-amber-300 shadow-xs space-y-2">
+                        <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-amber-950">
+                          <DoorOpen className="w-4 h-4 text-amber-600" />
+                          <span>In Which Room Are You Staying?</span>
+                          <span className="text-pink-600 font-extrabold">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          {...register('stayingRoomNumber')}
+                          className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${
+                            errors.stayingRoomNumber
+                              ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
+                              : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
+                          }`}
+                        />
+                        {errors.stayingRoomNumber && (
+                          <p className="mt-1 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{errors.stayingRoomNumber.message}</span>
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
@@ -1828,7 +1875,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     value={currentCheckInDate}
                     onChange={(val) => {
                       setValue('checkInDate', val, { shouldValidate: true });
-                      setValue('accommodationRequired', 'Yes', { shouldValidate: true });
                     }}
                     placeholder="Select Check-In Date"
                     minYear={2026}
@@ -1854,7 +1900,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     value={currentCheckOutDate}
                     onChange={(val) => {
                       setValue('checkOutDate', val, { shouldValidate: true });
-                      setValue('accommodationRequired', 'Yes', { shouldValidate: true });
                     }}
                     placeholder="Select Check-Out Date"
                     minYear={2026}
