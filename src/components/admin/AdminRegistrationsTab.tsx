@@ -175,8 +175,8 @@ export function AdminRegistrationsTab({
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="all">All Sports</option>
-              <option value="cricket">Cricket</option>
-              <option value="football">Football</option>
+              <option value="cricket">Underarm Turf Cricket</option>
+              <option value="football">Turf Football</option>
               <option value="badminton">Badminton</option>
               <option value="table-tennis">Table Tennis</option>
               <option value="pickleball">Pickleball</option>

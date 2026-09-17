@@ -48,7 +48,7 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
           <div className="flex items-center space-x-2">
             <Target className="w-5 h-5 text-emerald-400" />
             <span className="font-display font-extrabold text-lg text-white">
-              Football League <span className="text-emerald-400">S9</span>
+              Turf Football <span className="text-emerald-400">S9</span>
             </span>
           </div>
         </div>
@@ -58,10 +58,10 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
       <section className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-[#0E1A1A] via-[#091212] to-[#0A0612] border-b border-emerald-500/20">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <span className="text-xs uppercase font-extrabold tracking-widest px-4 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 inline-block mb-4">
-            Official Football Championship Context Site
+            Official Turf Football Championship Context Site
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-6">
-            RPL Season 9 <span className="text-gradient-emerald">Football League</span>
+            RPL Season 9 <span className="text-gradient-emerald">Turf Football</span>
           </h1>
           <p className="text-slate-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
             Fast-paced 7-a-side turf tournament. Complete your dedicated player profile and football questionnaire below.
@@ -135,7 +135,7 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
         ) : (
           <div className="solid-card-emerald p-8 md:p-10 rounded-3xl border border-emerald-500/40">
             <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white mb-2 text-center">
-              Football League Player Questionnaire
+              Turf Football Player Questionnaire
             </h2>
             <p className="text-slate-200 text-sm text-center mb-8">
               Please answer the following football-specific questions for position evaluation.
@@ -252,7 +252,7 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
                 type="submit"
                 className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-base md:text-lg transition-all"
               >
-                Submit Football Registration
+                Submit Turf Football Registration
               </button>
             </form>
           </div>

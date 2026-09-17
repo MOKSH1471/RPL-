@@ -456,6 +456,28 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <span className="text-slate-400 font-medium block">Jersey Number</span>
                     <span className="font-bold text-slate-900">{gen.preferredJerseyNumber || '-'}</span>
                   </div>
+
+                  {(gen.referrerName || gen.referrerMobile) && (
+                    <div className="col-span-2 sm:col-span-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-200/80 text-amber-800 flex items-center justify-center font-bold text-xs shrink-0">
+                          Ref
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider block">Referred By Mumukshu</span>
+                          <span className="text-xs font-extrabold text-slate-900">
+                            {gen.referrerName || 'Registered Mumukshu'}
+                            {gen.referrerCardNo ? ` (Card #${gen.referrerCardNo})` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      {gen.referrerMobile && (
+                        <span className="text-xs font-mono font-bold text-amber-900 bg-amber-100/80 px-2.5 py-1 rounded-md border border-amber-300/60">
+                          +91 {gen.referrerMobile}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

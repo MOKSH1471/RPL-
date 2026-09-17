@@ -11,8 +11,15 @@ export function buildDynamicZodSchema(fields: DynamicField[]) {
     email: z.string().email({ message: 'Please enter a valid Email ID' }),
     mobileNumber: z
       .string()
-      .min(7, { message: 'Please enter a valid mobile number' })
-      .regex(/^[0-9+\s-]{7,16}$/, { message: 'Invalid mobile number format' }),
+      .min(10, { message: 'Mobile number must be strictly 10 digits' })
+      .max(10, { message: 'Mobile number must be strictly 10 digits' })
+      .regex(/^\d{10}$/, { message: 'Mobile number must be strictly 10 digits' })
+      .refine((val) => !/^(\d)\1{9}$/.test(val), {
+        message: 'Repeated dummy numbers (like 0000000000, 1111111111) are not allowed',
+      })
+      .refine((val) => !val.startsWith('0'), {
+        message: 'Mobile number cannot start with 0 (card numbers are not valid mobile numbers)',
+      }),
     countryCode: z.string().optional(),
     selectedSports: z
       .array(z.string())

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import confetti from 'canvas-confetti';
-import { registrationSchema, RegistrationSchemaType } from '@/lib/validation';
+import { cleanPhoneNumber, registrationSchema, RegistrationSchemaType } from '@/lib/validation';
 import { LeagueType, RegistrationFormData } from '@/types';
 import { RegistrationTicket } from '@/components/ui/RegistrationTicket';
+import { CountryCodeSelect } from '@/components/ui/CountryCodeSelect';
 import Stepper, { Step } from '@/components/ui/Stepper';
 import { Trophy, Target, Heart, AlertCircle, Mail, Upload } from 'lucide-react';
 
@@ -36,6 +37,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       recipientGmail: 'rpl@rajpremierleague.com',
       ccEmail: '',
       fullName: '',
+      countryCode: '+91',
       mobileNumber: '',
       email: '',
       dateOfBirth: '',
@@ -58,6 +60,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
   }, [selectedLeague, setValue]);
 
   const currentLeague = watch('league');
+  const currentCountryCode = watch('countryCode') || '+91';
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,6 +89,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
+      countryCode: data.countryCode || '+91',
       mobileNumber: data.mobileNumber,
       email: data.email,
       dateOfBirth: data.dateOfBirth,
@@ -215,8 +219,8 @@ Sent via RPL Official Registration Portal
                   </label>
                   <div className="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200">
                     {[
-                      { id: 'cricket' as LeagueType, label: 'Cricket', icon: Trophy, color: 'text-amber-600' },
-                      { id: 'football' as LeagueType, label: 'Football', icon: Target, color: 'text-emerald-600' },
+                      { id: 'cricket' as LeagueType, label: 'Underarm Turf Cricket', icon: Trophy, color: 'text-amber-600' },
+                      { id: 'football' as LeagueType, label: 'Turf Football', icon: Target, color: 'text-emerald-600' },
                       { id: 'womens' as LeagueType, label: "Women's", icon: Heart, color: 'text-pink-600' },
                     ].map((tab) => {
                       const Icon = tab.icon;
@@ -319,18 +323,46 @@ Sent via RPL Official Registration Portal
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                       Mobile Number <span className="text-pink-600">*</span>
                     </label>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-4 rounded-l-xl bg-slate-200 border border-r-0 border-slate-300 text-slate-900 font-bold text-sm min-h-[48px]">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="XXXXXXXXXX"
-                        {...register('mobileNumber')}
-                        className="w-full px-4 py-3.5 min-h-[48px] rounded-r-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-500 transition-all text-base sm:text-sm"
+                    <div className="flex items-stretch rounded-xl bg-slate-50 border border-slate-300 focus-within:border-amber-500 focus-within:bg-white transition-all overflow-visible relative min-h-[48px]">
+                      <CountryCodeSelect
+                        value={currentCountryCode}
+                        onChange={(code) => setValue('countryCode', code, { shouldValidate: true })}
                       />
+                      <div className="w-[1px] bg-slate-300 my-2 shrink-0" />
+                      <div className="flex-1 min-w-0 flex items-stretch rounded-r-xl overflow-hidden">
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          autoComplete="tel"
+                          maxLength={10}
+                          pattern="[0-9]{10}"
+                          placeholder="Enter 10-digit mobile number"
+                          {...register('mobileNumber', {
+                            onChange: (e) => {
+                              const cleaned = cleanPhoneNumber(e.target.value, currentCountryCode);
+                              setValue('mobileNumber', cleaned, { shouldValidate: true });
+                            },
+                          })}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const pasted = e.clipboardData.getData('text');
+                            const cleaned = cleanPhoneNumber(pasted, currentCountryCode);
+                            setValue('mobileNumber', cleaned, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                          }}
+                          onKeyDown={(e) => {
+                            if (
+                              ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+                              ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase()))
+                            ) {
+                              return;
+                            }
+                            if (!/^\d$/.test(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="w-full px-4 py-3.5 bg-transparent border-0 text-slate-900 placeholder-slate-400 focus:outline-none text-base sm:text-sm font-mono rounded-r-xl"
+                        />
+                      </div>
                     </div>
                     {errors.mobileNumber && (
                       <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold">
@@ -540,7 +572,7 @@ Sent via RPL Official Registration Portal
                 {currentLeague === 'cricket' && (
                   <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
                     <h4 className="font-display text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wider">
-                      Cricket League Position Details
+                      Underarm Turf Cricket Position Details
                     </h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -577,7 +609,7 @@ Sent via RPL Official Registration Portal
                 {currentLeague === 'football' && (
                   <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-4">
                     <h4 className="font-display text-xs sm:text-sm font-bold text-emerald-800 uppercase tracking-wider">
-                      Football League Position Details
+                      Turf Football Position Details
                     </h4>
 
                     <div>

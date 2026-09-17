@@ -40,9 +40,9 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
   const formatSportName = (sport: string) => {
     switch (sport) {
       case 'cricket':
-        return 'Cricket';
+        return 'Underarm Turf Cricket';
       case 'football':
-        return 'Football';
+        return 'Turf Football';
       case 'badminton':
         return 'Badminton';
       case 'table-tennis':

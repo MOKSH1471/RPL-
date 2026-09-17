@@ -49,7 +49,7 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
           <div className="flex items-center space-x-2">
             <Trophy className="w-5 h-5 text-amber-400" />
             <span className="font-display font-extrabold text-lg text-white">
-              Cricket League <span className="text-amber-400">S9</span>
+              Underarm Turf Cricket <span className="text-amber-400">S9</span>
             </span>
           </div>
         </div>
@@ -59,13 +59,13 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
       <section className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-[#1C1322] via-[#120B1A] to-[#0A0612] border-b border-amber-500/20">
         <div className="max-w-5xl mx-auto px-4 text-center">
           <span className="text-xs uppercase font-extrabold tracking-widest px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 inline-block mb-4">
-            Official Cricket Championship Context Site
+            Official Underarm Turf Cricket Championship Context Site
           </span>
           <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-6">
-            RPL Season 9 <span className="text-gradient-amber">Cricket League</span>
+            RPL Season 9 <span className="text-gradient-amber">Underarm Turf Cricket</span>
           </h1>
           <p className="text-slate-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-            High-octane T20 leather ball tournament. Complete your dedicated player profile and cricket questionnaire below.
+            High-octane underarm turf cricket tournament under floodlights. Complete your dedicated player profile and questionnaire below.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-left">
@@ -140,7 +140,7 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
         ) : (
           <div className="solid-card-amber p-8 md:p-10 rounded-3xl border border-amber-500/40">
             <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white mb-2 text-center">
-              Cricket League Player Questionnaire
+              Underarm Turf Cricket Player Questionnaire
             </h2>
             <p className="text-slate-200 text-sm text-center mb-8">
               Please answer the following cricket-specific questions accurately for draft evaluation.
@@ -282,7 +282,7 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
                 type="submit"
                 className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-base md:text-lg transition-all"
               >
-                Submit Cricket Registration
+                Submit Underarm Turf Cricket Registration
               </button>
             </form>
           </div>

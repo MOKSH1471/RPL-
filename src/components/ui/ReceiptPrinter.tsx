@@ -78,9 +78,9 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
   const formatSportName = (s: string) => {
     switch (s) {
       case 'cricket':
-        return 'Cricket Championship';
+        return 'Underarm Turf Cricket';
       case 'football':
-        return 'Football Championship';
+        return 'Turf Football';
       case 'badminton':
         return 'Badminton Championship';
       case 'table-tennis':

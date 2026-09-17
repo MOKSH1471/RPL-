@@ -108,6 +108,12 @@ export interface RegistrationFormData {
   preferredJerseyNumber?: string;
   preferredTeamName?: string;
   additionalNotes?: string;
+
+  // Ashram Member Reference (Required when user is not found in DB)
+  referrerCountryCode?: string;
+  referrerMobile?: string;
+  referrerName?: string;
+  referrerCardNo?: string;
   // Pricing
   totalAmount?: number;
   calculatedFee?: number;

@@ -103,6 +103,7 @@ export async function submitRegistration(payload: RegistrationPayload): Promise<
 export interface MumukshuData {
   cardNo?: string;
   fullName: string;
+  mobile?: string;
   gender: 'Male' | 'Female' | 'Other' | string;
   dateOfBirth: string;
   email: string;
@@ -141,8 +142,8 @@ export interface PlayerLookupResponse {
 
 export async function lookupMumukshu(mobile: string): Promise<PlayerLookupResponse> {
   try {
-    const url = `${API_BASE_URL}/player-lookup?mobile=${encodeURIComponent(mobile)}`;
-    console.log(`[API] Looking up player/Mumukshu for: "${mobile}" via ${url}`);
+    const url = `${API_BASE_URL}/player-lookup?mobile=${encodeURIComponent(mobile)}&onlyPhone=true`;
+    console.log(`[API] Looking up player/Mumukshu strictly by phone: "${mobile}" via ${url}`);
     const res = await fetch(url);
     if (!res.ok) {
       console.warn(`[API] Lookup response error (status ${res.status}) from ${url}`);
@@ -158,6 +159,31 @@ export async function lookupMumukshu(mobile: string): Promise<PlayerLookupRespon
 }
 
 export const lookupPlayer = lookupMumukshu;
+
+/**
+ * Dedicated Referrer Lookup for unregistered participants.
+ * Strictly verifies the referrer by 10-digit mobile number, NEVER by card number.
+ */
+export async function lookupReferrer(mobile: string): Promise<PlayerLookupResponse> {
+  try {
+    const url = `${API_BASE_URL}/referrer-lookup?mobile=${encodeURIComponent(mobile)}&onlyPhone=true`;
+    console.log(`[API] Looking up referrer strictly by phone: "${mobile}" via ${url}`);
+    const res = await fetch(url);
+    if (!res.ok) {
+      // Fallback to player-lookup with strictly phone-only parameter if legacy server
+      const fallbackUrl = `${API_BASE_URL}/player-lookup?mobile=${encodeURIComponent(mobile)}&onlyPhone=true&referenceCheck=true`;
+      const fallbackRes = await fetch(fallbackUrl);
+      if (!fallbackRes.ok) return { found: false };
+      return await fallbackRes.json();
+    }
+    const result = await res.json();
+    console.log('[API] Referrer lookup result:', result);
+    return result;
+  } catch (err) {
+    console.error('[API] Referrer lookup network error:', err);
+    return { found: false };
+  }
+}
 
 // ==========================================
 // ADMIN API CLIENT METHODS

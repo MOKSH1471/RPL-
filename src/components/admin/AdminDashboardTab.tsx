@@ -29,8 +29,8 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
   const { totalRegistrations, payment, accommodationCount, sportsCount, tshirtSizes, centresCount } = stats;
 
   const sportLabels: Record<string, string> = {
-    cricket: 'Cricket',
-    football: 'Football',
+    cricket: 'Underarm Turf Cricket',
+    football: 'Turf Football',
     badminton: 'Badminton',
     'table-tennis': 'Table Tennis',
     pickleball: 'Pickleball',

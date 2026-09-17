@@ -53,11 +53,11 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </div>
 
                 <h3 className="font-display font-extrabold text-2xl sm:text-4xl lg:text-5xl text-slate-900 mb-3 sm:mb-4 group-hover:text-amber-700 transition-colors">
-                  Cricket League
+                  Underarm Turf Cricket
                 </h3>
 
                 <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-8 max-w-xl">
-                  The centerpiece of RPL Season 9. High-intensity leather ball T20 cricket under stadium lights, complete with powerplay overs, professional umpiring, and full player draft evaluations.
+                  The centerpiece of RPL Season 9. High-intensity underarm turf cricket under floodlights, complete with powerplay overs, professional umpiring, and full player draft evaluations.
                 </p>
 
                 <div className="mb-8 sm:mb-10">
@@ -85,7 +85,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 }}
                 className="w-full py-3.5 sm:py-4 px-6 rounded-2xl font-extrabold text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
               >
-                <span>Register for Cricket League</span>
+                <span>Register for Underarm Turf Cricket</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -108,7 +108,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     7-A-Side Turf Knockouts
                   </span>
                   <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">
-                    Football League
+                    Turf Football
                   </h3>
                   <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                     Fast-paced turf football action with group stages, penalty shootouts, Golden Boot, and Golden Glove trophies.
@@ -123,7 +123,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   }}
                   className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
                 >
-                  <span>Register for Football League</span>
+                  <span>Register for Turf Football</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
