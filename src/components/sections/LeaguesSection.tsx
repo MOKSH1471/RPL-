@@ -57,7 +57,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </h3>
 
                 <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-8 max-w-xl">
-                  Gather your friends for fast and exciting underarm turf cricket! Packed with high energy, team bonding, and unforgettable moments together on the pitch.
+                  Gather your friends for exciting underarm turf cricket! Packed with high energy, team bonding, and unforgettable moments together on the pitch.
                 </p>
 
                 <div className="mb-8 sm:mb-10">
