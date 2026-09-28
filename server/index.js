@@ -793,6 +793,7 @@ app.get('/api/admin/stats', async (req, res) => {
     let approved = 0;
     let pending = 0;
     let rejected = 0;
+    let archivedCount = 0;
     let accommodationCount = 0;
 
     const sportsCount = {
@@ -819,19 +820,25 @@ app.get('/api/admin/stats', async (req, res) => {
     const centresCount = {};
 
     regs.forEach((r) => {
-      // Payment status
-      const pStatus = (r.payment_status || 'pending').toLowerCase();
-      if (pStatus === 'approved') approved++;
-      else if (pStatus === 'rejected') rejected++;
-      else pending++;
-
-      // General Details parsing
       let gen = {};
       try {
         gen = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
       } catch (e) {
         gen = {};
       }
+
+      const isArchived = Boolean(r.is_archived || gen.isArchived);
+
+      if (isArchived) {
+        archivedCount++;
+        return; // Exclude archived players from active tallies
+      }
+
+      // Payment status
+      const pStatus = (r.payment_status || 'pending').toLowerCase();
+      if (pStatus === 'approved') approved++;
+      else if (pStatus === 'rejected') rejected++;
+      else pending++;
 
       // Accommodation
       if (gen.accommodationRequired === 'Yes') {
@@ -863,7 +870,9 @@ app.get('/api/admin/stats', async (req, res) => {
       success: true,
       stats: {
         totalRegistrations: regs.length,
-        payment: { approved, pending, rejected },
+        activeRegistrations: regs.length - archivedCount,
+        archivedCount,
+        payment: { approved, pending, rejected, archived: archivedCount },
         accommodationCount,
         sportsCount,
         tshirtSizes,
@@ -885,8 +894,12 @@ app.get('/api/admin/registrations', async (req, res) => {
     const conditions = [];
 
     if (payment_status && payment_status !== 'all') {
-      conditions.push('payment_status = ?');
-      params.push(payment_status);
+      if (payment_status === 'archived') {
+        conditions.push('(is_archived = TRUE OR JSON_EXTRACT(general_details, "$.isArchived") = true)');
+      } else {
+        conditions.push('payment_status = ?');
+        params.push(payment_status);
+      }
     }
 
     if (conditions.length > 0) {
@@ -901,6 +914,8 @@ app.get('/api/admin/registrations', async (req, res) => {
     let formatted = rows.map((r) => {
       const parsedGeneral = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
       const parsedSport = typeof r.sport_answers === 'string' ? JSON.parse(r.sport_answers || '{}') : (r.sport_answers || {});
+
+      const isArchived = Boolean(r.is_archived || parsedGeneral.isArchived);
 
       const paymentReceiptUrl = 
         r.payment_receipt_url || 
@@ -925,12 +940,14 @@ app.get('/api/admin/registrations', async (req, res) => {
 
       return {
         ...r,
+        is_archived: isArchived,
+        archived_at: r.archived_at || parsedGeneral.archivedAt || null,
         player_photo_url: playerPhotoUrl,
         payment_receipt_url: paymentReceiptUrl,
         payment_utr: paymentUtr,
-        general_details: parsedGeneral,
+        general_details: { ...parsedGeneral, isArchived },
         sport_answers: parsedSport,
-        answers: { ...parsedGeneral, ...parsedSport },
+        answers: { ...parsedGeneral, ...parsedSport, isArchived },
       };
     });
 
@@ -1078,11 +1095,13 @@ app.post('/api/admin/registrations/:id/payment', async (req, res) => {
   }
 });
 
-// 5. Admin Endpoint: Delete Registration (Cascaded Deletion: rpl_registrations, room_booking, transactions)
-app.delete('/api/admin/registrations/:id', async (req, res) => {
+// 5. Admin Endpoint: Archive / Unarchive Registration (Toggle Archive State with Resource Management)
+app.post('/api/admin/registrations/:id/archive', async (req, res) => {
   const { id } = req.params;
+  const shouldArchive = req.body.is_archived !== undefined ? Boolean(req.body.is_archived) : true;
+
   try {
-    // 1. Fetch player registration details before deletion
+    // 1. Fetch player registration details
     const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, error: 'Registration not found.' });
@@ -1090,13 +1109,19 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 
     const reg = existing[0];
     let gen = {};
+    let sportAns = {};
     try {
       gen = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details || '{}') : (reg.general_details || {});
     } catch (e) {
       gen = {};
     }
+    try {
+      sportAns = typeof reg.sport_answers === 'string' ? JSON.parse(reg.sport_answers || '{}') : (reg.sport_answers || {});
+    } catch (e) {
+      sportAns = {};
+    }
 
-    // 2. Collect card numbers associated with this registration/player
+    // Collect card numbers associated with this player
     const cardNos = new Set();
     if (gen.cardNo) cardNos.add(String(gen.cardNo).trim());
 
@@ -1105,75 +1130,154 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 
     if (mob10) {
       const [cards] = await db.query(
-        `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno LIKE ? OR LPAD(cardno, 10, "0") = LPAD(?, 10, "0")`,
+        `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno LIKE ? OR LPAD(cardno, 10, '0') = LPAD(?, 10, '0')`,
         [mob10, `%${mob10}`, gen.cardNo || '']
       );
       cards.forEach((c) => cardNos.add(String(c.cardno)));
     }
 
     const cardList = Array.from(cardNos).filter(Boolean);
-    let deletedBookingsCount = 0;
-    let deletedTransactionsCount = 0;
 
-    // 3. Delete room bookings and ledger transactions associated with this player
-    if (cardList.length > 0) {
-      const [bookings] = await db.query(
-        `SELECT bookingid FROM ${AASHRAY_DB}.room_booking 
-         WHERE cardno IN (?) 
-           AND (updatedBy IN ('RPL_TEAM', 'RPL_APP') OR roomno IN ('RPL_UNASSIGNED', 'UNASSIGNED') OR (checkin >= '2026-12-20' AND checkin <= '2026-12-30'))`,
-        [cardList]
+    if (shouldArchive) {
+      // --- ARCHIVE FLOW ---
+      // 1. Mark as archived in database (keeping all player & payment history intact)
+      gen.isArchived = true;
+      gen.archivedAt = new Date().toISOString();
+
+      await db.query(
+        `UPDATE ${RPL_DB}.rpl_registrations 
+         SET is_archived = TRUE, archived_at = NOW(), general_details = ? 
+         WHERE id = ?`,
+        [JSON.stringify(gen), id]
       );
 
-      const bookingIds = bookings.map((b) => b.bookingid);
+      // 2. Release room bookings and transactions in central Ashram database so rooms are freed up
+      let releasedBookingsCount = 0;
+      let releasedTransactionsCount = 0;
 
-      if (bookingIds.length > 0) {
-        // Delete related transactions
-        const [txRes] = await db.query(
-          `DELETE FROM ${AASHRAY_DB}.transactions 
-           WHERE bookingid IN (?) OR (cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%'))`,
-          [bookingIds, cardList]
-        );
-        deletedTransactionsCount = txRes.affectedRows;
-
-        // Delete room bookings
-        const [bookRes] = await db.query(
-          `DELETE FROM ${AASHRAY_DB}.room_booking WHERE bookingid IN (?)`,
-          [bookingIds]
-        );
-        deletedBookingsCount = bookRes.affectedRows;
-      } else {
-        const [txRes] = await db.query(
-          `DELETE FROM ${AASHRAY_DB}.transactions 
-           WHERE cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%')`,
+      if (cardList.length > 0) {
+        const [bookings] = await db.query(
+          `SELECT bookingid FROM ${AASHRAY_DB}.room_booking 
+           WHERE cardno IN (?) 
+             AND (updatedBy IN ('RPL_TEAM', 'RPL_APP') OR roomno IN ('RPL_UNASSIGNED', 'UNASSIGNED') OR (checkin >= '2026-12-20' AND checkin <= '2026-12-30'))`,
           [cardList]
         );
-        deletedTransactionsCount = txRes.affectedRows;
+
+        const bookingIds = bookings.map((b) => b.bookingid);
+
+        if (bookingIds.length > 0) {
+          const [txRes] = await db.query(
+            `DELETE FROM ${AASHRAY_DB}.transactions 
+             WHERE bookingid IN (?) OR (cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%'))`,
+            [bookingIds, cardList]
+          );
+          releasedTransactionsCount = txRes.affectedRows;
+
+          const [bookRes] = await db.query(
+            `DELETE FROM ${AASHRAY_DB}.room_booking WHERE bookingid IN (?)`,
+            [bookingIds]
+          );
+          releasedBookingsCount = bookRes.affectedRows;
+        } else {
+          const [txRes] = await db.query(
+            `DELETE FROM ${AASHRAY_DB}.transactions 
+             WHERE cardno IN (?) AND (updatedBy IN ('RPL', 'RPL_APP') OR description LIKE '%RPL%')`,
+            [cardList]
+          );
+          releasedTransactionsCount = txRes.affectedRows;
+        }
       }
 
-      // Clean up any temporary guest card created strictly for RPL
+      console.log(`[RPL ARCHIVE] Registration "${reg.full_name}" (${id}) moved to archive. Released ${releasedBookingsCount} room bookings and ${releasedTransactionsCount} transactions.`);
+
+      return res.json({
+        success: true,
+        message: `Player "${reg.full_name}" has been moved to archive. Room and kit allocations have been released.`,
+        is_archived: true,
+        archived_at: new Date().toISOString(),
+        released: {
+          room_bookings: releasedBookingsCount,
+          transactions: releasedTransactionsCount,
+        }
+      });
+    } else {
+      // --- UNARCHIVE (RESTORE) FLOW ---
+      // 1. Mark as active in database
+      gen.isArchived = false;
+      delete gen.archivedAt;
+
       await db.query(
-        `DELETE FROM ${AASHRAY_DB}.card_db WHERE cardno IN (?) AND (cardno LIKE 'GUEST_%' OR updatedBy = 'RPL_REGISTRATION')`,
-        [cardList]
+        `UPDATE ${RPL_DB}.rpl_registrations 
+         SET is_archived = FALSE, archived_at = NULL, general_details = ? 
+         WHERE id = ?`,
+        [JSON.stringify(gen), id]
       );
+
+      // 2. Re-process room booking if accommodation is requested
+      let accommodationRestored = null;
+      if (gen.accommodationRequired === 'Yes') {
+        try {
+          accommodationRestored = await processAccommodationBooking({
+            cardno: gen.cardNo || null,
+            fullName: reg.full_name,
+            email: reg.email,
+            mobile: reg.mobile,
+            centre: gen.centre || 'Mumbai',
+            gender: gen.gender || 'Male',
+            checkInDate: reg.check_in_date || gen.checkInDate || '2026-12-25',
+            checkOutDate: reg.check_out_date || gen.checkOutDate || '2026-12-27',
+          });
+        } catch (accErr) {
+          console.error('[RPL UNARCHIVE] Error restoring accommodation:', accErr);
+        }
+      }
+
+      console.log(`[RPL UNARCHIVE] Registration "${reg.full_name}" (${id}) restored to active.`);
+
+      return res.json({
+        success: true,
+        message: `Player "${reg.full_name}" has been restored to active status.`,
+        is_archived: false,
+        accommodation: accommodationRestored,
+      });
     }
+  } catch (error) {
+    console.error('Error toggling archive status:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to update archive status.' });
+  }
+});
 
-    // 4. Finally delete the registration record
-    const [result] = await db.query(`DELETE FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
+// Fallback DELETE route (redirected to safe archive)
+app.delete('/api/admin/registrations/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+    const reg = existing[0];
+    let gen = {};
+    try {
+      gen = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details || '{}') : (reg.general_details || {});
+    } catch (e) {
+      gen = {};
+    }
+    gen.isArchived = true;
+    gen.archivedAt = new Date().toISOString();
 
-    console.log(`[RPL DELETE] Registration "${reg.full_name}" (${id}) deleted alongside ${deletedBookingsCount} room booking(s) and ${deletedTransactionsCount} transaction(s).`);
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_registrations SET is_archived = TRUE, archived_at = NOW(), general_details = ? WHERE id = ?`,
+      [JSON.stringify(gen), id]
+    );
 
     res.json({
       success: true,
-      message: `Registration and all associated accommodation records for "${reg.full_name}" deleted successfully.`,
-      deleted: {
-        registrations: result.affectedRows,
-        room_bookings: deletedBookingsCount,
-        transactions: deletedTransactionsCount,
-      },
+      message: `Registration "${reg.full_name}" moved to archive safely.`,
+      is_archived: true,
     });
   } catch (error) {
-    console.error('Error deleting registration:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete registration.' });
+    console.error('Error in delete/archive handler:', error);
+    res.status(500).json({ success: false, error: 'Failed to archive registration.' });
   }
 });
 
@@ -1181,7 +1285,7 @@ app.delete('/api/admin/registrations/:id', async (req, res) => {
 app.get('/api/admin/accommodation', async (req, res) => {
   try {
     const [regs] = await db.query(`
-      SELECT r.id, r.full_name, r.mobile, r.email, r.payment_status, r.check_in_date, r.check_out_date, r.general_details
+      SELECT r.id, r.full_name, r.mobile, r.email, r.payment_status, r.check_in_date, r.check_out_date, r.general_details, r.is_archived
       FROM ${RPL_DB}.rpl_registrations r
       ORDER BY r.submitted_at DESC
     `);
@@ -1205,8 +1309,19 @@ app.get('/api/admin/accommodation', async (req, res) => {
       }
     }
 
+    // Filter out archived registrations from active accommodation list
+    const activeRegs = uniqueRegs.filter((r) => {
+      let gen = {};
+      try {
+        gen = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
+      } catch (e) {
+        gen = {};
+      }
+      return !r.is_archived && !gen.isArchived;
+    });
+
     // 2. Map bookings by cardno or contact
-    const accommodationList = uniqueRegs
+    const accommodationList = activeRegs
       .map((r) => {
         let gen = {};
         try {

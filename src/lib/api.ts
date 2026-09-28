@@ -230,13 +230,19 @@ export async function updatePaymentStatus(id: string, status: 'approved' | 'reje
   return data;
 }
 
-export async function deleteRegistration(id: string) {
-  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}`, {
-    method: 'DELETE',
+export async function toggleArchiveRegistration(id: string, is_archived: boolean) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/archive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_archived }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Failed to delete registration (Status ${res.status})`);
+  if (!res.ok) throw new Error(data.error || `Failed to update archive status (Status ${res.status})`);
   return data;
+}
+
+export async function deleteRegistration(id: string) {
+  return toggleArchiveRegistration(id, true);
 }
 
 export async function fetchAdminAccommodation() {

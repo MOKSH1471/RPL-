@@ -19,8 +19,11 @@ import {
   AlertCircle,
   Sparkles,
   Loader2,
+  Eye,
+  EyeOff,
+  Archive,
 } from 'lucide-react';
-import { updateRegistration, updatePaymentStatus } from '@/lib/api';
+import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 
 
@@ -84,6 +87,28 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     payment_status: player.payment_status || 'pending',
     payment_utr: player.payment_utr || '',
   });
+
+  const isArchived = Boolean(player.is_archived || gen.isArchived);
+
+  const handleToggleArchiveModal = async () => {
+    const isCurrentlyArchived = Boolean(player.is_archived || gen.isArchived);
+    const confirmMsg = isCurrentlyArchived
+      ? `Restore "${player.full_name}" to active status?\n\n• Player will return to active tournament roster\n• Accommodation reservation will be re-processed.`
+      : `Archive registration for "${player.full_name}"?\n\n• Player record and payment details will be safely preserved\n• Room bookings and jersey allocations will be released.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setActionLoading(true);
+      await toggleArchiveRegistration(player.id, !isCurrentlyArchived);
+      onRefresh();
+      onClose();
+    } catch (err: any) {
+      alert('Failed to update archive status: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleQuickPaymentStatus = async (status: 'approved' | 'rejected' | 'pending') => {
     try {
@@ -158,23 +183,45 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
                   {player.full_name}
                 </h2>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                    player.payment_status === 'approved'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : player.payment_status === 'rejected'
-                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                      : 'bg-amber-100 text-amber-800 border border-amber-300'
-                  }`}
-                >
-                  {player.payment_status || 'pending'}
-                </span>
+                {isArchived ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300">
+                    Archived
+                  </span>
+                ) : (
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                      player.payment_status === 'approved'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : player.payment_status === 'rejected'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                        : 'bg-amber-100 text-amber-800 border border-amber-300'
+                    }`}
+                  >
+                    {player.payment_status || 'pending'}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {player.id}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Archive / Restore Button */}
+            <button
+              type="button"
+              onClick={handleToggleArchiveModal}
+              disabled={actionLoading}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                isArchived
+                  ? 'bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300'
+                  : 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700'
+              }`}
+              title={isArchived ? 'Restore player to active status' : 'Archive player and release allocations'}
+            >
+              {isArchived ? <EyeOff className="w-3.5 h-3.5 text-purple-700" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{isArchived ? 'Restore Active' : 'Archive Player'}</span>
+            </button>
+
             {!isEditing ? (
               <button
                 type="button"
@@ -208,6 +255,24 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
 
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
+
+          {/* Archived Warning Banner */}
+          {isArchived && (
+            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2 text-purple-900 text-xs font-bold">
+                <EyeOff className="w-4 h-4 text-purple-600 shrink-0" />
+                <span>This player registration is currently ARCHIVED. Room and jersey allocations have been released.</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleArchiveModal}
+                disabled={actionLoading}
+                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-extrabold shadow-sm shrink-0"
+              >
+                Restore to Active
+              </button>
+            </div>
+          )}
 
           {/* Action Ribbon: Verification & Quick WhatsApp */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-wrap items-center justify-between gap-3">

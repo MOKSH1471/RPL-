@@ -6,8 +6,8 @@ import {
   XCircle,
   Clock,
   Eye,
+  EyeOff,
   MessageCircle,
-  Trash2,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
@@ -16,8 +16,9 @@ import {
   Building2,
   Calendar,
   Printer,
+  Archive,
 } from 'lucide-react';
-import { updatePaymentStatus, deleteRegistration } from '@/lib/api';
+import { updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
@@ -47,6 +48,7 @@ export function AdminRegistrationsTab({
   const filtered = registrations.filter((r) => {
     const gen = r.general_details || {};
     const sports = gen.selectedSports || [];
+    const isArchived = Boolean(r.is_archived || gen.isArchived);
 
     // Search filter
     if (searchTerm) {
@@ -62,8 +64,11 @@ export function AdminRegistrationsTab({
       }
     }
 
-    // Status filter
-    if (statusFilter !== 'all') {
+    // Status / Archive filter
+    if (statusFilter === 'archived') {
+      if (!isArchived) return false;
+    } else if (statusFilter !== 'all') {
+      if (isArchived) return false; // Exclude archived from specific payment status views
       const pStatus = (r.payment_status || 'pending').toLowerCase();
       if (pStatus !== statusFilter) return false;
     }
@@ -106,14 +111,21 @@ export function AdminRegistrationsTab({
     }
   };
 
-  const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
+  const handleToggleArchive = async (player: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to delete registration for "${name}"?`)) return;
+    const isCurrentlyArchived = Boolean(player.is_archived || player.general_details?.isArchived);
+    
+    const confirmMsg = isCurrentlyArchived
+      ? `Restore "${player.full_name}" to active status?\n\n• Player will return to active tournament roster\n• Accommodation reservation will be re-processed.`
+      : `Archive registration for "${player.full_name}"?\n\n• Player record and payment details will be safely preserved\n• Room bookings and jersey allocations will be released.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await deleteRegistration(id);
+      await toggleArchiveRegistration(player.id, !isCurrentlyArchived);
       onRefresh();
     } catch (err: any) {
-      alert('Failed to delete: ' + err.message);
+      alert('Failed to update archive status: ' + err.message);
     }
   };
 
@@ -163,6 +175,7 @@ export function AdminRegistrationsTab({
               <option value="pending">Pending Review</option>
               <option value="approved">Approved / Verified</option>
               <option value="rejected">Rejected</option>
+              <option value="archived">📦 Archived Records</option>
             </select>
 
             {/* Sport Filter */}
@@ -268,11 +281,17 @@ export function AdminRegistrationsTab({
                     ? gen.paymentUtrs
                     : String(rawUtrs).split(',').map((s) => s.trim()).filter(Boolean);
 
+                  const isArchived = Boolean(player.is_archived || gen.isArchived);
+
                   return (
                     <tr
                       key={player.id}
                       onClick={() => onSelectPlayer(player)}
-                      className="hover:bg-amber-50/40 transition-colors cursor-pointer group"
+                      className={`${
+                        isArchived
+                          ? 'bg-purple-50/30 opacity-75 hover:opacity-100 hover:bg-purple-50/50'
+                          : 'hover:bg-amber-50/40'
+                      } transition-colors cursor-pointer group`}
                     >
                       
                       {/* 1. Player Info & Photo */}
@@ -294,8 +313,18 @@ export function AdminRegistrationsTab({
                             </div>
                           )}
                           <div>
-                            <span className="font-extrabold text-slate-900 block group-hover:text-amber-600 transition-colors">
+                            <span className="font-extrabold text-slate-900 flex items-center gap-1.5 group-hover:text-amber-600 transition-colors">
                               {player.full_name}
+                              {isArchived && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-300">
+                                  Archived
+                                </span>
+                              )}
+                              {gen.cardNo && (
+                                <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-slate-100 text-slate-700">
+                                  #{gen.cardNo}
+                                </span>
+                              )}
                             </span>
 
                             <span className="text-[10px] text-slate-400 font-mono">
@@ -352,17 +381,23 @@ export function AdminRegistrationsTab({
                       <td className="py-3.5 px-4">
                         <div className="space-y-1">
                           <div className="flex items-center space-x-1.5">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                player.payment_status === 'approved'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                  : player.payment_status === 'rejected'
-                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                  : 'bg-amber-100 text-amber-800 border border-amber-300'
-                              }`}
-                            >
-                              {player.payment_status || 'pending'}
-                            </span>
+                            {isArchived ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300">
+                                Archived
+                              </span>
+                            ) : (
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  player.payment_status === 'approved'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : player.payment_status === 'rejected'
+                                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                }`}
+                              >
+                                {player.payment_status || 'pending'}
+                              </span>
+                            )}
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
                               ₹{(gen.totalAmount || (2500 + Math.max(0, (sports.length || 1) - 1) * 400)).toLocaleString('en-IN')}
                             </span>
@@ -407,8 +442,8 @@ export function AdminRegistrationsTab({
                             <MessageCircle className="w-4 h-4" />
                           </a>
 
-                          {/* Quick Approve / Reject */}
-                          {player.payment_status !== 'approved' && (
+                          {/* Quick Approve / Reject (Only for active players) */}
+                          {!isArchived && player.payment_status !== 'approved' && (
                             <button
                               type="button"
                               onClick={(e) => handleQuickApprove(player.id, e)}
@@ -419,7 +454,7 @@ export function AdminRegistrationsTab({
                             </button>
                           )}
 
-                          {player.payment_status !== 'rejected' && (
+                          {!isArchived && player.payment_status !== 'rejected' && (
                             <button
                               type="button"
                               onClick={(e) => handleQuickReject(player.id, e)}
@@ -443,24 +478,26 @@ export function AdminRegistrationsTab({
                             <Printer className="w-4 h-4" />
                           </button>
 
-                          {/* View Detail Drawer */}
+                          {/* Archive / Unarchive Toggle Button (Eye Icon) */}
                           <button
                             type="button"
-                            onClick={() => onSelectPlayer(player)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-                            title="View / Edit Profile"
+                            onClick={(e) => handleToggleArchive(player, e)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isArchived
+                                ? 'text-purple-700 bg-purple-100 hover:bg-purple-200'
+                                : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
+                            }`}
+                            title={
+                              isArchived
+                                ? 'Unarchive / Restore Player (Bring back to Active & Re-allocate)'
+                                : 'Archive Player (Release Room & Kit Allocations)'
+                            }
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleDelete(player.id, player.full_name, e)}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            {isArchived ? (
+                              <EyeOff className="w-4 h-4 text-purple-700" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </td>

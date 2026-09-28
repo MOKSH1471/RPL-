@@ -35,10 +35,11 @@ export function getDriveDirectImageUrl(url?: string): string {
 
 
 
-// 1. Export Master Registrations Sheet
+// 1. Export Master Registrations Sheet (Includes full historical active & archived records)
 export function exportMasterRegistrations(registrations: any[]) {
   const headers = [
     'Registration ID',
+    'Record Status',
     'Full Name',
     'Mobile Number',
     'Email Address',
@@ -62,13 +63,17 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Player Photo URL',
     'Payment Receipt URL',
     'Submitted At',
+    'Archived At',
   ];
 
   const rows = registrations.map((r) => {
     const gen = r.general_details || {};
     const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports.join(', ') : '';
+    const isArchived = Boolean(r.is_archived || gen.isArchived);
+
     return [
       escapeCSV(r.id),
+      escapeCSV(isArchived ? 'ARCHIVED' : 'ACTIVE'),
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
       escapeCSV(r.email),
@@ -92,6 +97,7 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(r.player_photo_url || ''),
       escapeCSV(r.payment_receipt_url || ''),
       escapeCSV(r.submitted_at || ''),
+      escapeCSV(r.archived_at || gen.archivedAt || '-'),
     ].join(',');
   });
 
@@ -99,7 +105,7 @@ export function exportMasterRegistrations(registrations: any[]) {
   downloadCSV(csvContent, `RPL9_Master_Registrations_${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
-// 2. Export Jersey Manufacturing Order Sheet
+// 2. Export Jersey Manufacturing Order Sheet (Active Players Only)
 export function exportJerseyVendorSheet(registrations: any[]) {
   const headers = [
     'Sr No',
@@ -112,7 +118,10 @@ export function exportJerseyVendorSheet(registrations: any[]) {
     'Payment Status',
   ];
 
-  const rows = registrations.map((r, idx) => {
+  // Exclude archived registrations so vendors don't manufacture for cancelled participants
+  const activeOnly = registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived);
+
+  const rows = activeOnly.map((r, idx) => {
     const gen = r.general_details || {};
     return [
       idx + 1,
@@ -130,7 +139,7 @@ export function exportJerseyVendorSheet(registrations: any[]) {
   downloadCSV(csvContent, `RPL9_Jersey_Manufacturing_Order_${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
-// 3. Export Sport Squad Sheets (Cricket Auction / Badminton / Football)
+// 3. Export Sport Squad Sheets (Cricket Auction / Badminton / Football - Active Players Only)
 export function exportSportSquadSheet(registrations: any[], sportKey: string, sportTitle: string) {
   const headers = [
     'Sr No',
@@ -143,6 +152,8 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
   ];
 
   const filtered = registrations.filter((r) => {
+    const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
+    if (isArchived) return false;
     const sports = r.general_details?.selectedSports || [];
     return Array.isArray(sports) && sports.includes(sportKey);
   });
