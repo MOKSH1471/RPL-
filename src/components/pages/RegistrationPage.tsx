@@ -123,7 +123,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'football',
     name: 'Turf Football',
-    category: '7-A-Side Turf Knockouts',
+    category: 'Turf Football Championship',
     emoji: '⚽',
     colorBg: 'bg-emerald-50',
     colorBorder: 'border-emerald-400',
@@ -337,7 +337,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       // Cricket Defaults
       cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
-      bowlingStyle: 'Right-arm Fast / Medium',
+      bowlingStyle: 'Right-arm Off-Spin',
       cricketExperience: 'Intermediate (Club / College)',
       // Football Defaults
       footballPosition: 'Forward / Striker',
@@ -2389,8 +2389,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <BasicDropdown
                           label="Select Bowling Style"
                           items={[
-                            { id: 'Right-arm Fast / Medium', label: 'Right-Arm Fast / Pace / Medium' },
-                            { id: 'Left-arm Fast / Medium', label: 'Left-Arm Fast / Pace / Medium' },
                             { id: 'Right-arm Off-Spin', label: 'Right-Arm Off-Spin' },
                             { id: 'Right-arm Leg-Spin', label: 'Right-Arm Leg-Spin / Googly' },
                             { id: 'Left-arm Orthodox', label: 'Left-Arm Orthodox Spin / Chinaman' },

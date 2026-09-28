@@ -65,25 +65,25 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
             RPL Season 9 <span className="text-gradient-amber">Underarm Turf Cricket</span>
           </h1>
           <p className="text-slate-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-            High-octane underarm turf cricket tournament under floodlights. Complete your dedicated player profile and questionnaire below.
+            Exciting underarm turf cricket tournament with great team bonding and fun! Complete your player profile below.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-left">
             <div className="solid-card p-4 rounded-xl border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Format</span>
-              <span className="font-display text-sm font-bold text-amber-400">T20 Leather Ball</span>
+              <span className="font-display text-sm font-bold text-amber-400">Underarm Turf</span>
             </div>
             <div className="solid-card p-4 rounded-xl border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Selection</span>
-              <span className="font-display text-sm font-bold text-amber-400">Draft & Auction</span>
+              <span className="font-display text-sm font-bold text-amber-400">Team Squads</span>
             </div>
             <div className="solid-card p-4 rounded-xl border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Equipment</span>
-              <span className="font-display text-sm font-bold text-amber-400">Full Cricket Gear</span>
+              <span className="font-display text-sm font-bold text-amber-400">Tennis Ball & Bat</span>
             </div>
             <div className="solid-card p-4 rounded-xl border border-amber-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Matches</span>
-              <span className="font-display text-sm font-bold text-amber-400">Day & Night Stadium</span>
+              <span className="font-display text-sm font-bold text-amber-400">Turf Arena</span>
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
               Underarm Turf Cricket Player Questionnaire
             </h2>
             <p className="text-slate-200 text-sm text-center mb-8">
-              Please answer the following cricket-specific questions accurately for draft evaluation.
+              Please answer a few quick questions about your cricket experience.
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -205,8 +205,7 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
                     className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/15 text-white focus:outline-none focus:border-amber-400"
                   >
                     <option value="Batter">Batter</option>
-                    <option value="Fast Bowler">Fast Bowler</option>
-                    <option value="Spin Bowler">Spin Bowler</option>
+                    <option value="Bowler">Bowler</option>
                     <option value="All-rounder">All-rounder</option>
                     <option value="Wicketkeeper">Wicketkeeper</option>
                   </select>
@@ -231,11 +230,9 @@ export const CricketLeagueSite: React.FC<CricketLeagueSiteProps> = ({ onBackToHo
                     {...register('bowlingStyle')}
                     className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-white/15 text-white focus:outline-none focus:border-amber-400"
                   >
-                    <option value="Right-Arm Fast">Right-Arm Fast / Medium</option>
                     <option value="Right-Arm Spin">Right-Arm Off/Leg Spin</option>
-                    <option value="Left-Arm Fast">Left-Arm Fast / Medium</option>
                     <option value="Left-Arm Spin">Left-Arm Spin</option>
-                    <option value="Does Not Bowl">Does Not Bowl</option>
+                    <option value="Does Not Bowl">Does Not Bowl / Pure Wicketkeeper</option>
                   </select>
                 </div>
               </div>

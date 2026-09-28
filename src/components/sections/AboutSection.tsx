@@ -53,7 +53,7 @@ export const AboutSection: React.FC = () => {
               </div>
             </div>
             <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed">
-              More than a sports tournament — RPL Season 9 is a celebration of unity, athletic excellence, and youth empowerment. Every league match is structured to bring participants together in a high-energy, uplifting environment.
+              More than just a tournament — RPL brings everyone together. Play with passion, make new friends, and enjoy the excitement of sports in a friendly and welcoming community.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export const AboutSection: React.FC = () => {
                 <h3 className="font-display text-base sm:text-lg font-bold text-slate-900">Competitive Spirit</h3>
               </div>
               <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
-                High-octane matches designed to foster athleticism, teamwork, and healthy community rivalry.
+                Exciting matches played with great energy, teamwork, and friendly competition.
               </p>
             </div>
 
@@ -75,7 +75,7 @@ export const AboutSection: React.FC = () => {
                 <h3 className="font-display text-base sm:text-lg font-bold text-slate-900">Inclusive Participation</h3>
               </div>
               <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
-                Dedicated divisions for Cricket, Football, and Women’s Sports welcoming all skill levels.
+                A place for everyone to play! Separate leagues for Cricket, Football, and Women’s Sports open to all skill levels.
               </p>
             </div>
           </div>

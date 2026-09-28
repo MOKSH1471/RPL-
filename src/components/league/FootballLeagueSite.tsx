@@ -64,13 +64,13 @@ export const FootballLeagueSite: React.FC<FootballLeagueSiteProps> = ({ onBackTo
             RPL Season 9 <span className="text-gradient-emerald">Turf Football</span>
           </h1>
           <p className="text-slate-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-            Fast-paced 7-a-side turf tournament. Complete your dedicated player profile and football questionnaire below.
+            Exciting turf football tournament with great team bonding and fun! Complete your player profile below.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-left">
             <div className="solid-card p-4 rounded-xl border border-emerald-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Match Format</span>
-              <span className="font-display text-sm font-bold text-emerald-400">7-A-Side Turf</span>
+              <span className="font-display text-sm font-bold text-emerald-400">Turf Football</span>
             </div>
             <div className="solid-card p-4 rounded-xl border border-emerald-500/30">
               <span className="text-[10px] uppercase font-bold text-slate-300 block">Awards</span>

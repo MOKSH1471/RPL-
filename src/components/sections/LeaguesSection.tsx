@@ -44,7 +44,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                   <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-700">
-                    Flagship T20 Willow Championship
+                    Team Spirit & Excitement
                   </span>
                   <span className="flex items-center space-x-1 text-[11px] font-bold text-amber-800 uppercase tracking-widest bg-amber-200/80 px-2.5 py-1 rounded-full border border-amber-300">
                     <Star className="w-3.5 h-3.5 fill-amber-600 text-amber-600" />
@@ -57,7 +57,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </h3>
 
                 <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-8 max-w-xl">
-                  The centerpiece of RPL Season 9. High-intensity underarm turf cricket under floodlights, complete with powerplay overs, professional umpiring, and full player draft evaluations.
+                  Gather your friends for fast and exciting underarm turf cricket! Packed with high energy, team bonding, and unforgettable moments together on the pitch.
                 </p>
 
                 <div className="mb-8 sm:mb-10">
@@ -65,7 +65,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     Featured Playing Roles
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {['Batter', 'Fast Bowler', 'Spin Bowler', 'All-Rounder', 'Wicketkeeper'].map((role, idx) => (
+                    {['Batter', 'Bowler', 'All-Rounder', 'Wicketkeeper'].map((role, idx) => (
                       <span
                         key={idx}
                         className="text-xs font-semibold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg bg-amber-100/90 text-amber-900 border border-amber-200"
@@ -105,13 +105,13 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
               >
                 <div>
                   <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-emerald-700 block mb-2">
-                    7-A-Side Turf Knockouts
+                    Exciting Turf Football
                   </span>
                   <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">
                     Turf Football
                   </h3>
                   <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                    Fast-paced turf football action with group stages, penalty shootouts, Golden Boot, and Golden Glove trophies.
+                    Step onto the turf for fast-paced football, great teamwork, and pure excitement! Play with passion, cheer on your squad, and make amazing memories with friends.
                   </p>
                 </div>
 
@@ -141,13 +141,16 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
               >
                 <div>
                   <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-pink-700 block mb-2">
-                    Multi-Sport Championship
+                    HER GAME. HER VOICE. HER POWER.
                   </span>
                   <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-pink-700 transition-colors">
                     Women's League
                   </h3>
                   <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                    Empowering multi-sport championship featuring Women's Cricket, Women's Football, and Throwball divisions.
+                    <span className="font-bold text-slate-900 block mb-1">
+                      WOMEN WHO PLAY. WOMEN WHO LEAD. WOMEN WHO INSPIRE.
+                    </span>
+                    Celebrating the spirit, strength, and diversity of women in sport.
                   </p>
                 </div>
 
