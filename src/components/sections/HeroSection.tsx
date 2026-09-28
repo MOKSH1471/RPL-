@@ -25,10 +25,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
         {/* Main Display Headline scaling smoothly on all mobile screens */}
         <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-3 sm:mb-6 max-w-full">
-          <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words">
+          <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words uppercase">
             Raj Premier League
           </span>
-          <span className="block text-gradient-vibrant text-3xl sm:text-5xl md:text-6xl lg:text-7xl">
+          <span className="block text-gradient-vibrant text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase">
             Season 9
           </span>
         </h1>

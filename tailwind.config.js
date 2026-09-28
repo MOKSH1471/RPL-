@@ -37,9 +37,11 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Bebas Neue"', 'Outfit', 'sans-serif'],
-        heading: ['Outfit', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Conthrax', '"Conthrax SemiBold"', 'Montserrat', 'sans-serif'],
+        heading: ['Conthrax', '"Conthrax SemiBold"', 'Montserrat', 'sans-serif'],
+        conthrax: ['Conthrax', '"Conthrax SemiBold"', 'sans-serif'],
+        sans: ['Montserrat', 'system-ui', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',

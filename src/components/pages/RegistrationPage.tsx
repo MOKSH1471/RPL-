@@ -2203,21 +2203,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-amber-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-amber-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-amber-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏏</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-amber-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏏</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Underarm Turf Cricket Questions
-                          </h3>
-                          <p className="text-amber-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Underarm Turf Cricket Questions
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-amber-800 text-xs font-semibold leading-relaxed">
                             Custom role, batting style, bowling variation & experience
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2315,21 +2317,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-emerald-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">⚽</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚽</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Turf Football Questions
-                          </h3>
-                          <p className="text-emerald-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Turf Football Questions
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-emerald-800 text-xs font-semibold leading-relaxed">
                             Tactical pitch position, preferred shooting foot & turf experience
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2399,21 +2403,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-cyan-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-cyan-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-cyan-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏸</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-cyan-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏸</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Badminton Questions
-                          </h3>
-                          <p className="text-cyan-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Badminton Questions
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-cyan-200 text-cyan-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-cyan-800 text-xs font-semibold leading-relaxed">
                             Singles / doubles category, playing hand & match experience
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-cyan-200 text-cyan-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2478,21 +2484,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-indigo-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-indigo-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-indigo-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏓</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-indigo-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏓</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Table Tennis Questions
-                          </h3>
-                          <p className="text-indigo-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Table Tennis Questions
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-indigo-800 text-xs font-semibold leading-relaxed">
                             Singles / doubles format, paddle grip & tournament level
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-indigo-200 text-indigo-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
 
@@ -2557,21 +2565,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-orange-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-orange-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-orange-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🎾</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-orange-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎾</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Pickleball Questions
-                          </h3>
-                          <p className="text-orange-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Pickleball Questions
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-orange-800 text-xs font-semibold leading-relaxed">
                             Skill rating, doubles division & partner details
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-orange-200 text-orange-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2635,21 +2645,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-purple-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-purple-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-purple-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏐</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-purple-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏐</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Volleyball & Throwball
-                          </h3>
-                          <p className="text-purple-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Volleyball & Throwball
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-purple-800 text-xs font-semibold leading-relaxed">
                             Net position, court specialty & experience
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-purple-200 text-purple-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2700,21 +2712,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     transition={{ duration: 0.3 }}
                     className="bg-pink-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-pink-300 shadow-md space-y-6"
                   >
-                    <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-pink-200 pb-4">
-                      <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">🏆</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-pink-200 pb-4">
+                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏆</span>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                            Women's League
-                          </h3>
-                          <p className="text-pink-800 text-xs font-semibold mt-0.5">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                              Women's League
+                            </h3>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-200 text-pink-900 font-bold text-[10px] sm:text-xs shrink-0">
+                              Active Sport
+                            </span>
+                          </div>
+                          <p className="text-pink-800 text-xs font-semibold leading-relaxed">
                             Select discipline (Cricket, Football, Throwball) & specific role
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 px-2.5 py-1 rounded-full bg-pink-200 text-pink-900 font-bold text-[11px] sm:text-xs">
-                        Active Sport
-                      </span>
                     </div>
 
 
@@ -2816,39 +2830,41 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
                 className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
               >
-                <div className="flex flex-wrap items-start sm:items-center justify-between gap-2.5 border-b border-emerald-200 pb-4">
-                  <div className="flex items-start sm:items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
-                    <span className="text-2xl sm:text-3xl shrink-0 mt-0.5 sm:mt-0">💳</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                  <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                    <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">💳</span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-tight">
-                        Payment & Verification Proof
-                      </h3>
-                      <p className="text-emerald-800 text-xs font-semibold mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                          Payment & Verification Proof
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${
+                          existingPaymentStatus === 'approved'
+                            ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                        }`}>
+                          {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
+                        </span>
+                      </div>
+                      <p className="text-emerald-800 text-xs font-medium leading-relaxed">
                         Either Transaction UTR or Payment Screenshot is sufficient for verification (Optional on initial registration — you can always return later to pay)
                       </p>
                     </div>
                   </div>
-                  <span className={`shrink-0 px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs ${
-                    existingPaymentStatus === 'approved'
-                      ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                      : 'bg-emerald-100 text-emerald-900'
-                  }`}>
-                    {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
-                  </span>
                 </div>
 
                 {/* Dynamic Registration Fee Calculation & Summary Card */}
-                <div className="p-5 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
+                <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                         ₹
                       </div>
-                      <div>
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                      <div className="min-w-0">
+                        <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
                           {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
                         </span>
-                        <h4 className="text-sm font-extrabold text-slate-900">
+                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                           {isReturningPaidUser ? (
                             newlyAddedSportsCount > 0 ? (
                               `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
@@ -2862,8 +2878,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-baseline space-x-1.5 self-start sm:self-auto bg-white px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-xs">
-                      <span className="text-xs font-semibold text-slate-500">
+                    <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
+                      <span className="text-xs font-semibold text-slate-600">
                         {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
                       </span>
                       <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
