@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +41,8 @@ import {
   CreditCard,
   ExternalLink,
   Printer,
+  ZoomIn,
+  Maximize2,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -245,6 +248,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
+  const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
+
+  // Prevent background scrolling when size guide modal is open
+  useEffect(() => {
+    if (showSizeGuideModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showSizeGuideModal]);
 
   // Unregistered player reference verification states
   const [isUnregisteredPlayer, setIsUnregisteredPlayer] = useState(false);
@@ -1709,17 +1724,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               </div>
 
               {/* Jersey / T-Shirt Size Selector */}
-              <div>
-                <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
-                  <span className="flex items-center space-x-1.5">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                     <Shirt className="w-3.5 h-3.5 text-slate-600" />
                     <span>{getFieldLabel('tshirt_size', 'Jersey / T-Shirt Size')}</span>
                     <span className="text-pink-600">*</span>
-                  </span>
-                  <span className="text-slate-500 font-semibold text-[11px] normal-case">
-                    Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentTshirtSize}</strong>
-                  </span>
-                </label>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeGuideModal(true)}
+                      className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-200/90 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Size Guide Chart</span>
+                    </button>
+                    <span className="text-slate-500 font-semibold text-[11px] normal-case">
+                      Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentTshirtSize}</strong>
+                    </span>
+                  </div>
+                </div>
+
                 <OptionSelector
                   options={JERSEY_SIZES}
                   value={currentTshirtSize}
@@ -1729,12 +1755,50 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   activeColor="bg-slate-900"
                   activeTextColor="text-amber-300"
                 />
+
                 {errors.tshirtSize && (
                   <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>{errors.tshirtSize.message}</span>
                   </p>
                 )}
+
+                {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
+                <div className="mt-3">
+                  <div
+                    onClick={() => setShowSizeGuideModal(true)}
+                    className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                  >
+                    <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
+                      <img
+                        src="/jersey-size-guide.jpg"
+                        alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
+                        className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
+                        loading="lazy"
+                      />
+
+                      {/* Tap / Click to Zoom Hint Overlay */}
+                      <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
+                        <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
+                          <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Tap to view full chart & zoom</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Size Guide Card Footer */}
+                    <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
+                      <span className="flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                        <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
+                      </span>
+                      <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
+                        <span>Click to enlarge</span>
+                        <Maximize2 className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Date of Birth & Gender */}
@@ -3087,6 +3151,81 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           </form>
         )}
       </div>
+
+      {/* Jersey Size Guide Fullscreen Lightbox Modal (Portaled directly to body to sit above fixed Navbar) */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {showSizeGuideModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+                onClick={() => setShowSizeGuideModal(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh] max-h-[90dvh]"
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-200 bg-slate-50 shrink-0">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                        <Shirt className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 leading-tight">
+                          T-Shirt & Jersey Size Guide
+                        </h3>
+                        <p className="text-[10px] sm:text-xs text-slate-500 font-medium">
+                          Official measurements in inches (Chest & Length)
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeGuideModal(false)}
+                      className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/80 active:bg-slate-300 transition-colors cursor-pointer"
+                      aria-label="Close Size Guide"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Modal Body / Image */}
+                  <div className="p-2 sm:p-4 overflow-auto flex items-center justify-center bg-slate-100/60 min-h-0 flex-1 touch-manipulation">
+                    <img
+                      src="/jersey-size-guide.jpg"
+                      alt="T-Shirt & Jersey Size Guide with Chest and Length measurements"
+                      className="w-full h-auto max-h-[68vh] max-h-[68dvh] object-contain rounded-xl shadow-xs"
+                    />
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
+                    <span className="flex items-center space-x-1.5 text-[11px] sm:text-xs">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                      <span>±0.5 inch buffer in all finalized sizes</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeGuideModal(false)}
+                      className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </div>
   );
 };
