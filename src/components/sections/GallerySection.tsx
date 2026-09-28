@@ -71,10 +71,10 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
       {/* Card Content */}
       <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
         <div>
-          <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1 line-clamp-1">
+          <h3 className="font-display font-bold text-xs sm:text-sm text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1.5 line-clamp-2 min-h-[2.4rem] sm:min-h-[2.6rem] tracking-tight">
             {item.title}
           </h3>
-          <p className="text-slate-600 text-xs font-medium leading-relaxed line-clamp-2">
+          <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2 sm:line-clamp-3">
             {item.caption}
           </p>
         </div>

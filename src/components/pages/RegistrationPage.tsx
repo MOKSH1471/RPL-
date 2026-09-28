@@ -249,6 +249,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
+  const [isOtherCentre, setIsOtherCentre] = useState(false);
+  const [customCentreName, setCustomCentreName] = useState('');
 
   // Prevent background scrolling when size guide modal is open
   useEffect(() => {
@@ -398,8 +400,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   }, [currentGender, allowedSports, setValue]);
   const currentAcc = watch('accommodationRequired');
   const currentExistingFamily = watch('existingRplFamily');
-  const currentCentre = watch('centre');
   const currentFood = watch('foodPreference');
+  const currentCentre = watch('centre');
+
+  // Auto-detect custom centre from loaded profile or Mumukshu lookup
+  useEffect(() => {
+    if (currentCentre && !CENTRE_LIST.includes(currentCentre as any)) {
+      setIsOtherCentre(true);
+      if (currentCentre !== 'Other') {
+        setCustomCentreName(currentCentre);
+      }
+    }
+  }, [currentCentre]);
   const currentFullName = watch('fullName');
   const currentCountryCode = watch('countryCode') || '+91';
   const currentMobile = watch('mobileNumber');
@@ -1706,18 +1718,69 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     label="Select Centre"
                     items={[
                       ...CENTRE_LIST.map((c) => ({ id: c, label: c })),
-                      ...(currentCentre && ![...CENTRE_LIST, 'Other'].includes(currentCentre as any)
-                        ? [{ id: currentCentre, label: currentCentre }]
-                        : []),
                       { id: 'Other', label: 'Other Centre' },
                     ]}
-                    value={currentCentre ? { id: currentCentre, label: currentCentre } : null}
-                    onChange={(item) => setValue('centre', String(item.id), { shouldValidate: true })}
+                    value={
+                      isOtherCentre
+                        ? { id: 'Other', label: 'Other Centre' }
+                        : currentCentre && CENTRE_LIST.includes(currentCentre as any)
+                        ? { id: currentCentre, label: currentCentre }
+                        : null
+                    }
+                    onChange={(item) => {
+                      if (item.id === 'Other') {
+                        setIsOtherCentre(true);
+                        setCustomCentreName('');
+                        setValue('centre', '', { shouldValidate: true });
+                      } else {
+                        setIsOtherCentre(false);
+                        setCustomCentreName('');
+                        setValue('centre', String(item.id), { shouldValidate: true });
+                      }
+                    }}
                   />
+
+                  {/* Custom Centre Name Input when "Other Centre" is selected */}
+                  <AnimatePresence>
+                    {isOtherCentre && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Specify Centre Name</span>
+                          <span className="text-pink-600">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={customCentreName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomCentreName(val);
+                              setValue('centre', val.trim(), { shouldValidate: true });
+                            }}
+                            placeholder="Enter your Centre / City name (e.g. Surat, Navsari, London)"
+                            className="w-full px-4 py-3 min-h-[46px] rounded-xl bg-slate-50 border border-slate-300 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 text-sm font-medium transition-all"
+                            autoFocus
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {errors.centre && (
                     <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{errors.centre.message}</span>
+                      <span>
+                        {isOtherCentre && !customCentreName.trim()
+                          ? 'Please specify your Centre / City name'
+                          : errors.centre.message}
+                      </span>
                     </p>
                   )}
                 </div>

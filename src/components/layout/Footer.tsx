@@ -25,7 +25,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-4 xl:gap-8 pt-2">
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Official Media
@@ -34,7 +34,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-900 hover:text-pink-600 transition-colors text-2xl sm:text-3xl lg:text-4xl"
+                className="text-slate-900 hover:text-pink-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
               >
                 Instagram
               </FlipLink>
@@ -48,7 +48,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-900 hover:text-red-600 transition-colors text-2xl sm:text-3xl lg:text-4xl"
+                className="text-slate-900 hover:text-red-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
               >
                 YouTube
               </FlipLink>
@@ -62,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 href="https://chat.whatsapp.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-900 hover:text-emerald-600 transition-colors text-2xl sm:text-3xl lg:text-4xl"
+                className="text-slate-900 hover:text-emerald-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
               >
                 WhatsApp
               </FlipLink>
@@ -78,7 +78,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                   e.preventDefault();
                   onRegisterClick?.();
                 }}
-                className="text-slate-900 hover:text-amber-500 transition-colors text-2xl sm:text-3xl lg:text-4xl"
+                className="text-slate-900 hover:text-amber-500 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
               >
                 Register Now
               </FlipLink>
