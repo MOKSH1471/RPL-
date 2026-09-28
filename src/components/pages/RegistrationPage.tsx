@@ -2909,44 +2909,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               </AnimatePresence>
             </div>
 
-            {/* ========================================================================= */}
-            {/* SECTION 4: APPAREL CUSTOMIZATION & TEAM SQUAD INFO */}
-            {/* ========================================================================= */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-              className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6"
-            >
-              <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
-                  3
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
-                    Jersey Print & Customization (Optional)
-                  </h2>
-                  <p className="text-slate-600 text-xs sm:text-sm font-medium">
-                    Personalize your tournament jersey preferences
-                  </p>
-                </div>
-              </div>
-
-
-              <div>
-                <div className="max-w-md">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    {getFieldLabel('preferred_jersey_number', 'Preferred Jersey Number')} <span className="text-slate-500 text-[10px]">(0-99, Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={3}
-                    placeholder="e.g. 7, 10, 18, 99"
-                    {...register('preferredJerseyNumber')}
-                    className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200 transition-all text-sm font-medium font-mono"
-                  />
-                </div>
-              </div>
-            </InView>
 
             {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & RECEIPT UPLOAD (DYNAMIC FROM DATABASE) */}

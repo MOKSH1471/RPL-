@@ -137,7 +137,7 @@ export interface StatItem {
 export interface GalleryItem {
   id: string;
   title: string;
-  season: string;
+  season?: string;
   category: 'cricket' | 'football' | 'womens' | 'ceremony' | string;
   image: string;
   thumbnail?: string;

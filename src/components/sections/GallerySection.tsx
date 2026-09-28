@@ -52,11 +52,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
 
-        {/* Top Badges (Solid high-contrast with ZERO GPU backdrop-filter overhead) */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-          <span className="font-display text-[10px] sm:text-[11px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full bg-slate-950/85 text-amber-300 border border-amber-400/30 shadow-xs">
-            {item.season}
-          </span>
+        {/* Top Category Badge */}
+        <div className="absolute top-2.5 right-2.5 flex items-center pointer-events-none">
           <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full border border-white/20 shadow-xs ${catInfo.bg}`}>
             {catInfo.icon} {catInfo.label}
           </span>
@@ -99,8 +96,7 @@ export const GallerySection: React.FC = () => {
   const galleryItems: GalleryItem[] = [
     {
       id: '1',
-      title: 'RPL Season 8 Grand Inaugural Ceremony',
-      season: 'Season 8',
+      title: 'RPL Grand Inaugural Ceremony',
       category: 'ceremony',
       image: '/rpl-photos/rpl-12.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-12.jpg',
@@ -109,7 +105,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '2',
       title: 'Cricket Champions Coronation with Pujya Pappaji & Pujya Nileshbhai',
-      season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-21.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-21.jpg',
@@ -118,7 +113,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '3',
       title: 'Fast-Paced Turf Football Action',
-      season: 'Season 8',
       category: 'football',
       image: '/rpl-photos/rpl-4.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-4.jpg',
@@ -127,7 +121,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '4',
       title: "Women's League Cricket Matchday",
-      season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-2.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-2.jpg',
@@ -136,7 +129,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '5',
       title: 'Championship Trophy Jubilation with Pujya Nileshbhai',
-      season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-5.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-5.jpg',
@@ -145,7 +137,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '6',
       title: 'Football Volley & Penalty Box Action',
-      season: 'Season 8',
       category: 'football',
       image: '/rpl-photos/rpl-7.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-7.jpg',
@@ -154,7 +145,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '7',
       title: 'Match-Winning Knock Ovation',
-      season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-1.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-1.jpg',
@@ -163,7 +153,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '8',
       title: "Women's League Spirit & Joyous Celebration",
-      season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-6.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-6.jpg',
@@ -172,7 +161,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '9',
       title: 'The Golden Batsman & Stumps Trophies',
-      season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-10.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-10.jpg',
@@ -181,7 +169,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '10',
       title: 'Official Gold & Silver Championship Medals',
-      season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-20.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-20.jpg',
@@ -190,7 +177,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '11',
       title: 'Pre-Match Turf Dance Warm-Up Flashmob',
-      season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-15.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-15.jpg',
@@ -199,7 +185,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '12',
       title: 'Captains Oath of Fair Play & Sportsmanship',
-      season: 'Season 8',
       category: 'ceremony',
       image: '/rpl-photos/rpl-8.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-8.jpg',
@@ -208,7 +193,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '13',
       title: "Women's League Community Fun Games",
-      season: 'Season 8',
       category: 'womens',
       image: '/rpl-photos/rpl-18.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-18.jpg',
@@ -217,7 +201,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '14',
       title: 'Cricket Runners-Up & Squad Fellowship',
-      season: 'Season 8',
       category: 'cricket',
       image: '/rpl-photos/rpl-3.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-3.jpg',
@@ -226,7 +209,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '15',
       title: 'Squad March-In onto the Turf Arena',
-      season: 'Season 7',
       category: 'ceremony',
       image: '/rpl-photos/rpl-19.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-19.jpg',
@@ -235,7 +217,6 @@ export const GallerySection: React.FC = () => {
     {
       id: '16',
       title: 'Cheering Squads & Team Colors',
-      season: 'Season 7',
       category: 'ceremony',
       image: '/rpl-photos/rpl-23.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-23.jpg',
@@ -405,10 +386,7 @@ export const GallerySection: React.FC = () => {
                   {/* Lightbox Header Bar */}
                   <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/60 border-b border-amber-100 select-none">
                     <div className="flex items-center space-x-2.5">
-                      <span className="font-display text-[11px] sm:text-xs uppercase font-extrabold tracking-wider px-3 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80">
-                        {currentPhoto.season}
-                      </span>
-                      <span className="text-xs sm:text-sm text-slate-500 font-bold">
+                      <span className="text-xs sm:text-sm text-slate-700 font-bold">
                         Photo {selectedPhotoIndex + 1} of {filteredItems.length}
                       </span>
                     </div>
