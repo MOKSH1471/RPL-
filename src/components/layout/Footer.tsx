@@ -31,7 +31,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 Official Media
               </span>
               <FlipLink
-                href="https://instagram.com"
+                href="https://www.instagram.com/researchcentre_global/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-900 hover:text-pink-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 Match Highlights
               </span>
               <FlipLink
-                href="https://youtube.com"
+                href="https://www.youtube.com/@VitraagVigyaan"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-900 hover:text-red-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
@@ -106,7 +106,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               </span>
             </div>
             <p className="text-slate-600 text-sm font-medium max-w-md leading-relaxed">
-              Raj Premier League (RPL) is an annual community sports championship, bringing together athletes for Cricket, Football, Badminton, Table Tennis, Pickleball, Volleyball, and Women's sports leagues.
+              Raj Premier League (RPL) is an annual community sports championship, bringing together athletes for Football, Cricket, and Women's League.
             </p>
           </div>
 

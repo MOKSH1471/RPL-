@@ -129,6 +129,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBorder: 'border-emerald-400',
     colorBadge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
   },
+  /*
   {
     id: 'badminton',
     name: 'Badminton Championship',
@@ -165,6 +166,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBorder: 'border-purple-400',
     colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
   },
+  */
   {
     id: 'womens-sports',
     name: "Women's Multi-Sport League",

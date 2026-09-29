@@ -117,7 +117,7 @@ export const RevealLinks: React.FC<{ className?: string }> = ({ className = "" }
   return (
     <section className={`grid place-content-center gap-4 px-4 py-16 text-slate-900 max-w-full overflow-hidden ${className}`}>
       <FlipLink
-        href="https://instagram.com"
+        href="https://www.instagram.com/researchcentre_global/"
         target="_blank"
         rel="noopener noreferrer"
         className="text-3xl sm:text-5xl md:text-6xl hover:text-pink-600 transition-colors"
@@ -125,7 +125,7 @@ export const RevealLinks: React.FC<{ className?: string }> = ({ className = "" }
         Instagram
       </FlipLink>
       <FlipLink
-        href="https://youtube.com"
+        href="https://www.youtube.com/@VitraagVigyaan"
         target="_blank"
         rel="noopener noreferrer"
         className="text-3xl sm:text-5xl md:text-6xl hover:text-red-600 transition-colors"
