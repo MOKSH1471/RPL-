@@ -1968,7 +1968,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 border-2 border-amber-300 shadow-xs space-y-2">
                         <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-amber-950">
                           <DoorOpen className="w-4 h-4 text-amber-600" />
-                          <span>In Which Room Are You Staying?</span>
+                          <span>In Which Room/Flat Are You Staying?</span>
                           <span className="text-pink-600 font-extrabold">*</span>
                         </label>
                         <input

@@ -563,7 +563,7 @@ Sent via RPL Official Registration Portal
                   {watch('accommodationRequired') === 'No' && (
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        In Which Room Are You Staying? <span className="text-pink-600">*</span>
+                        In Which Room/Flat Are You Staying? <span className="text-pink-600">*</span>
                       </label>
                       <input
                         type="text"
