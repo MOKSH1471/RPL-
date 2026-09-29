@@ -698,7 +698,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
               if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
               if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              setValue('existingRplFamily', 'Yes', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              setValue('existingRplFamily', 'No', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
             }
           } else {
             setIsUnregisteredPlayer(true);
@@ -2070,7 +2070,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={[
-                      { value: 'No', label: 'New Player' },
+                      { value: 'No', label: 'No, New Player' },
                       { value: 'Yes', label: 'Yes, Previous Season' },
                     ]}
                     value={currentExistingFamily}

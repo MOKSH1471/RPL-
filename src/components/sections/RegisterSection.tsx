@@ -487,8 +487,8 @@ Sent via RPL Official Registration Portal
                       {...register('existingRplFamily')}
                       className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 text-base sm:text-sm"
                     >
-                      <option value="No">No</option>
-                      <option value="Yes">Yes</option>
+                      <option value="No">No, New Player</option>
+                      <option value="Yes">Yes, Previous Season</option>
                     </select>
                   </div>
 

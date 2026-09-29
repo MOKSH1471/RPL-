@@ -15,6 +15,9 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
+      case 'winners':
+      case 'winner':
+        return { label: 'Champions', icon: '🏆', bg: 'bg-amber-500 text-slate-950 font-black' };
       case 'cricket':
         return { label: 'Cricket', icon: '🏏', bg: 'bg-amber-600 text-white' };
       case 'football':
@@ -33,27 +36,40 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
     <div
       onClick={() => onSelect(idx)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '320px' }}
-      className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu"
+      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${
+        item.category === 'winners' ? 'border-amber-300 ring-1 ring-amber-400/30' : 'border-slate-200/90'
+      }`}
     >
       {/* Image Container with Consistent 4:3 Aspect Ratio */}
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
         {!loaded && (
           <div className="absolute inset-0 bg-slate-200 animate-pulse" />
         )}
-        <img
-          src={item.thumbnail || item.image}
-          alt={item.title}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setLoaded(true)}
-          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
+        <picture className="w-full h-full">
+          <source
+            srcSet={(item.thumbnail || item.image).replace(/\.jpg$/, '.webp')}
+            type="image/webp"
+          />
+          <img
+            src={item.thumbnail || item.image}
+            alt={item.title}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${
+              loaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        </picture>
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
 
-        {/* Top Category Badge */}
-        <div className="absolute top-2.5 right-2.5 flex items-center pointer-events-none">
+        {/* Top Category & Season Badges */}
+        <div className="absolute top-2.5 right-2.5 flex items-center space-x-1.5 pointer-events-none">
+          {item.season && (
+            <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-slate-950/85 text-amber-300 border border-amber-400/40 shadow-xs">
+              {item.season}
+            </span>
+          )}
           <span className={`text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full border border-white/20 shadow-xs ${catInfo.bg}`}>
             {catInfo.icon} {catInfo.label}
           </span>
@@ -89,11 +105,85 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
 };
 
 export const GallerySection: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'cricket' | 'football' | 'womens' | 'ceremony'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'winners' | 'cricket' | 'football' | 'womens' | 'ceremony'>('all');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   const galleryItems: GalleryItem[] = [
+    // ── All Seasons Winners (Season 1 to Season 8) ──
+    {
+      id: 'w8',
+      title: 'RPL Season 8 Defending Champions',
+      season: 'Season 8',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-8-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-8-winner.jpg',
+      caption: 'Defending champions of Season 8 celebrating their monumental victory on the grand stadium stage before Season 9.',
+    },
+    {
+      id: 'w7',
+      title: 'RPL Season 7 Champions',
+      season: 'Season 7',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-7-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-7-winner.jpg',
+      caption: 'Season 7 champions rejoicing on the podium in their victorious championship team jerseys.',
+    },
+    {
+      id: 'w6',
+      title: 'RPL Season 6 Champions',
+      season: 'Season 6',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-6-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-6-winner.jpg',
+      caption: 'The triumphant squad proudly lifting high the Season 6 trophy after an extraordinary championship tournament run.',
+    },
+    {
+      id: 'w5',
+      title: 'RPL Season 5 Champions',
+      season: 'Season 5',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-5-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-5-winner.jpg',
+      caption: 'Season 5 champions celebrating an unforgettable final match triumph with the golden championship trophy.',
+    },
+    {
+      id: 'w4',
+      title: 'RPL Season 4 Champions',
+      season: 'Season 4',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-4-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-4-winner.jpg',
+      caption: 'Season 4 title holders celebrating their championship triumph on the victory stage.',
+    },
+    {
+      id: 'w3',
+      title: 'RPL Season 3 Champions',
+      season: 'Season 3',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-3-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-3-winner.jpg',
+      caption: 'Season 3 champions lifting the coveted RPL cup amidst triumphant cheers from supporters.',
+    },
+    {
+      id: 'w2',
+      title: 'RPL Season 2 Champions',
+      season: 'Season 2',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-2-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-2-winner.jpg',
+      caption: 'Season 2 championship winning squad proudly posing with the winner trophy and commemorative medals.',
+    },
+    {
+      id: 'w1',
+      title: 'RPL Season 1 Inaugural Champions',
+      season: 'Season 1',
+      category: 'winners',
+      image: '/rpl-photos/winners/season-1-winner.jpg',
+      thumbnail: '/rpl-photos/winners/thumbs/season-1-winner.jpg',
+      caption: 'The inaugural champions celebrating their historic title victory at the very first Raj Premier League.',
+    },
+    // ── Tournament Highlights & Action ──
     {
       id: '1',
       title: 'RPL Grand Inaugural Ceremony',
@@ -300,6 +390,7 @@ export const GallerySection: React.FC = () => {
         >
           {[
             { id: 'all', label: 'All Highlights', count: galleryItems.length },
+            { id: 'winners', label: '🏆 Season Winners (S1–S8)', count: galleryItems.filter((i) => i.category === 'winners').length },
             { id: 'cricket', label: '🏏 Cricket', count: galleryItems.filter((i) => i.category === 'cricket').length },
             { id: 'football', label: '⚽ Football', count: galleryItems.filter((i) => i.category === 'football').length },
             { id: 'womens', label: "🏆 Women's League", count: galleryItems.filter((i) => i.category === 'womens').length },
@@ -405,17 +496,23 @@ export const GallerySection: React.FC = () => {
 
                   {/* Photo Display Frame - Pre-stabilized Height & Zero Jitter */}
                   <div className="relative flex-1 min-h-[260px] sm:min-h-[380px] md:min-h-[460px] max-h-[62vh] bg-slate-50/90 flex items-center justify-center p-2.5 sm:p-4 overflow-hidden">
-                    <img
-                      key={currentPhoto.image}
-                      src={currentPhoto.image}
-                      alt={currentPhoto.title}
-                      decoding="async"
-                      style={{
-                        maxHeight: 'min(60vh, 580px)',
-                        maxWidth: '100%',
-                      }}
-                      className="w-auto h-auto object-contain select-none rounded-xl shadow-md border border-slate-200/80"
-                    />
+                    <picture className="flex items-center justify-center">
+                      <source
+                        srcSet={currentPhoto.image.replace(/\.jpg$/, '.webp')}
+                        type="image/webp"
+                      />
+                      <img
+                        key={currentPhoto.image}
+                        src={currentPhoto.image}
+                        alt={currentPhoto.title}
+                        decoding="async"
+                        style={{
+                          maxHeight: 'min(60vh, 580px)',
+                          maxWidth: '100%',
+                        }}
+                        className="w-auto h-auto object-contain select-none rounded-xl shadow-md border border-slate-200/80"
+                      />
+                    </picture>
 
                     {/* Previous Navigation Arrow */}
                     {filteredItems.length > 1 && (
@@ -458,7 +555,13 @@ export const GallerySection: React.FC = () => {
                         {currentPhoto.caption}
                       </p>
                     </div>
-                    <div className="shrink-0 hidden sm:flex items-center">
+                    <div className="shrink-0 hidden sm:flex items-center space-x-2">
+                      {currentPhoto.season && (
+                        <span className="text-[11px] font-black text-amber-950 bg-amber-300 px-3 py-1 rounded-full border border-amber-400 uppercase tracking-wider shadow-xs flex items-center space-x-1">
+                          <span>🏆</span>
+                          <span>{currentPhoto.season} Champions</span>
+                        </span>
+                      )}
                       <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/80 uppercase">
                         {currentPhoto.category}
                       </span>
