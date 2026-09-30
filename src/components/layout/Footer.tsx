@@ -127,6 +127,11 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 </a>
               </li>
               <li>
+                <a href="#schedule" className="hover:text-amber-600 transition-colors">
+                  Match Schedule
+                </a>
+              </li>
+              <li>
                 <a href="#gallery" className="hover:text-amber-600 transition-colors">
                   Past Season Highlights
                 </a>

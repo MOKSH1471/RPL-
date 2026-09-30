@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             } else if (scrollY < 120) {
               setActiveSection((prev) => (prev !== 'about' ? 'about' : prev));
             } else {
-              const sections = ['about', 'leagues', 'gallery', 'how-it-works'];
+              const sections = ['about', 'leagues', 'schedule', 'gallery', 'how-it-works'];
               let currentSection = '';
 
               for (const sectionId of sections) {
@@ -117,6 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'about', label: 'About', href: '#about' },
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
+    { id: 'schedule', label: 'Schedule', href: '#schedule' },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
     { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
   ];

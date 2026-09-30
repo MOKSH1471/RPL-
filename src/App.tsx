@@ -5,6 +5,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { AboutSection } from '@/components/sections/AboutSection';
 import { LeaguesSection } from '@/components/sections/LeaguesSection';
+import { ScheduleSection } from '@/components/sections/ScheduleSection';
 import { GallerySection } from '@/components/sections/GallerySection';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
@@ -115,6 +116,7 @@ export function App() {
               />
               <AboutSection />
               <LeaguesSection onSelectLeague={handleSelectLeague} />
+              <ScheduleSection onRegisterClick={handleRegisterClick} />
               <GallerySection />
               <HowItWorksSection />
             </>
