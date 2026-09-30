@@ -70,7 +70,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Season 9 Entry
+                Register
               </span>
               <FlipLink
                 href="#register"
@@ -102,7 +102,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 </div>
               </div>
               <span className="font-display font-extrabold text-2xl text-slate-900 tracking-wider">
-                RPL <span className="text-gradient-vibrant">Season 9</span>
+                Raj Premier League
               </span>
             </div>
             <p className="text-slate-600 text-sm font-medium max-w-md leading-relaxed">
@@ -157,11 +157,25 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
             <ul className="space-y-3 text-sm text-slate-600 font-medium">
               <li className="flex items-center space-x-3">
                 <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>WhatsApp Helpline</span>
+                <a
+                  href="https://wa.me/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-600 transition-colors"
+                >
+                  WhatsApp Helpline
+                </a>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-pink-600 shrink-0" />
-                <span>contact@rplseason9.com</span>
+                <a
+                  href="https://mail.google.com/mail/?view=cm&to=info.rplevents@gmail.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-pink-600 transition-colors"
+                >
+                  info.rplevents@gmail.com
+                </a>
               </li>
             </ul>
           </div>
@@ -169,11 +183,25 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
         {/* Bottom Bar */}
         <div className="pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3 sm:gap-4">
-          <p>© 2026 Raj Premier League (RPL Season 9). All rights reserved.</p>
-          <p className="flex items-center space-x-1">
-            <span>Crafted with passion for community sports</span>
-            <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600 inline" />
-          </p>
+          <p>© 2026 Raj Premier League (RPL). All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <a
+              href="#/privacy-policy"
+              className="hover:text-amber-600 transition-colors underline underline-offset-2"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="#/terms"
+              className="hover:text-amber-600 transition-colors underline underline-offset-2"
+            >
+              Terms &amp; Conditions
+            </a>
+            <p className="flex items-center space-x-1">
+              <span>Crafted with passion for community sports</span>
+              <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600 inline" />
+            </p>
+          </div>
         </div>
       </InView>
     </footer>

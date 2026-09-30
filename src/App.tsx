@@ -8,12 +8,14 @@ import { LeaguesSection } from '@/components/sections/LeaguesSection';
 import { GallerySection } from '@/components/sections/GallerySection';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
+import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
+import { TermsPage } from '@/components/pages/TermsPage';
 import { AdminPortal } from '@/components/admin/AdminPortal';
 import { Footer } from '@/components/layout/Footer';
 import { LeagueType } from '@/types';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'admin'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'admin' | 'privacy' | 'terms'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
 
@@ -27,6 +29,12 @@ export function App() {
         setShowIntro(false);
       } else if (path === '/register' || path.startsWith('/register') || hash === '#/register' || hash === '#register') {
         setCurrentPage('register');
+        setShowIntro(false);
+      } else if (hash === '#/privacy-policy' || hash === '#privacy-policy') {
+        setCurrentPage('privacy');
+        setShowIntro(false);
+      } else if (hash === '#/terms' || hash === '#terms') {
+        setCurrentPage('terms');
         setShowIntro(false);
       } else {
         setCurrentPage('home');
@@ -67,6 +75,14 @@ export function App() {
 
   if (currentPage === 'admin') {
     return <AdminPortal onBackToHome={handleBackToHome} />;
+  }
+
+  if (currentPage === 'privacy') {
+    return <PrivacyPolicyPage onBackToHome={handleBackToHome} />;
+  }
+
+  if (currentPage === 'terms') {
+    return <TermsPage onBackToHome={handleBackToHome} />;
   }
 
   return (
