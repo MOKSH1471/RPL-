@@ -3097,6 +3097,62 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 )}
 
+                {/* UPI QR Code Scanner Banner */}
+                {totalPayableFee > 0 && (
+                  <div className="p-5 sm:p-6 bg-white rounded-2xl border-2 border-emerald-300 shadow-sm flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                    <div className="relative shrink-0 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm group">
+                      <img
+                        src="/rpl_upi_qr.png"
+                        alt="RPL UPI QR Code Scanner"
+                        className="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl"
+                      />
+                    </div>
+
+                    <div className="flex-1 text-center sm:text-left space-y-2.5">
+                      <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Official RPL Payment QR Code</span>
+                      </div>
+
+                      <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
+                        Scan QR Code to Pay ₹{totalPayableFee} via Any UPI App
+                      </h4>
+
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        Open Google Pay, PhonePe, Paytm, or BHIM UPI, scan the QR code to pay <strong className="text-slate-900 font-extrabold">₹{totalPayableFee}</strong>, then enter your UTR / Transaction ID or upload receipt screenshot below.
+                      </p>
+
+                      <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-800 flex items-center space-x-2">
+                          <span>UPI ID:</span>
+                          <span className="text-emerald-800 font-bold">info.rplevents@okicici</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('info.rplevents@okicici');
+                            setCopiedUpi(true);
+                            setTimeout(() => setCopiedUpi(false), 2000);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
+                        >
+                          {copiedUpi ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-white" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy UPI ID</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Dynamic UTR & Receipt Screenshot Upload Fields */}
                 {totalPayableFee > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
