@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import db, { RPL_DB } from '../config/db.js';
 import razorpay from '../config/razorpay.js';
-import { processAccommodationBooking } from '../../services/roomBookingService.js';
+import { processAccommodationBooking } from '../services/roomBookingService.js';
 
 const router = Router();
 

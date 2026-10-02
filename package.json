@@ -18,7 +18,8 @@
     "build:all": "npm run build:web && npm run build:admin",
     "preview": "npm run preview --workspace=@rpl/web",
     "server": "node server/index.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "db:migrate": "node database/migrate.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

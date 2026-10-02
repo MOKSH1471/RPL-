@@ -21,12 +21,15 @@ import registrationRoutes from './src/routes/registration.routes.js';
 import razorpayRoutes from './src/routes/razorpay.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter } from './src/middleware/rateLimiter.js';
+import { notFoundHandler, globalErrorHandler } from './src/middleware/errorHandler.js';
+import { securityHeadersMiddleware, corsOptions } from './src/middleware/security.js';
 
 const app = express();
 const port = process.env.PORT || 5005;
 
-// Middleware
-app.use(cors());
+// Security & Parsing Middleware
+app.use(securityHeadersMiddleware);
+app.use(cors(corsOptions()));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -47,11 +50,15 @@ app.use('/api', registrationRoutes);
 app.use('/api', razorpayRoutes);
 app.use('/api', adminRoutes);
 
-// 3. Fallback Root-Level Aliases for Lookups (backward compatibility)
+// 4. Fallback Root-Level Aliases for Lookups (backward compatibility)
 app.get('/mumukshu-lookup', handlePlayerLookup);
 app.get('/card/lookup', handlePlayerLookup);
 app.get('/referrer-lookup', handleReferrerLookup);
 app.get('/reference-lookup', handleReferrerLookup);
+
+// 5. Centralized 404 & Error Handlers
+app.use(notFoundHandler);
+app.use(globalErrorHandler);
 
 // Start Server if not running in test runner
 const isTestEnv = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
