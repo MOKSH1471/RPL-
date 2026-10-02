@@ -307,3 +307,13 @@ export async function verifyRazorpayPayment(params: VerifyPaymentParams) {
   return data;
 }
 
+export async function reportRazorpayPaymentFailure(orderId: string, error: any) {
+  try {
+    await fetch(`${API_BASE_URL}/razorpay/payment-failed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, error }),
+    });
+  } catch {}
+}
+

@@ -58,6 +58,33 @@ router.post('/razorpay/create-order', async (req, res) => {
 
     console.log(`[RAZORPAY ORDER CREATED] Order ID: ${order.id}, Amount: ₹${computedFee} (${amountInPaise} paise) for "${fullName}"`);
 
+    // 1. Pre-Payment Intent: Record initiated transaction before checkout
+    try {
+      const cleanMobDigits = String(mobile || '').replace(/\D/g, '');
+      const cardNoVal = req.body.cardNo || `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
+      const sportsList = Array.isArray(selectedSports) ? selectedSports.join(', ') : 'Cricket';
+      const initialBookingId = registrationId || `PENDING_${order.id.slice(-12)}`;
+
+      await db.query(
+        `INSERT INTO ${RPL_DB}.rpl_transactions 
+         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+         VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_INTENT', NOW(), NOW(), ?)
+         ON DUPLICATE KEY UPDATE 
+           amount = VALUES(amount),
+           description = VALUES(description),
+           updatedAt = NOW()`,
+        [
+          cardNoVal,
+          initialBookingId,
+          computedFee,
+          `RPL Season 9 Registration (${sportsList}) - Pre-Payment Intent`,
+          order.id,
+        ]
+      );
+    } catch (intentErr) {
+      console.warn('[PRE-PAYMENT INTENT NOTICE]', intentErr.message);
+    }
+
     res.json({
       success: true,
       orderId: order.id,
@@ -297,7 +324,8 @@ router.post('/razorpay/webhook', async (req, res) => {
 
     if (webhookSecret && receivedSignature) {
       const shasum = crypto.createHmac('sha256', webhookSecret);
-      shasum.update(JSON.stringify(req.body));
+      const rawContent = req.rawBody || JSON.stringify(req.body);
+      shasum.update(rawContent);
       const digest = shasum.digest('hex');
 
       if (digest !== receivedSignature) {
@@ -327,7 +355,7 @@ router.post('/razorpay/webhook', async (req, res) => {
       console.warn('[RAZORPAY WEBHOOK LOG ERROR]', logErr.message);
     }
 
-    // B. Handle payment.captured or order.paid for asynchronous fallback approval
+    // B. Fail-Safe Webhook Fallback: Update transaction & approve player registration asynchronously
     if (event === 'payment.captured' || event === 'order.paid') {
       if (orderId) {
         await db.query(
@@ -337,20 +365,65 @@ router.post('/razorpay/webhook', async (req, res) => {
           [paymentId, orderId]
         );
 
+        let targetRegId = null;
         const [matchedTx] = await db.query(
           `SELECT bookingid FROM ${RPL_DB}.rpl_transactions WHERE razorpay_order_id = ? LIMIT 1`,
           [orderId]
         );
 
-        if (matchedTx.length > 0 && matchedTx[0].bookingid) {
-          const regId = matchedTx[0].bookingid;
+        if (matchedTx.length > 0 && matchedTx[0].bookingid && !matchedTx[0].bookingid.startsWith('PENDING_')) {
+          targetRegId = matchedTx[0].bookingid;
+        } else {
+          // Fail-Safe Fallback: Locate pending registration by payer contact or notes
+          const payerPhone = (payment.contact || (payment.notes && payment.notes.mobile) || '').replace(/\D/g, '').slice(-10);
+          if (payerPhone && payerPhone.length === 10) {
+            const [matchedRegs] = await db.query(
+              `SELECT id FROM ${RPL_DB}.rpl_registrations 
+               WHERE REPLACE(REPLACE(mobile, '+91', ''), ' ', '') LIKE ? AND payment_status = 'pending' 
+               ORDER BY submitted_at DESC LIMIT 1`,
+              [`%${payerPhone}`]
+            );
+            if (matchedRegs.length > 0) {
+              targetRegId = matchedRegs[0].id;
+              // Link registration ID to transaction
+              await db.query(
+                `UPDATE ${RPL_DB}.rpl_transactions SET bookingid = ? WHERE razorpay_order_id = ?`,
+                [targetRegId, orderId]
+              );
+            }
+          }
+        }
+
+        if (targetRegId) {
           await db.query(
             `UPDATE ${RPL_DB}.rpl_registrations 
              SET payment_status = 'approved', payment_utr = COALESCE(?, payment_utr), submitted_at = NOW() 
              WHERE id = ?`,
-            [paymentId, regId]
+            [paymentId, targetRegId]
           );
-          console.log(`[RAZORPAY WEBHOOK AUTO-APPROVED] Registration "${regId}" confirmed.`);
+          console.log(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" confirmed via webhook.`);
+        }
+      }
+    }
+
+    // C. Failure Telemetry: Track failed payment attempts with root cause analysis
+    if (event === 'payment.failed') {
+      const errorCode = payment.error_code || 'PAYMENT_FAILED';
+      const errorDesc = payment.error_description || payment.error_reason || 'Payment failed';
+      console.warn(`[RAZORPAY FAILURE TELEMETRY] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
+
+      if (orderId) {
+        try {
+          await db.query(
+            `UPDATE ${RPL_DB}.rpl_transactions 
+             SET status = 'failed', 
+                 description = CONCAT(description, ' | Failure: [', ?, '] ', ?),
+                 updatedAt = NOW() 
+             WHERE razorpay_order_id = ? AND status != 'completed'`,
+            [errorCode, String(errorDesc).slice(0, 100), orderId]
+          );
+        } catch (failErr) {
+          console.warn('[FAILURE TELEMETRY LOG NOTICE]', failErr.message);
         }
       }
     }
@@ -359,6 +432,35 @@ router.post('/razorpay/webhook', async (req, res) => {
   } catch (error) {
     console.error('[RAZORPAY WEBHOOK ERROR]', error);
     res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+// 4. Client-Side Payment Failure Telemetry
+router.post('/razorpay/payment-failed', async (req, res) => {
+  try {
+    const { orderId, error } = req.body;
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'orderId is required' });
+    }
+
+    const errorCode = error?.code || 'CLIENT_DECLINED';
+    const errorDesc = error?.description || error?.reason || 'User cancelled or payment failed';
+
+    console.warn(`[RAZORPAY CLIENT FAILURE] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
+
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_transactions 
+       SET status = 'failed', 
+           description = CONCAT(description, ' | Failure: [', ?, '] ', ?),
+           updatedAt = NOW() 
+       WHERE razorpay_order_id = ? AND status != 'completed'`,
+      [errorCode, String(errorDesc).slice(0, 100), orderId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.warn('[PAYMENT FAILURE ENDPOINT NOTICE]', err.message);
+    res.json({ success: false, error: err.message });
   }
 });
 

@@ -32,7 +32,12 @@ import pool from './src/config/db.js';
 // Security & Parsing Middleware
 app.use(securityHeadersMiddleware);
 app.use(cors(corsOptions()));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Structured HTTP Request Logger

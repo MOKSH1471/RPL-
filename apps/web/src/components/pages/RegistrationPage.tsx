@@ -14,6 +14,7 @@ import {
   lookupReferrer,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  reportRazorpayPaymentFailure,
 } from '@/lib/api';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
 
@@ -1346,6 +1347,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               setIsRazorpayLoading(false);
             },
           },
+        });
+
+        rzp.on('payment.failed', function (response: any) {
+          console.warn('[RAZORPAY PAYMENT FAILED]', response.error);
+          reportRazorpayPaymentFailure(orderData.orderId, response.error);
         });
 
         rzp.open();
