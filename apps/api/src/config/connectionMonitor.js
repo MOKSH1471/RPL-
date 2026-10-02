@@ -26,6 +26,9 @@ export class ConnectionMonitor {
     this.monitoringInterval = setInterval(() => {
       this.checkConnectionPool();
     }, this.intervalMs);
+    if (this.monitoringInterval && typeof this.monitoringInterval.unref === 'function') {
+      this.monitoringInterval.unref();
+    }
 
     // Initial check
     this.checkConnectionPool();
