@@ -45,8 +45,8 @@ app.get('/reference-lookup', handleReferrerLookup);
 // Start Server if not running in test runner
 const isTestEnv = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
 if (!isTestEnv) {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port} (0.0.0.0)`);
   });
 }
 
