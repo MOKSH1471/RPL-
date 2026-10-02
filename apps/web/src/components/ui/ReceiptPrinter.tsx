@@ -452,7 +452,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                     <span className="text-neutral-500 font-bold uppercase shrink-0">PID:</span>
                     <span className={`font-mono font-bold text-[8.5px] text-right leading-relaxed ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {effectiveUtr
-                        ? effectiveUtr.split(',').map((p: string) => p.trim()).filter(Boolean).map((pid, i) => (
+                        ? effectiveUtr.split(',').map((p: string) => p.trim()).filter(Boolean).map((pid: string, i: number) => (
                             <span key={i} className="block">{pid}</span>
                           ))
                         : isApproved

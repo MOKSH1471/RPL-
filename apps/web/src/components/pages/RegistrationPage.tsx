@@ -749,7 +749,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setValue('centre', '', { shouldValidate: false });
           setValue('dateOfBirth', '', { shouldValidate: false });
           setValue('gender', 'Male', { shouldValidate: false });
-          setValue('tshirtSize', '', { shouldValidate: false });
+          setValue('tshirtSize', '' as any, { shouldValidate: false });
         }
       })
       .catch((err) => {
@@ -768,7 +768,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('centre', '', { shouldValidate: false });
         setValue('dateOfBirth', '', { shouldValidate: false });
         setValue('gender', 'Male', { shouldValidate: false });
-        setValue('tshirtSize', '', { shouldValidate: false });
+        setValue('tshirtSize', '' as any, { shouldValidate: false });
       });
   }, [currentMobile, currentCountryCode, setValue]);
 
