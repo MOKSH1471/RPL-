@@ -3,8 +3,6 @@ import { RegistrationFormData } from '@/types';
 import { printerAudio } from '@/lib/printerAudio';
 import {
   Printer,
-  Volume2,
-  VolumeX,
   Share2,
   Check,
   Download,
@@ -293,21 +291,6 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
           <span>{isPrinting ? 'Printing Pass...' : isPrinted ? 'Re-print Pass' : 'Print Pass'}</span>
         </button>
 
-        <div className="w-px h-4 bg-slate-200" />
-
-        {/* Sound Toggle */}
-        <button
-          type="button"
-          onClick={handleToggleSound}
-          className="p-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-          title={soundEnabled ? 'Mute Audio' : 'Unmute Audio'}
-        >
-          {soundEnabled ? (
-            <Volume2 className="w-4 h-4 text-amber-600" />
-          ) : (
-            <VolumeX className="w-4 h-4 text-slate-400" />
-          )}
-        </button>
 
         {/* Direct Receipt Image Download (.png) */}
         <button
@@ -461,17 +444,17 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference || 'Regular'}
+                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PROOF:</span>
-                    <span className={`font-mono font-bold text-[8.5px] truncate max-w-[190px] ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      {effectiveUtr && (data.payment_receipt || data.paymentReceiptUrl)
-                        ? `UTR: ${effectiveUtr} (SS ATTACHED)`
-                        : effectiveUtr
-                        ? `UTR: ${effectiveUtr}`
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="text-neutral-500 font-bold uppercase shrink-0">PID:</span>
+                    <span className={`font-mono font-bold text-[8.5px] text-right leading-relaxed ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
+                      {effectiveUtr
+                        ? effectiveUtr.split(',').map((p: string) => p.trim()).filter(Boolean).map((pid, i) => (
+                            <span key={i} className="block">{pid}</span>
+                          ))
                         : isApproved
                         ? 'VERIFIED & CLEARED'
                         : (data.payment_receipt || data.paymentReceiptUrl)

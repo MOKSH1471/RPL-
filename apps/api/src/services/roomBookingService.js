@@ -156,9 +156,51 @@ export async function processAccommodationBooking({
     }
 
     // -------------------------------------------------------------
-    // Window 2: Official RPL Tournament Stay (25 Dec -> 27 Dec)
-    // Handled under RPL Tournament Package (No aashray.room_booking entry needed)
+    // Window 2: Official RPL Tournament Stay (25 Dec → 27 Dec)
+    // Covered by the RPL registration fee — create as 'confirmed' immediately.
     // -------------------------------------------------------------
+    const rplNights = calculateNights(RPL_START_DATE, RPL_END_DATE); // always 2
+    const [existingRpl] = await db.query(
+      `SELECT bookingid FROM ${AASHRAY_DB}.room_booking 
+       WHERE cardno = ? AND checkin = ? AND checkout = ? LIMIT 1`,
+      [validCardNo, RPL_START_DATE, RPL_END_DATE]
+    );
+
+    if (existingRpl.length > 0) {
+      // Already exists — ensure it's confirmed (in case old code left it as pending/waiting)
+      await db.query(
+        `UPDATE ${AASHRAY_DB}.room_booking 
+         SET status = 'confirmed', roomno = 'RPL_UNASSIGNED', bookedBy = 'RPL_TEAM', updatedAt = ? 
+         WHERE bookingid = ?`,
+        [now, existingRpl[0].bookingid]
+      );
+      bookingsCreated.push({
+        type: 'rpl_tournament',
+        bookingid: existingRpl[0].bookingid,
+        checkin: RPL_START_DATE,
+        checkout: RPL_END_DATE,
+        nights: rplNights,
+        status: 'confirmed',
+        paidBy: 'RPL Registration Fee (Included)',
+      });
+    } else {
+      const rplBookingId = uuidv4();
+      await db.query(
+        `INSERT INTO ${AASHRAY_DB}.room_booking 
+         (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
+         VALUES (?, ?, 'RPL_TEAM', 'RPL_UNASSIGNED', ?, ?, ?, 'nac', 'confirmed', ?, 'RPL_APP', ?, ?)`,
+        [rplBookingId, validCardNo, RPL_START_DATE, RPL_END_DATE, rplNights, mappedGender, now, now]
+      );
+      bookingsCreated.push({
+        type: 'rpl_tournament',
+        bookingid: rplBookingId,
+        checkin: RPL_START_DATE,
+        checkout: RPL_END_DATE,
+        nights: rplNights,
+        status: 'confirmed',
+        paidBy: 'RPL Registration Fee (Included)',
+      });
+    }
 
     // -------------------------------------------------------------
     // Window 3: Post-RPL Stay (e.g. 27 Dec -> 29 Dec)

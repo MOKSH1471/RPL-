@@ -1,6 +1,6 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, MessageCircle, Trophy } from 'lucide-react';
+import { CheckCircle2, Clock, MessageCircle, Trophy } from 'lucide-react';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
@@ -59,24 +59,53 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     }
   };
 
+  const isPayLater = 
+    (data.paymentStatus === 'pending' || data.paymentStatus === 'approved_due') && 
+    !data.paymentUtr && 
+    !data.payment_utr;
+  const isApprovedDue = data.paymentStatus === 'approved_due';
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6 animate-fadeIn">
       {/* 3D THERMAL RECEIPT DISPENSER - HERO CENTERPIECE AT TOP */}
       <div
         ref={receiptContainerRef}
-        className="rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24"
+        className={`rounded-3xl p-5 sm:p-7 border-2 ${isPayLater ? 'border-amber-300 bg-amber-50/30' : 'border-emerald-300 bg-white'} shadow-xl scroll-mt-24`}
       >
         <div className="flex flex-col items-center justify-center text-center mb-4">
-          <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>ENTRY RECORDED • OFFICIAL PASS DISPENSER</span>
-          </div>
+          {isPayLater ? (
+            <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-300 font-extrabold text-xs mb-1.5 shadow-xs">
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              <span>REGISTERED • {isApprovedDue ? 'ADDITIONAL PAYMENT DUE' : 'PAYMENT PENDING'}</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>ENTRY RECORDED • OFFICIAL PASS DISPENSER</span>
+            </div>
+          )}
           <h2 className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
-            Registration Confirmed!
+            {isApprovedDue ? 'Additional Payment Due!' : 'Registration Saved!'}
           </h2>
           <p className="text-slate-600 text-xs sm:text-sm font-medium mt-0.5">
-            Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your official tournament pass is rolling out below:
+            {isPayLater ? (
+              <>
+                {isApprovedDue
+                  ? <>Your base registration is paid, <strong className="text-slate-950">{data.fullName}</strong>. Pay the additional sport fee to activate your new entry.</>
+                  : <>Your details are saved, <strong className="text-slate-950">{data.fullName}</strong>. Complete payment to activate your official pass.</>
+                }
+              </>
+            ) : (
+              <>Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your official tournament pass is rolling out below:</>
+            )}
           </p>
+          {isPayLater && (
+            <div className="mt-3 p-3 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-medium text-center leading-relaxed max-w-sm">
+              {isApprovedDue
+                ? '💳 To pay for your additional sport, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'
+                : '💳 To complete payment, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'}
+            </div>
+          )}
         </div>
 
         <ReceiptPrinter

@@ -61,28 +61,37 @@ router.post('/razorpay/create-order', async (req, res) => {
     console.log(`[RAZORPAY ORDER CREATED] Order ID: ${order.id}, Amount: ₹${computedFee} (${amountInPaise} paise) for "${fullName}"`);
 
     // 1. Pre-Payment Intent: Record initiated transaction before checkout
+    // Uses UPDATE-first to avoid duplicate rows when a player retries payment
     try {
       const cleanMobDigits = String(mobile || '').replace(/\D/g, '');
       const cardNoVal = req.body.cardNo || `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
       const sportsList = Array.isArray(selectedSports) ? selectedSports.join(', ') : 'Cricket';
       const initialBookingId = registrationId || `PENDING_${order.id.slice(-12)}`;
+      const description = `RPL Season 9 Registration (${sportsList}) - Pre-Payment Intent`;
 
-      await db.query(
-        `INSERT INTO ${RPL_DB}.rpl_transactions 
-         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-         VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_INTENT', NOW(), NOW(), ?)
-         ON DUPLICATE KEY UPDATE 
-           amount = VALUES(amount),
-           description = VALUES(description),
-           updatedAt = NOW()`,
-        [
-          cardNoVal,
-          initialBookingId,
-          computedFee,
-          `RPL Season 9 Registration (${sportsList}) - Pre-Payment Intent`,
-          order.id,
-        ]
+      // Try updating an existing pending row first (retry scenario)
+      const [updateResult] = await db.query(
+        `UPDATE ${RPL_DB}.rpl_transactions
+         SET razorpay_order_id = ?, amount = ?, description = ?, updatedAt = NOW()
+         WHERE bookingid = ? AND category = 'sports' AND status = 'pending'
+         LIMIT 1`,
+        [order.id, computedFee, description, initialBookingId]
       );
+
+      // Only insert if no existing pending row was found
+      if (updateResult.affectedRows === 0) {
+        await db.query(
+          `INSERT INTO ${RPL_DB}.rpl_transactions 
+           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+           VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_INTENT', NOW(), NOW(), ?)
+           ON DUPLICATE KEY UPDATE 
+             amount = VALUES(amount),
+             description = VALUES(description),
+             razorpay_order_id = VALUES(razorpay_order_id),
+             updatedAt = NOW()`,
+          [cardNoVal, initialBookingId, computedFee, description, order.id]
+        );
+      }
     } catch (intentErr) {
       console.warn('[PRE-PAYMENT INTENT NOTICE]', intentErr.message);
     }
@@ -165,7 +174,9 @@ router.post('/razorpay/verify-payment', async (req, res) => {
     // C. Server-Side Amount Reconciliation (Aashray Tamper Prevention)
     if (verifiedPayment && registrationPayload) {
       const cleanGeneral = registrationPayload.general_details || {};
-      const expectedRupees = cleanGeneral.totalAmount || cleanGeneral.calculatedFee || cleanGeneral.incrementalFee;
+      // Use incrementalFee first (the actual amount due for this payment),
+      // then fall back to calculatedFee, then totalAmount (cumulative)
+      const expectedRupees = cleanGeneral.incrementalFee || cleanGeneral.calculatedFee || cleanGeneral.totalAmount;
       if (expectedRupees && Number(expectedRupees) > 0) {
         const actualPaidRupees = Math.round(Number(verifiedPayment.amount) / 100);
         if (actualPaidRupees < Number(expectedRupees)) {
@@ -291,7 +302,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         // C. Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
         const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
-        const finalAmount = cleanGeneralDetails.totalAmount || cleanGeneralDetails.calculatedFee || 2500;
+        const finalAmount = cleanGeneralDetails.incrementalFee || cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2500;
 
         await db.query(
           `INSERT INTO ${RPL_DB}.rpl_transactions 

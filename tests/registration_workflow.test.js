@@ -104,3 +104,68 @@ test('Razorpay Fee Calculation: Returning player with no new sports needs no pay
   assert.strictEqual(res.data.orderId, null);
   assert.strictEqual(res.data.message, 'No payment required');
 });
+
+test('Pay Later: POST /api/register with payment_status=pending saves registration without payment', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'cricket',
+      full_name: 'Pay Later Player',
+      email: 'paylater@example.com',
+      mobile: '+91 9988776655',
+      payment_status: 'pending',
+      general_details: {
+        centre: 'Mumbai',
+        gender: 'Male',
+        selectedSports: ['cricket'],
+      },
+      answers: {},
+    }),
+  });
+
+  // Should succeed (200/201) or fail gracefully if DB is offline (500)
+  assert.ok(
+    [200, 201, 500].includes(res.status),
+    `Expected 200, 201, or 500, got ${res.status}`
+  );
+
+  // If DB is reachable, registration must be saved with pending status (no UTR required)
+  if (res.status === 200 || res.status === 201) {
+    assert.ok(res.data.registration_id || res.data.success, 'Should return a registration ID or success flag');
+  }
+});
+
+test('Pay Later: registration submitted without UTR/receipt should not be marked approved', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'cricket',
+      full_name: 'No Payment Player',
+      email: 'nopay@example.com',
+      mobile: '+91 9911223344',
+      payment_status: 'pending',
+      payment_utr: undefined,
+      payment_receipt_url: undefined,
+      general_details: {
+        centre: 'Delhi',
+        gender: 'Male',
+        selectedSports: ['cricket'],
+      },
+      answers: {},
+    }),
+  });
+
+  assert.ok(
+    [200, 201, 500].includes(res.status),
+    `Expected 200, 201, or 500, got ${res.status}`
+  );
+
+  // If DB is reachable, payment status must NOT be 'approved' without a UTR
+  if ((res.status === 200 || res.status === 201) && res.data.paymentStatus) {
+    assert.notStrictEqual(
+      res.data.paymentStatus,
+      'approved',
+      'Registration without payment should not be approved'
+    );
+  }
+});

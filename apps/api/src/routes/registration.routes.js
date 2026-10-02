@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db, { RPL_DB } from '../config/db.js';
 import { getFieldValue } from '../utils/helpers.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
+import { ensureGuestCard } from '../services/guestCardService.js';
 
 const router = Router();
 
@@ -237,7 +238,22 @@ router.post('/register', async (req, res) => {
       finalGeneralDetails = mergedGeneralDetails;
 
       const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
-      const finalPaymentStatus = prevRow.payment_status === 'approved' ? 'approved' : 'pending';
+      const hasNewPayment = newUtrs.length > 0 || newReceipts.length > 0;
+      const hasNewSports = newlyAddedSportsCount > 0;
+      const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
+
+      let finalPaymentStatus;
+      if (prevRow.payment_status === 'approved') {
+        if (hasNewSports && !hasNewPayment && incomingStatusIsPending) {
+          // Approved player added new sports via Pay Later — mark as due
+          finalPaymentStatus = 'approved_due';
+        } else {
+          // Normal update (adding payment, or no new sports) — keep approved
+          finalPaymentStatus = 'approved';
+        }
+      } else {
+        finalPaymentStatus = 'pending';
+      }
 
       await db.query(
         `UPDATE ${RPL_DB}.rpl_registrations 
@@ -268,6 +284,24 @@ router.post('/register', async (req, res) => {
       const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
       cleanGeneralDetails.totalAmount = newFee;
       cleanGeneralDetails.calculatedFee = newFee;
+
+      // Auto-create an Aashray guest card for non-mumukshu players (no existing cardNo)
+      if (!cleanGeneralDetails.cardNo) {
+        const guestCardNo = await ensureGuestCard({
+          fullName: cleanFullName,
+          mobile: mobile10,
+          email: cleanEmail,
+          gender: cleanGeneralDetails.gender || 'Male',
+          dob: cleanGeneralDetails.dateOfBirth || null,
+          centre: cleanGeneralDetails.centre || 'Mumbai',
+          photoUrl: cleanPhotoUrl || null,
+          referrerCardNo: cleanGeneralDetails.referrerCardNo || null,
+        });
+        if (guestCardNo) {
+          cleanGeneralDetails.cardNo = guestCardNo;
+          console.log(`[RPL Registration] Assigned Aashray guest card ${guestCardNo} to new player "${cleanFullName}"`);
+        }
+      }
 
       await db.query(
         `INSERT INTO ${RPL_DB}.rpl_registrations 

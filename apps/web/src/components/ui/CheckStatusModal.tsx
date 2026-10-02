@@ -92,7 +92,10 @@ export function CheckStatusModal({
     try {
       const gen = record.generalDetails || {};
       const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports : ['cricket'];
-      const fee = Number(record.payment_amount) || gen.calculatedFee || gen.totalAmount || (2500 + Math.max(0, sports.length - 1) * 400);
+
+      const prevUtrs = String(record.payment_utr || gen.payment_utr || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+      const hasPreviouslyPaid = prevUtrs.length > 0 || ['approved', 'approved_due'].includes((record.paymentStatus || record.payment_status || '').toLowerCase());
+      const prevSportsCount = hasPreviouslyPaid ? Math.max(1, (gen.previouslyPaidSportsCount || (sports.length - 1)) ) : 0;
 
       const orderData = await createRazorpayOrder({
         fullName: record.fullName,
@@ -100,6 +103,8 @@ export function CheckStatusModal({
         mobile: record.mobile,
         selectedSports: sports,
         isExistingPlayer: true,
+        hasPreviouslyPaid,
+        previouslyPaidSportsCount: prevSportsCount,
         registrationId: record.id,
       });
 
@@ -193,6 +198,14 @@ export function CheckStatusModal({
     matchedRecord &&
     ((matchedRecord.paymentStatus || '').toLowerCase() === 'approved' ||
       (matchedRecord.payment_status || '').toLowerCase() === 'approved');
+
+  // 'approved_due' = existing paid player who added new sports via Pay Later
+  const isApprovedDue =
+    matchedRecord &&
+    ((matchedRecord.paymentStatus || '').toLowerCase() === 'approved_due' ||
+      (matchedRecord.payment_status || '').toLowerCase() === 'approved_due');
+
+  const isPending = !isApproved && (matchedRecord != null);
 
   return (
     <AnimatePresence>
@@ -293,6 +306,11 @@ export function CheckStatusModal({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>VERIFIED & APPROVED</span>
                       </span>
+                    ) : isApprovedDue ? (
+                      <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-orange-100 text-orange-800 border border-orange-300">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>ADDITIONAL FEE DUE</span>
+                      </span>
                     ) : (
                       <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300">
                         <Clock className="w-3.5 h-3.5" />
@@ -302,14 +320,31 @@ export function CheckStatusModal({
                   </div>
                 </div>
 
-                {/* Case 1: Pending Payment -> 1-Click Pay Now CTA */}
-                {!isApproved && (
+                {/* Case 1: Pending or ApprovedDue -> 1-Click Pay Now CTA */}
+                {(isPending || isApprovedDue) && (
                   <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 border border-amber-200 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-500 uppercase">Registration Fee Due</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase">
+                          {isApprovedDue ? 'Additional Sport Fee Due' : 'Registration Fee Due'}
+                        </span>
                         <h3 className="text-2xl font-black text-slate-900">
-                          ₹{matchedRecord.generalDetails?.calculatedFee || matchedRecord.generalDetails?.totalAmount || 2500}
+                          ₹{(
+                            () => {
+                              const gen = matchedRecord.generalDetails || {};
+                              const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports : ['cricket'];
+                              const prevUtrs = String(matchedRecord.payment_utr || gen.payment_utr || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+                              const hadPrevPayment = prevUtrs.length > 0;
+                              if (isApprovedDue && hadPrevPayment) {
+                                // Incremental fee = total - already paid
+                                const totalFee = 2500 + Math.max(0, sports.length - 1) * 400;
+                                const prevSports = gen.previouslyPaidSportsCount || (sports.length - 1);
+                                const prevFee = 2500 + Math.max(0, prevSports - 1) * 400;
+                                return totalFee - prevFee;
+                              }
+                              return gen.incrementalFee || gen.calculatedFee || gen.totalAmount || 2500;
+                            }
+                          )()}
                         </h3>
                       </div>
                       <button

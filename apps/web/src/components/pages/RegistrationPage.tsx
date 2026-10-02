@@ -6,11 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { cleanPhoneNumber, registrationSchema, RegistrationSchemaType } from '@/lib/validation';
 import { SportType, RegistrationFormData, DynamicField } from '@/types';
-import { 
-  uploadFileToDrive, 
-  submitRegistration, 
-  fetchRegistrationFields, 
-  lookupMumukshu, 
+import {
+  uploadFileToDrive,
+  submitRegistration,
+  fetchRegistrationFields,
+  lookupMumukshu,
   lookupReferrer,
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -263,6 +263,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const [serverWakingHint, setServerWakingHint] = useState(false);
+  const [isPayLater, setIsPayLater] = useState(false);
+  const isPayLaterRef = useRef(false);
 
   useEffect(() => {
     let timer: any;
@@ -569,170 +571,146 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       .then((res) => {
         setIsLookingUpMumukshu(false);
         if (res.found) {
-            // STRICT CLIENT-SIDE GUARD: Ensure the match was strictly by phone number and NOT by card number!
-            const returnedCardNo = String(res.data?.cardNo || res.registration?.cardNo || '').replace(/\D/g, '');
-            const returnedCardNoStripped = returnedCardNo.replace(/^0+/, '');
-            const enteredStripped = cleanMobile.replace(/^0+/, '');
-            const returnedMobile = String(res.data?.mobile || res.registration?.mobile || '').replace(/\D/g, '');
-            const cleanReturnedMobile = returnedMobile.length > 10 ? returnedMobile.slice(-10) : returnedMobile;
+          // STRICT CLIENT-SIDE GUARD: Ensure the match was strictly by phone number and NOT by card number!
+          const returnedCardNo = String(res.data?.cardNo || res.registration?.cardNo || '').replace(/\D/g, '');
+          const returnedCardNoStripped = returnedCardNo.replace(/^0+/, '');
+          const enteredStripped = cleanMobile.replace(/^0+/, '');
+          const returnedMobile = String(res.data?.mobile || res.registration?.mobile || '').replace(/\D/g, '');
+          const cleanReturnedMobile = returnedMobile.length > 10 ? returnedMobile.slice(-10) : returnedMobile;
 
-            // If the match returned a cardNo that matches the entered digits and member's phone doesn't match:
-            if (returnedCardNo && (returnedCardNo === cleanMobile || enteredStripped === returnedCardNoStripped)) {
-              if (cleanReturnedMobile && cleanReturnedMobile !== cleanMobile) {
-                console.warn('[LOOKUP] Discarded card number match for:', cleanMobile);
-                setIsUnregisteredPlayer(true);
-                setIsExistingPlayerRegistration(false);
-                setMumukshuCardInfo(null);
-                return;
-              }
-            }
-
-            if (res.isExistingRegistration && res.registration) {
-              // -------------------------------------------------------------
-              // 1. EXISTING RPL REGISTRATION FOUND - FULL AUTO-FILL
-              // -------------------------------------------------------------
-              const reg = res.registration;
-              const gen = reg.generalDetails || {};
-              const sports = reg.sportAnswers || {};
-
-              setIsExistingPlayerRegistration(true);
-              setExistingRegistrationId(reg.id);
-              setExistingPaymentStatus(reg.paymentStatus || 'pending');
-              setMumukshuCardInfo({ cardNo: reg.cardNo || gen.cardNo, name: reg.fullName });
-
-              // Core fields
-              if (reg.fullName) setValue('fullName', reg.fullName, { shouldValidate: true, shouldDirty: true });
-              if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
-              if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
-              if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
-              if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
-              if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
-              if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
-              if (gen.accommodationRequired) setValue('accommodationRequired', gen.accommodationRequired as any, { shouldValidate: true, shouldDirty: true });
-              if (gen.stayingRoomNumber) setValue('stayingRoomNumber', gen.stayingRoomNumber, { shouldValidate: true, shouldDirty: true });
-              if (reg.checkInDate || gen.checkInDate) setValue('checkInDate', reg.checkInDate || gen.checkInDate, { shouldValidate: true, shouldDirty: true });
-              if (reg.checkOutDate || gen.checkOutDate) setValue('checkOutDate', reg.checkOutDate || gen.checkOutDate, { shouldValidate: true, shouldDirty: true });
-              if (gen.existingRplFamily) setValue('existingRplFamily', gen.existingRplFamily as any, { shouldValidate: true, shouldDirty: true });
-              if (gen.countryCode) setValue('countryCode', gen.countryCode, { shouldValidate: true });
-              if (gen.referrerCountryCode) setValue('referrerCountryCode', gen.referrerCountryCode, { shouldValidate: true });
-              if (gen.referrerMobile) setValue('referrerMobile', String(gen.referrerMobile).replace(/\D/g, '').slice(0, 10), { shouldValidate: true });
-              if (gen.referrerName) setValue('referrerName', gen.referrerName, { shouldValidate: true });
-              if (gen.referrerCardNo) setValue('referrerCardNo', gen.referrerCardNo, { shouldValidate: true });
-
-              // Customizations
-              if (gen.customJerseyName) setValue('customJerseyName', gen.customJerseyName, { shouldValidate: true });
-              if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
-              if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
-              if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
-
-              // Restore selected sports
-              const savedSports = gen.selectedSports || Object.keys(sports);
-              if (Array.isArray(savedSports) && savedSports.length > 0) {
-                const validSports = savedSports.filter((s: string) => AVAILABLE_SPORTS.some((as) => as.id === s)) as SportType[];
-                if (validSports.length > 0) {
-                  setSelectedSports(validSports);
-                }
-              }
-
-              // Track previous payment data & receipts
-              const rawReceiptList = reg.receiptList || (reg.paymentReceiptUrl ? String(reg.paymentReceiptUrl).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
-              const rawUtrList = reg.utrList || (reg.paymentUtr ? String(reg.paymentUtr).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
-              const isPaid = Boolean(
-                reg.hasPreviouslyPaid ||
-                ['approved', 'completed', 'paid', 'success'].includes((reg.paymentStatus || '').toLowerCase()) ||
-                rawReceiptList.length > 0 ||
-                rawUtrList.length > 0
-              );
-
-              setPreviouslyPaidSportsCount(reg.previouslyPaidSportsCount || (Array.isArray(savedSports) ? savedSports.length : 1));
-              setPreviousReceiptUrls(rawReceiptList);
-              setPreviousUtrs(rawUtrList);
-              setHasPreviouslyPaid(isPaid);
-
-              // Restore sport answers
-              if (sports.cricket) {
-                if (sports.cricket.role) setValue('cricketRole', sports.cricket.role);
-                if (sports.cricket.battingStyle) setValue('battingStyle', sports.cricket.battingStyle);
-                if (sports.cricket.bowlingStyle) setValue('bowlingStyle', sports.cricket.bowlingStyle);
-                if (sports.cricket.experience) setValue('cricketExperience', sports.cricket.experience);
-              }
-              if (sports.football) {
-                if (sports.football.position) setValue('footballPosition', sports.football.position);
-                if (sports.football.preferredFoot) setValue('preferredFoot', sports.football.preferredFoot);
-                if (sports.football.experience) setValue('footballExperience', sports.football.experience);
-              }
-              if (sports.badminton) {
-                if (sports.badminton.category) setValue('badmintonCategory', sports.badminton.category);
-                if (sports.badminton.playingHand) setValue('badmintonHand', sports.badminton.playingHand);
-                if (sports.badminton.experience) setValue('badmintonExperience', sports.badminton.experience);
-              }
-              if (sports['table-tennis']) {
-                if (sports['table-tennis'].category) setValue('ttCategory', sports['table-tennis'].category);
-                if (sports['table-tennis'].grip) setValue('ttGrip', sports['table-tennis'].grip);
-                if (sports['table-tennis'].experience) setValue('ttExperience', sports['table-tennis'].experience);
-              }
-              if (sports.pickleball) {
-                if (sports.pickleball.category) setValue('pickleballCategory', sports.pickleball.category);
-                if (sports.pickleball.skillLevel) setValue('pickleballSkill', sports.pickleball.skillLevel);
-                if (sports.pickleball.partnerName) setValue('pickleballPartner', sports.pickleball.partnerName);
-                if (sports.pickleball.experience) setValue('pickleballExperience', sports.pickleball.experience);
-              }
-              if (sports.volleyball) {
-                if (sports.volleyball.role) setValue('volleyballRole', sports.volleyball.role);
-                if (sports.volleyball.experience) setValue('volleyballExperience', sports.volleyball.experience);
-              }
-              if (sports['womens-sports']) {
-                if (sports['womens-sports'].category) setValue('womensCategory', sports['womens-sports'].category);
-                if (sports['womens-sports'].playingRole) setValue('womensPlayingRole', sports['womens-sports'].playingRole);
-                if (sports['womens-sports'].experience) setValue('womensExperience', sports['womens-sports'].experience);
-              }
-
-              // Profile Photo Preview
-              if (reg.playerPhotoUrl) {
-                setPhotoDriveUrl(reg.playerPhotoUrl);
-                setPhotoPreview(reg.playerPhotoUrl);
-              }
-
-              // Restore dynamic answers & payment fields (cleared if already paid so user can enter fresh UTR / receipt for additional sports)
-              const restoredDyn: Record<string, any> = { ...gen };
-              if (!isPaid) {
-                if (reg.paymentUtr) restoredDyn.payment_utr = reg.paymentUtr;
-                if (reg.paymentReceiptUrl) restoredDyn.payment_receipt = reg.paymentReceiptUrl;
-              } else {
-                delete restoredDyn.payment_utr;
-                delete restoredDyn.payment_receipt;
-                delete restoredDyn.paymentReceipt;
-                delete restoredDyn.paymentReceiptUrl;
-              }
-              setDynamicAnswers(restoredDyn);
-            } else if (res.data) {
-              // -------------------------------------------------------------
-              // 2. UNREGISTERED MUMUKSHU FROM ASHRAM CARD_DB
-              // -------------------------------------------------------------
+          // If the match returned a cardNo that matches the entered digits and member's phone doesn't match:
+          if (returnedCardNo && (returnedCardNo === cleanMobile || enteredStripped === returnedCardNoStripped)) {
+            if (cleanReturnedMobile && cleanReturnedMobile !== cleanMobile) {
+              console.warn('[LOOKUP] Discarded card number match for:', cleanMobile);
+              setIsUnregisteredPlayer(true);
               setIsExistingPlayerRegistration(false);
-              setExistingRegistrationId(null);
-              setExistingPaymentStatus(null);
-              setPreviouslyPaidSportsCount(0);
-              setPreviousReceiptUrls([]);
-              setPreviousUtrs([]);
-              setHasPreviouslyPaid(false);
-              const d = res.data;
-              const cleanName = (d.fullName || '').trim();
-              const cleanEmail = (d.email || '').trim();
-              const cleanCentre = (d.centre || '').trim();
-              const cleanDob = (d.dateOfBirth || '').trim();
-              const cleanGender = d.gender === 'Female' ? 'Female' : 'Male';
-
-              setMumukshuCardInfo({ cardNo: d.cardNo, name: cleanName });
-              if (cleanName) setValue('fullName', cleanName, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              if (cleanEmail) setValue('email', cleanEmail, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-              setValue('existingRplFamily', 'No', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+              setMumukshuCardInfo(null);
+              return;
             }
-          } else {
-            setIsUnregisteredPlayer(true);
+          }
+
+          if (res.isExistingRegistration && res.registration) {
+            // -------------------------------------------------------------
+            // 1. EXISTING RPL REGISTRATION FOUND - FULL AUTO-FILL
+            // -------------------------------------------------------------
+            const reg = res.registration;
+            const gen = reg.generalDetails || {};
+            const sports = reg.sportAnswers || {};
+
+            setIsExistingPlayerRegistration(true);
+            setExistingRegistrationId(reg.id);
+            setExistingPaymentStatus(reg.paymentStatus || 'pending');
+            setMumukshuCardInfo({ cardNo: reg.cardNo || gen.cardNo, name: reg.fullName });
+
+            // Core fields
+            if (reg.fullName) setValue('fullName', reg.fullName, { shouldValidate: true, shouldDirty: true });
+            if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
+            if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
+            if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
+            if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
+            if (gen.accommodationRequired) setValue('accommodationRequired', gen.accommodationRequired as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.stayingRoomNumber) setValue('stayingRoomNumber', gen.stayingRoomNumber, { shouldValidate: true, shouldDirty: true });
+            if (reg.checkInDate || gen.checkInDate) setValue('checkInDate', reg.checkInDate || gen.checkInDate, { shouldValidate: true, shouldDirty: true });
+            if (reg.checkOutDate || gen.checkOutDate) setValue('checkOutDate', reg.checkOutDate || gen.checkOutDate, { shouldValidate: true, shouldDirty: true });
+            if (gen.existingRplFamily) setValue('existingRplFamily', gen.existingRplFamily as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.countryCode) setValue('countryCode', gen.countryCode, { shouldValidate: true });
+            if (gen.referrerCountryCode) setValue('referrerCountryCode', gen.referrerCountryCode, { shouldValidate: true });
+            if (gen.referrerMobile) setValue('referrerMobile', String(gen.referrerMobile).replace(/\D/g, '').slice(0, 10), { shouldValidate: true });
+            if (gen.referrerName) setValue('referrerName', gen.referrerName, { shouldValidate: true });
+            if (gen.referrerCardNo) setValue('referrerCardNo', gen.referrerCardNo, { shouldValidate: true });
+
+            // Customizations
+            if (gen.customJerseyName) setValue('customJerseyName', gen.customJerseyName, { shouldValidate: true });
+            if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
+            if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
+            if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+
+            // Restore selected sports
+            const savedSports = gen.selectedSports || Object.keys(sports);
+            if (Array.isArray(savedSports) && savedSports.length > 0) {
+              const validSports = savedSports.filter((s: string) => AVAILABLE_SPORTS.some((as) => as.id === s)) as SportType[];
+              if (validSports.length > 0) {
+                setSelectedSports(validSports);
+              }
+            }
+
+            // Track previous payment data & receipts
+            const rawReceiptList = reg.receiptList || (reg.paymentReceiptUrl ? String(reg.paymentReceiptUrl).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+            const rawUtrList = reg.utrList || (reg.paymentUtr ? String(reg.paymentUtr).split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+            const isPaid = Boolean(
+              reg.hasPreviouslyPaid ||
+              ['approved', 'completed', 'paid', 'success'].includes((reg.paymentStatus || '').toLowerCase()) ||
+              rawReceiptList.length > 0 ||
+              rawUtrList.length > 0
+            );
+
+            setPreviouslyPaidSportsCount(reg.previouslyPaidSportsCount || (Array.isArray(savedSports) ? savedSports.length : 1));
+            setPreviousReceiptUrls(rawReceiptList);
+            setPreviousUtrs(rawUtrList);
+            setHasPreviouslyPaid(isPaid);
+
+            // Restore sport answers
+            if (sports.cricket) {
+              if (sports.cricket.role) setValue('cricketRole', sports.cricket.role);
+              if (sports.cricket.battingStyle) setValue('battingStyle', sports.cricket.battingStyle);
+              if (sports.cricket.bowlingStyle) setValue('bowlingStyle', sports.cricket.bowlingStyle);
+              if (sports.cricket.experience) setValue('cricketExperience', sports.cricket.experience);
+            }
+            if (sports.football) {
+              if (sports.football.position) setValue('footballPosition', sports.football.position);
+              if (sports.football.preferredFoot) setValue('preferredFoot', sports.football.preferredFoot);
+              if (sports.football.experience) setValue('footballExperience', sports.football.experience);
+            }
+            if (sports.badminton) {
+              if (sports.badminton.category) setValue('badmintonCategory', sports.badminton.category);
+              if (sports.badminton.playingHand) setValue('badmintonHand', sports.badminton.playingHand);
+              if (sports.badminton.experience) setValue('badmintonExperience', sports.badminton.experience);
+            }
+            if (sports['table-tennis']) {
+              if (sports['table-tennis'].category) setValue('ttCategory', sports['table-tennis'].category);
+              if (sports['table-tennis'].grip) setValue('ttGrip', sports['table-tennis'].grip);
+              if (sports['table-tennis'].experience) setValue('ttExperience', sports['table-tennis'].experience);
+            }
+            if (sports.pickleball) {
+              if (sports.pickleball.category) setValue('pickleballCategory', sports.pickleball.category);
+              if (sports.pickleball.skillLevel) setValue('pickleballSkill', sports.pickleball.skillLevel);
+              if (sports.pickleball.partnerName) setValue('pickleballPartner', sports.pickleball.partnerName);
+              if (sports.pickleball.experience) setValue('pickleballExperience', sports.pickleball.experience);
+            }
+            if (sports.volleyball) {
+              if (sports.volleyball.role) setValue('volleyballRole', sports.volleyball.role);
+              if (sports.volleyball.experience) setValue('volleyballExperience', sports.volleyball.experience);
+            }
+            if (sports['womens-sports']) {
+              if (sports['womens-sports'].category) setValue('womensCategory', sports['womens-sports'].category);
+              if (sports['womens-sports'].playingRole) setValue('womensPlayingRole', sports['womens-sports'].playingRole);
+              if (sports['womens-sports'].experience) setValue('womensExperience', sports['womens-sports'].experience);
+            }
+
+            // Profile Photo Preview
+            if (reg.playerPhotoUrl) {
+              setPhotoDriveUrl(reg.playerPhotoUrl);
+              setPhotoPreview(reg.playerPhotoUrl);
+            }
+
+            // Restore dynamic answers & payment fields (cleared if already paid so user can enter fresh UTR / receipt for additional sports)
+            const restoredDyn: Record<string, any> = { ...gen };
+            if (!isPaid) {
+              if (reg.paymentUtr) restoredDyn.payment_utr = reg.paymentUtr;
+              if (reg.paymentReceiptUrl) restoredDyn.payment_receipt = reg.paymentReceiptUrl;
+            } else {
+              delete restoredDyn.payment_utr;
+              delete restoredDyn.payment_receipt;
+              delete restoredDyn.paymentReceipt;
+              delete restoredDyn.paymentReceiptUrl;
+            }
+            setDynamicAnswers(restoredDyn);
+          } else if (res.data) {
+            // -------------------------------------------------------------
+            // 2. UNREGISTERED MUMUKSHU FROM ASHRAM CARD_DB
+            // -------------------------------------------------------------
             setIsExistingPlayerRegistration(false);
             setExistingRegistrationId(null);
             setExistingPaymentStatus(null);
@@ -740,21 +718,58 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             setPreviousReceiptUrls([]);
             setPreviousUtrs([]);
             setHasPreviouslyPaid(false);
-            setMumukshuCardInfo(null);
+            const d = res.data;
+            const cleanName = (d.fullName || '').trim();
+            const cleanEmail = (d.email || '').trim();
+            const cleanCentre = (d.centre || '').trim();
+            const cleanDob = (d.dateOfBirth || '').trim();
+            const cleanGender = d.gender === 'Female' ? 'Female' : 'Male';
+
+            setMumukshuCardInfo({ cardNo: d.cardNo, name: cleanName });
+            if (cleanName) setValue('fullName', cleanName, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanEmail) setValue('email', cleanEmail, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanGender) setValue('gender', cleanGender as any, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+            setValue('existingRplFamily', 'No', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
           }
-        })
-        .catch((err) => {
-          console.warn('Player lookup error:', err);
-          setIsLookingUpMumukshu(false);
+        } else {
           setIsUnregisteredPlayer(true);
           setIsExistingPlayerRegistration(false);
           setExistingRegistrationId(null);
+          setExistingPaymentStatus(null);
           setPreviouslyPaidSportsCount(0);
           setPreviousReceiptUrls([]);
           setPreviousUtrs([]);
           setHasPreviouslyPaid(false);
           setMumukshuCardInfo(null);
-        });
+          // Clear fields that were auto-filled from the previous lookup
+          setValue('fullName', '', { shouldValidate: false });
+          setValue('email', '', { shouldValidate: false });
+          setValue('centre', '', { shouldValidate: false });
+          setValue('dateOfBirth', '', { shouldValidate: false });
+          setValue('gender', 'Male', { shouldValidate: false });
+          setValue('tshirtSize', '', { shouldValidate: false });
+        }
+      })
+      .catch((err) => {
+        console.warn('Player lookup error:', err);
+        setIsLookingUpMumukshu(false);
+        setIsUnregisteredPlayer(true);
+        setIsExistingPlayerRegistration(false);
+        setExistingRegistrationId(null);
+        setPreviouslyPaidSportsCount(0);
+        setPreviousReceiptUrls([]);
+        setPreviousUtrs([]);
+        setHasPreviouslyPaid(false);
+        setMumukshuCardInfo(null);
+        setValue('fullName', '', { shouldValidate: false });
+        setValue('email', '', { shouldValidate: false });
+        setValue('centre', '', { shouldValidate: false });
+        setValue('dateOfBirth', '', { shouldValidate: false });
+        setValue('gender', 'Male', { shouldValidate: false });
+        setValue('tshirtSize', '', { shouldValidate: false });
+      });
   }, [currentMobile, currentCountryCode, setValue]);
 
   // Auto-verify Referrer from card_db when an unregistered participant enters referrer mobile number
@@ -844,61 +859,61 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       return;
     }
 
-      setIsLookingUpReferrer(true);
-      setReferrerLookupError(null);
+    setIsLookingUpReferrer(true);
+    setReferrerLookupError(null);
 
-      lookupReferrer(cleanReferrer)
-        .then((res) => {
-          setIsLookingUpReferrer(false);
-          // Must be a valid Mumukshu in the database
-          const foundName = res.data?.fullName || res.registration?.fullName;
-          const cardNo = res.data?.cardNo || res.registration?.cardNo || res.registration?.generalDetails?.cardNo;
-          const centre = res.data?.centre || res.registration?.generalDetails?.centre;
+    lookupReferrer(cleanReferrer)
+      .then((res) => {
+        setIsLookingUpReferrer(false);
+        // Must be a valid Mumukshu in the database
+        const foundName = res.data?.fullName || res.registration?.fullName;
+        const cardNo = res.data?.cardNo || res.registration?.cardNo || res.registration?.generalDetails?.cardNo;
+        const centre = res.data?.centre || res.registration?.generalDetails?.centre;
 
-          // Guard against card number matches from legacy backend
-          const returnedCardNo = String(cardNo || '').replace(/\D/g, '');
-          const returnedCardNoStripped = returnedCardNo.replace(/^0+/, '');
-          const enteredStripped = cleanReferrer.replace(/^0+/, '');
-          const returnedMobile = String(res.data?.mobile || res.registration?.mobile || '').replace(/\D/g, '');
-          const cleanReturnedMobile = returnedMobile.length > 10 ? returnedMobile.slice(-10) : returnedMobile;
+        // Guard against card number matches from legacy backend
+        const returnedCardNo = String(cardNo || '').replace(/\D/g, '');
+        const returnedCardNoStripped = returnedCardNo.replace(/^0+/, '');
+        const enteredStripped = cleanReferrer.replace(/^0+/, '');
+        const returnedMobile = String(res.data?.mobile || res.registration?.mobile || '').replace(/\D/g, '');
+        const cleanReturnedMobile = returnedMobile.length > 10 ? returnedMobile.slice(-10) : returnedMobile;
 
-          if (returnedCardNo && (returnedCardNo === cleanReferrer || enteredStripped === returnedCardNoStripped)) {
-            if (cleanReturnedMobile && cleanReturnedMobile !== cleanReferrer) {
-              console.warn('[REFERRER LOOKUP] Discarded card number match for:', cleanReferrer);
-              setReferrerFoundInfo(null);
-              setReferrerLookupError('No verified Mumukshu found with this mobile number. Must be a valid mobile number.');
-              setValue('referrerName', '', { shouldValidate: true });
-              setValue('referrerCardNo', '', { shouldValidate: true });
-              return;
-            }
-          }
-
-          if (res.found && foundName) {
-            setReferrerFoundInfo({
-              name: foundName,
-              cardNo: cardNo || undefined,
-              centre: centre || undefined,
-            });
-            setReferrerLookupError(null);
-            setValue('referrerName', foundName, { shouldValidate: true, shouldDirty: true });
-            if (cardNo) {
-              setValue('referrerCardNo', cardNo, { shouldValidate: true, shouldDirty: true });
-            }
-          } else {
+        if (returnedCardNo && (returnedCardNo === cleanReferrer || enteredStripped === returnedCardNoStripped)) {
+          if (cleanReturnedMobile && cleanReturnedMobile !== cleanReferrer) {
+            console.warn('[REFERRER LOOKUP] Discarded card number match for:', cleanReferrer);
             setReferrerFoundInfo(null);
-            setReferrerLookupError('No verified Mumukshu found with this mobile number. Must be a valid Mumukshu.');
+            setReferrerLookupError('No verified Mumukshu found with this mobile number. Must be a valid mobile number.');
             setValue('referrerName', '', { shouldValidate: true });
             setValue('referrerCardNo', '', { shouldValidate: true });
+            return;
           }
-        })
-        .catch((err) => {
-          console.warn('Referrer lookup error:', err);
-          setIsLookingUpReferrer(false);
+        }
+
+        if (res.found && foundName) {
+          setReferrerFoundInfo({
+            name: foundName,
+            cardNo: cardNo || undefined,
+            centre: centre || undefined,
+          });
+          setReferrerLookupError(null);
+          setValue('referrerName', foundName, { shouldValidate: true, shouldDirty: true });
+          if (cardNo) {
+            setValue('referrerCardNo', cardNo, { shouldValidate: true, shouldDirty: true });
+          }
+        } else {
           setReferrerFoundInfo(null);
-          setReferrerLookupError('Unable to verify referrer. Please check the number.');
+          setReferrerLookupError('No verified Mumukshu found with this mobile number. Must be a valid Mumukshu.');
           setValue('referrerName', '', { shouldValidate: true });
           setValue('referrerCardNo', '', { shouldValidate: true });
-        });
+        }
+      })
+      .catch((err) => {
+        console.warn('Referrer lookup error:', err);
+        setIsLookingUpReferrer(false);
+        setReferrerFoundInfo(null);
+        setReferrerLookupError('Unable to verify referrer. Please check the number.');
+        setValue('referrerName', '', { shouldValidate: true });
+        setValue('referrerCardNo', '', { shouldValidate: true });
+      });
   }, [currentReferrerMobile, currentReferrerCountryCode, isUnregisteredPlayer, mumukshuCardInfo, isExistingPlayerRegistration, currentMobile, setValue]);
 
 
@@ -1062,21 +1077,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const paymentUtr = 
-      (data as any).payment_utr || 
-      (data as any).paymentUtr || 
-      dynamicAnswers.payment_utr || 
-      dynamicAnswers.paymentUtr || 
+    const paymentUtr =
+      (data as any).payment_utr ||
+      (data as any).paymentUtr ||
+      dynamicAnswers.payment_utr ||
+      dynamicAnswers.paymentUtr ||
       undefined;
 
-    const paymentReceiptUrl = 
-      dynamicAnswers.payment_receipt || 
-      dynamicAnswers.payment_receipt_url || 
-      dynamicAnswers.paymentReceiptUrl || 
-      dynamicAnswers.paymentReceipt || 
-      (data as any).payment_receipt || 
-      (data as any).payment_receipt_url || 
-      (data as any).paymentReceiptUrl || 
+    const paymentReceiptUrl =
+      dynamicAnswers.payment_receipt ||
+      dynamicAnswers.payment_receipt_url ||
+      dynamicAnswers.paymentReceiptUrl ||
+      dynamicAnswers.paymentReceipt ||
+      (data as any).payment_receipt ||
+      (data as any).payment_receipt_url ||
+      (data as any).paymentReceiptUrl ||
       undefined;
 
     const fullData: RegistrationFormData = {
@@ -1253,6 +1268,78 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     delete (sanitizedAnswers as any).photoDataUrl;
 
     // =========================================================================
+    // 0. PAY LATER PATH — Save registration as pending, skip payment
+    // =========================================================================
+    if (isPayLaterRef.current && totalPayableFee > 0) {
+      // Save the registration with payment_status = 'pending' (or 'approved_due' for returning paid users)
+      const payLaterStatus = isReturningPaidUser ? 'approved_due' : 'pending';
+      fullData.paymentStatus = payLaterStatus;
+      fullData.payment_status = payLaterStatus;
+
+      try {
+        const submitPromise = submitRegistration({
+          registration_id: existingRegistrationId || undefined,
+          sport_id: selectedSports[0] || 'cricket',
+          full_name: data.fullName.trim(),
+          email: data.email.trim(),
+          mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
+          check_in_date: data.checkInDate || '2026-12-25',
+          check_out_date: data.checkOutDate || '2026-12-27',
+          player_photo_url: playerPhotoUrl,
+          payment_utr: undefined,
+          payment_receipt_url: undefined,
+          payment_status: 'pending',
+          general_details: generalDetails,
+          sport_answers: sportAnswers,
+          answers: sanitizedAnswers,
+        });
+
+        const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
+          setTimeout(() => resolve({ isTimeout: true }), 3000)
+        );
+
+        const result = await Promise.race([submitPromise, timeoutPromise]);
+        if ('isTimeout' in result) {
+          console.warn('[RPL Pay Later] API taking >3s (cold-start), continuing in background.');
+          submitPromise
+            .then((res: any) => {
+              if (res && res.registration_id) activeRegistrationId = res.registration_id;
+            })
+            .catch((err) => console.warn('[RPL Pay Later Background Notice]', err));
+        } else {
+          if ((result as any)?.registration_id) {
+            activeRegistrationId = (result as any).registration_id;
+          }
+        }
+      } catch (apiErr: any) {
+        console.warn('[RPL Pay Later] Save notice:', apiErr);
+      }
+
+      // Store in localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
+        const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
+        localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
+      } catch { }
+
+      setIsSubmitting(false);
+      setIsPayLater(false);
+      isPayLaterRef.current = false;
+      setRegistrationId(activeRegistrationId);
+      setSubmittedData(fullData);
+
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.5 },
+          colors: ['#F59E0B', '#10B981', '#3B82F6'],
+        });
+      } catch { }
+      return;
+    }
+
+    // =========================================================================
     // 1. ONLINE PAYMENT PATH (RAZORPAY GATEWAY - INSTANT AUTO-APPROVAL)
     // =========================================================================
     if (totalPayableFee > 0) {
@@ -1337,7 +1424,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
                 const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
                 localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
-              } catch {}
+              } catch { }
 
               setIsSubmitting(false);
               setIsRazorpayLoading(false);
@@ -1351,7 +1438,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   origin: { y: 0.5 },
                   colors: ['#F59E0B', '#10B981', '#EC4899', '#3B82F6'],
                 });
-              } catch {}
+              } catch { }
             } catch (vErr: any) {
               alert('⚠️ Payment completed, but verification failed: ' + (vErr.message || 'Verification Error'));
               setIsSubmitting(false);
@@ -1610,11 +1697,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div>
                       <h4 className="text-sm font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
                         <span>Existing Registration Found ({existingRegistrationId?.slice(0, 8)})</span>
-                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          existingPaymentStatus === 'approved'
+                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${existingPaymentStatus === 'approved'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                             : 'bg-amber-100 text-amber-800 border border-amber-300'
-                        }`}>
+                          }`}>
                           {existingPaymentStatus === 'approved' ? '✅ Payment Verified' : '⏳ Payment Pending / Edit Mode'}
                         </span>
                       </h4>
@@ -1711,7 +1797,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {isUnregisteredPlayer && !isExistingPlayerRegistration && !mumukshuCardInfo && !mobileInputError && !mobileInputHint && (
                     <div className="mt-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center space-x-2 text-amber-900 text-xs font-bold shadow-sm">
                       <Users className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Mobile number not found in Ashram records. Please provide a Mumukshu reference below to proceed.</span>
+                      <span>Mobile number not found in The Research Centre's records. Please provide a Mumukshu reference below to proceed.</span>
                     </div>
                   )}
                   {isExistingPlayerRegistration ? (
@@ -1913,8 +1999,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       isOtherCentre
                         ? { id: 'Other', label: 'Other Centre' }
                         : currentCentre && CENTRE_LIST.includes(currentCentre as any)
-                        ? { id: currentCentre, label: currentCentre }
-                        : null
+                          ? { id: currentCentre, label: currentCentre }
+                          : null
                     }
                     onChange={(item) => {
                       if (item.id === 'Other') {
@@ -2085,14 +2171,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <span>{getFieldLabel('gender', 'Gender')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
-                  <OptionSelector
-                    options={['Male', 'Female', 'Other']}
-                    value={currentGender}
-                    onChange={(genderOption) => setValue('gender', genderOption as any, { shouldValidate: true })}
-                    layoutId="gender-indicator"
-                    activeColor="bg-gradient-to-r from-amber-500 to-orange-600"
-                    activeTextColor="text-white"
-                  />
+                  {(isExistingPlayerRegistration || mumukshuCardInfo) ? (
+                    // Lock gender — auto-filled from verified mumukshu/RPL record, not editable
+                    <div className="flex items-center space-x-2 px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm">
+                      <User className="w-4 h-4 text-slate-400" />
+                      <span>{currentGender || 'Not set'}</span>
+                      <span className="ml-auto text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Locked</span>
+                    </div>
+                  ) : (
+                    <OptionSelector
+                      options={['Male', 'Female', 'Other']}
+                      value={currentGender}
+                      onChange={(genderOption) => setValue('gender', genderOption as any, { shouldValidate: true })}
+                      layoutId="gender-indicator"
+                      activeColor="bg-gradient-to-r from-amber-500 to-orange-600"
+                      activeTextColor="text-white"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -2107,8 +2202,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={[
-                      { value: 'Regular', label: 'Regular' },
-                      { value: 'Non-Spicy', label: 'Non-Spicy' },
+                      { value: 'Regular', label: 'Spicy Meal' },
+                      { value: 'Non-Spicy', label: 'Non-Spicy Meal' },
                     ]}
                     value={currentFood || 'Regular'}
                     onChange={(val) => setValue('foodPreference', val as any, { shouldValidate: true })}
@@ -2161,11 +2256,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <input
                           type="text"
                           {...register('stayingRoomNumber')}
-                          className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${
-                            errors.stayingRoomNumber
+                          className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${errors.stayingRoomNumber
                               ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
                               : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
-                          }`}
+                            }`}
                         />
                         {errors.stayingRoomNumber && (
                           <p className="mt-1 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
@@ -2232,18 +2326,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
 
                 {/* Stay Billing / Policy Clarification */}
-                <div className={`md:col-span-2 p-4 rounded-2xl flex items-start space-x-3 text-xs transition-all duration-300 ${
-                  currentAcc === 'Yes' 
-                    ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20' 
+                <div className={`md:col-span-2 p-4 rounded-2xl flex items-start space-x-3 text-xs transition-all duration-300 ${currentAcc === 'Yes'
+                    ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
                     : 'bg-slate-50 border border-slate-200 text-slate-700'
-                }`}>
+                  }`}>
                   <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600' : 'text-slate-400'}`} />
                   <div className="space-y-1.5 leading-relaxed flex-1">
                     <div>
                       <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
                     </div>
                     <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 font-medium">
-                      <strong className="font-extrabold text-amber-900">Note:</strong> If pre-booking or post-booking of stay is needed (before 25 Dec or after 27 Dec), it has to be done by self on the <strong>Aashray App</strong> itself.
+                      <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> By default, your booking will be created on a <strong>waitlist</strong>. It will be reviewed and confirmed by <strong>The Research Centre office</strong>. You will be notified on <strong>WhatsApp</strong> with payment details if your stay is confirmed.
                     </div>
                   </div>
                 </div>
@@ -2367,11 +2460,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 {/* Dropdown Trigger Box */}
                 <div
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${
-                    dropdownOpen
+                  className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${dropdownOpen
                       ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
                       : 'border-slate-300 hover:border-slate-400'
-                  }`}
+                    }`}
                 >
                   <div className="flex flex-wrap items-center gap-1.5 flex-1">
                     {selectedSports.map((sportId) => {
@@ -2404,9 +2496,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       {selectedSports.length} selected
                     </span>
                     <ChevronDown
-                      className={`w-5 h-5 text-slate-600 transition-transform ${
-                        dropdownOpen ? 'rotate-180 text-amber-600' : ''
-                      }`}
+                      className={`w-5 h-5 text-slate-600 transition-transform ${dropdownOpen ? 'rotate-180 text-amber-600' : ''
+                        }`}
                     />
                   </div>
                 </div>
@@ -2460,11 +2551,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <div
                               key={sport.id}
                               onClick={() => toggleSportSelection(sport.id)}
-                              className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                                isChecked
+                              className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
                                   ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
                                   : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <span className="text-2xl">{sport.emoji}</span>
@@ -2479,11 +2569,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               </div>
 
                               <div
-                                className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${
-                                  isChecked
+                                className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${isChecked
                                     ? 'bg-slate-900 border-slate-900 text-amber-300'
                                     : 'border-slate-300 bg-white'
-                                }`}
+                                  }`}
                               >
                                 {isChecked && <Check className="w-4 h-4" />}
                               </div>
@@ -3055,8 +3144,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           label="Select Discipline"
                           items={[
                             { id: "Women's Cricket", label: "Women's Cricket" },
-                            { id: "Women's Football", label: "Women's Football" },
-                            { id: 'Throwball', label: 'Throwball Championship' },
                           ]}
                           value={currentWomensCat ? { id: currentWomensCat, label: currentWomensCat } : null}
                           onChange={(item) => setValue('womensCategory', String(item.id), { shouldValidate: true })}
@@ -3113,11 +3200,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
                         Payment & Registration Fee
                       </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${
-                        existingPaymentStatus === 'approved' && totalPayableFee === 0
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
                           ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
                           : 'bg-amber-100 text-amber-900 border border-amber-300'
-                      }`}>
+                        }`}>
                         {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
                       </span>
                     </div>
@@ -3165,11 +3251,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 {/* Returning User Notification Callout */}
                 {isReturningPaidUser && (
-                  <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${
-                    newlyAddedSportsCount > 0
+                  <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${newlyAddedSportsCount > 0
                       ? 'bg-amber-100/70 border-amber-300 text-amber-950'
                       : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
-                  }`}>
+                    }`}>
                     <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
                     <div>
                       {newlyAddedSportsCount > 0 ? (
@@ -3200,36 +3285,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       return (
                         <div
                           key={sportId}
-                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
-                            isPreviouslyCovered
+                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${isPreviouslyCovered
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
                               : isNewlyAdded
-                              ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
-                              : isPrimary
-                              ? 'bg-amber-100/80 border-amber-300 text-amber-900'
-                              : 'bg-slate-50 border-slate-300 text-slate-800'
-                          }`}
+                                ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
+                                : isPrimary
+                                  ? 'bg-amber-100/80 border-amber-300 text-amber-900'
+                                  : 'bg-slate-50 border-slate-300 text-slate-800'
+                            }`}
                         >
                           <span>{sportObj?.emoji || '🏅'}</span>
                           <span>{sportObj?.name || sportId}</span>
                           <span
-                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                              isPreviouslyCovered
+                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${isPreviouslyCovered
                                 ? 'bg-emerald-200 text-emerald-950'
                                 : isNewlyAdded
-                                ? 'bg-amber-300 text-amber-950'
-                                : isPrimary
-                                ? 'bg-amber-200 text-amber-950'
-                                : 'bg-slate-200 text-slate-900'
-                            }`}
+                                  ? 'bg-amber-300 text-amber-950'
+                                  : isPrimary
+                                    ? 'bg-amber-200 text-amber-950'
+                                    : 'bg-slate-200 text-slate-900'
+                              }`}
                           >
                             {isPreviouslyCovered
                               ? 'Paid'
                               : isNewlyAdded
-                              ? '+₹400 Due'
-                              : isPrimary
-                              ? 'Base: ₹2,500'
-                              : '+₹400'}
+                                ? '+₹400 Due'
+                                : isPrimary
+                                  ? 'Base: ₹2,500'
+                                  : '+₹400'}
                           </span>
                         </div>
                       );
@@ -3288,16 +3371,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-amber-200/80">
-                <div className="flex items-center space-x-2 text-xs font-bold text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
-                </div>
+              <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 pt-2 border-t border-amber-200/80">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
+              </div>
 
+              {/* Primary Pay Now button */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
-                  className="w-full sm:w-auto px-10 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
+                  onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
+                  className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                 >
                   {isRazorpayLoading ? (
                     <div className="flex items-center space-x-2">
@@ -3308,7 +3393,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <span>Uploading Payment Receipt to Drive...</span>
                   ) : isUploadingPhoto ? (
                     <span>Uploading Player Photo to Drive...</span>
-                  ) : isSubmitting ? (
+                  ) : isSubmitting && !isPayLater ? (
                     <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                   ) : totalPayableFee > 0 ? (
                     <>
@@ -3323,15 +3408,59 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   )}
                 </button>
 
-                {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
-                {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
-                  <div className="mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
-                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
-                    <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
-                  </div>
+                {/* Pay Later button — only shown when there is an outstanding fee */}
+                {totalPayableFee > 0 && (
+                  <button
+                    type="button"
+                    disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
+                    onClick={() => {
+                      isPayLaterRef.current = true;
+                      setIsPayLater(true);
+                      // Trigger form validation + submit via handleSubmit wrapper
+                      handleSubmit(onSubmit, onInvalid)();
+                    }}
+                    className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
+                  >
+                    {isSubmitting && isPayLater ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Registration...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        <span>Pay Later</span>
+                      </>
+                    )}
+                  </button>
                 )}
-
               </div>
+
+              {/* Pay Later hint */}
+              {totalPayableFee > 0 && (
+                <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed mt-4 pt-3 border-t border-slate-100">
+                  💡 Prefer to pay later?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                      onOpenCheckStatus?.(mob);
+                    }}
+                    className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
+                  >
+                    Check Pass / Pay Due
+                  </button>
+                  {' '}— register now and complete payment anytime using your mobile number.
+                </p>
+              )}
+
+              {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+              {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
+                  <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                  <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
+                </div>
+              )}
             </InView>
 
 

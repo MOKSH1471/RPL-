@@ -80,6 +80,7 @@ export interface RegistrationPayload {
   player_photo_url?: string;
   payment_utr?: string;
   payment_receipt_url?: string;
+  payment_status?: string;
   general_details?: Record<string, any>;
   sport_answers?: Record<string, any>;
   answers: Record<string, any>;
