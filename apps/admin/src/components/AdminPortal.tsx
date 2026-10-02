@@ -10,11 +10,13 @@ import {
   ArrowLeft,
   Sparkles,
   ShieldCheck,
+  CreditCard,
 } from 'lucide-react';
 import { fetchAdminStats, fetchAdminRegistrations, fetchAdminAccommodation } from '@/lib/api';
 import { AdminDashboardTab } from './AdminDashboardTab';
 import { AdminRegistrationsTab } from './AdminRegistrationsTab';
 import { AdminAccommodationTab } from './AdminAccommodationTab';
+import { AdminTransactionsTab } from './AdminTransactionsTab';
 import { AdminExportTab } from './AdminExportTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
 
@@ -23,7 +25,7 @@ interface AdminPortalProps {
 }
 
 export function AdminPortal({ onBackToHome }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'exports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports'>('dashboard');
   const [stats, setStats] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
@@ -226,6 +228,18 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
 
           <button
             type="button"
+            onClick={() => setActiveTab('transactions')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'transactions'
+                ? 'bg-slate-900 text-amber-300 shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+              }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Payments & Audit</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('exports')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'exports'
                 ? 'bg-slate-900 text-amber-300 shadow-sm'
@@ -261,6 +275,10 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
             loading={loading}
             onRefresh={loadData}
           />
+        )}
+
+        {activeTab === 'transactions' && (
+          <AdminTransactionsTab />
         )}
 
         {activeTab === 'exports' && (

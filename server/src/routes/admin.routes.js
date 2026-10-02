@@ -15,6 +15,8 @@ router.get('/admin/stats', async (req, res) => {
     let rejected = 0;
     let archivedCount = 0;
     let accommodationCount = 0;
+    let totalRevenue = 0;
+    let pendingRevenue = 0;
 
     const sportsCount = {
       cricket: 0,
@@ -54,10 +56,21 @@ router.get('/admin/stats', async (req, res) => {
         return; // Exclude archived players from active tallies
       }
 
+      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+      const sportCount = Math.max(1, selected.length);
+      const calculatedFee = 2500 + Math.max(0, sportCount - 1) * 400;
+      const effectiveFee = Number(r.payment_amount) || calculatedFee;
+
       const pStatus = (r.payment_status || 'pending').toLowerCase();
-      if (pStatus === 'approved') approved++;
-      else if (pStatus === 'rejected') rejected++;
-      else pending++;
+      if (pStatus === 'approved') {
+        approved++;
+        totalRevenue += effectiveFee;
+      } else if (pStatus === 'rejected') {
+        rejected++;
+      } else {
+        pending++;
+        pendingRevenue += effectiveFee;
+      }
 
       if (gen.accommodationRequired === 'Yes') {
         accommodationCount++;
@@ -70,7 +83,6 @@ router.get('/admin/stats', async (req, res) => {
       const centreName = gen.centre || 'Unspecified';
       centresCount[centreName] = (centresCount[centreName] || 0) + 1;
 
-      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
       selected.forEach((s) => {
         const sKey = String(s).toLowerCase();
         if (sportsCount[sKey] !== undefined) {
@@ -88,6 +100,11 @@ router.get('/admin/stats', async (req, res) => {
         activeRegistrations: regs.length - archivedCount,
         archivedCount,
         payment: { approved, pending, rejected, archived: archivedCount },
+        financials: {
+          totalRevenue,
+          pendingRevenue,
+          potentialRevenue: totalRevenue + pendingRevenue,
+        },
         accommodationCount,
         sportsCount,
         tshirtSizes,
@@ -587,6 +604,93 @@ router.post('/admin/accommodation/assign', async (req, res) => {
   } catch (error) {
     console.error('Error assigning room:', error);
     res.status(500).json({ success: false, error: 'Failed to assign room number.' });
+  }
+});
+
+// 8. Admin Endpoint: Razorpay Transactions & Payment Reconciliation
+router.get('/admin/transactions', async (req, res) => {
+  try {
+    const { status, search, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT 
+        t.id,
+        t.cardno,
+        t.bookingid,
+        t.amount,
+        t.discount,
+        t.upi_ref,
+        t.description,
+        t.status,
+        t.updatedBy,
+        t.createdAt,
+        t.updatedAt,
+        t.razorpay_order_id,
+        r.full_name AS player_name,
+        r.mobile AS player_mobile,
+        r.email AS player_email,
+        r.payment_status AS registration_payment_status
+      FROM ${RPL_DB}.rpl_transactions t
+      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && status !== 'all') {
+      query += ` AND t.status = ?`;
+      params.push(status);
+    }
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      query += ` AND (t.razorpay_order_id LIKE ? OR t.upi_ref LIKE ? OR t.description LIKE ? OR r.full_name LIKE ? OR r.mobile LIKE ?)`;
+      params.push(term, term, term, term, term);
+    }
+
+    query += ` ORDER BY t.id DESC LIMIT ? OFFSET ?`;
+    params.push(Number(limit) || 100, Number(offset) || 0);
+
+    const [transactions] = await db.query(query, params);
+
+    // Summary stats for fast reconciliation badges
+    const [summaryRows] = await db.query(`
+      SELECT 
+        status, 
+        COUNT(*) as count, 
+        COALESCE(SUM(amount), 0) as total_amount 
+      FROM ${RPL_DB}.rpl_transactions 
+      GROUP BY status
+    `);
+
+    const summary = {
+      completed: { count: 0, amount: 0 },
+      pending: { count: 0, amount: 0 },
+      failed: { count: 0, amount: 0 },
+      total_count: 0,
+      total_completed_amount: 0,
+    };
+
+    summaryRows.forEach(row => {
+      summary.total_count += Number(row.count);
+      if (row.status === 'completed') {
+        summary.completed = { count: Number(row.count), amount: Number(row.total_amount) };
+        summary.total_completed_amount = Number(row.total_amount);
+      } else if (row.status === 'pending') {
+        summary.pending = { count: Number(row.count), amount: Number(row.total_amount) };
+      } else if (row.status === 'failed') {
+        summary.failed = { count: Number(row.count), amount: Number(row.total_amount) };
+      }
+    });
+
+    res.json({
+      success: true,
+      count: transactions.length,
+      summary,
+      transactions,
+    });
+  } catch (error) {
+    console.error('Error fetching admin transactions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch transaction records.' });
   }
 });
 

@@ -607,4 +607,91 @@ router.post('/admin/accommodation/assign', async (req, res) => {
   }
 });
 
+// 8. Admin Endpoint: Razorpay Transactions & Payment Reconciliation
+router.get('/admin/transactions', async (req, res) => {
+  try {
+    const { status, search, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT 
+        t.id,
+        t.cardno,
+        t.bookingid,
+        t.amount,
+        t.discount,
+        t.upi_ref,
+        t.description,
+        t.status,
+        t.updatedBy,
+        t.createdAt,
+        t.updatedAt,
+        t.razorpay_order_id,
+        r.full_name AS player_name,
+        r.mobile AS player_mobile,
+        r.email AS player_email,
+        r.payment_status AS registration_payment_status
+      FROM ${RPL_DB}.rpl_transactions t
+      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && status !== 'all') {
+      query += ` AND t.status = ?`;
+      params.push(status);
+    }
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      query += ` AND (t.razorpay_order_id LIKE ? OR t.upi_ref LIKE ? OR t.description LIKE ? OR r.full_name LIKE ? OR r.mobile LIKE ?)`;
+      params.push(term, term, term, term, term);
+    }
+
+    query += ` ORDER BY t.id DESC LIMIT ? OFFSET ?`;
+    params.push(Number(limit) || 100, Number(offset) || 0);
+
+    const [transactions] = await db.query(query, params);
+
+    // Summary stats for fast reconciliation badges
+    const [summaryRows] = await db.query(`
+      SELECT 
+        status, 
+        COUNT(*) as count, 
+        COALESCE(SUM(amount), 0) as total_amount 
+      FROM ${RPL_DB}.rpl_transactions 
+      GROUP BY status
+    `);
+
+    const summary = {
+      completed: { count: 0, amount: 0 },
+      pending: { count: 0, amount: 0 },
+      failed: { count: 0, amount: 0 },
+      total_count: 0,
+      total_completed_amount: 0,
+    };
+
+    summaryRows.forEach(row => {
+      summary.total_count += Number(row.count);
+      if (row.status === 'completed') {
+        summary.completed = { count: Number(row.count), amount: Number(row.total_amount) };
+        summary.total_completed_amount = Number(row.total_amount);
+      } else if (row.status === 'pending') {
+        summary.pending = { count: Number(row.count), amount: Number(row.total_amount) };
+      } else if (row.status === 'failed') {
+        summary.failed = { count: Number(row.count), amount: Number(row.total_amount) };
+      }
+    });
+
+    res.json({
+      success: true,
+      count: transactions.length,
+      summary,
+      transactions,
+    });
+  } catch (error) {
+    console.error('Error fetching admin transactions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch transaction records.' });
+  }
+});
+
 export default router;

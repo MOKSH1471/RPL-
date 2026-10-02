@@ -307,3 +307,13 @@ export async function verifyRazorpayPayment(params: VerifyPaymentParams) {
   return data;
 }
 
+export async function fetchAdminTransactions(params?: { status?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set('status', params.status);
+  if (params?.search) query.set('search', params.search);
+  const res = await fetch(`${API_BASE_URL}/admin/transactions?${query.toString()}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch transaction records');
+  return data;
+}
+

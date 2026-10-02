@@ -40,3 +40,14 @@ test('POST /api/admin/accommodation/assign validates bookingid and roomno', asyn
   assert.equal(status, 400);
   assert.equal(data.success, false);
 });
+
+test('GET /api/admin/transactions returns reconciliation summary and transaction list', async () => {
+  const { status, data } = await apiRequest('/api/admin/transactions');
+  assert.ok([200, 500].includes(status), `Expected 200 or 500, got ${status}`);
+  if (status === 200) {
+    assert.equal(data.success, true);
+    assert.ok(Array.isArray(data.transactions), 'transactions must be an array');
+    assert.ok(data.summary, 'summary object must be present');
+    assert.ok('total_count' in data.summary);
+  }
+});

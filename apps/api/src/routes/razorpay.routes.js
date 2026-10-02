@@ -52,6 +52,8 @@ router.post('/razorpay/create-order', async (req, res) => {
       notes: {
         fullName: String(fullName || '').slice(0, 40),
         mobile: String(mobile || '').slice(0, 15),
+        email: String(email || '').slice(0, 40),
+        registrationId: String(registrationId || 'NEW').slice(0, 36),
         sports: Array.isArray(selectedSports) ? selectedSports.join(', ').slice(0, 40) : 'Cricket',
       },
     });
@@ -444,7 +446,7 @@ router.post('/razorpay/webhook', async (req, res) => {
         if (targetRegId) {
           await db.query(
             `UPDATE ${RPL_DB}.rpl_registrations 
-             SET payment_status = 'approved', payment_utr = COALESCE(?, payment_utr), submitted_at = NOW() 
+             SET payment_status = 'approved', payment_utr = COALESCE(?, payment_utr), submitted_at = COALESCE(submitted_at, NOW()) 
              WHERE id = ?`,
             [paymentId, targetRegId]
           );
