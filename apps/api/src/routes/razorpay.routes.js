@@ -119,24 +119,66 @@ router.post('/razorpay/verify-payment', async (req, res) => {
       });
     }
 
-    // A. Cryptographic Signature Verification
+    // A. Cryptographic Signature Verification with Timing-Safe comparison (Aashray Standard)
     const secret = process.env.RAZORPAY_KEY_SECRET || 'TE0Ex76uPfAIQI51jtt7x301';
     const expectedSignature = crypto
       .createHmac('sha256', secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
-      console.error(`[RAZORPAY SIGNATURE MISMATCH] Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid payment signature. Verification failed.',
-      });
+    const signatureMatches = (expectedSignature.length === razorpay_signature.length) &&
+      crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(razorpay_signature));
+
+    // B. Direct Server-to-Server Fallback Fetch (Aashray Enterprise Fallback)
+    let verifiedPayment = null;
+    if (!signatureMatches) {
+      console.warn(`[RAZORPAY SIGNATURE CHECK FAILED] Attempting direct server-to-server fetch for payment ${razorpay_payment_id}...`);
+      try {
+        verifiedPayment = await razorpay.payments.fetch(razorpay_payment_id);
+      } catch (fetchErr) {
+        console.warn('[RAZORPAY DIRECT FETCH ERROR]', fetchErr.message);
+      }
+
+      const isDirectlyConfirmed = verifiedPayment &&
+        verifiedPayment.order_id === razorpay_order_id &&
+        (verifiedPayment.status === 'captured' || verifiedPayment.status === 'authorized');
+
+      if (!isDirectlyConfirmed) {
+        console.error(`[RAZORPAY SIGNATURE MISMATCH] Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid payment signature. Verification failed.',
+        });
+      }
+      console.log(`[RAZORPAY DIRECT FETCH SUCCESS] Direct API confirmed payment: ${verifiedPayment.id} (Status: ${verifiedPayment.status})`);
+    } else {
+      // Signature matched! Fetch payment entity opportunistically for amount reconciliation
+      try {
+        verifiedPayment = await razorpay.payments.fetch(razorpay_payment_id);
+      } catch (fetchErr) {
+        // Safe to proceed with valid HMAC signature in offline/mock test environments
+      }
+    }
+
+    // C. Server-Side Amount Reconciliation (Aashray Tamper Prevention)
+    if (verifiedPayment && registrationPayload) {
+      const cleanGeneral = registrationPayload.general_details || {};
+      const expectedRupees = cleanGeneral.totalAmount || cleanGeneral.calculatedFee || cleanGeneral.incrementalFee;
+      if (expectedRupees && Number(expectedRupees) > 0) {
+        const actualPaidRupees = Math.round(Number(verifiedPayment.amount) / 100);
+        if (actualPaidRupees < Number(expectedRupees)) {
+          console.error(`[RAZORPAY AMOUNT MISMATCH] Expected ₹${expectedRupees}, but Razorpay captured ₹${actualPaidRupees}`);
+          return res.status(400).json({
+            success: false,
+            error: `Payment amount discrepancy. Expected ₹${expectedRupees}, but received ₹${actualPaidRupees}.`,
+          });
+        }
+      }
     }
 
     console.log(`[RAZORPAY PAYMENT VERIFIED] Payment ID: ${razorpay_payment_id}, Order ID: ${razorpay_order_id}`);
 
-    // B. Auto-approve and save registration if registrationPayload is included
+    // D. Auto-approve and save registration if registrationPayload is included
     if (registrationPayload) {
       const regBody = {
         ...registrationPayload,
@@ -319,21 +361,6 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 // 3. Razorpay Server-to-Server Webhook (Immutable Audit Log & Fail-Safe Auto-Approval)
 router.post('/razorpay/webhook', async (req, res) => {
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    const receivedSignature = req.headers['x-razorpay-signature'];
-
-    if (webhookSecret && receivedSignature) {
-      const shasum = crypto.createHmac('sha256', webhookSecret);
-      const rawContent = req.rawBody || JSON.stringify(req.body);
-      shasum.update(rawContent);
-      const digest = shasum.digest('hex');
-
-      if (digest !== receivedSignature) {
-        console.warn('[RAZORPAY WEBHOOK WARNING] Webhook signature mismatch.');
-        return res.status(400).json({ status: 'invalid_signature' });
-      }
-    }
-
     const event = req.body.event || 'unknown';
     const payload = req.body.payload || {};
     const payment = payload.payment?.entity || {};
@@ -344,7 +371,8 @@ router.post('/razorpay/webhook', async (req, res) => {
 
     console.log(`[RAZORPAY WEBHOOK] Event: ${event} | Payment ID: ${paymentId} | Order ID: ${orderId}`);
 
-    // A. Immutable event log into RPL.rpl_razorpay_webhook
+    // 1. Audit-First Logging (Aashray Enterprise Standard):
+    // Record the delivery into audit table before anything can reject it
     try {
       await db.query(
         `INSERT INTO ${RPL_DB}.rpl_razorpay_webhook (payment_id, order_id, event, json, createdAt, updatedAt)
@@ -352,7 +380,26 @@ router.post('/razorpay/webhook', async (req, res) => {
         [paymentId, orderId, event, JSON.stringify(req.body)]
       );
     } catch (logErr) {
-      console.warn('[RAZORPAY WEBHOOK LOG ERROR]', logErr.message);
+      console.warn('[RAZORPAY WEBHOOK AUDIT LOG ERROR]', logErr.message);
+    }
+
+    // 2. Timing-Safe Cryptographic Signature Verification (Aashray Standard)
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const receivedSignature = req.headers['x-razorpay-signature'];
+
+    if (webhookSecret && receivedSignature) {
+      const shasum = crypto.createHmac('sha256', webhookSecret);
+      const rawContent = req.rawBody || JSON.stringify(req.body);
+      shasum.update(rawContent);
+      const expectedDigest = shasum.digest('hex');
+
+      const matches = (expectedDigest.length === receivedSignature.length) &&
+        crypto.timingSafeEqual(Buffer.from(expectedDigest), Buffer.from(receivedSignature));
+
+      if (!matches) {
+        console.warn(`[RAZORPAY WEBHOOK SIGNATURE MISMATCH] Expected: ${expectedDigest}, Received: ${receivedSignature}`);
+        return res.status(400).json({ status: 'invalid_signature' });
+      }
     }
 
     // B. Fail-Safe Webhook Fallback: Update transaction & approve player registration asynchronously
