@@ -7,6 +7,7 @@ export function createRateLimiter({
   windowMs = 60 * 1000,
   max = 60,
   message = 'Too many requests from this IP, please try again after a minute.',
+  enabledInTest = false,
 } = {}) {
   const ipRequests = new Map();
 
@@ -24,7 +25,7 @@ export function createRateLimiter({
   }, 5 * 60 * 1000).unref();
 
   return function rateLimiterMiddleware(req, res, next) {
-    if (process.env.NODE_ENV === 'test' || process.argv.some(a => a.includes('test'))) {
+    if (!enabledInTest && (process.env.NODE_ENV === 'test' || process.argv.some(a => a.includes('test')))) {
       return next();
     }
 

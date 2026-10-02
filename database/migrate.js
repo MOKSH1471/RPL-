@@ -38,11 +38,12 @@ async function runMigrations() {
       const filePath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(filePath, 'utf8');
 
-      // Split statements by semicolon
+      // Strip comments and split statements by semicolon
       const statements = sql
-        .split(/;\s*$/m)
+        .replace(/--.*$/gm, '')
+        .split(';')
         .map((s) => s.trim())
-        .filter((s) => s.length > 0 && !s.startsWith('--'));
+        .filter((s) => s.length > 0);
 
       for (const statement of statements) {
         try {

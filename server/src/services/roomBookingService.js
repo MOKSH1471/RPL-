@@ -2,10 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../config/db.js';
 
 const AASHRAY_DB = process.env.AASHRAY_DB || 'aashray';
-const RPL_START_DATE = '2026-12-25';
-const RPL_END_DATE = '2026-12-27';
+export const RPL_START_DATE = '2026-12-25';
+export const RPL_END_DATE = '2026-12-27';
 
-function calculateNights(startDateStr, endDateStr) {
+export function calculateNights(startDateStr, endDateStr) {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
   const diffTime = end.getTime() - start.getTime();
