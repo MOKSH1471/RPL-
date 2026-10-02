@@ -1311,7 +1311,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               }
 
               fullData.paymentUtr = response.razorpay_payment_id;
+              fullData.payment_utr = response.razorpay_payment_id;
               fullData.paymentStatus = 'approved';
+              fullData.payment_status = 'approved';
 
               try {
                 const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');

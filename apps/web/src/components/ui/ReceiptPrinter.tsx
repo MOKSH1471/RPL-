@@ -63,12 +63,24 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
   const paperRef = useRef<HTMLDivElement>(null);
   const cutterFlashRef = useRef<HTMLDivElement>(null);
 
-  // Check if payment photo / receipt is attached
+  const effectiveUtr =
+    (data.payment_utr && data.payment_utr.trim()) ||
+    (data.paymentUtr && data.paymentUtr.trim()) ||
+    ((data as any).razorpay_payment_id && String((data as any).razorpay_payment_id).trim()) ||
+    '';
+
+  const isApproved =
+    data.paymentStatus === 'approved' ||
+    data.payment_status === 'approved' ||
+    (data as any).status === 'approved';
+
+  // Check if payment photo / receipt is attached or verified via Razorpay
   const hasPaymentProof = Boolean(
+    isApproved ||
+    effectiveUtr.length > 0 ||
     data.payment_receipt ||
     data.paymentReceiptUrl ||
-    (data as any).paymentReceipt ||
-    (data.payment_utr && data.payment_utr.trim().length > 0)
+    (data as any).paymentReceipt
   );
 
   const sportsList =
@@ -215,7 +227,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       foodPreference: data.foodPreference,
       sportsList: sportsList.map(formatSportName),
       hasPaymentProof,
-      paymentUtr: data.payment_utr,
+      paymentUtr: effectiveUtr || undefined,
     });
   };
 
@@ -396,10 +408,12 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">PROOF:</span>
                     <span className={`font-mono font-bold text-[8.5px] truncate max-w-[190px] ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      {data.payment_utr && (data.payment_receipt || data.paymentReceiptUrl)
-                        ? `UTR: ${data.payment_utr} (SS ATTACHED)`
-                        : data.payment_utr
-                        ? `UTR: ${data.payment_utr}`
+                      {effectiveUtr && (data.payment_receipt || data.paymentReceiptUrl)
+                        ? `UTR: ${effectiveUtr} (SS ATTACHED)`
+                        : effectiveUtr
+                        ? `UTR: ${effectiveUtr}`
+                        : isApproved
+                        ? 'VERIFIED & CLEARED'
                         : (data.payment_receipt || data.paymentReceiptUrl)
                         ? 'PAYMENT SCREENSHOT ATTACHED'
                         : 'PAYMENT DUE (NO PROOF)'}
