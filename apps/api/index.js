@@ -12,6 +12,11 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 import { validateEnvironment } from './src/config/env.js';
 validateEnvironment();
 
+// Import structured logger & connection monitor (Aashray Standard)
+import logger from './src/config/logger.js';
+import httpLogger from './src/middleware/Logger.js';
+import connectionMonitor from './src/config/connectionMonitor.js';
+
 // Import modular routes & rate limiting
 import healthRoutes from './src/routes/health.routes.js';
 import sportsRoutes from './src/routes/sports.routes.js';
@@ -40,16 +45,8 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Structured HTTP Request Logger
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    if (req.originalUrl === '/health' || req.originalUrl === '/ready' || req.originalUrl === '/api/health' || req.originalUrl === '/api/ready') return;
-    const duration = Date.now() - start;
-    console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} (${duration}ms)`);
-  });
-  next();
-});
+// Correlation ID & Structured HTTP Request Logger (Aashray Standard)
+app.use(httpLogger);
 
 // 1. Health & Readiness Probes (Root level & /api level)
 app.use('/', healthRoutes);
@@ -83,18 +80,21 @@ app.use(globalErrorHandler);
 const isTestEnv = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
 if (!isTestEnv) {
   const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port} (0.0.0.0)`);
+    logger.info(`Server running on port ${port} (0.0.0.0)`);
+    // Start database connection pool monitoring & keep-alive
+    connectionMonitor.start();
   });
 
   const handleShutdown = async (signal) => {
-    console.log(`\n🛑 [SHUTDOWN] Received ${signal}. Gracefully stopping RPL server...`);
+    logger.info(`🛑 [SHUTDOWN] Received ${signal}. Gracefully stopping RPL server...`);
+    connectionMonitor.stop();
     server.close(async () => {
-      console.log('🔒 [SHUTDOWN] HTTP listener closed. Draining database connections...');
+      logger.info('🔒 [SHUTDOWN] HTTP listener closed. Draining database connections...');
       try {
         await pool.end();
-        console.log('✅ [SHUTDOWN] Database pool closed successfully.');
+        logger.info('✅ [SHUTDOWN] Database pool closed successfully.');
       } catch (err) {
-        console.error('⚠️ [SHUTDOWN] Error closing database pool:', err.message);
+        logger.error(`⚠️ [SHUTDOWN] Error closing database pool: ${err.message}`);
       }
       process.exit(0);
     });

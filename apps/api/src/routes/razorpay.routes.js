@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import db, { RPL_DB } from '../config/db.js';
 import razorpay from '../config/razorpay.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
+import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
+import logger from '../config/logger.js';
 
 const router = Router();
 
@@ -58,62 +60,52 @@ router.post('/razorpay/create-order', async (req, res) => {
       },
     });
 
-    console.log(`[RAZORPAY ORDER CREATED] Order ID: ${order.id}, Amount: ₹${computedFee} (${amountInPaise} paise) for "${fullName}"`);
+    logger.info(`[RAZORPAY ORDER CREATED] Order ID: ${order.id} | Amount: ₹${computedFee} (${amountInPaise} paise) | Receipt: ${receiptId}`);
 
-    // 1. Pre-Payment Intent: Record initiated transaction before checkout
-    // Uses UPDATE-first to avoid duplicate rows when a player retries payment
+    // Pre-Payment Intent Persistence: Record pending intent in RPL.rpl_transactions
     try {
-      const cleanMobDigits = String(mobile || '').replace(/\D/g, '');
-      const cardNoVal = req.body.cardNo || `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
       const sportsList = Array.isArray(selectedSports) ? selectedSports.join(', ') : 'Cricket';
-      const initialBookingId = registrationId || `PENDING_${order.id.slice(-12)}`;
-      const description = `RPL Season 9 Registration (${sportsList}) - Pre-Payment Intent`;
+      const cleanMobDigits = cleanDomesticPhone(mobile);
+      const cardNoVal = `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
 
-      // Try updating an existing pending row first (retry scenario)
-      const [updateResult] = await db.query(
-        `UPDATE ${RPL_DB}.rpl_transactions
-         SET razorpay_order_id = ?, amount = ?, description = ?, updatedAt = NOW()
-         WHERE bookingid = ? AND category = 'sports' AND status = 'pending'
-         LIMIT 1`,
-        [order.id, computedFee, description, initialBookingId]
+      await db.query(
+        `INSERT INTO ${RPL_DB}.rpl_transactions 
+         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+         VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_PRE_ORDER', NOW(), NOW(), ?)
+         ON DUPLICATE KEY UPDATE 
+           amount = VALUES(amount),
+           description = VALUES(description),
+           updatedAt = NOW()`,
+        [
+          cardNoVal,
+          registrationId || `PENDING_${order.id.slice(-8)}`,
+          computedFee,
+          `RPL Season 9 Registration (${sportsList}) - Order Initiated`,
+          order.id,
+        ]
       );
-
-      // Only insert if no existing pending row was found
-      if (updateResult.affectedRows === 0) {
-        await db.query(
-          `INSERT INTO ${RPL_DB}.rpl_transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-           VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_INTENT', NOW(), NOW(), ?)
-           ON DUPLICATE KEY UPDATE 
-             amount = VALUES(amount),
-             description = VALUES(description),
-             razorpay_order_id = VALUES(razorpay_order_id),
-             updatedAt = NOW()`,
-          [cardNoVal, initialBookingId, computedFee, description, order.id]
-        );
-      }
-    } catch (intentErr) {
-      console.warn('[PRE-PAYMENT INTENT NOTICE]', intentErr.message);
+    } catch (dbErr) {
+      logger.warn(`[RAZORPAY PRE-RECORD WARNING] Could not pre-record transaction: ${dbErr.message}`);
     }
 
-    res.json({
+    return res.json({
       success: true,
       orderId: order.id,
       amount: order.amount,
       amountInRupees: computedFee,
       currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_TivKrz1oOVPG55',
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_live_RNd5s35aK8yS9h',
     });
   } catch (error) {
-    console.error('Error creating Razorpay order:', error);
+    logger.error(`Error creating Razorpay order: ${error.message}`, { error });
     res.status(500).json({
       success: false,
-      error: error.message || 'Failed to initiate Razorpay order.',
+      error: error.message || 'Failed to initialize payment gateway.',
     });
   }
 });
 
-// 2. Cryptographic Verification of Razorpay Payment & Instant Player Auto-Approval
+// 2. Verify Razorpay Payment Signature & Process Registration Atomically
 router.post('/razorpay/verify-payment', async (req, res) => {
   try {
     const {
@@ -143,11 +135,11 @@ router.post('/razorpay/verify-payment', async (req, res) => {
     // B. Direct Server-to-Server Fallback Fetch (Aashray Enterprise Fallback)
     let verifiedPayment = null;
     if (!signatureMatches) {
-      console.warn(`[RAZORPAY SIGNATURE CHECK FAILED] Attempting direct server-to-server fetch for payment ${razorpay_payment_id}...`);
+      logger.warn(`[RAZORPAY SIGNATURE CHECK FAILED] Attempting direct server-to-server fetch for payment ${razorpay_payment_id}...`);
       try {
         verifiedPayment = await razorpay.payments.fetch(razorpay_payment_id);
       } catch (fetchErr) {
-        console.warn('[RAZORPAY DIRECT FETCH ERROR]', fetchErr.message);
+        logger.warn(`[RAZORPAY DIRECT FETCH ERROR] ${fetchErr.message}`);
       }
 
       const isDirectlyConfirmed = verifiedPayment &&
@@ -155,32 +147,29 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         (verifiedPayment.status === 'captured' || verifiedPayment.status === 'authorized');
 
       if (!isDirectlyConfirmed) {
-        console.error(`[RAZORPAY SIGNATURE MISMATCH] Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
+        logger.error(`[RAZORPAY SIGNATURE MISMATCH] Expected: ${expectedSignature}, Received: ${razorpay_signature}`);
         return res.status(400).json({
           success: false,
           error: 'Invalid payment signature. Verification failed.',
         });
       }
-      console.log(`[RAZORPAY DIRECT FETCH SUCCESS] Direct API confirmed payment: ${verifiedPayment.id} (Status: ${verifiedPayment.status})`);
+      logger.info(`[RAZORPAY DIRECT FETCH SUCCESS] Direct API confirmed payment: ${verifiedPayment.id} (Status: ${verifiedPayment.status})`);
     } else {
-      // Signature matched! Fetch payment entity opportunistically for amount reconciliation
       try {
         verifiedPayment = await razorpay.payments.fetch(razorpay_payment_id);
       } catch (fetchErr) {
-        // Safe to proceed with valid HMAC signature in offline/mock test environments
+        // Safe to proceed with valid HMAC signature
       }
     }
 
     // C. Server-Side Amount Reconciliation (Aashray Tamper Prevention)
     if (verifiedPayment && registrationPayload) {
       const cleanGeneral = registrationPayload.general_details || {};
-      // Use incrementalFee first (the actual amount due for this payment),
-      // then fall back to calculatedFee, then totalAmount (cumulative)
       const expectedRupees = cleanGeneral.incrementalFee || cleanGeneral.calculatedFee || cleanGeneral.totalAmount;
       if (expectedRupees && Number(expectedRupees) > 0) {
         const actualPaidRupees = Math.round(Number(verifiedPayment.amount) / 100);
         if (actualPaidRupees < Number(expectedRupees)) {
-          console.error(`[RAZORPAY AMOUNT MISMATCH] Expected ₹${expectedRupees}, but Razorpay captured ₹${actualPaidRupees}`);
+          logger.error(`[RAZORPAY AMOUNT MISMATCH] Expected ₹${expectedRupees}, but Razorpay captured ₹${actualPaidRupees}`);
           return res.status(400).json({
             success: false,
             error: `Payment amount discrepancy. Expected ₹${expectedRupees}, but received ₹${actualPaidRupees}.`,
@@ -189,9 +178,9 @@ router.post('/razorpay/verify-payment', async (req, res) => {
       }
     }
 
-    console.log(`[RAZORPAY PAYMENT VERIFIED] Payment ID: ${razorpay_payment_id}, Order ID: ${razorpay_order_id}`);
+    logger.info(`[RAZORPAY PAYMENT VERIFIED] Payment ID: ${razorpay_payment_id}, Order ID: ${razorpay_order_id}`);
 
-    // D. Auto-approve and save registration if registrationPayload is included
+    // D. Auto-approve and save registration atomically if registrationPayload is included
     if (registrationPayload) {
       const regBody = {
         ...registrationPayload,
@@ -205,12 +194,14 @@ router.post('/razorpay/verify-payment', async (req, res) => {
       let savedRegistrationId = registrationPayload.registration_id || null;
       let internalSaveError = null;
 
+      const connection = await db.getConnection();
+      await connection.beginTransaction();
+
       try {
         const full_name = regBody.full_name || regBody.fullName || '';
         const email = regBody.email || '';
         const mobile = regBody.mobile || regBody.mobileNumber || '';
-        const rawMobileDigits = mobile.replace(/\D/g, '');
-        const mobile10 = rawMobileDigits.length > 10 ? rawMobileDigits.slice(-10) : rawMobileDigits;
+        const mobile10 = cleanDomesticPhone(mobile);
 
         const cleanGeneralDetails = regBody.general_details || regBody.answers || {};
         cleanGeneralDetails.payment_utr = razorpay_payment_id;
@@ -223,16 +214,14 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         const cleanCheckInDate = regBody.check_in_date || cleanGeneralDetails.checkInDate || '2026-12-25';
         const cleanCheckOutDate = regBody.check_out_date || cleanGeneralDetails.checkOutDate || '2026-12-27';
 
-        const [existingRegs] = await db.query(
+        const [existingRegs] = await connection.query(
           `SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM ${RPL_DB}.rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
           [regBody.registration_id || '', mobile, `%${mobile10}`]
         );
 
         let regId = uuidv4();
-        let isUpdate = false;
 
         if (existingRegs.length > 0) {
-          isUpdate = true;
           regId = existingRegs[0].id;
 
           let prevGeneral = {};
@@ -258,7 +247,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           mergedGeneralDetails.paymentUtrs = mergedUtrList;
           mergedGeneralDetails.payment_utr = mergedUtrList.join(', ');
 
-          await db.query(
+          await connection.query(
             `UPDATE ${RPL_DB}.rpl_registrations 
              SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
                  player_photo_url = ?, payment_status = 'approved', payment_utr = ?, 
@@ -278,7 +267,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
             ]
           );
         } else {
-          await db.query(
+          await connection.query(
             `INSERT INTO ${RPL_DB}.rpl_registrations 
              (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, general_details, sport_answers, is_archived, submitted_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, FALSE, NOW())`,
@@ -299,12 +288,12 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         savedRegistrationId = regId;
 
-        // C. Record transaction in RPL.rpl_transactions
+        // Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
         const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
         const finalAmount = cleanGeneralDetails.incrementalFee || cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2500;
 
-        await db.query(
+        await connection.query(
           `INSERT INTO ${RPL_DB}.rpl_transactions 
            (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
            VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
@@ -325,7 +314,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           ]
         );
 
-        // D. Process Pre/Post stay requests if accommodation is required
+        // Process Accommodation Booking within transaction
         if (cleanGeneralDetails.accommodationRequired === 'Yes') {
           await processAccommodationBooking({
             cardno: cleanGeneralDetails.cardNo || null,
@@ -337,11 +326,18 @@ router.post('/razorpay/verify-payment', async (req, res) => {
             checkInDate: cleanCheckInDate,
             checkOutDate: cleanCheckOutDate,
             accommodationRequired: 'Yes',
+            connection,
           });
         }
+
+        await connection.commit();
+        logger.info(`[RAZORPAY VERIFY TRANSACTION COMMITTED] Registration: ${savedRegistrationId}`);
       } catch (saveErr) {
-        console.error('[RAZORPAY SAVE REGISTRATION ERROR]', saveErr);
+        await connection.rollback();
+        logger.error(`[RAZORPAY SAVE REGISTRATION ERROR - ROLLBACK] ${saveErr.message}`, { error: saveErr });
         internalSaveError = saveErr.message;
+      } finally {
+        connection.release();
       }
 
       return res.json({
@@ -363,7 +359,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
       orderId: razorpay_order_id,
     });
   } catch (error) {
-    console.error('Error verifying Razorpay payment:', error);
+    logger.error(`Error verifying Razorpay payment: ${error.message}`, { error });
     res.status(500).json({
       success: false,
       error: error.message || 'Payment verification failed.',
@@ -382,10 +378,9 @@ router.post('/razorpay/webhook', async (req, res) => {
     const paymentId = payment.id || null;
     const orderId = payment.order_id || order.id || null;
 
-    console.log(`[RAZORPAY WEBHOOK] Event: ${event} | Payment ID: ${paymentId} | Order ID: ${orderId}`);
+    logger.info(`[RAZORPAY WEBHOOK] Event: ${event} | Payment ID: ${paymentId} | Order ID: ${orderId}`);
 
-    // 1. Audit-First Logging (Aashray Enterprise Standard):
-    // Record the delivery into audit table before anything can reject it
+    // Audit-First Logging: Record the delivery into audit table
     try {
       await db.query(
         `INSERT INTO ${RPL_DB}.rpl_razorpay_webhook (payment_id, order_id, event, json, createdAt, updatedAt)
@@ -393,10 +388,10 @@ router.post('/razorpay/webhook', async (req, res) => {
         [paymentId, orderId, event, JSON.stringify(req.body)]
       );
     } catch (logErr) {
-      console.warn('[RAZORPAY WEBHOOK AUDIT LOG ERROR]', logErr.message);
+      logger.warn(`[RAZORPAY WEBHOOK AUDIT LOG ERROR] ${logErr.message}`);
     }
 
-    // 2. Timing-Safe Cryptographic Signature Verification (Aashray Standard)
+    // Timing-Safe Cryptographic Signature Verification
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const receivedSignature = req.headers['x-razorpay-signature'];
 
@@ -410,94 +405,107 @@ router.post('/razorpay/webhook', async (req, res) => {
         crypto.timingSafeEqual(Buffer.from(expectedDigest), Buffer.from(receivedSignature));
 
       if (!matches) {
-        console.warn(`[RAZORPAY WEBHOOK SIGNATURE MISMATCH] Expected: ${expectedDigest}, Received: ${receivedSignature}`);
+        logger.warn(`[RAZORPAY WEBHOOK SIGNATURE MISMATCH] Expected: ${expectedDigest}, Received: ${receivedSignature}`);
         return res.status(400).json({ status: 'invalid_signature' });
       }
     }
 
-    // B. Fail-Safe Webhook Fallback: Upsert transaction & approve player registration asynchronously
+    // Fail-Safe Webhook Fallback: Upsert transaction & approve player registration in an atomic transaction
     if (event === 'payment.captured' || event === 'order.paid') {
       if (orderId) {
-        const payerPhone = (payment.contact || (payment.notes && payment.notes.mobile) || '').replace(/\D/g, '').slice(-10);
+        const payerPhone = cleanDomesticPhone(payment.contact || (payment.notes && payment.notes.mobile) || '');
         let targetRegId = null;
         let targetReg = null;
 
-        // 1. Locate registration by existing transaction or player mobile
-        const [matchedTx] = await db.query(
-          `SELECT bookingid FROM ${RPL_DB}.rpl_transactions WHERE razorpay_order_id = ? LIMIT 1`,
-          [orderId]
-        );
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
 
-        if (matchedTx.length > 0 && matchedTx[0].bookingid && !matchedTx[0].bookingid.startsWith('PENDING_') && !matchedTx[0].bookingid.startsWith('WEBHOOK_')) {
-          targetRegId = matchedTx[0].bookingid;
-          const [foundRegs] = await db.query(
-            `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations WHERE id = ? LIMIT 1`,
-            [targetRegId]
+        try {
+          // Locate registration by existing transaction or player mobile
+          const [matchedTx] = await connection.query(
+            `SELECT bookingid FROM ${RPL_DB}.rpl_transactions WHERE razorpay_order_id = ? LIMIT 1`,
+            [orderId]
           );
-          if (foundRegs.length > 0) targetReg = foundRegs[0];
-        } else if (payerPhone && payerPhone.length === 10) {
-          const [matchedRegs] = await db.query(
-            `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations 
-             WHERE (REPLACE(REPLACE(mobile, '+91', ''), ' ', '') LIKE ? OR id = ?)
-             ORDER BY submitted_at DESC LIMIT 1`,
-            [`%${payerPhone}`, payment.notes?.registration_id || '']
-          );
-          if (matchedRegs.length > 0) {
-            targetReg = matchedRegs[0];
-            targetRegId = targetReg.id;
+
+          if (matchedTx.length > 0 && matchedTx[0].bookingid && !matchedTx[0].bookingid.startsWith('PENDING_') && !matchedTx[0].bookingid.startsWith('WEBHOOK_')) {
+            targetRegId = matchedTx[0].bookingid;
+            const [foundRegs] = await connection.query(
+              `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations WHERE id = ? LIMIT 1`,
+              [targetRegId]
+            );
+            if (foundRegs.length > 0) targetReg = foundRegs[0];
+          } else if (payerPhone && payerPhone.length === 10) {
+            const [matchedRegs] = await connection.query(
+              `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations 
+               WHERE (REPLACE(REPLACE(mobile, '+91', ''), ' ', '') LIKE ? OR id = ?)
+               ORDER BY submitted_at DESC LIMIT 1`,
+              [`%${payerPhone}`, payment.notes?.registration_id || '']
+            );
+            if (matchedRegs.length > 0) {
+              targetReg = matchedRegs[0];
+              targetRegId = targetReg.id;
+            }
           }
-        }
 
-        // 2. Prepare transaction data & ALWAYS insert/upsert into rpl_transactions
-        const finalAmount = Math.round(Number(payment.amount || 250000) / 100);
-        let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
-        let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
+          // Prepare transaction data & insert/upsert into rpl_transactions
+          const finalAmount = Math.round(Number(payment.amount || 250000) / 100);
+          let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
+          let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
 
-        if (targetReg?.general_details) {
-          try {
-            const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
-            if (gd.cardNo) cardNoVal = gd.cardNo;
-          } catch (e) {}
-        }
+          if (targetReg?.general_details) {
+            try {
+              const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
+              if (gd.cardNo) cardNoVal = gd.cardNo;
+            } catch (e) {}
+          }
 
-        await db.query(
-          `INSERT INTO ${RPL_DB}.rpl_transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-           VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
-           ON DUPLICATE KEY UPDATE 
-             bookingid = COALESCE(VALUES(bookingid), bookingid),
-             amount = VALUES(amount),
-             upi_ref = COALESCE(VALUES(upi_ref), upi_ref),
-             status = 'completed',
-             updatedAt = NOW()`,
-          [
-            cardNoVal,
-            targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
-            finalAmount,
-            paymentId,
-            `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
-            orderId,
-          ]
-        );
-
-        // 3. Mark player registration as approved if matched
-        if (targetRegId) {
-          await db.query(
-            `UPDATE ${RPL_DB}.rpl_registrations 
-             SET payment_status = 'approved', payment_utr = COALESCE(?, payment_utr), submitted_at = COALESCE(submitted_at, NOW()) 
-             WHERE id = ?`,
-            [paymentId, targetRegId]
+          await connection.query(
+            `INSERT INTO ${RPL_DB}.rpl_transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+             VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
+             ON DUPLICATE KEY UPDATE 
+               bookingid = COALESCE(VALUES(bookingid), bookingid),
+               amount = VALUES(amount),
+               upi_ref = COALESCE(VALUES(upi_ref), upi_ref),
+               status = 'completed',
+               updatedAt = NOW()`,
+            [
+              cardNoVal,
+              targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
+              finalAmount,
+              paymentId,
+              `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
+              orderId,
+            ]
           );
-          console.log(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" and transaction confirmed via webhook.`);
+
+          // Mark player registration as approved if matched
+          if (targetRegId) {
+            await connection.query(
+              `UPDATE ${RPL_DB}.rpl_registrations 
+               SET payment_status = 'approved', payment_utr = COALESCE(?, payment_utr), submitted_at = COALESCE(submitted_at, NOW()) 
+               WHERE id = ?`,
+              [paymentId, targetRegId]
+            );
+            logger.info(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" confirmed via webhook.`);
+          }
+
+          await connection.commit();
+        } catch (webhookTxErr) {
+          await connection.rollback();
+          logger.error(`[RAZORPAY WEBHOOK TRANSACTION ROLLBACK] ${webhookTxErr.message}`);
+          throw webhookTxErr;
+        } finally {
+          connection.release();
         }
       }
     }
 
-    // C. Failure Telemetry: Track failed payment attempts with root cause analysis
+    // Failure Telemetry: Track failed payment attempts
     if (event === 'payment.failed') {
       const errorCode = payment.error_code || 'PAYMENT_FAILED';
       const errorDesc = payment.error_description || payment.error_reason || 'Payment failed';
-      console.warn(`[RAZORPAY FAILURE TELEMETRY] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
+      logger.warn(`[RAZORPAY FAILURE TELEMETRY] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
 
       if (orderId) {
         try {
@@ -510,14 +518,14 @@ router.post('/razorpay/webhook', async (req, res) => {
             [errorCode, String(errorDesc).slice(0, 100), orderId]
           );
         } catch (failErr) {
-          console.warn('[FAILURE TELEMETRY LOG NOTICE]', failErr.message);
+          logger.warn(`[FAILURE TELEMETRY LOG NOTICE] ${failErr.message}`);
         }
       }
     }
 
     res.status(200).json({ status: 'ok' });
   } catch (error) {
-    console.error('[RAZORPAY WEBHOOK ERROR]', error);
+    logger.error(`[RAZORPAY WEBHOOK ERROR] ${error.message}`, { error });
     res.status(500).json({ status: 'error', message: error.message });
   }
 });
@@ -533,7 +541,7 @@ router.post('/razorpay/payment-failed', async (req, res) => {
     const errorCode = error?.code || 'CLIENT_DECLINED';
     const errorDesc = error?.description || error?.reason || 'User cancelled or payment failed';
 
-    console.warn(`[RAZORPAY CLIENT FAILURE] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
+    logger.warn(`[RAZORPAY CLIENT FAILURE] Order ID: ${orderId} | Code: ${errorCode} | Reason: ${errorDesc}`);
 
     await db.query(
       `UPDATE ${RPL_DB}.rpl_transactions 
@@ -546,7 +554,7 @@ router.post('/razorpay/payment-failed', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.warn('[PAYMENT FAILURE ENDPOINT NOTICE]', err.message);
+    logger.warn(`[PAYMENT FAILURE ENDPOINT NOTICE] ${err.message}`);
     res.json({ success: false, error: err.message });
   }
 });

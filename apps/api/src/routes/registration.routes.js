@@ -4,10 +4,12 @@ import db, { RPL_DB } from '../config/db.js';
 import { getFieldValue } from '../utils/helpers.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
 import { ensureGuestCard } from '../services/guestCardService.js';
+import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
+import logger from '../config/logger.js';
 
 const router = Router();
 
-// Handle Registration (Dynamic Validation & Save)
+// Handle Registration (Dynamic Validation & Atomic Save)
 router.post('/register', async (req, res) => {
   const {
     sport_id,
@@ -31,6 +33,7 @@ router.post('/register', async (req, res) => {
     const cleanFullName = full_name.trim();
     const cleanEmail = email.trim();
     const cleanMobile = mobile.trim();
+    const mobile10 = cleanDomesticPhone(cleanMobile);
 
     // Prepare clean sanitized answers (Ensure no raw base64 data URLs enter MySQL)
     const sanitizedAnswers = answers ? { ...answers } : {};
@@ -110,17 +113,15 @@ router.post('/register', async (req, res) => {
       const rules = typeof field.validation_rules === 'string' ? JSON.parse(field.validation_rules) : (field.validation_rules || {});
       const options = typeof field.options === 'string' ? JSON.parse(field.options) : (field.options || []);
 
-      // Rule: Required check
       if (rules.required && (value === undefined || value === null || String(value).trim() === '')) {
         if (['full_name', 'email', 'mobile', 'centre'].includes(field.field_key)) {
           validationErrors[field.field_key] = `${field.label} is required.`;
           return;
         } else {
-          console.warn(`[RPL Validation Notice] Field '${field.field_key}' is empty, proceeding with save.`);
+          logger.warn(`[RPL Validation Notice] Field '${field.field_key}' is empty, proceeding with save.`);
         }
       }
 
-      // Rule: Select option verification
       if (field.field_type === 'select' && value && Array.isArray(options) && options.length > 0) {
         const isMatch = options.some((opt) => {
           const optStr = String(typeof opt === 'object' ? opt.value || opt.id || opt.label : opt).toLowerCase();
@@ -128,11 +129,10 @@ router.post('/register', async (req, res) => {
           return optStr === valStr || valStr.includes(optStr) || optStr.includes(valStr);
         });
         if (!isMatch) {
-          console.warn(`[RPL Validation Notice] Option '${value}' for '${field.field_key}' accepted.`);
+          logger.warn(`[RPL Validation Notice] Option '${value}' for '${field.field_key}' accepted.`);
         }
       }
 
-      // Rule: Numeric validation
       if (field.field_type === 'number' && value !== undefined && value !== null && value !== '') {
         const numVal = Number(value);
         if (isNaN(numVal)) {
@@ -149,195 +149,194 @@ router.post('/register', async (req, res) => {
     });
 
     if (Object.keys(validationErrors).length > 0) {
-      console.warn('[RPL Registration Warning] Validation errors:', validationErrors);
+      logger.warn('[RPL Registration Warning] Validation errors:', validationErrors);
       return res.status(400).json({ success: false, errors: validationErrors });
     }
 
-    // C. Save or Update in MySQL rpl_registrations
-    const rawMobileDigits = cleanMobile.replace(/\D/g, '');
-    const mobile10 = rawMobileDigits.length > 10 ? rawMobileDigits.slice(-10) : rawMobileDigits;
-
-    const [existingRegs] = await db.query(
-      `SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM ${RPL_DB}.rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
-      [req.body.registration_id || '', cleanMobile, `%${mobile10}`]
-    );
+    // C. Atomic Transaction for Multi-Table Writes (Aashray Standard)
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
     let id;
     let isUpdate = false;
     let finalGeneralDetails = cleanGeneralDetails;
+    let finalPaymentStatus = 'pending';
+    let accommodationResult = { booked: false };
 
-    if (existingRegs.length > 0) {
-      isUpdate = true;
-      const prevRow = existingRegs[0];
-      id = prevRow.id;
-
-      let prevGeneral = {};
-      let prevSports = {};
-      try {
-        prevGeneral = typeof prevRow.general_details === 'string' ? JSON.parse(prevRow.general_details) : (prevRow.general_details || {});
-      } catch (e) {
-        prevGeneral = {};
-      }
-      try {
-        prevSports = typeof prevRow.sport_answers === 'string' ? JSON.parse(prevRow.sport_answers) : (prevRow.sport_answers || {});
-      } catch (e) {
-        prevSports = {};
-      }
-
-      const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
-      const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
-      const allSelectedSports = Array.from(new Set([
-        ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
-        ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
-        ...Object.keys(mergedSportAnswers),
-      ]));
-      mergedGeneralDetails.selectedSports = allSelectedSports;
-      const computedSportsCount = Math.max(1, allSelectedSports.length);
-      const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
-      const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
-      const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
-
-      const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const newUtrs = String(cleanPaymentUtr || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const mergedUtrList = Array.from(new Set([...prevUtrs, ...newUtrs]));
-      const finalPaymentUtr = mergedUtrList.length > 0 ? mergedUtrList.join(', ') : null;
-
-      const prevReceipts = String(prevRow.payment_receipt_url || prevGeneral.payment_receipt_url || prevGeneral.payment_receipt || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const newReceipts = String(cleanReceiptUrl || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const mergedReceiptList = Array.from(new Set([...prevReceipts, ...newReceipts]));
-      const finalReceiptUrl = mergedReceiptList.length > 0 ? mergedReceiptList.join(', ') : null;
-
-      const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
-      const incrementalFee = isAlreadyPaid ? newlyAddedSportsCount * 400 : computedFee;
-
-      mergedGeneralDetails.totalAmount = computedFee;
-      mergedGeneralDetails.calculatedFee = computedFee;
-      mergedGeneralDetails.incrementalFee = incrementalFee;
-      mergedGeneralDetails.paymentReceipts = mergedReceiptList;
-      mergedGeneralDetails.paymentUtrs = mergedUtrList;
-      mergedGeneralDetails.payment_receipt = finalReceiptUrl;
-      mergedGeneralDetails.payment_receipt_url = finalReceiptUrl;
-      mergedGeneralDetails.paymentReceiptUrl = finalReceiptUrl;
-      mergedGeneralDetails.payment_utr = finalPaymentUtr;
-      finalGeneralDetails = mergedGeneralDetails;
-
-      const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
-      const hasNewPayment = newUtrs.length > 0 || newReceipts.length > 0;
-      const hasNewSports = newlyAddedSportsCount > 0;
-      const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
-
-      let finalPaymentStatus;
-      if (prevRow.payment_status === 'approved') {
-        if (hasNewSports && !hasNewPayment && incomingStatusIsPending) {
-          // Approved player added new sports via Pay Later — mark as due
-          finalPaymentStatus = 'approved_due';
-        } else {
-          // Normal update (adding payment, or no new sports) — keep approved
-          finalPaymentStatus = 'approved';
-        }
-      } else {
-        finalPaymentStatus = 'pending';
-      }
-
-      await db.query(
-        `UPDATE ${RPL_DB}.rpl_registrations 
-         SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
-             player_photo_url = ?, payment_status = ?, payment_utr = ?, payment_receipt_url = ?, 
-             general_details = ?, sport_answers = ?, submitted_at = NOW() 
-         WHERE id = ?`,
-        [
-          cleanFullName,
-          cleanEmail,
-          cleanMobile,
-          cleanCheckInDate,
-          cleanCheckOutDate,
-          finalPhotoUrl,
-          finalPaymentStatus,
-          finalPaymentUtr,
-          finalReceiptUrl,
-          JSON.stringify(mergedGeneralDetails),
-          JSON.stringify(mergedSportAnswers),
-          id,
-        ]
-      );
-
-      console.log(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
-    } else {
-      id = uuidv4();
-      const newSportsCount = Math.max(1, Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.length : 1);
-      const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
-      cleanGeneralDetails.totalAmount = newFee;
-      cleanGeneralDetails.calculatedFee = newFee;
-
-      // Auto-create an Aashray guest card for non-mumukshu players (no existing cardNo)
-      if (!cleanGeneralDetails.cardNo) {
-        const guestCardNo = await ensureGuestCard({
-          fullName: cleanFullName,
-          mobile: mobile10,
-          email: cleanEmail,
-          gender: cleanGeneralDetails.gender || 'Male',
-          dob: cleanGeneralDetails.dateOfBirth || null,
-          centre: cleanGeneralDetails.centre || 'Mumbai',
-          photoUrl: cleanPhotoUrl || null,
-          referrerCardNo: cleanGeneralDetails.referrerCardNo || null,
-        });
-        if (guestCardNo) {
-          cleanGeneralDetails.cardNo = guestCardNo;
-          console.log(`[RPL Registration] Assigned Aashray guest card ${guestCardNo} to new player "${cleanFullName}"`);
-        }
-      }
-
-      await db.query(
-        `INSERT INTO ${RPL_DB}.rpl_registrations 
-         (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
-        [
-          id,
-          cleanFullName,
-          cleanEmail,
-          cleanMobile,
-          cleanCheckInDate,
-          cleanCheckOutDate,
-          cleanPhotoUrl,
-          cleanPaymentUtr,
-          cleanReceiptUrl,
-          JSON.stringify(cleanGeneralDetails),
-          JSON.stringify(cleanSportAnswers),
-        ]
-      );
-
-      console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Fee: ₹${newFee})`);
-    }
-
-    // D. Record or update sports package entry in RPL.rpl_transactions table
     try {
+      const [existingRegs] = await connection.query(
+        `SELECT id, full_name, email, mobile, payment_status, player_photo_url, payment_utr, payment_receipt_url, general_details, sport_answers FROM ${RPL_DB}.rpl_registrations WHERE id = ? OR mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
+        [req.body.registration_id || '', cleanMobile, `%${mobile10}`]
+      );
+
+      if (existingRegs.length > 0) {
+        isUpdate = true;
+        const prevRow = existingRegs[0];
+        id = prevRow.id;
+
+        let prevGeneral = {};
+        let prevSports = {};
+        try {
+          prevGeneral = typeof prevRow.general_details === 'string' ? JSON.parse(prevRow.general_details) : (prevRow.general_details || {});
+        } catch (e) {
+          prevGeneral = {};
+        }
+        try {
+          prevSports = typeof prevRow.sport_answers === 'string' ? JSON.parse(prevRow.sport_answers) : (prevRow.sport_answers || {});
+        } catch (e) {
+          prevSports = {};
+        }
+
+        const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
+        const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
+        const allSelectedSports = Array.from(new Set([
+          ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
+          ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
+          ...Object.keys(mergedSportAnswers),
+        ]));
+        mergedGeneralDetails.selectedSports = allSelectedSports;
+        const computedSportsCount = Math.max(1, allSelectedSports.length);
+        const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
+        const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
+        const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
+
+        const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const newUtrs = String(cleanPaymentUtr || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const mergedUtrList = Array.from(new Set([...prevUtrs, ...newUtrs]));
+        const finalPaymentUtr = mergedUtrList.length > 0 ? mergedUtrList.join(', ') : null;
+
+        const prevReceipts = String(prevRow.payment_receipt_url || prevGeneral.payment_receipt_url || prevGeneral.payment_receipt || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const newReceipts = String(cleanReceiptUrl || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const mergedReceiptList = Array.from(new Set([...prevReceipts, ...newReceipts]));
+        const finalReceiptUrl = mergedReceiptList.length > 0 ? mergedReceiptList.join(', ') : null;
+
+        const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
+        const incrementalFee = isAlreadyPaid ? newlyAddedSportsCount * 400 : computedFee;
+
+        mergedGeneralDetails.totalAmount = computedFee;
+        mergedGeneralDetails.calculatedFee = computedFee;
+        mergedGeneralDetails.incrementalFee = incrementalFee;
+        mergedGeneralDetails.paymentReceipts = mergedReceiptList;
+        mergedGeneralDetails.paymentUtrs = mergedUtrList;
+        mergedGeneralDetails.payment_receipt = finalReceiptUrl;
+        mergedGeneralDetails.payment_receipt_url = finalReceiptUrl;
+        mergedGeneralDetails.paymentReceiptUrl = finalReceiptUrl;
+        mergedGeneralDetails.payment_utr = finalPaymentUtr;
+        finalGeneralDetails = mergedGeneralDetails;
+
+        const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
+        const hasNewPayment = newUtrs.length > 0 || newReceipts.length > 0;
+        const hasNewSports = newlyAddedSportsCount > 0;
+        const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
+
+        if (prevRow.payment_status === 'approved') {
+          if (hasNewSports && !hasNewPayment && incomingStatusIsPending) {
+            finalPaymentStatus = 'approved_due';
+          } else {
+            finalPaymentStatus = 'approved';
+          }
+        } else {
+          finalPaymentStatus = 'pending';
+        }
+
+        await connection.query(
+          `UPDATE ${RPL_DB}.rpl_registrations 
+           SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
+               player_photo_url = ?, payment_status = ?, payment_utr = ?, payment_receipt_url = ?, 
+               general_details = ?, sport_answers = ?, submitted_at = NOW() 
+           WHERE id = ?`,
+          [
+            cleanFullName,
+            cleanEmail,
+            cleanMobile,
+            cleanCheckInDate,
+            cleanCheckOutDate,
+            finalPhotoUrl,
+            finalPaymentStatus,
+            finalPaymentUtr,
+            finalReceiptUrl,
+            JSON.stringify(mergedGeneralDetails),
+            JSON.stringify(mergedSportAnswers),
+            id,
+          ]
+        );
+
+        logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
+      } else {
+        id = uuidv4();
+        const newSportsCount = Math.max(1, Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.length : 1);
+        const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
+        cleanGeneralDetails.totalAmount = newFee;
+        cleanGeneralDetails.calculatedFee = newFee;
+
+        // Auto-create an Aashray guest card within the transaction
+        if (!cleanGeneralDetails.cardNo) {
+          const guestCardNo = await ensureGuestCard({
+            fullName: cleanFullName,
+            mobile: mobile10,
+            email: cleanEmail,
+            gender: cleanGeneralDetails.gender || 'Male',
+            dob: cleanGeneralDetails.dateOfBirth || null,
+            centre: cleanGeneralDetails.centre || 'Mumbai',
+            photoUrl: cleanPhotoUrl || null,
+            referrerCardNo: cleanGeneralDetails.referrerCardNo || null,
+            connection,
+          });
+          if (guestCardNo) {
+            cleanGeneralDetails.cardNo = guestCardNo;
+            logger.info(`[RPL Registration] Assigned Aashray guest card ${guestCardNo} to new player "${cleanFullName}"`);
+          }
+        }
+
+        await connection.query(
+          `INSERT INTO ${RPL_DB}.rpl_registrations 
+           (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+          [
+            id,
+            cleanFullName,
+            cleanEmail,
+            cleanMobile,
+            cleanCheckInDate,
+            cleanCheckOutDate,
+            cleanPhotoUrl,
+            cleanPaymentUtr,
+            cleanReceiptUrl,
+            JSON.stringify(cleanGeneralDetails),
+            JSON.stringify(cleanSportAnswers),
+          ]
+        );
+
+        logger.info(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Fee: ₹${newFee})`);
+      }
+
+      // Record transaction in RPL.rpl_transactions ledger
       const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
         ? finalGeneralDetails.selectedSports.join(', ')
         : (req.body.sport_id || 'Cricket');
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
-      const cleanMobDigits = cleanMobile.replace(/\D/g, '');
-      const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
+      const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
         : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || 2500);
 
-      await db.query(
+      await connection.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
@@ -354,32 +353,41 @@ router.post('/register', async (req, res) => {
           'sports',
           finalFeeVal,
           0,
-          finalPaymentUtr || 'NA',
+          finalGeneralDetails.payment_utr || 'NA',
           `RPL Season 9 Registration (${sportsList})`,
           txnStatus,
           'RPL_APP',
           req.body.razorpay_order_id || null,
         ]
       );
-    } catch (txnErr) {
-      console.warn('[RPL.rpl_transactions record notice]', txnErr.message);
+
+      // Process Room Booking within the transaction
+      accommodationResult = await processAccommodationBooking({
+        cardno: finalGeneralDetails.cardNo || null,
+        fullName: cleanFullName,
+        email: cleanEmail,
+        mobile: cleanMobile,
+        centre: finalGeneralDetails.centre || 'Mumbai',
+        gender: finalGeneralDetails.gender || 'Male',
+        checkInDate: cleanCheckInDate,
+        checkOutDate: cleanCheckOutDate,
+        accommodationRequired: finalGeneralDetails.accommodationRequired || 'No',
+        connection,
+      });
+
+      // Commit transaction
+      await connection.commit();
+      logger.info(`[RPL Registration TRANSACTION COMMITTED] ID: ${id}`);
+    } catch (txErr) {
+      await connection.rollback();
+      logger.error(`[RPL Registration TRANSACTION ROLLBACK] Registration failed: ${txErr.message}`, { error: txErr });
+      throw txErr;
+    } finally {
+      connection.release();
     }
 
-    // E. Automatically process Pre/Post Room Booking if accommodation is required
-    const accommodationResult = await processAccommodationBooking({
-      cardno: finalGeneralDetails.cardNo || null,
-      fullName: cleanFullName,
-      email: cleanEmail,
-      mobile: cleanMobile,
-      centre: finalGeneralDetails.centre || 'Mumbai',
-      gender: finalGeneralDetails.gender || 'Male',
-      checkInDate: cleanCheckInDate,
-      checkOutDate: cleanCheckOutDate,
-      accommodationRequired: finalGeneralDetails.accommodationRequired || 'No',
-    });
-
     if (accommodationResult.booked) {
-      console.log(`[RPL Accommodation SUCCESS] Pre/Post stay requests synced for "${cleanFullName}":`, accommodationResult.bookings);
+      logger.info(`[RPL Accommodation SUCCESS] Pre/Post stay requests synced for "${cleanFullName}":`, accommodationResult.bookings);
     }
 
     res.json({
@@ -390,7 +398,7 @@ router.post('/register', async (req, res) => {
       accommodation: accommodationResult,
     });
   } catch (error) {
-    console.error('Registration processing error:', error);
+    logger.error(`Registration processing error: ${error.message}`, { error });
     res.status(500).json({ error: 'Failed to process registration.' });
   }
 });
