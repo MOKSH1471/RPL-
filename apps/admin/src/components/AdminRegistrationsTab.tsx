@@ -17,9 +17,10 @@ import {
   Calendar,
   Printer,
   Archive,
+  Download,
 } from 'lucide-react';
 import { updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
-import { getDriveDirectImageUrl } from '@/lib/exportUtils';
+import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
 
@@ -37,12 +38,22 @@ export function AdminRegistrationsTab({
   onRefresh,
 }: AdminRegistrationsTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sportFilter, setSportFilter] = useState('all');
   const [accFilter, setAccFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
   const rowsPerPage = 15;
+
+  // Debounce search input by 200ms to maintain smooth 60fps scrolling
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 200);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   // Filter registrations
   const filtered = registrations.filter((r) => {
@@ -51,8 +62,8 @@ export function AdminRegistrationsTab({
     const isArchived = Boolean(r.is_archived || gen.isArchived);
 
     // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (debouncedSearch) {
+      const term = debouncedSearch.toLowerCase();
       const matchName = r.full_name?.toLowerCase().includes(term);
       const matchPhone = r.mobile?.includes(term);
       const matchEmail = r.email?.toLowerCase().includes(term);
@@ -214,24 +225,38 @@ export function AdminRegistrationsTab({
 
         </div>
 
-        {/* Counter Badge */}
-        <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-          <span>
-            Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
-          </span>
-          {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all') && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-                setSportFilter('all');
-                setAccFilter('all');
-              }}
-              className="text-amber-600 font-bold hover:underline"
-            >
-              Clear all filters
-            </button>
-          )}
+        {/* Counter Badge & Quick Export */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <div className="flex items-center space-x-3">
+            <span>
+              Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
+            </span>
+            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setSportFilter('all');
+                  setAccFilter('all');
+                }}
+                className="text-amber-600 font-bold hover:underline cursor-pointer"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => exportMasterRegistrations(filtered)}
+            disabled={filtered.length === 0}
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Download visible filtered registrations as CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Quick Export CSV ({filtered.length})</span>
+          </button>
         </div>
       </div>
 

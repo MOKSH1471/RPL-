@@ -14,6 +14,9 @@ test('GET /api/admin/stats responds with structured statistics object or DB erro
     assert.ok('stats' in data, 'Stats object must be returned');
     assert.ok('totalRegistrations' in data.stats);
     assert.ok('payment' in data.stats);
+    assert.ok('financials' in data.stats, 'financials must be in stats');
+    assert.ok('totalRevenue' in data.stats.financials);
+    assert.ok('pendingRevenue' in data.stats.financials);
   } else {
     assert.equal(data.success, false);
     assert.ok('error' in data);

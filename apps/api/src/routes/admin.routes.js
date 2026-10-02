@@ -15,6 +15,8 @@ router.get('/admin/stats', async (req, res) => {
     let rejected = 0;
     let archivedCount = 0;
     let accommodationCount = 0;
+    let totalRevenue = 0;
+    let pendingRevenue = 0;
 
     const sportsCount = {
       cricket: 0,
@@ -54,10 +56,21 @@ router.get('/admin/stats', async (req, res) => {
         return; // Exclude archived players from active tallies
       }
 
+      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+      const sportCount = Math.max(1, selected.length);
+      const calculatedFee = 2500 + Math.max(0, sportCount - 1) * 400;
+      const effectiveFee = Number(r.payment_amount) || calculatedFee;
+
       const pStatus = (r.payment_status || 'pending').toLowerCase();
-      if (pStatus === 'approved') approved++;
-      else if (pStatus === 'rejected') rejected++;
-      else pending++;
+      if (pStatus === 'approved') {
+        approved++;
+        totalRevenue += effectiveFee;
+      } else if (pStatus === 'rejected') {
+        rejected++;
+      } else {
+        pending++;
+        pendingRevenue += effectiveFee;
+      }
 
       if (gen.accommodationRequired === 'Yes') {
         accommodationCount++;
@@ -70,7 +83,6 @@ router.get('/admin/stats', async (req, res) => {
       const centreName = gen.centre || 'Unspecified';
       centresCount[centreName] = (centresCount[centreName] || 0) + 1;
 
-      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
       selected.forEach((s) => {
         const sKey = String(s).toLowerCase();
         if (sportsCount[sKey] !== undefined) {
@@ -88,6 +100,11 @@ router.get('/admin/stats', async (req, res) => {
         activeRegistrations: regs.length - archivedCount,
         archivedCount,
         payment: { approved, pending, rejected, archived: archivedCount },
+        financials: {
+          totalRevenue,
+          pendingRevenue,
+          potentialRevenue: totalRevenue + pendingRevenue,
+        },
         accommodationCount,
         sportsCount,
         tshirtSizes,

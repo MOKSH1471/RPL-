@@ -9,6 +9,8 @@ import {
   Trophy,
   Activity,
   Bed,
+  IndianRupee,
+  TrendingUp,
 } from 'lucide-react';
 
 interface AdminDashboardTabProps {
@@ -26,7 +28,10 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     );
   }
 
-  const { totalRegistrations, payment, accommodationCount, sportsCount, tshirtSizes, centresCount } = stats;
+  const { totalRegistrations, payment, financials, accommodationCount, sportsCount, tshirtSizes, centresCount } = stats;
+
+  const formatINR = (val: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   const sportLabels: Record<string, string> = {
     cricket: 'Underarm Turf Cricket',
@@ -40,6 +45,57 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
+      
+      {/* Financial Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Verified Collections */}
+        <div className="p-5 rounded-3xl bg-slate-900 border border-emerald-500/30 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Total Verified Collections</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <IndianRupee className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline space-x-2">
+            <span className="text-2xl sm:text-3xl font-black text-emerald-300 tracking-tight">
+              {formatINR(financials?.totalRevenue || (payment?.approved || 0) * 2500)}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-emerald-400/80 font-medium">Bank-cleared registration fees</p>
+        </div>
+
+        {/* Pending Collections */}
+        <div className="p-5 rounded-3xl bg-slate-900 border border-amber-500/30 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Pending Review Dues</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline space-x-2">
+            <span className="text-2xl sm:text-3xl font-black text-amber-300 tracking-tight">
+              {formatINR(financials?.pendingRevenue || (payment?.pending || 0) * 2500)}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-amber-400/80 font-medium">Under review / UTR verification</p>
+        </div>
+
+        {/* Projected Total */}
+        <div className="p-5 rounded-3xl bg-slate-900 border border-indigo-500/30 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Projected Tournament Pool</span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline space-x-2">
+            <span className="text-2xl sm:text-3xl font-black text-indigo-300 tracking-tight">
+              {formatINR(financials?.potentialRevenue || ((payment?.approved || 0) + (payment?.pending || 0)) * 2500)}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] text-indigo-400/80 font-medium">100% verified conversion potential</p>
+        </div>
+      </div>
       
       {/* KPI Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
