@@ -42,9 +42,12 @@ app.get('/card/lookup', handlePlayerLookup);
 app.get('/referrer-lookup', handleReferrerLookup);
 app.get('/reference-lookup', handleReferrerLookup);
 
-// Start Server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// Start Server if not running in test runner
+const isTestEnv = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
+if (!isTestEnv) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
 
 export default app;
