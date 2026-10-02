@@ -11,12 +11,11 @@ import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
-import { AdminPortal } from '@/components/admin/AdminPortal';
 import { Footer } from '@/components/layout/Footer';
 import { LeagueType } from '@/types';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'admin' | 'privacy' | 'terms'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
 
@@ -25,10 +24,7 @@ export function App() {
       const path = (window.location.pathname || '').toLowerCase();
       const hash = (window.location.hash || '').toLowerCase();
 
-      if (path === '/admin' || path.startsWith('/admin') || hash === '#/admin' || hash === '#admin') {
-        setCurrentPage('admin');
-        setShowIntro(false);
-      } else if (path === '/register' || path.startsWith('/register') || hash === '#/register' || hash === '#register') {
+      if (path === '/register' || path.startsWith('/register') || hash === '#/register' || hash === '#register') {
         setCurrentPage('register');
         setShowIntro(false);
       } else if (hash === '#/privacy-policy' || hash === '#privacy-policy') {
@@ -73,10 +69,6 @@ export function App() {
     window.location.hash = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  if (currentPage === 'admin') {
-    return <AdminPortal onBackToHome={handleBackToHome} />;
-  }
 
   if (currentPage === 'privacy') {
     return <PrivacyPolicyPage onBackToHome={handleBackToHome} />;
