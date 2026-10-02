@@ -1,0 +1,9 @@
+{
+  "name": "@rpl/types",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared TypeScript domain definitions and schemas for RPL monorepo",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts"
+}

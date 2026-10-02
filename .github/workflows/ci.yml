@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+
+jobs:
+  validate:
+    name: Test & Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm install
+
+      - name: Run Test Suite (24 Integration & Unit Tests)
+        run: npm test
+        env:
+          NODE_ENV: test
+          PORT: 5005
+          DB_HOST: localhost
+          DB_USER: root
+          DB_PASSWORD: test
+          DB_NAME: RPL
+          ADMIN_API_SECRET: rpl_admin_secret_key_season9
+          RAZORPAY_KEY_ID: rzp_test_TivKrz1oOVPG55
+          RAZORPAY_KEY_SECRET: TE0Ex76uPfAIQI51jtt7x301
+          RAZORPAY_WEBHOOK_SECRET: RPL9_Webhook_Secret_2026
+
+      - name: Verify Monorepo Production Builds (@rpl/web & @rpl/admin)
+        run: npm run build:all

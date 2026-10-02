@@ -39,55 +39,63 @@
 
 ---
 
-## 📁 Repository Structure
+## 📁 Repository Structure (Monorepo)
 
 ```text
 RPL/
-├── public/                    # Static assets & icons
-├── src/
-│   ├── components/
-│   │   ├── layout/            # Navbar, Footer
-│   │   ├── sections/          # HeroSection, AboutSection, LeaguesSection, GallerySection, HowItWorksSection, RegisterSection
-│   │   ├── ui/                # Stepper, InView, TextMorph, IntroSplash, GlareCard, MeshGradient, RegistrationTicket
-│   │   └── league/            # Dedicated League Sub-Views
-│   ├── lib/
-│   │   └── validation.ts      # Zod validation schemas
-│   ├── types/
-│   │   └── index.ts           # TypeScript interfaces & types
-│   ├── App.tsx                # Main App entry point
-│   ├── main.tsx               # React root DOM render
-│   └── index.css              # Custom Tailwind & theme utility layer
-├── index.html                 # HTML index entry point
-├── package.json               # Package dependencies & scripts
-├── tailwind.config.js         # Tailwind configuration
-└── vite.config.ts             # Vite build configuration
+├── apps/
+│   ├── web/                   # [PUBLIC] React 18 + Vite Registration Portal
+│   │   ├── src/               # Landing sections, dynamic multi-sport registration wizard, Razorpay checkout
+│   │   ├── public/            # Static assets & tournament photos
+│   │   ├── package.json       # Workspace: @rpl/web
+│   │   ├── vite.config.ts
+│   │   └── vercel.json        # Single Page App routing rewrites
+│   │
+│   ├── admin/                 # [ADMIN] Dedicated React 18 + Vite Management Portal
+│   │   ├── src/               # KPI dashboard, registrations grid, payment approval, room allocations, CSV exporter
+│   │   ├── package.json       # Workspace: @rpl/admin
+│   │   ├── vite.config.ts
+│   │   └── vercel.json
+│   │
+│   └── api/                   # [BACKEND] Express.js REST API
+│       ├── src/               # Modular config, routes (sports, lookup, razorpay, admin), utils
+│       ├── services/          # Accommodation booking logic
+│       ├── index.js           # Express app bootstrap
+│       └── package.json       # Workspace: @rpl/api
+│
+├── server/                    # Backward-compatible backend mirror (for Render deployments)
+├── database/                  # MySQL DDL Schemas & Seeds
+│   ├── db_schema.sql          # Table definitions (rpl_sports, rpl_registration_fields, rpl_registrations)
+│   └── db_seed.sql            # Seed sports data & questionnaire fields
+│
+├── docs/                      # Architectural reports & audits
+│   ├── BACKEND_DATABASE_REPORT.md
+│   ├── FINAL_AUDIT_AND_IMPROVEMENT_REPORT.md
+│   └── INSTRUCTIONS_AUDIT_AND_ROADMAP.md
+│
+├── package.json               # Root monorepo workspace orchestrator
+└── README.md
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-Ensure you have **Node.js** (Active LTS) installed on your machine.
-
 ### Installation
+From the repository root, install dependencies across all apps:
+```bash
+npm install
+```
 
-1. Navigate to the project folder:
-   ```bash
-   cd RPL
-   ```
+### Local Development
+* **Run Public User Site**: `npm run dev:web` (or `npm run dev`)
+* **Run Admin Dashboard**: `npm run dev:admin`
+* **Run Backend API Server**: `npm run dev:api` (or `npm run server`)
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:5173` in your browser.
+### Production Builds
+* **Build Public Web App**: `npm run build:web`
+* **Build Admin App**: `npm run build:admin`
+* **Build Everything**: `npm run build:all`
 
 4. To test on mobile devices connected to the same Wi-Fi network:
    ```bash

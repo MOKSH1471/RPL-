@@ -18,6 +18,9 @@ build/
 
 # Logs & OS noise
 *.log
+logs/
+apps/api/logs/
+*-audit.json
 .DS_Store
 Thumbs.db
 *.code-workspace

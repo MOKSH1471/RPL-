@@ -1,13 +1,25 @@
 {
-  "name": "rpl-season-9",
+  "name": "rpl-monorepo",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "npm run dev --workspace=@rpl/web",
+    "dev:web": "npm run dev --workspace=@rpl/web",
+    "dev:admin": "npm run dev --workspace=@rpl/admin",
+    "dev:api": "node server/index.js",
+    "build": "npm run build --workspace=@rpl/web",
+    "build:web": "npm run build --workspace=@rpl/web",
+    "build:admin": "npm run build --workspace=@rpl/admin",
+    "build:all": "npm run build:web && npm run build:admin",
+    "preview": "npm run preview --workspace=@rpl/web",
+    "server": "node server/index.js",
+    "test": "node --test tests/*.test.js",
+    "db:migrate": "node database/migrate.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

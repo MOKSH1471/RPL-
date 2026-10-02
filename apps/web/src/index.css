@@ -1,0 +1,218 @@
+@import './styles/receipt-printer.css';
+
+@font-face {
+  font-family: 'Conthrax';
+  src: url('/fonts/Conthrax-SemiBold.otf') format('opentype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Conthrax SemiBold';
+  src: url('/fonts/Conthrax-SemiBold.otf') format('opentype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #F8FAFC;
+    --accent-cricket: #D97706;
+    --accent-football: #059669;
+    --accent-womens: #DB2777;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
+    -webkit-text-size-adjust: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Prevent iOS auto-zoom on form field focus (must be ≥ 16px) */
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 16px;
+  }
+
+  /* Mobile active-state tap feedback */
+  a:active,
+  button:active {
+    opacity: 0.85;
+  }
+
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+    content-visibility: auto;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Conthrax', 'Conthrax SemiBold', sans-serif !important;
+  }
+
+  .font-heading {
+    font-family: 'Conthrax', 'Conthrax SemiBold', sans-serif !important;
+  }
+
+  .font-conthrax {
+    font-family: 'Conthrax', 'Conthrax SemiBold', sans-serif !important;
+  }
+
+  .font-sans {
+    font-family: 'Montserrat', system-ui, sans-serif !important;
+  }
+
+  .font-montserrat {
+    font-family: 'Montserrat', sans-serif !important;
+  }
+
+  .solid-nav {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid #E2E8F0;
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+  }
+
+  .solid-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  }
+
+  .solid-card-amber {
+    background-color: #FFFBEB;
+    border: 1px solid #FDE68A;
+  }
+
+  .solid-card-emerald {
+    background-color: #ECFDF5;
+    border: 1px solid #A7F3D0;
+  }
+
+  .solid-card-magenta {
+    background-color: #FDF2F8;
+    border: 1px solid #FBCFE8;
+  }
+
+  .text-gradient-vibrant {
+    background: linear-gradient(135deg, #F59E0B 0%, #F97316 35%, #EC4899 70%, #F43F5E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FDE047 0%, #FBBF24 30%, #F59E0B 65%, #EA580C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-royal {
+    background: linear-gradient(135deg, #38BDF8 0%, #818CF8 45%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-amber {
+    background: linear-gradient(135deg, #FDE047 0%, #FBBF24 30%, #F97316 70%, #FB7185 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-emerald {
+    background: linear-gradient(135deg, #6EE7B7 0%, #34D399 35%, #10B981 70%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-magenta {
+    background: linear-gradient(135deg, #FDA4AF 0%, #FB7185 30%, #F472B6 65%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-cyan {
+    background: linear-gradient(135deg, #67E8F9 0%, #38BDF8 40%, #06B6D4 75%, #0284C7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Safe-area aware bottom padding utility */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Custom Sleek Light Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Hide scrollbar on mobile for horizontal scroll containers */
+@media (max-width: 640px) {
+  .mobile-hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Prevent browser autofill from breaking border-radius and background colors */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: #0f172a !important;
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: inset 0 0 20px 20px transparent !important;
+}
+
