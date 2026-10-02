@@ -341,14 +341,14 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
 
       try {
         const [rplTxRes] = await db.query(
-          `UPDATE ${RPL_DB}.transactions 
+          `UPDATE ${RPL_DB}.rpl_transactions 
            SET status = 'cancelled', updatedAt = NOW() 
            WHERE bookingid = ? OR cardno IN (?)`,
           [id, cardList.length > 0 ? cardList : ['NONE']]
         );
         cancelledTransactionsCount += rplTxRes.affectedRows || 0;
       } catch (rplTxErr) {
-        console.warn('[RPL Archive] Notice updating RPL.transactions:', rplTxErr.message);
+        console.warn('[RPL Archive] Notice updating RPL.rpl_transactions:', rplTxErr.message);
       }
 
       if (cardList.length > 0) {
@@ -404,13 +404,13 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
 
       try {
         await db.query(
-          `UPDATE ${RPL_DB}.transactions 
+          `UPDATE ${RPL_DB}.rpl_transactions 
            SET status = 'completed', updatedAt = NOW() 
            WHERE bookingid = ? OR cardno IN (?)`,
           [id, cardList.length > 0 ? cardList : ['NONE']]
         );
       } catch (rplTxErr) {
-        console.warn('[RPL Unarchive] Notice restoring RPL.transactions:', rplTxErr.message);
+        console.warn('[RPL Unarchive] Notice restoring RPL.rpl_transactions:', rplTxErr.message);
       }
 
       let accommodationRestored = null;

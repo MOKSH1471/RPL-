@@ -217,13 +217,13 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         savedRegistrationId = regId;
 
-        // C. Record transaction in RPL.transactions
+        // C. Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
         const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
         const finalAmount = cleanGeneralDetails.totalAmount || cleanGeneralDetails.calculatedFee || 2500;
 
         await db.query(
-          `INSERT INTO ${RPL_DB}.transactions 
+          `INSERT INTO ${RPL_DB}.rpl_transactions 
            (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
            VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
            ON DUPLICATE KEY UPDATE 
@@ -316,10 +316,10 @@ router.post('/razorpay/webhook', async (req, res) => {
 
     console.log(`[RAZORPAY WEBHOOK] Event: ${event} | Payment ID: ${paymentId} | Order ID: ${orderId}`);
 
-    // A. Immutable event log into RPL.razorpay_webhook
+    // A. Immutable event log into RPL.rpl_razorpay_webhook
     try {
       await db.query(
-        `INSERT INTO ${RPL_DB}.razorpay_webhook (payment_id, order_id, event, json, createdAt, updatedAt)
+        `INSERT INTO ${RPL_DB}.rpl_razorpay_webhook (payment_id, order_id, event, json, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, NOW(), NOW())`,
         [paymentId, orderId, event, JSON.stringify(req.body)]
       );
@@ -331,14 +331,14 @@ router.post('/razorpay/webhook', async (req, res) => {
     if (event === 'payment.captured' || event === 'order.paid') {
       if (orderId) {
         await db.query(
-          `UPDATE ${RPL_DB}.transactions 
+          `UPDATE ${RPL_DB}.rpl_transactions 
            SET status = 'completed', upi_ref = COALESCE(?, upi_ref), updatedAt = NOW() 
            WHERE razorpay_order_id = ?`,
           [paymentId, orderId]
         );
 
         const [matchedTx] = await db.query(
-          `SELECT bookingid FROM ${RPL_DB}.transactions WHERE razorpay_order_id = ? LIMIT 1`,
+          `SELECT bookingid FROM ${RPL_DB}.rpl_transactions WHERE razorpay_order_id = ? LIMIT 1`,
           [orderId]
         );
 

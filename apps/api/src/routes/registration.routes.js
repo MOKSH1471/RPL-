@@ -291,7 +291,7 @@ router.post('/register', async (req, res) => {
       console.log(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Fee: ₹${newFee})`);
     }
 
-    // D. Record or update sports package entry in RPL.transactions table
+    // D. Record or update sports package entry in RPL.rpl_transactions table
     try {
       const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
         ? finalGeneralDetails.selectedSports.join(', ')
@@ -304,7 +304,7 @@ router.post('/register', async (req, res) => {
         : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || 2500);
 
       await db.query(
-        `INSERT INTO ${RPL_DB}.transactions 
+        `INSERT INTO ${RPL_DB}.rpl_transactions 
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
          ON DUPLICATE KEY UPDATE 
@@ -328,7 +328,7 @@ router.post('/register', async (req, res) => {
         ]
       );
     } catch (txnErr) {
-      console.warn('[RPL.transactions record notice]', txnErr.message);
+      console.warn('[RPL.rpl_transactions record notice]', txnErr.message);
     }
 
     // E. Automatically process Pre/Post Room Booking if accommodation is required
