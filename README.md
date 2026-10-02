@@ -43,24 +43,46 @@
 
 ```text
 RPL/
-├── public/                    # Static assets & icons
-├── src/
+├── database/                  # MySQL DDL Schemas & Seeds
+│   ├── db_schema.sql          # Table definitions (rpl_sports, rpl_registration_fields, rpl_registrations)
+│   └── db_seed.sql            # Seed sports data & questionnaire fields
+│
+├── docs/                      # Architectural reports & audits
+│   ├── BACKEND_DATABASE_REPORT.md
+│   ├── FINAL_AUDIT_AND_IMPROVEMENT_REPORT.md
+│   └── INSTRUCTIONS_AUDIT_AND_ROADMAP.md
+│
+├── public/                    # Static assets, fonts, official payment QR, & compressed photo gallery
+│   ├── fonts/                 # Conthrax font assets
+│   └── rpl-photos/            # Tournament match photos & WebP thumbnails
+│
+├── server/                    # Express.js REST API Backend
+│   ├── services/              # Accommodation booking & external services
+│   ├── db.js                  # MySQL2 connection pool with SSL
+│   ├── index.js               # REST API endpoints, Razorpay orders, webhooks, admin auth
+│   ├── package.json           # Backend dependencies
+│   └── .env.example           # Backend environment configuration
+│
+├── src/                       # Frontend React Application
 │   ├── components/
+│   │   ├── admin/             # Admin Portal (Dashboard, Registrations grid, Accommodations, Export)
 │   │   ├── layout/            # Navbar, Footer
-│   │   ├── sections/          # HeroSection, AboutSection, LeaguesSection, GallerySection, HowItWorksSection, RegisterSection
-│   │   ├── ui/                # Stepper, InView, TextMorph, IntroSplash, GlareCard, MeshGradient, RegistrationTicket
-│   │   └── league/            # Dedicated League Sub-Views
-│   ├── lib/
-│   │   └── validation.ts      # Zod validation schemas
-│   ├── types/
-│   │   └── index.ts           # TypeScript interfaces & types
-│   ├── App.tsx                # Main App entry point
+│   │   ├── league/            # Dedicated League Sub-Views (Cricket, Football, Women's)
+│   │   ├── pages/             # Registration wizard, Privacy Policy, Terms & Conditions
+│   │   ├── sections/          # Landing sections (Hero, About, Leagues, Schedule, Gallery)
+│   │   └── ui/                # UI design system & interactive widgets
+│   ├── lib/                   # API client (api.ts), validation, dynamic schemas, export utils
+│   ├── types/                 # TypeScript interfaces & types
+│   ├── App.tsx                # Client-side router & entry point
 │   ├── main.tsx               # React root DOM render
 │   └── index.css              # Custom Tailwind & theme utility layer
+│
 ├── index.html                 # HTML index entry point
-├── package.json               # Package dependencies & scripts
+├── package.json               # Frontend package dependencies & scripts
 ├── tailwind.config.js         # Tailwind configuration
-└── vite.config.ts             # Vite build configuration
+├── tsconfig.json              # TypeScript root configuration
+├── vercel.json                # Vercel deployment & SPA routing rewrites
+└── vite.config.ts             # Vite build configuration (single source of truth)
 ```
 
 ---
