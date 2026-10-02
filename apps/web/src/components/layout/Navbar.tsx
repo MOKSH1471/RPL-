@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Menu, X, ArrowRight } from 'lucide-react';
+import { Trophy, Menu, X, ArrowRight, Search } from 'lucide-react';
 import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
@@ -276,6 +276,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
 
+              {/* Check Pass / Pay Due CTA */}
+              <button
+                type="button"
+                onClick={() => {
+                  document.body.style.overflow = '';
+                  setMobileMenuOpen(false);
+                  window.location.hash = 'register?checkPass=1';
+                  onRegisterClick();
+                }}
+                className="hidden sm:flex py-1.5 px-3 sm:px-3.5 sm:py-2 rounded-full bg-amber-50/80 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] sm:text-xs uppercase tracking-wider items-center space-x-1.5 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+              >
+                <Search className="w-3.5 h-3.5 text-amber-600" />
+                <span>Check Pass</span>
+              </button>
+
               {/* Primary "Register Now" CTA with Character Flip Animation */}
               <motion.button
                 type="button"
@@ -373,7 +388,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </nav>
 
                   {/* Bottom Register CTA in Mobile Menu */}
-                  <div className="pt-2 border-t border-slate-100">
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -385,6 +400,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <span>Register for Season 9</span>
                       <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.body.style.overflow = '';
+                        setMobileMenuOpen(false);
+                        window.location.hash = 'register?checkPass=1';
+                        onRegisterClick();
+                      }}
+                      className="w-full py-2 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs uppercase tracking-wider border border-amber-300 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[38px]"
+                    >
+                      <Search className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Check Pass / Pay Due</span>
                     </button>
                   </div>
                 </div>

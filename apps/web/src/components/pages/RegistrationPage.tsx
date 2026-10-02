@@ -294,14 +294,30 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlMob = params.get('mobile') || params.get('phone') || params.get('check');
-      const shouldPay = params.get('pay') === '1' || params.get('pay') === 'true';
-      if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
-        setCheckStatusMobile(urlMob.replace(/\D/g, ''));
-        setAutoTriggerPay(shouldPay);
-        setIsCheckStatusOpen(true);
-      }
+      const parseParams = () => {
+        const searchParams = new URLSearchParams(window.location.search);
+        let hashQuery = '';
+        if (window.location.hash && window.location.hash.includes('?')) {
+          hashQuery = window.location.hash.substring(window.location.hash.indexOf('?'));
+        }
+        const hashParams = new URLSearchParams(hashQuery);
+
+        const urlMob = searchParams.get('mobile') || searchParams.get('phone') || searchParams.get('check') || hashParams.get('mobile') || hashParams.get('phone') || hashParams.get('check');
+        const shouldPay = searchParams.get('pay') === '1' || searchParams.get('pay') === 'true' || hashParams.get('pay') === '1' || hashParams.get('pay') === 'true';
+        const openCheckPass = searchParams.get('checkPass') === '1' || hashParams.get('checkPass') === '1';
+
+        if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
+          setCheckStatusMobile(urlMob.replace(/\D/g, ''));
+          setAutoTriggerPay(shouldPay);
+          setIsCheckStatusOpen(true);
+        } else if (openCheckPass) {
+          setIsCheckStatusOpen(true);
+        }
+      };
+
+      parseParams();
+      window.addEventListener('hashchange', parseParams);
+      return () => window.removeEventListener('hashchange', parseParams);
     }
   }, []);
 
