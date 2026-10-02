@@ -36,6 +36,17 @@ export function CheckStatusModal({
   const [matchedRecord, setMatchedRecord] = useState<any | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any | null>(null);
+  const [serverWakingHint, setServerWakingHint] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (loading || isProcessingPayment) {
+      timer = setTimeout(() => setServerWakingHint(true), 2500);
+    } else {
+      setServerWakingHint(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading, isProcessingPayment]);
 
   useEffect(() => {
     if (initialMobile) {
@@ -242,6 +253,14 @@ export function CheckStatusModal({
                 <span>{loading ? 'Searching...' : 'Find Pass'}</span>
               </button>
             </form>
+
+            {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+            {serverWakingHint && (loading || isProcessingPayment) && (
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center space-x-2 animate-in fade-in duration-300">
+                <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
+              </div>
+            )}
 
             {/* Error Message */}
             {searchError && (

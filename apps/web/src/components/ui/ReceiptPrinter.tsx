@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Scissors,
+  MessageCircle,
 } from 'lucide-react';
 
 import { downloadReceiptAsImage } from '@/lib/receiptImageGenerator';
@@ -231,6 +232,32 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
     });
   };
 
+  const handleWhatsAppShare = () => {
+    const rawMobile = data.mobileNumber || '';
+    const cleanMob = rawMobile.replace(/\D/g, '').slice(-10);
+    const domain = typeof window !== 'undefined' ? window.location.origin : 'https://rpl-s9.vercel.app';
+    const passUrl = cleanMob ? `${domain}/?mobile=${cleanMob}` : domain;
+
+    const message = [
+      `🏏 *RAJ PREMIER LEAGUE (RPL SEASON 9)*`,
+      `*Official Participant Pass*`,
+      ``,
+      `👤 *Player:* ${data.fullName || 'Participant'}`,
+      `🎫 *Pass ID:* ${registrationId}`,
+      `⚡ *Sports:* ${sportsList.map(formatSportName).join(', ')}`,
+      `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
+      `📍 *Centre:* ${data.centre || 'Mumbai'}`,
+      `🏨 *Stay:* ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}`,
+      `✅ *Status:* ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL / VERIFIED' : '⏳ PAYMENT DUE'}`,
+      ``,
+      `👉 *View & Download Official Pass:*`,
+      passUrl,
+    ].join('\n');
+
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleSharePass = async () => {
     const summaryText = `🏏 RAJ PREMIER LEAGUE (RPL SEASON 9)\nOfficial Player Pass\nPlayer: ${data.fullName || 'Participant'}\nPass ID: ${registrationId}\nSports: ${sportsList.map(formatSportName).join(', ')}\nStatus: ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}`;
     const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mobile=${data.mobileNumber || ''}` : '';
@@ -293,12 +320,23 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
           <span className="hidden sm:inline">Download</span>
         </button>
 
+        {/* Direct WhatsApp Share Button */}
+        <button
+          type="button"
+          onClick={handleWhatsAppShare}
+          className="flex items-center space-x-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-300 transition-all cursor-pointer text-xs font-bold shadow-xs active:scale-95"
+          title="Share Pass directly on WhatsApp"
+        >
+          <MessageCircle className="w-4 h-4 text-emerald-600" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </button>
+
         {/* Native 1-Tap Share / Copy Pass */}
         <button
           type="button"
           onClick={handleSharePass}
           className="flex items-center space-x-1 px-3 py-1 rounded-full text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold"
-          title="Share Pass via WhatsApp / Mobile"
+          title="Share Pass via Native Share / Copy Summary"
         >
           {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-amber-600" />}
           <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>

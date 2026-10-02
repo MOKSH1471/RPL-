@@ -404,45 +404,72 @@ router.post('/razorpay/webhook', async (req, res) => {
       }
     }
 
-    // B. Fail-Safe Webhook Fallback: Update transaction & approve player registration asynchronously
+    // B. Fail-Safe Webhook Fallback: Upsert transaction & approve player registration asynchronously
     if (event === 'payment.captured' || event === 'order.paid') {
       if (orderId) {
-        await db.query(
-          `UPDATE ${RPL_DB}.rpl_transactions 
-           SET status = 'completed', upi_ref = COALESCE(?, upi_ref), updatedAt = NOW() 
-           WHERE razorpay_order_id = ?`,
-          [paymentId, orderId]
-        );
-
+        const payerPhone = (payment.contact || (payment.notes && payment.notes.mobile) || '').replace(/\D/g, '').slice(-10);
         let targetRegId = null;
+        let targetReg = null;
+
+        // 1. Locate registration by existing transaction or player mobile
         const [matchedTx] = await db.query(
           `SELECT bookingid FROM ${RPL_DB}.rpl_transactions WHERE razorpay_order_id = ? LIMIT 1`,
           [orderId]
         );
 
-        if (matchedTx.length > 0 && matchedTx[0].bookingid && !matchedTx[0].bookingid.startsWith('PENDING_')) {
+        if (matchedTx.length > 0 && matchedTx[0].bookingid && !matchedTx[0].bookingid.startsWith('PENDING_') && !matchedTx[0].bookingid.startsWith('WEBHOOK_')) {
           targetRegId = matchedTx[0].bookingid;
-        } else {
-          // Fail-Safe Fallback: Locate pending registration by payer contact or notes
-          const payerPhone = (payment.contact || (payment.notes && payment.notes.mobile) || '').replace(/\D/g, '').slice(-10);
-          if (payerPhone && payerPhone.length === 10) {
-            const [matchedRegs] = await db.query(
-              `SELECT id FROM ${RPL_DB}.rpl_registrations 
-               WHERE REPLACE(REPLACE(mobile, '+91', ''), ' ', '') LIKE ? AND payment_status = 'pending' 
-               ORDER BY submitted_at DESC LIMIT 1`,
-              [`%${payerPhone}`]
-            );
-            if (matchedRegs.length > 0) {
-              targetRegId = matchedRegs[0].id;
-              // Link registration ID to transaction
-              await db.query(
-                `UPDATE ${RPL_DB}.rpl_transactions SET bookingid = ? WHERE razorpay_order_id = ?`,
-                [targetRegId, orderId]
-              );
-            }
+          const [foundRegs] = await db.query(
+            `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations WHERE id = ? LIMIT 1`,
+            [targetRegId]
+          );
+          if (foundRegs.length > 0) targetReg = foundRegs[0];
+        } else if (payerPhone && payerPhone.length === 10) {
+          const [matchedRegs] = await db.query(
+            `SELECT id, full_name, mobile, general_details, payment_status FROM ${RPL_DB}.rpl_registrations 
+             WHERE (REPLACE(REPLACE(mobile, '+91', ''), ' ', '') LIKE ? OR id = ?)
+             ORDER BY submitted_at DESC LIMIT 1`,
+            [`%${payerPhone}`, payment.notes?.registration_id || '']
+          );
+          if (matchedRegs.length > 0) {
+            targetReg = matchedRegs[0];
+            targetRegId = targetReg.id;
           }
         }
 
+        // 2. Prepare transaction data & ALWAYS insert/upsert into rpl_transactions
+        const finalAmount = Math.round(Number(payment.amount || 250000) / 100);
+        let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
+        let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
+
+        if (targetReg?.general_details) {
+          try {
+            const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
+            if (gd.cardNo) cardNoVal = gd.cardNo;
+          } catch (e) {}
+        }
+
+        await db.query(
+          `INSERT INTO ${RPL_DB}.rpl_transactions 
+           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+           VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
+           ON DUPLICATE KEY UPDATE 
+             bookingid = COALESCE(VALUES(bookingid), bookingid),
+             amount = VALUES(amount),
+             upi_ref = COALESCE(VALUES(upi_ref), upi_ref),
+             status = 'completed',
+             updatedAt = NOW()`,
+          [
+            cardNoVal,
+            targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
+            finalAmount,
+            paymentId,
+            `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
+            orderId,
+          ]
+        );
+
+        // 3. Mark player registration as approved if matched
         if (targetRegId) {
           await db.query(
             `UPDATE ${RPL_DB}.rpl_registrations 
@@ -450,7 +477,7 @@ router.post('/razorpay/webhook', async (req, res) => {
              WHERE id = ?`,
             [paymentId, targetRegId]
           );
-          console.log(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" confirmed via webhook.`);
+          console.log(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" and transaction confirmed via webhook.`);
         }
       }
     }

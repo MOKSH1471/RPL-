@@ -16,6 +16,7 @@ import {
   exportSportSquadSheet,
   exportAccommodationGateList,
   exportTransactionsLedger,
+  exportKitDistributionSheet,
 } from '@/lib/exportUtils';
 import { fetchAdminTransactions } from '@/lib/api';
 
@@ -207,6 +208,27 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           >
             {isExportingLedger ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             <span>{isExportingLedger ? 'Generating Ledger...' : 'Download Financial Audit Ledger CSV'}</span>
+          </button>
+        </div>
+
+        {/* 8. Tournament Kit & Jersey Distribution Checklist */}
+        <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <h4 className="font-extrabold text-base text-slate-900">Kit & Jersey Distribution Checklist</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Printable sign-off sheet for registration desk volunteers to verify player payment status, hand over kit & jersey, and collect receiver signatures.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => exportKitDistributionSheet(registrations)}
+            className="w-full py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download Kit Handover Checklist CSV</span>
           </button>
         </div>
 

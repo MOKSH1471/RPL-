@@ -262,6 +262,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
+  const [serverWakingHint, setServerWakingHint] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (isSubmitting || isRazorpayLoading) {
+      timer = setTimeout(() => setServerWakingHint(true), 2500);
+    } else {
+      setServerWakingHint(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isSubmitting, isRazorpayLoading]);
 
   // Pre-load Razorpay checkout script on mount
   useEffect(() => {
@@ -3311,6 +3322,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </>
                   )}
                 </button>
+
+                {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+                {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
+                  <div className="mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
+                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                    <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
+                  </div>
+                )}
 
               </div>
             </InView>

@@ -44,15 +44,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
-    if (req.originalUrl === '/health' || req.originalUrl === '/ready') return;
+    if (req.originalUrl === '/health' || req.originalUrl === '/ready' || req.originalUrl === '/api/health' || req.originalUrl === '/api/ready') return;
     const duration = Date.now() - start;
     console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} (${duration}ms)`);
   });
   next();
 });
 
-// 1. Health & Readiness Probes (Root level)
+// 1. Health & Readiness Probes (Root level & /api level)
 app.use('/', healthRoutes);
+app.use('/api', healthRoutes);
 
 // 2. Sensitive Route Rate Limiting
 app.use(['/api/player-lookup', '/mumukshu-lookup', '/card/lookup'], lookupRateLimiter);

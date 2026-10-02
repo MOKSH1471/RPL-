@@ -253,3 +253,58 @@ export function exportTransactionsLedger(transactions: any[]) {
   downloadCSV(csvContent, `RPL9_Razorpay_Audit_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
+// 6. Export Tournament Kit & Jersey Distribution Handover Sheet (Registration Desk Printout)
+export function exportKitDistributionSheet(registrations: any[]) {
+  const headers = [
+    'Sr No',
+    'Registration ID',
+    'Player Name',
+    'Mobile',
+    'Centre',
+    'Payment Status',
+    'Jersey Size',
+    'Jersey Name Back',
+    'Jersey Number',
+    'Food Preference',
+    'Accommodation Status',
+    '[ ] Kit Handed Over',
+    '[ ] Jersey Handed Over',
+    'Receiver Signature / Volunteer Notes',
+  ];
+
+  const activeOnly = registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived);
+
+  // Sort approved first, then alphabetically by name
+  activeOnly.sort((a, b) => {
+    const aApp = (a.payment_status || 'pending').toLowerCase() === 'approved';
+    const bApp = (b.payment_status || 'pending').toLowerCase() === 'approved';
+    if (aApp && !bApp) return -1;
+    if (!aApp && bApp) return 1;
+    return String(a.full_name || '').localeCompare(String(b.full_name || ''));
+  });
+
+  const rows = activeOnly.map((r, idx) => {
+    const gen = r.general_details || {};
+    const stay = gen.accommodationRequired === 'Yes' ? 'Ashram Stay' : (gen.stayingRoomNumber ? `Self (${gen.stayingRoomNumber})` : 'Self-Arranged');
+    return [
+      idx + 1,
+      escapeCSV(r.id),
+      escapeCSV(r.full_name),
+      escapeCSV(r.mobile),
+      escapeCSV(gen.centre || ''),
+      escapeCSV((r.payment_status || 'pending').toUpperCase()),
+      escapeCSV(gen.tshirtSize || 'L'),
+      escapeCSV(gen.customJerseyName || r.full_name?.toUpperCase() || ''),
+      escapeCSV(gen.preferredJerseyNumber || '-'),
+      escapeCSV(gen.foodPreference || 'Regular'),
+      escapeCSV(stay),
+      escapeCSV('[   ]'),
+      escapeCSV('[   ]'),
+      escapeCSV(''),
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  downloadCSV(csvContent, `RPL9_Kit_Distribution_Checklist_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+

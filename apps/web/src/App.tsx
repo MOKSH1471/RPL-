@@ -14,6 +14,7 @@ import { TermsPage } from '@/components/pages/TermsPage';
 import { Footer } from '@/components/layout/Footer';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { LeagueType } from '@/types';
+import { warmUpBackend } from '@/lib/api';
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms'>('home');
@@ -22,6 +23,11 @@ export function App() {
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
   const [checkStatusMobile, setCheckStatusMobile] = useState('');
   const [autoTriggerPay, setAutoTriggerPay] = useState(false);
+
+  // Background server spin-up on visit
+  useEffect(() => {
+    warmUpBackend();
+  }, []);
 
   useEffect(() => {
     const parseParams = () => {
