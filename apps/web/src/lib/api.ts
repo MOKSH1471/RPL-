@@ -6,6 +6,14 @@ const rawBase = import.meta.env.VITE_API_URL || defaultApiUrl;
 const cleanBase = String(rawBase).trim().replace(/\/+$/, '');
 const API_BASE_URL = cleanBase.endsWith('/api') ? cleanBase : `${cleanBase}/api`;
 
+// Background warm-up ping to eliminate Render free tier cold-start latency
+export function warmUpBackend() {
+  if (typeof window === 'undefined') return;
+  fetch(`${API_BASE_URL.replace(/\/api$/, '')}/health`, { method: 'GET', keepalive: true }).catch(() => {});
+}
+// Trigger opportunistically on module load
+warmUpBackend();
+
 
 
 export async function fetchSports(): Promise<DynamicSport[]> {

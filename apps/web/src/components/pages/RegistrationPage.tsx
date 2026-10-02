@@ -32,6 +32,7 @@ function loadRazorpayScript(): Promise<boolean> {
 }
 
 import { RegistrationTicket } from '@/components/ui/RegistrationTicket';
+import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { InView } from '@/components/ui/in-view';
 import BasicDropdown, { DropdownItem } from '@/components/ui/accordion-2';
 import { OptionSelector } from '@/components/ui/OptionSelector';
@@ -66,6 +67,7 @@ import {
   Printer,
   ZoomIn,
   Maximize2,
+  Clock,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -285,6 +287,24 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [referrerFoundInfo, setReferrerFoundInfo] = useState<{ name: string; cardNo?: string; centre?: string } | null>(null);
   const [referrerLookupError, setReferrerLookupError] = useState<string | null>(null);
 
+  // Check pass & pay due modal state + deep-link handling
+  const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
+  const [checkStatusMobile, setCheckStatusMobile] = useState('');
+  const [autoTriggerPay, setAutoTriggerPay] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlMob = params.get('mobile') || params.get('phone') || params.get('check');
+      const shouldPay = params.get('pay') === '1' || params.get('pay') === 'true';
+      if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
+        setCheckStatusMobile(urlMob.replace(/\D/g, ''));
+        setAutoTriggerPay(shouldPay);
+        setIsCheckStatusOpen(true);
+      }
+    }
+  }, []);
+
   // Dynamic fee calculation:
   // 1. Returning Paid Participant Adding New Sports:
   //    - Base fee already paid for previouslyPaidSportsCount
@@ -324,6 +344,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     register,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     clearErrors,
     formState: { errors },
@@ -1479,7 +1500,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           </button>
 
           <div className="flex items-center space-x-2">
-            <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
+            <button
+              type="button"
+              onClick={() => {
+                const currentMob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                if (currentMob && currentMob.length === 10) {
+                  setCheckStatusMobile(currentMob);
+                }
+                setIsCheckStatusOpen(true);
+              }}
+              className="flex items-center space-x-1.5 px-3 sm:px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-xs sm:text-sm transition-all active:scale-95 touch-manipulation cursor-pointer min-h-[44px]"
+            >
+              <Search className="w-4 h-4 text-amber-600" />
+              <span>Check Pass / Pay Due</span>
+            </button>
+            <span className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               <span>Season 9 Official Portal</span>
             </span>
@@ -1501,6 +1536,35 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           <p className="text-slate-600 text-xs sm:text-base font-medium mb-6">
             Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.
           </p>
+
+          {/* Smart In-Form Pending Payment Banner */}
+          {isExistingPlayerRegistration && existingPaymentStatus === 'pending' && (
+            <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-400">
+              <div className="space-y-1 text-center sm:text-left">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  <span>Registration Saved • Payment Due</span>
+                </div>
+                <h4 className="font-black text-slate-900 text-base">
+                  Welcome back, {getValues('fullName') || 'Player'}!
+                </h4>
+                <p className="text-xs text-slate-600 font-medium">
+                  Your registration details are saved in the system. Complete payment to activate your official pass.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckStatusMobile(cleanPhoneNumber(getValues('mobileNumber') || ''));
+                  setIsCheckStatusOpen(true);
+                }}
+                className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center space-x-2 shadow-sm transition-all active:scale-95 shrink-0 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Pay Now & Get Pass</span>
+              </button>
+            </div>
+          )}
 
           {/* Sleek Milestone Progress Track */}
           <div className="max-w-md mx-auto px-1">
@@ -3363,6 +3427,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           </AnimatePresence>,
           document.body
         )}
+
+      {/* Find My Pass & Complete Payment Modal */}
+      <CheckStatusModal
+        isOpen={isCheckStatusOpen}
+        onClose={() => {
+          setIsCheckStatusOpen(false);
+          setAutoTriggerPay(false);
+        }}
+        initialMobile={checkStatusMobile}
+        autoTriggerPay={autoTriggerPay}
+      />
     </div>
   );
 };

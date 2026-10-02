@@ -231,6 +231,26 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
     });
   };
 
+  const handleSharePass = async () => {
+    const summaryText = `🏏 RAJ PREMIER LEAGUE (RPL SEASON 9)\nOfficial Player Pass\nPlayer: ${data.fullName || 'Participant'}\nPass ID: ${registrationId}\nSports: ${sportsList.map(formatSportName).join(', ')}\nStatus: ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}`;
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mobile=${data.mobileNumber || ''}` : '';
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `RPL Season 9 Pass - ${data.fullName || 'Player'}`,
+          text: summaryText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    // Fallback: Copy to clipboard
+    handleCopySummary();
+  };
+
   return (
     <div className={`w-full flex flex-col items-center select-none ${className}`}>
       {/* Centered Controls Bar ABOVE the Machine */}
@@ -266,20 +286,22 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
         <button
           type="button"
           onClick={handleDownloadReceipt}
-          className="p-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="flex items-center space-x-1 px-3 py-1 rounded-full text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold"
           title="Download Receipt Image (.png)"
         >
           <Download className="w-4 h-4 text-amber-600" />
+          <span className="hidden sm:inline">Download</span>
         </button>
 
-        {/* Copy pass */}
+        {/* Native 1-Tap Share / Copy Pass */}
         <button
           type="button"
-          onClick={handleCopySummary}
-          className="p-1.5 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-          title="Copy Pass Info"
+          onClick={handleSharePass}
+          className="flex items-center space-x-1 px-3 py-1 rounded-full text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold"
+          title="Share Pass via WhatsApp / Mobile"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-slate-600" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-amber-600" />}
+          <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
         </button>
       </div>
 

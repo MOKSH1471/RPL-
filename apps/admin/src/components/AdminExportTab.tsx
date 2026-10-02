@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Download,
   FileSpreadsheet,
@@ -7,13 +7,17 @@ import {
   Bed,
   Sparkles,
   CheckCircle2,
+  CreditCard,
+  RefreshCw,
 } from 'lucide-react';
 import {
   exportMasterRegistrations,
   exportJerseyVendorSheet,
   exportSportSquadSheet,
   exportAccommodationGateList,
+  exportTransactionsLedger,
 } from '@/lib/exportUtils';
+import { fetchAdminTransactions } from '@/lib/api';
 
 interface AdminExportTabProps {
   registrations: any[];
@@ -21,6 +25,21 @@ interface AdminExportTabProps {
 }
 
 export function AdminExportTab({ registrations, accommodationList }: AdminExportTabProps) {
+  const [isExportingLedger, setIsExportingLedger] = useState(false);
+
+  const handleExportLedger = async () => {
+    setIsExportingLedger(true);
+    try {
+      const res = await fetchAdminTransactions({ status: undefined });
+      if (res && res.transactions) {
+        exportTransactionsLedger(res.transactions);
+      }
+    } catch (err) {
+      alert('Failed to export transaction ledger: ' + (err as any).message);
+    } finally {
+      setIsExportingLedger(false);
+    }
+  };
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -166,6 +185,28 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           >
             <Download className="w-4 h-4" />
             <span>Download Ashram Gate List</span>
+          </button>
+        </div>
+
+        {/* 7. Razorpay Financial Audit & Reconciliation Ledger */}
+        <div className="p-6 rounded-3xl bg-white border border-emerald-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 bg-gradient-to-br from-white to-emerald-50/20">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <h4 className="font-extrabold text-base text-slate-900">Razorpay Financial Audit Ledger</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Official transaction reconciliation export from <code className="text-emerald-700 font-mono">rpl_transactions</code> with Order IDs, Payment IDs/UTRs, Player Names, and Bank Statuses.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={isExportingLedger}
+            onClick={handleExportLedger}
+            className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98 disabled:opacity-50"
+          >
+            {isExportingLedger ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            <span>{isExportingLedger ? 'Generating Ledger...' : 'Download Financial Audit Ledger CSV'}</span>
           </button>
         </div>
 

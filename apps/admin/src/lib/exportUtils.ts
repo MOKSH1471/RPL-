@@ -216,3 +216,40 @@ export function exportAccommodationGateList(accommodationList: any[]) {
   const csvContent = [headers.join(','), ...rows].join('\n');
   downloadCSV(csvContent, `RPL9_Ashram_Accommodation_GateList_${new Date().toISOString().slice(0, 10)}.csv`);
 }
+
+// 5. Export Razorpay Transactions & Financial Audit Ledger
+export function exportTransactionsLedger(transactions: any[]) {
+  const headers = [
+    'Transaction ID',
+    'Razorpay Order ID',
+    'Payment ID / UPI Ref',
+    'Player Name',
+    'Contact Mobile',
+    'Email Address',
+    'Amount (INR)',
+    'Status',
+    'Description / Failure Cause',
+    'Updated By',
+    'Created At',
+    'Updated At',
+  ];
+
+  const rows = transactions.map((t) => [
+    t.id,
+    escapeCSV(t.razorpay_order_id),
+    escapeCSV(t.upi_ref),
+    escapeCSV(t.player_name || 'Guest / Intent User'),
+    escapeCSV(t.player_mobile || t.cardno),
+    escapeCSV(t.player_email),
+    t.amount || 0,
+    escapeCSV(t.status?.toUpperCase()),
+    escapeCSV(t.description),
+    escapeCSV(t.updatedBy),
+    escapeCSV(t.createdAt ? new Date(t.createdAt).toLocaleString('en-IN') : ''),
+    escapeCSV(t.updatedAt ? new Date(t.updatedAt).toLocaleString('en-IN') : ''),
+  ].join(','));
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  downloadCSV(csvContent, `RPL9_Razorpay_Audit_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
