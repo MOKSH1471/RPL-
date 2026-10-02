@@ -407,23 +407,32 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
 
               {/* UTR Badges */}
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-                <span className="font-semibold text-slate-600 block">Transaction UTR / Ref:</span>
+                <span className="font-semibold text-slate-600 block">Transaction Reference / Gateway ID:</span>
                 {utrList.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {utrList.map((utr, idx) => (
-                      <span
-                        key={idx}
-                        className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px] inline-flex items-center space-x-1"
-                      >
-                        {utrList.length > 1 && <span className="text-amber-700 font-extrabold mr-1">#{idx + 1}:</span>}
-                        <span>{utr}</span>
-                      </span>
-                    ))}
+                    {utrList.map((utr, idx) => {
+                      const isRzp = String(utr).startsWith('pay_');
+                      return (
+                        <span
+                          key={idx}
+                          className={`font-mono font-bold px-2 py-0.5 rounded border text-[11px] inline-flex items-center space-x-1 ${
+                            isRzp
+                              ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold'
+                              : 'bg-white text-slate-900 border-slate-200'
+                          }`}
+                        >
+                          {isRzp && <span className="text-amber-500">⚡</span>}
+                          {utrList.length > 1 && <span className="text-amber-700 font-extrabold mr-1">#{idx + 1}:</span>}
+                          <span>{isRzp ? `Razorpay: ${utr}` : utr}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 ) : (
                   <span className="font-mono text-slate-400 italic">Not Provided</span>
                 )}
               </div>
+
 
               {/* Multi-Receipt Preview Cards */}
               {receiptList.length > 0 ? (

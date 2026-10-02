@@ -1,8 +1,12 @@
 import { DynamicField, DynamicSport } from '@/types';
 
-const rawBase = import.meta.env.VITE_API_URL || 'https://rpl-back.onrender.com/api';
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const defaultApiUrl = isLocalhost ? 'http://localhost:5005/api' : 'https://rpl-back.onrender.com/api';
+const rawBase = import.meta.env.VITE_API_URL || defaultApiUrl;
 const cleanBase = String(rawBase).trim().replace(/\/+$/, '');
 const API_BASE_URL = cleanBase.endsWith('/api') ? cleanBase : `${cleanBase}/api`;
+
+
 
 export async function fetchSports(): Promise<DynamicSport[]> {
   try {
@@ -262,3 +266,44 @@ export async function assignRoomNumber(bookingid: string, roomno: string) {
   if (!res.ok) throw new Error(data.error || `Failed to assign room number (Status ${res.status})`);
   return data;
 }
+
+export interface CreateOrderParams {
+  fullName: string;
+  email: string;
+  mobile: string;
+  selectedSports: string[];
+  isExistingPlayer?: boolean;
+  previouslyPaidSportsCount?: number;
+  hasPreviouslyPaid?: boolean;
+  registrationId?: string;
+}
+
+export async function createRazorpayOrder(params: CreateOrderParams) {
+  const res = await fetch(`${API_BASE_URL}/razorpay/create-order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to create payment order (Status ${res.status})`);
+  return data;
+}
+
+export interface VerifyPaymentParams {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+  registrationPayload: Record<string, any>;
+}
+
+export async function verifyRazorpayPayment(params: VerifyPaymentParams) {
+  const res = await fetch(`${API_BASE_URL}/razorpay/verify-payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to verify payment (Status ${res.status})`);
+  return data;
+}
+

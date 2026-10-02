@@ -119,11 +119,15 @@ export interface RegistrationFormData {
   totalAmount?: number;
   calculatedFee?: number;
 
-  // Payment proof
+  // Payment proof & status
   payment_receipt?: string;
   paymentReceiptUrl?: string;
   payment_utr?: string;
+  paymentUtr?: string;
+  payment_status?: string;
+  paymentStatus?: string;
 }
+
 
 export interface StatItem {
   id: string;

@@ -403,11 +403,23 @@ export function AdminRegistrationsTab({
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            {utrList.length > 0 && (
-                              <span className="font-mono text-[10px] text-slate-500 block truncate max-w-[120px]" title={utrList.join(', ')}>
-                                UTR: {utrList.join(', ')}
-                              </span>
-                            )}
+                            {utrList.map((utr, uIdx) => {
+                              const isRzp = String(utr).startsWith('pay_');
+                              return (
+                                <span
+                                  key={uIdx}
+                                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border inline-flex items-center space-x-1 ${
+                                    isRzp
+                                      ? 'bg-blue-50 text-blue-800 border-blue-200 font-bold'
+                                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                                  }`}
+                                  title={utr}
+                                >
+                                  {isRzp && <span className="text-amber-500">⚡</span>}
+                                  <span>{isRzp ? 'Razorpay: ' : 'UTR: '}{utr.length > 14 ? `${utr.slice(0, 14)}...` : utr}</span>
+                                </span>
+                              );
+                            })}
                             {receiptList.map((url, rIdx) => (
                               <a
                                 key={rIdx}
@@ -423,6 +435,7 @@ export function AdminRegistrationsTab({
                               </a>
                             ))}
                           </div>
+
                         </div>
                       </td>
 

@@ -6,8 +6,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { cleanPhoneNumber, registrationSchema, RegistrationSchemaType } from '@/lib/validation';
 import { SportType, RegistrationFormData, DynamicField } from '@/types';
-import { uploadFileToDrive, submitRegistration, fetchRegistrationFields, lookupMumukshu, lookupReferrer } from '@/lib/api';
+import { 
+  uploadFileToDrive, 
+  submitRegistration, 
+  fetchRegistrationFields, 
+  lookupMumukshu, 
+  lookupReferrer,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+} from '@/lib/api';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 import { RegistrationTicket } from '@/components/ui/RegistrationTicket';
 import { InView } from '@/components/ui/in-view';
 import BasicDropdown, { DropdownItem } from '@/components/ui/accordion-2';
@@ -218,26 +240,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [photoDriveUrl, setPhotoDriveUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState<boolean>(false);
-  const [dbFields, setDbFields] = useState<DynamicField[]>([
-    {
-      id: 'f_payment_utr',
-      sport_id: null,
-      field_key: 'payment_utr',
-      label: 'Payment UTR / Transaction ID',
-      field_type: 'text',
-      validation_rules: { required: false },
-      sort_order: 90,
-    },
-    {
-      id: 'f_payment_receipt',
-      sport_id: null,
-      field_key: 'payment_receipt',
-      label: 'Upload Payment Receipt Screenshot',
-      field_type: 'file',
-      validation_rules: { required: false },
-      sort_order: 91,
-    },
-  ]);
+  const [dbFields, setDbFields] = useState<DynamicField[]>([]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [isLookingUpMumukshu, setIsLookingUpMumukshu] = useState(false);
   const [mumukshuCardInfo, setMumukshuCardInfo] = useState<{ cardNo?: string; name?: string } | null>(null);
@@ -253,6 +256,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
+  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
+
+  // Pre-load Razorpay checkout script on mount
+  useEffect(() => {
+    loadRazorpayScript().catch((err) => console.warn('[Razorpay Load Warning]', err));
+  }, []);
 
   // Prevent background scrolling when size guide modal is open
   useEffect(() => {
@@ -264,6 +274,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       };
     }
   }, [showSizeGuideModal]);
+
 
   // Unregistered player reference verification states
   const [isUnregisteredPlayer, setIsUnregisteredPlayer] = useState(false);
@@ -1223,6 +1234,131 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     };
     delete (sanitizedAnswers as any).photoDataUrl;
 
+    // =========================================================================
+    // 1. ONLINE PAYMENT PATH (RAZORPAY GATEWAY - INSTANT AUTO-APPROVAL)
+    // =========================================================================
+    if (totalPayableFee > 0) {
+      setIsSubmitting(true);
+      setIsRazorpayLoading(true);
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded || !(window as any).Razorpay) {
+        alert('⚠️ Unable to load Razorpay payment gateway. Please check your internet connection.');
+        setIsSubmitting(false);
+        setIsRazorpayLoading(false);
+        return;
+      }
+
+      try {
+        const orderData = await createRazorpayOrder({
+          fullName: data.fullName.trim(),
+          email: data.email.trim(),
+          mobile: cleanPhoneNumber(data.mobileNumber),
+          selectedSports,
+          isExistingPlayer: isExistingPlayerRegistration,
+          previouslyPaidSportsCount,
+          hasPreviouslyPaid,
+          registrationId: existingRegistrationId || undefined,
+        });
+
+        if (!orderData || !orderData.orderId) {
+          throw new Error(orderData?.error || 'Failed to generate Razorpay order ID.');
+        }
+
+        const registrationPayload = {
+          registration_id: existingRegistrationId || undefined,
+          sport_id: selectedSports[0] || 'cricket',
+          full_name: data.fullName.trim(),
+          email: data.email.trim(),
+          mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
+          check_in_date: data.checkInDate || '2026-12-25',
+          check_out_date: data.checkOutDate || '2026-12-27',
+          player_photo_url: playerPhotoUrl,
+          general_details: generalDetails,
+          sport_answers: sportAnswers,
+          answers: sanitizedAnswers,
+        };
+
+        const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TivKrz1oOVPG55';
+
+        const rzp = new (window as any).Razorpay({
+          key: razorpayKey,
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: 'Raj Premier League (RPL Season 9)',
+          description: `RPL Entry for ${selectedSports.length} Sport(s)`,
+          order_id: orderData.orderId,
+          prefill: {
+            name: data.fullName.trim(),
+            email: data.email.trim(),
+            contact: cleanPhoneNumber(data.mobileNumber),
+          },
+          theme: {
+            color: '#f59e0b',
+          },
+          handler: async (response: any) => {
+            try {
+              setIsSubmitting(true);
+              const verifyRes = await verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                registrationPayload,
+              });
+
+              if (verifyRes.registrationId) {
+                activeRegistrationId = verifyRes.registrationId;
+              }
+
+              fullData.paymentUtr = response.razorpay_payment_id;
+              fullData.paymentStatus = 'approved';
+
+              try {
+                const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
+                const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
+                localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
+              } catch {}
+
+              setIsSubmitting(false);
+              setIsRazorpayLoading(false);
+              setRegistrationId(activeRegistrationId);
+              setSubmittedData(fullData);
+
+              try {
+                confetti({
+                  particleCount: 140,
+                  spread: 80,
+                  origin: { y: 0.5 },
+                  colors: ['#F59E0B', '#10B981', '#EC4899', '#3B82F6'],
+                });
+              } catch {}
+            } catch (vErr: any) {
+              alert('⚠️ Payment completed, but verification failed: ' + (vErr.message || 'Verification Error'));
+              setIsSubmitting(false);
+              setIsRazorpayLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setIsSubmitting(false);
+              setIsRazorpayLoading(false);
+            },
+          },
+        });
+
+        rzp.open();
+        return;
+      } catch (orderErr: any) {
+        alert('⚠️ Unable to open Razorpay payment gateway: ' + (orderErr.message || 'Order creation failed'));
+        setIsSubmitting(false);
+        setIsRazorpayLoading(false);
+        return;
+      }
+    }
+
+    // =========================================================================
+    // 2. STANDARD / MANUAL RECEIPT SUBMISSION PATH
+    // =========================================================================
     // Submit to MySQL backend API (with 3s timeout race to prevent waiting on Render cold-starts)
     try {
       const submitPromise = submitRegistration({
@@ -1275,8 +1411,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       // LocalStorage fallback
     }
 
-
-
     setIsSubmitting(false);
     setRegistrationId(activeRegistrationId);
     setSubmittedData(fullData);
@@ -1292,6 +1426,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       // Fallback
     }
   };
+
 
   const handleReset = () => {
     setSubmittedData(null);
@@ -2911,222 +3046,180 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
             {/* ========================================================================= */}
-            {/* PAYMENT VERIFICATION & RECEIPT UPLOAD (DYNAMIC FROM DATABASE) */}
+            {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
-            {dbFields.some((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr')) && (
-              <InView
-                viewOptions={{ once: true, amount: 0.05 }}
-                transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-                className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
-                  <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                    <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">💳</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                          Payment & Verification Proof
-                        </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${
-                          existingPaymentStatus === 'approved'
-                            ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                            : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                        }`}>
-                          {existingPaymentStatus === 'approved' ? '✅ Verified' : 'Either UTR or Screenshot'}
-                        </span>
-                      </div>
-                      <p className="text-emerald-800 text-xs font-medium leading-relaxed">
-                        Either Transaction UTR or Payment Screenshot is sufficient for verification (Optional on initial registration — you can always return later to pay)
-                      </p>
+            <InView
+              viewOptions={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                  <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">💳</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                        Payment & Registration Fee
+                      </h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${
+                        existingPaymentStatus === 'approved' && totalPayableFee === 0
+                          ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}>
+                        {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
+                      </span>
                     </div>
+                    <p className="text-emerald-800 text-xs font-medium leading-relaxed">
+                      Official Razorpay Gateway: Instant auto-verification with UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards & NetBanking.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Registration Fee Calculation & Summary Card */}
+              <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                      ₹
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                        {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
+                        {isReturningPaidUser ? (
+                          newlyAddedSportsCount > 0 ? (
+                            `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
+                          ) : (
+                            `All ${selectedSports.length} Sports Previously Paid (No Payment Required)`
+                          )
+                        ) : (
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)`
+                        )}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
+                    <span className="text-xs font-semibold text-slate-600">
+                      {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
+                    </span>
+                    <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
+                      ₹{totalPayableFee.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
 
-                {/* Dynamic Registration Fee Calculation & Summary Card */}
-                <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                        ₹
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                          {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
+                {/* Returning User Notification Callout */}
+                {isReturningPaidUser && (
+                  <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${
+                    newlyAddedSportsCount > 0
+                      ? 'bg-amber-100/70 border-amber-300 text-amber-950'
+                      : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
+                  }`}>
+                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                    <div>
+                      {newlyAddedSportsCount > 0 ? (
+                        <span>
+                          <strong>Incremental Multi-Sport Registration:</strong> You previously paid <strong>₹{previousPaidAmount.toLocaleString('en-IN')}</strong> for {previouslyPaidSportsCount} sport(s). For the <strong>{newlyAddedSportsCount}</strong> newly selected sport(s), only <strong>₹{totalPayableFee.toLocaleString('en-IN')}</strong> (₹400 × {newlyAddedSportsCount}) is required. Please click below to complete the payment via Razorpay.
                         </span>
-                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                          {isReturningPaidUser ? (
-                            newlyAddedSportsCount > 0 ? (
-                              `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
-                            ) : (
-                              `All ${selectedSports.length} Sports Previously Paid (No Payment Required)`
-                            )
-                          ) : (
-                            `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)`
-                          )}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
-                      <span className="text-xs font-semibold text-slate-600">
-                        {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
-                      </span>
-                      <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
-                        ₹{totalPayableFee.toLocaleString('en-IN')}
-                      </span>
+                      ) : (
+                        <span>
+                          <strong>Zero Additional Payment:</strong> Your registration for these {selectedSports.length} sport(s) has already been verified (₹{previousPaidAmount.toLocaleString('en-IN')}). You can edit your player profile, jersey specs, or accommodation dates without paying again.
+                        </span>
+                      )}
                     </div>
                   </div>
+                )}
 
-                  {/* Returning User Notification Callout */}
-                  {isReturningPaidUser && (
-                    <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${
-                      newlyAddedSportsCount > 0
-                        ? 'bg-amber-100/70 border-amber-300 text-amber-950'
-                        : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
-                    }`}>
-                      <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
-                      <div>
-                        {newlyAddedSportsCount > 0 ? (
-                          <span>
-                            <strong>Incremental Multi-Sport Registration:</strong> You previously paid <strong>₹{previousPaidAmount.toLocaleString('en-IN')}</strong> for {previouslyPaidSportsCount} sport(s). For the <strong>{newlyAddedSportsCount}</strong> newly selected sport(s), only <strong>₹{totalPayableFee.toLocaleString('en-IN')}</strong> (₹400 × {newlyAddedSportsCount}) is required. Please pay ₹{totalPayableFee} and upload Receipt #{nextReceiptIndex}.
-                          </span>
-                        ) : (
-                          <span>
-                            <strong>Zero Additional Payment:</strong> Your registration for these {selectedSports.length} sport(s) has already been verified (₹{previousPaidAmount.toLocaleString('en-IN')}). You can edit your player profile, jersey specs, or accommodation dates without paying again.
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                {/* Sport Breakdown List */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                    Selected Sports & Rate Applied:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSports.map((sportId, idx) => {
+                      const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+                      const isPreviouslyCovered = isReturningPaidUser && idx < previouslyPaidSportsCount;
+                      const isNewlyAdded = isReturningPaidUser && idx >= previouslyPaidSportsCount;
+                      const isPrimary = !isReturningPaidUser && idx === 0;
 
-                  {/* Sport Breakdown List */}
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                      Selected Sports & Rate Applied:
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedSports.map((sportId, idx) => {
-                        const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                        const isPreviouslyCovered = isReturningPaidUser && idx < previouslyPaidSportsCount;
-                        const isNewlyAdded = isReturningPaidUser && idx >= previouslyPaidSportsCount;
-                        const isPrimary = !isReturningPaidUser && idx === 0;
-
-                        return (
-                          <div
-                            key={sportId}
-                            className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
+                      return (
+                        <div
+                          key={sportId}
+                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${
+                            isPreviouslyCovered
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                              : isNewlyAdded
+                              ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
+                              : isPrimary
+                              ? 'bg-amber-100/80 border-amber-300 text-amber-900'
+                              : 'bg-slate-50 border-slate-300 text-slate-800'
+                          }`}
+                        >
+                          <span>{sportObj?.emoji || '🏅'}</span>
+                          <span>{sportObj?.name || sportId}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
                               isPreviouslyCovered
-                                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                                ? 'bg-emerald-200 text-emerald-950'
                                 : isNewlyAdded
-                                ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
+                                ? 'bg-amber-300 text-amber-950'
                                 : isPrimary
-                                ? 'bg-amber-100/80 border-amber-300 text-amber-900'
-                                : 'bg-slate-50 border-slate-300 text-slate-800'
+                                ? 'bg-amber-200 text-amber-950'
+                                : 'bg-slate-200 text-slate-900'
                             }`}
                           >
-                            <span>{sportObj?.emoji || '🏅'}</span>
-                            <span>{sportObj?.name || sportId}</span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
-                                isPreviouslyCovered
-                                  ? 'bg-emerald-200 text-emerald-950'
-                                  : isNewlyAdded
-                                  ? 'bg-amber-300 text-amber-950'
-                                  : isPrimary
-                                  ? 'bg-amber-200 text-amber-950'
-                                  : 'bg-slate-200 text-slate-900'
-                              }`}
-                            >
-                              {isPreviouslyCovered
-                                ? 'Paid'
-                                : isNewlyAdded
-                                ? '+₹400 Due'
-                                : isPrimary
-                                ? 'Base: ₹2,500'
-                                : '+₹400'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                            {isPreviouslyCovered
+                              ? 'Paid'
+                              : isNewlyAdded
+                              ? '+₹400 Due'
+                              : isPrimary
+                              ? 'Base: ₹2,500'
+                              : '+₹400'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  {/* 1-Click Pay & Copy Actions (Only when totalPayableFee > 0) */}
-                  {totalPayableFee > 0 && (
-                    <div className="pt-2 flex flex-wrap items-center gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(String(totalPayableFee));
-                          setCopiedAmount(true);
-                          setTimeout(() => setCopiedAmount(false), 2000);
-                        }}
-                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs active:scale-95 cursor-pointer"
-                      >
-                        {copiedAmount ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700 font-extrabold">Amount Copied (₹{totalPayableFee})!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Copy Amount (₹{totalPayableFee})</span>
-                          </>
-                        )}
-                      </button>
-
-                      <a
-                        href={upiPaymentUri}
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Pay ₹{totalPayableFee} via UPI App</span>
-                        <ExternalLink className="w-3 h-3 text-white/80" />
-                      </a>
-                    </div>
-                  )}
                 </div>
 
-                {totalPayableFee === 0 && (
-                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                    <div className="text-xs font-semibold leading-relaxed">
-                      <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment or receipt upload is required. Click <strong>Update Registration & Save</strong> below to save any changes.
+                {/* Razorpay Online Payment Checkout Banner */}
+                {totalPayableFee > 0 && (
+                  <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
+                        <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Instant Online Payment via Razorpay</span>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        ⚡ Instant Auto-Approval
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      When you click <strong className="text-slate-950 font-black">Pay ₹{totalPayableFee} & Complete Registration</strong> below, the official Razorpay payment window will open. You can pay securely via <strong>Google Pay, PhonePe, Paytm, BHIM, UPI Apps, Debit/Credit Card, or NetBanking</strong>. Your payment is verified automatically in real-time, and your official Digital Pass will be issued instantly.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-slate-600">
+                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Google Pay</span>
+                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ PhonePe</span>
+                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Paytm / BHIM</span>
+                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ All UPI Apps</span>
+                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Cards & NetBanking</span>
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Dynamic UTR & Receipt Screenshot Upload Fields */}
-                {totalPayableFee > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {dbFields
-                      .filter((f) => f.field_key.startsWith('payment_') || f.field_key.includes('receipt') || f.field_key.includes('utr'))
-                      .map((field) => {
-                        const isEitherOptional = {
-                          ...field,
-                          validation_rules: {
-                            ...field.validation_rules,
-                            required: false, // Either UTR or Screenshot is sufficient
-                          },
-                        };
-                        return (
-                          <div key={field.id} className={field.field_type === 'file' ? 'md:col-span-2' : ''}>
-                            <DynamicFieldRenderer
-                              field={isEitherOptional}
-                              value={dynamicAnswers[field.field_key]}
-                              onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
-                              onUploadingChange={(uploading) => setIsUploadingReceipt(uploading)}
-                              contextName={watch('fullName') || 'Player'}
-                              receiptIndex={nextReceiptIndex}
-                            />
-                          </div>
-                        );
-                      })}
+              {totalPayableFee === 0 && (
+                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                  <div className="text-xs font-semibold leading-relaxed">
+                    <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment is required. Click <strong>Update Registration & Save</strong> below to save any changes.
                   </div>
-                )}
-              </InView>
-            )}
+                </div>
+              )}
+            </InView>
 
             {/* ========================================================================= */}
             {/* SUBMIT BUTTON & CONFIRMATION CALLOUT */}
@@ -3139,7 +3232,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="flex items-start space-x-3 text-slate-700">
                 <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
                 <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                  Upon clicking <strong className="text-slate-900 font-extrabold">{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</strong>, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be updated instantly.
+                  Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
                 </p>
               </div>
 
@@ -3151,15 +3244,25 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt}
+                  disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
                   className="w-full sm:w-auto px-10 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                 >
-                  {isUploadingReceipt ? (
+                  {isRazorpayLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Opening Razorpay Gateway...</span>
+                    </div>
+                  ) : isUploadingReceipt ? (
                     <span>Uploading Payment Receipt to Drive...</span>
                   ) : isUploadingPhoto ? (
                     <span>Uploading Player Photo to Drive...</span>
                   ) : isSubmitting ? (
-                    <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Submitting Registration...'}</span>
+                    <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
+                  ) : totalPayableFee > 0 ? (
+                    <>
+                      <span>Pay ₹{totalPayableFee} & Complete Registration</span>
+                      <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                    </>
                   ) : (
                     <>
                       <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</span>
@@ -3170,6 +3273,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
               </div>
             </InView>
+
 
 
 
