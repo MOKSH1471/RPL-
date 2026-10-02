@@ -8,7 +8,11 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-// Import modular routes
+// Validate critical startup environment variables
+import { validateEnvironment } from './src/config/env.js';
+validateEnvironment();
+
+// Import modular routes & rate limiting
 import healthRoutes from './src/routes/health.routes.js';
 import sportsRoutes from './src/routes/sports.routes.js';
 import lookupRoutes, { handlePlayerLookup, handleReferrerLookup } from './src/routes/lookup.routes.js';
@@ -16,6 +20,7 @@ import uploadRoutes from './src/routes/upload.routes.js';
 import registrationRoutes from './src/routes/registration.routes.js';
 import razorpayRoutes from './src/routes/razorpay.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
+import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter } from './src/middleware/rateLimiter.js';
 
 const app = express();
 const port = process.env.PORT || 5005;
@@ -28,7 +33,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // 1. Health & Readiness Probes (Root level)
 app.use('/', healthRoutes);
 
-// 2. Core API Routes (Mounted under /api)
+// 2. Sensitive Route Rate Limiting
+app.use(['/api/player-lookup', '/mumukshu-lookup', '/card/lookup'], lookupRateLimiter);
+app.use(['/api/referrer-lookup', '/referrer-lookup', '/reference-lookup'], lookupRateLimiter);
+app.use('/api/register', registrationRateLimiter);
+app.use('/api/razorpay', paymentRateLimiter);
+
+// 3. Core API Routes (Mounted under /api)
 app.use('/api', sportsRoutes);
 app.use('/api', lookupRoutes);
 app.use('/api', uploadRoutes);
