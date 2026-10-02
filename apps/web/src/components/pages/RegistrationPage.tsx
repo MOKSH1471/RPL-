@@ -32,7 +32,6 @@ function loadRazorpayScript(): Promise<boolean> {
 }
 
 import { RegistrationTicket } from '@/components/ui/RegistrationTicket';
-import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { InView } from '@/components/ui/in-view';
 import BasicDropdown, { DropdownItem } from '@/components/ui/accordion-2';
 import { OptionSelector } from '@/components/ui/OptionSelector';
@@ -73,6 +72,7 @@ import {
 interface RegistrationPageProps {
   initialLeague?: string;
   onBackToHome: () => void;
+  onOpenCheckStatus?: (mobile?: string) => void;
 }
 
 interface SportOption {
@@ -218,6 +218,7 @@ const isSportAllowedForGender = (sportId: SportType, gender?: string) => {
 export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   initialLeague = 'cricket',
   onBackToHome,
+  onOpenCheckStatus,
 }) => {
   const initialGender = initialLeague === 'womens' ? 'Female' : 'Male';
 
@@ -287,39 +288,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [referrerFoundInfo, setReferrerFoundInfo] = useState<{ name: string; cardNo?: string; centre?: string } | null>(null);
   const [referrerLookupError, setReferrerLookupError] = useState<string | null>(null);
 
-  // Check pass & pay due modal state + deep-link handling
-  const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
-  const [checkStatusMobile, setCheckStatusMobile] = useState('');
-  const [autoTriggerPay, setAutoTriggerPay] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const parseParams = () => {
-        const searchParams = new URLSearchParams(window.location.search);
-        let hashQuery = '';
-        if (window.location.hash && window.location.hash.includes('?')) {
-          hashQuery = window.location.hash.substring(window.location.hash.indexOf('?'));
-        }
-        const hashParams = new URLSearchParams(hashQuery);
-
-        const urlMob = searchParams.get('mobile') || searchParams.get('phone') || searchParams.get('check') || hashParams.get('mobile') || hashParams.get('phone') || hashParams.get('check');
-        const shouldPay = searchParams.get('pay') === '1' || searchParams.get('pay') === 'true' || hashParams.get('pay') === '1' || hashParams.get('pay') === 'true';
-        const openCheckPass = searchParams.get('checkPass') === '1' || hashParams.get('checkPass') === '1';
-
-        if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
-          setCheckStatusMobile(urlMob.replace(/\D/g, ''));
-          setAutoTriggerPay(shouldPay);
-          setIsCheckStatusOpen(true);
-        } else if (openCheckPass) {
-          setIsCheckStatusOpen(true);
-        }
-      };
-
-      parseParams();
-      window.addEventListener('hashchange', parseParams);
-      return () => window.removeEventListener('hashchange', parseParams);
-    }
-  }, []);
 
   // Dynamic fee calculation:
   // 1. Returning Paid Participant Adding New Sports:
@@ -1515,26 +1484,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <span>Back to Home</span>
           </button>
 
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                const currentMob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                if (currentMob && currentMob.length === 10) {
-                  setCheckStatusMobile(currentMob);
-                }
-                setIsCheckStatusOpen(true);
-              }}
-              className="flex items-center space-x-1.5 px-3 sm:px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-xs sm:text-sm transition-all active:scale-95 touch-manipulation cursor-pointer min-h-[44px]"
-            >
-              <Search className="w-4 h-4 text-amber-600" />
-              <span>Check Pass / Pay Due</span>
-            </button>
-            <span className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-              <span>Season 9 Official Portal</span>
-            </span>
-          </div>
+          <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+            <span>Season 9 Official Portal</span>
+          </span>
         </InView>
 
         {/* Page Hero Header with InView */}
@@ -1571,8 +1524,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setCheckStatusMobile(cleanPhoneNumber(getValues('mobileNumber') || ''));
-                  setIsCheckStatusOpen(true);
+                  const currentMob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                  onOpenCheckStatus?.(currentMob);
                 }}
                 className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center space-x-2 shadow-sm transition-all active:scale-95 shrink-0 cursor-pointer"
               >
@@ -3444,16 +3397,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           document.body
         )}
 
-      {/* Find My Pass & Complete Payment Modal */}
-      <CheckStatusModal
-        isOpen={isCheckStatusOpen}
-        onClose={() => {
-          setIsCheckStatusOpen(false);
-          setAutoTriggerPay(false);
-        }}
-        initialMobile={checkStatusMobile}
-        autoTriggerPay={autoTriggerPay}
-      />
     </div>
   );
 };

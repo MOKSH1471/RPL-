@@ -154,6 +154,12 @@ export function CheckStatusModal({
         modal: {
           ondismiss: () => {
             setIsProcessingPayment(false);
+            // Fallback poll: Check if webhook captured payment in the background
+            setTimeout(() => {
+              if (record.mobile) {
+                handleSearchMobile(record.mobile);
+              }
+            }, 2500);
           },
         },
       });
@@ -184,10 +190,10 @@ export function CheckStatusModal({
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8"
+          className="relative w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
         >
           {/* Header Gradient */}
-          <div className="relative px-6 py-5 bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white flex items-center justify-between">
+          <div className="relative px-6 py-5 bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
                 <Search className="w-4 h-4" />
@@ -208,7 +214,7 @@ export function CheckStatusModal({
             </button>
           </div>
 
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1">
             {/* Search Input Bar */}
             <form
               onSubmit={(e) => {

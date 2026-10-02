@@ -1,7 +1,7 @@
 import { DynamicField, DynamicSport } from '@/types';
 
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const defaultApiUrl = isLocalhost ? 'http://localhost:5005/api' : 'https://rpl-back.onrender.com/api';
+const defaultApiUrl = isLocalhost ? 'http://localhost:5005/api' : 'https://rpl-api-w3k1.onrender.com/api';
 const rawBase = import.meta.env.VITE_API_URL || defaultApiUrl;
 const cleanBase = String(rawBase).trim().replace(/\/+$/, '');
 const API_BASE_URL = cleanBase.endsWith('/api') ? cleanBase : `${cleanBase}/api`;

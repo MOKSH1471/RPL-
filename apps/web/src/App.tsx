@@ -12,12 +12,43 @@ import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { Footer } from '@/components/layout/Footer';
+import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { LeagueType } from '@/types';
 
 export function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
+  const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
+  const [checkStatusMobile, setCheckStatusMobile] = useState('');
+  const [autoTriggerPay, setAutoTriggerPay] = useState(false);
+
+  useEffect(() => {
+    const parseParams = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      let hashQuery = '';
+      if (window.location.hash && window.location.hash.includes('?')) {
+        hashQuery = window.location.hash.substring(window.location.hash.indexOf('?'));
+      }
+      const hashParams = new URLSearchParams(hashQuery);
+
+      const urlMob = searchParams.get('mobile') || searchParams.get('phone') || searchParams.get('check') || hashParams.get('mobile') || hashParams.get('phone') || hashParams.get('check');
+      const shouldPay = searchParams.get('pay') === '1' || searchParams.get('pay') === 'true' || hashParams.get('pay') === '1' || hashParams.get('pay') === 'true';
+      const openCheckPass = searchParams.get('checkPass') === '1' || hashParams.get('checkPass') === '1';
+
+      if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
+        setCheckStatusMobile(urlMob.replace(/\D/g, ''));
+        setAutoTriggerPay(shouldPay);
+        setIsCheckStatusOpen(true);
+      } else if (openCheckPass) {
+        setIsCheckStatusOpen(true);
+      }
+    };
+
+    parseParams();
+    window.addEventListener('hashchange', parseParams);
+    return () => window.removeEventListener('hashchange', parseParams);
+  }, []);
 
   useEffect(() => {
     const checkRoute = () => {
@@ -92,6 +123,7 @@ export function App() {
           onRegisterClick={handleRegisterClick}
           currentPage={currentPage}
           onNavigateHome={handleBackToHome}
+          onCheckPassClick={() => setIsCheckStatusOpen(true)}
         />
 
         <main>
@@ -99,6 +131,10 @@ export function App() {
             <RegistrationPage
               initialLeague={selectedLeague}
               onBackToHome={handleBackToHome}
+              onOpenCheckStatus={(mobile) => {
+                if (mobile) setCheckStatusMobile(mobile);
+                setIsCheckStatusOpen(true);
+              }}
             />
           ) : (
             <>
@@ -116,6 +152,17 @@ export function App() {
         </main>
 
         <Footer onRegisterClick={handleRegisterClick} />
+
+        {/* Global Check Pass / Pay Due Modal */}
+        <CheckStatusModal
+          isOpen={isCheckStatusOpen}
+          onClose={() => {
+            setIsCheckStatusOpen(false);
+            setAutoTriggerPay(false);
+          }}
+          initialMobile={checkStatusMobile}
+          autoTriggerPay={autoTriggerPay}
+        />
       </div>
     </div>
   );

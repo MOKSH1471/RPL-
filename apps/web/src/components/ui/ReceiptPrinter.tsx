@@ -498,8 +498,10 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
           </div>
         </div>
 
-        {/* Minimal Pointer Tear Helper Text */}
-        <p className="text-[11px] text-slate-500 font-medium text-center mt-3">
+        {/* Minimal Pointer Tear Helper Text positioned below the dispensed receipt */}
+        <p className={`text-[11px] text-slate-500 font-medium text-center transition-all ${
+          isPrinted || isPrinting ? 'mt-[680px] sm:mt-[710px] pb-4' : 'mt-3'
+        }`}>
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
             : isPrinted

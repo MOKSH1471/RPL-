@@ -25,11 +25,11 @@ export const ReceiptPrinterModal: React.FC<ReceiptPrinterModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-gradient-to-b from-white via-slate-50 to-slate-100 rounded-3xl p-5 sm:p-7 border border-amber-200 shadow-2xl my-8 overflow-hidden"
+          className="relative w-full max-w-lg bg-gradient-to-b from-white via-slate-50 to-slate-100 rounded-3xl p-5 sm:p-7 border border-amber-200 shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4">
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 mb-4 shrink-0">
             <div className="flex items-center space-x-2">
               <span className="p-1 rounded-lg bg-amber-100 text-amber-800">
                 <Sparkles className="w-4 h-4" />
@@ -48,7 +48,7 @@ export const ReceiptPrinterModal: React.FC<ReceiptPrinterModalProps> = ({
           </div>
 
           {/* Receipt Printer Stage */}
-          <div className="py-2">
+          <div className="py-2 overflow-y-auto flex-1">
             <ReceiptPrinter {...printerProps} autoPrint={true} />
           </div>
         </motion.div>
