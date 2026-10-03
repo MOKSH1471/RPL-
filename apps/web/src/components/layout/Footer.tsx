@@ -42,7 +42,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Match Highlights
+                Live Opening Ceremony
               </span>
               <FlipLink
                 href="https://www.youtube.com/@VitraagVigyaan"
@@ -158,12 +158,12 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               <li className="flex items-center space-x-3">
                 <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                 <a
-                  href="https://wa.me/"
+                  href="https://wa.me/919321001499"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-emerald-600 transition-colors"
                 >
-                  WhatsApp Helpline
+                  +91 9321001499
                 </a>
               </li>
               <li className="flex items-center space-x-3">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import QRCode from 'qrcode';
 import { RegistrationFormData } from '@/types';
 import { printerAudio } from '@/lib/printerAudio';
 import {
@@ -58,6 +59,28 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
   const [isTearing, setIsTearing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+
+  const rawCardNo =
+    (data.cardNo && String(data.cardNo).trim()) ||
+    (data.mobileNumber ? data.mobileNumber.replace(/\D/g, '').slice(-10) : '') ||
+    registrationId;
+
+  useEffect(() => {
+    if (rawCardNo) {
+      QRCode.toDataURL(String(rawCardNo), {
+        width: 160,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff',
+        },
+        errorCorrectionLevel: 'M',
+      })
+        .then((url) => setQrCodeDataUrl(url))
+        .catch((err) => console.warn('Aashray QR generation error:', err));
+    }
+  }, [rawCardNo]);
 
   const paperRef = useRef<HTMLDivElement>(null);
   const cutterFlashRef = useRef<HTMLDivElement>(null);
@@ -227,6 +250,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       sportsList: sportsList.map(formatSportName),
       hasPaymentProof,
       paymentUtr: effectiveUtr || undefined,
+      qrCodeDataUrl: qrCodeDataUrl || undefined,
     });
   };
 
@@ -505,13 +529,34 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
 
 
 
+                {/* Official Aashray Identity QR Code */}
+                <div className="my-2.5 p-2 bg-white rounded-lg border border-neutral-300 text-center flex flex-col items-center justify-center shadow-xs">
+                  {qrCodeDataUrl ? (
+                    <img
+                      src={qrCodeDataUrl}
+                      alt={`Aashray Card QR: ${rawCardNo}`}
+                      className="w-24 h-24 sm:w-28 sm:h-28 object-contain mx-auto"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-neutral-100 flex items-center justify-center text-[8px] text-neutral-400">
+                      Generating Pass QR...
+                    </div>
+                  )}
+                  <div className="font-mono font-bold text-[9px] text-slate-900 tracking-wider mt-1">
+                    {data.cardNo ? `AASHRAY CARD: ${data.cardNo}` : `PASS ID: ${registrationId}`}
+                  </div>
+                  <div className="text-[7.5px] text-neutral-500 font-semibold uppercase tracking-wider mt-0.5">
+                    Official Gate &amp; Desk Scanner Pass • SRATRC
+                  </div>
+                </div>
+
                 {/* Footer Greeting */}
                 <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
                   <div className="text-[8px] font-black text-slate-900 tracking-wider uppercase">
                     ★ PLAY WITH PASSION • WIN WITH GRACE ★
                   </div>
                   <div className="text-[7.5px] text-neutral-500 uppercase tracking-widest mt-0.5 font-semibold">
-                    RPL S9 ORGANIZING COMMITTEE
+                    RPL S9 ORGANIZING COMMITTEE • SRATRC
                   </div>
                 </div>
               </div>
@@ -521,7 +566,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
 
         {/* Minimal Pointer Tear Helper Text positioned below the dispensed receipt */}
         <p className={`text-[11px] text-slate-500 font-medium text-center transition-all ${
-          isPrinted || isPrinting ? 'mt-[680px] sm:mt-[710px] pb-4' : 'mt-3'
+          isPrinted || isPrinting ? 'mt-[820px] sm:mt-[860px] pb-4' : 'mt-3'
         }`}>
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
