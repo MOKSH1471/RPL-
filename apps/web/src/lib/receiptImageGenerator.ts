@@ -19,14 +19,16 @@ interface ReceiptImageParams {
   sportsList: string[];
   hasPaymentProof: boolean;
   paymentUtr?: string;
+  qrCodeDataUrl?: string;
 }
 
 export function downloadReceiptAsImage(params: ReceiptImageParams) {
   const width = 640;
   const scale = 2; // Retina 2x resolution
   
-  // Calculate dynamic height based on sports (without barcode/regId)
-  const baseHeight = 720 + (params.sportsList.length * 28);
+  // Calculate dynamic height based on sports + QR code
+  const qrExtraHeight = params.qrCodeDataUrl ? 160 : 0;
+  const baseHeight = 720 + (params.sportsList.length * 28) + qrExtraHeight;
   const height = baseHeight;
 
   const canvas = document.createElement('canvas');
@@ -110,7 +112,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
 
     ctx.fillStyle = '#047857';
     ctx.font = 'bold 10px "JetBrains Mono", monospace';
-    ctx.fillText('VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE', width / 2, y + 40);
+    ctx.fillText('VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE (SRATRC)', width / 2, y + 40);
   } else {
     ctx.fillStyle = '#fffbeb';
     ctx.strokeStyle = '#f59e0b';
@@ -127,7 +129,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
 
     ctx.fillStyle = '#b45309';
     ctx.font = 'bold 10px "JetBrains Mono", monospace';
-    ctx.fillText('ATTACH PROOF AT DESK • RESEARCH CENTRE', width / 2, y + 40);
+    ctx.fillText('ATTACH PROOF AT DESK • RESEARCH CENTRE (SRATRC)', width / 2, y + 40);
   }
   ctx.textAlign = 'left';
 
@@ -245,31 +247,67 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
   drawDashedLine(y);
   y += 20;
 
-  // Footer Greeting
-  ctx.fillStyle = '#111827';
-  ctx.font = 'bold 12px "JetBrains Mono", monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('★ PLAY WITH PASSION • WIN WITH GRACE ★', width / 2, y);
+  const finishAndDownload = () => {
+    // Footer Greeting
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('★ PLAY WITH PASSION • WIN WITH GRACE ★', width / 2, y);
 
-  y += 18;
-  ctx.fillStyle = '#6b7280';
-  ctx.font = 'bold 10px "JetBrains Mono", monospace';
-  ctx.fillText('RPL S9 ORGANIZING COMMITTEE', width / 2, y);
+    y += 18;
+    ctx.fillStyle = '#6b7280';
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillText('RPL S9 ORGANIZING COMMITTEE • SRATRC', width / 2, y);
 
-  // 5. Direct PNG Download Named as Person's Name
-  canvas.toBlob((blob) => {
-    if (blob) {
-      const blobUrl = URL.createObjectURL(blob);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.href = blobUrl;
-      const personName = params.fullName?.trim()
-        ? params.fullName.trim().replace(/[/\\?%*:|"<>]/g, '')
-        : 'Participant';
-      downloadAnchor.download = `rpl 9 pass ${personName}.png`;
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      document.body.removeChild(downloadAnchor);
-      URL.revokeObjectURL(blobUrl);
-    }
-  }, 'image/png');
+    // Direct PNG Download Named as Person's Name
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = blobUrl;
+        const personName = params.fullName?.trim()
+          ? params.fullName.trim().replace(/[/\\?%*:|"<>]/g, '')
+          : 'Participant';
+        downloadAnchor.download = `rpl 9 pass ${personName}.png`;
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        URL.revokeObjectURL(blobUrl);
+      }
+    }, 'image/png');
+  };
+
+  // Draw QR code if provided
+  if (params.qrCodeDataUrl) {
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      const qrSize = 100;
+      const qrX = (width - qrSize) / 2;
+      ctx.drawImage(qrImg, qrX, y, qrSize, qrSize);
+      y += qrSize + 14;
+
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      const cardText = params.cardNo ? `AASHRAY CARD: ${params.cardNo}` : `PASS ID: ${params.registrationId}`;
+      ctx.fillText(cardText, width / 2, y);
+      y += 14;
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.fillText('OFFICIAL AASHRAY GATE & DESK SCANNER PASS', width / 2, y);
+      y += 20;
+
+      drawDashedLine(y);
+      y += 20;
+
+      finishAndDownload();
+    };
+    qrImg.onerror = () => {
+      finishAndDownload();
+    };
+    qrImg.src = params.qrCodeDataUrl;
+  } else {
+    finishAndDownload();
+  }
 }

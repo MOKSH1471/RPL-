@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, ArrowLeft, Lock, Eye, Database, Share2, Bell, Mail } from 'lucide-react';
+import { Shield, ArrowLeft, Lock, Eye, Database, Share2, Bell, Mail, MapPin, Building2 } from 'lucide-react';
 
 interface PrivacyPolicyPageProps {
   onBackToHome: () => void;
@@ -25,7 +25,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-4">
           <button
             onClick={onBackToHome}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-amber-600 transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-amber-600 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
@@ -43,15 +43,15 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-widest mb-6">
             <Shield className="w-3.5 h-3.5" />
-            Privacy Policy
+            Privacy &amp; Data Protection
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight">
-            Your Privacy Matters to Us
+            Your Privacy &amp; Data Security
           </h1>
           <p className="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
-            This policy explains how Raj Premier League (RPL) collects, uses, and protects your personal information when you use our platform.
+            This policy outlines how the Raj Premier League (RPL) at Shrimad Rajchandra Aatma Tatva Research Centre collects, utilizes, and protects your personal and payment details.
           </p>
-          <p className="text-slate-500 text-xs mt-4">Last updated: September 30, 2026</p>
+          <p className="text-slate-500 text-xs mt-4">Last updated: October 2026</p>
         </div>
       </div>
 
@@ -59,97 +59,80 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 sm:p-12">
 
-          <Section icon={<Eye className="w-4 h-4" />} title="Information We Collect">
-            <p>When you register for RPL or use our platform, we may collect the following types of information:</p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li><strong>Personal Identification:</strong> Full name, age, gender, and photograph (where provided).</li>
-              <li><strong>Contact Information:</strong> Email address, phone number, and WhatsApp contact.</li>
-              <li><strong>Team &amp; Sport Information:</strong> Preferred sport (Cricket, Football, or Women's League), team preferences, and playing position.</li>
-              <li><strong>Payment Information:</strong> Registration fee payment references (we do not store card or banking details directly).</li>
-              <li><strong>Usage Data:</strong> Browser type, device information, pages visited, and interaction logs for improving our platform.</li>
-            </ul>
-          </Section>
-
-          <Section icon={<Database className="w-4 h-4" />} title="How We Use Your Information">
-            <p>We use the information we collect for the following purposes:</p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li>Processing and confirming your tournament registration.</li>
-              <li>Communicating updates, schedule changes, and match notifications.</li>
-              <li>Organizing teams, fixtures, and scoreboards for the league season.</li>
-              <li>Publishing player profiles and statistics on our official platform (with consent).</li>
-              <li>Improving our website and user experience through anonymized analytics.</li>
-              <li>Sending promotional content about future RPL seasons (you may opt out at any time).</li>
-            </ul>
-          </Section>
-
-          <Section icon={<Share2 className="w-4 h-4" />} title="Information Sharing &amp; Disclosure">
-            <p>We respect your privacy and do not sell your personal data. We may share your information in limited circumstances:</p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li><strong>Within RPL:</strong> Organizers, team captains, and match officials may access relevant player data for operational purposes.</li>
-              <li><strong>Public Scoreboards:</strong> Player names and match statistics may be displayed publicly on our platform and social media.</li>
-              <li><strong>Legal Requirements:</strong> We may disclose information if required by law or to protect the rights and safety of participants.</li>
-              <li><strong>Service Providers:</strong> Trusted third-party tools (e.g., hosting, payment processors) that operate under strict data agreements.</li>
-            </ul>
-            <p className="mt-3">We never share your contact details with third-party advertisers without your explicit consent.</p>
-          </Section>
-
-          <Section icon={<Lock className="w-4 h-4" />} title="Data Security">
-            <p>
-              We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. These include:
-            </p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li>Encrypted data storage and transmission (HTTPS/TLS).</li>
-              <li>Access controls limiting who can view sensitive participant data.</li>
-              <li>Regular security reviews of our platform and infrastructure.</li>
-            </ul>
-            <p className="mt-3">
-              While we take all reasonable precautions, no system is 100% secure. We encourage you to use a strong, unique password and report any suspicious activity to our team.
-            </p>
-          </Section>
-
-          <Section icon={<Bell className="w-4 h-4" />} title="Cookies &amp; Tracking">
-            <p>
-              Our website may use cookies and similar technologies to enhance your browsing experience. These include:
-            </p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li><strong>Essential Cookies:</strong> Required for core functionality such as authentication and session management.</li>
-              <li><strong>Analytics Cookies:</strong> Help us understand how visitors interact with our platform (anonymized).</li>
-              <li><strong>Preference Cookies:</strong> Remember your settings and preferences for future visits.</li>
-            </ul>
-            <p className="mt-3">You can manage or disable cookies through your browser settings. Disabling essential cookies may affect your ability to register or access certain features.</p>
-          </Section>
-
-          <Section icon={<Shield className="w-4 h-4" />} title="Your Rights">
-            <p>You have the following rights with respect to your personal data:</p>
-            <ul className="list-disc pl-5 space-y-1.5 mt-2">
-              <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
-              <li><strong>Correction:</strong> Request corrections to inaccurate or incomplete data.</li>
-              <li><strong>Deletion:</strong> Request deletion of your data (subject to legal and operational requirements).</li>
-              <li><strong>Opt-out:</strong> Unsubscribe from marketing communications at any time.</li>
-              <li><strong>Data Portability:</strong> Request your data in a structured, machine-readable format.</li>
-            </ul>
-            <p className="mt-3">To exercise any of these rights, please contact us at the details below.</p>
-          </Section>
-
-          <Section icon={<Mail className="w-4 h-4" />} title="Contact Us">
-            <p>If you have any questions, concerns, or requests regarding this Privacy Policy, please reach out to us:</p>
-            <ul className="list-none space-y-2 mt-3">
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>info.rplevents@gmail.com</span>
-              </li>
-              <li>
-                <span className="font-semibold text-slate-700">Raj Premier League — Official Organizers</span>
-              </li>
-            </ul>
-            <p className="mt-4 text-xs text-slate-400">We will respond to all legitimate requests within 14 business days.</p>
-          </Section>
-
-          <div className="mt-10 p-5 rounded-xl bg-amber-50 border border-amber-200">
-            <p className="text-xs text-amber-800 font-medium leading-relaxed">
-              <strong>Policy Updates:</strong> We may update this Privacy Policy from time to time. We will notify registered participants of any significant changes via email or an in-platform notice. Continued use of the RPL platform after such changes constitutes your acceptance of the updated policy.
+          <div className="mb-10 p-5 rounded-xl bg-slate-50 border border-slate-200">
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              The <strong>Raj Premier League (RPL)</strong>, hosted at <strong>Shrimad Rajchandra Aatma Tatva Research Centre, Parli</strong> ("we", "us", or "our"), is dedicated to safeguarding the privacy and personal data of our participants and visitors. This Privacy Policy details our data collection practices in compliance with applicable Indian data protection standards and online payment processing guidelines.
             </p>
           </div>
+
+          {/* 1. Information We Collect */}
+          <Section icon={<Database className="w-4 h-4" />} title="1. Information We Collect">
+            <p>When you register for tournament events or interact with our portal, we collect the following categories of information:</p>
+            <ul className="list-disc pl-5 space-y-1.5 mt-2">
+              <li><strong>Personal Identification Data:</strong> Full Name, Date of Birth, Gender, Home Centre/City, and Player Photograph (shared with third-party auction platform <a href="https://auctionarena.in/" target="_blank" rel="noopener noreferrer" className="text-amber-600 underline font-medium hover:text-amber-700">https://auctionarena.in/</a> for player profile creation and team auction bidding).</li>
+              <li><strong>Contact Information:</strong> Active Mobile Number and Email Address (utilized strictly for communication purposes, including tournament updates, match announcements, schedule changes, and emergency notifications).</li>
+              <li><strong>Athletic &amp; Kit Preferences:</strong> Selected sports (Cricket and Football), preferred jersey sizes (XS–XXXL), custom jersey names, preferred numbers, and cricket playing styles.</li>
+              <li><strong>Hospitality &amp; Research Centre Stay:</strong> Check-in and check-out dates, food preference (Spicy / Non-Spicy), and accommodation records.</li>
+              <li><strong>Payment Metadata:</strong> Transaction reference IDs, Razorpay Order IDs, Payment IDs, and UTR numbers. <em>Note:</em> We do not store or have access to your credit/debit card numbers, CVVs, or Net Banking PINs. All payment transactions are encrypted and processed through Razorpay.</li>
+              <li><strong>System &amp; Security Logs:</strong> IP address, device type, browser information, and server correlation identifiers (<code>X-Request-Id</code>) to monitor system health and prevent fraudulent activities.</li>
+            </ul>
+          </Section>
+
+          {/* 2. How We Use Information */}
+          <Section icon={<Eye className="w-4 h-4" />} title="2. Purpose of Data Processing">
+            <p>Your information is used strictly for legitimate tournament administration and Research Centre hospitality purposes:</p>
+            <ul className="list-disc pl-5 space-y-1.5 mt-2">
+              <li>Processing your tournament enrollment and generating official team rosters.</li>
+              <li>Issuing your digital player pass, verification QR codes, and payment receipts.</li>
+              <li>Synchronizing participant guest identities and Research Centre stay records with the central <strong>Aashray</strong> system at Shrimad Rajchandra Aatma Tatva Research Centre for gate security and room allocations.</li>
+              <li>Delivering critical tournament notifications, match schedules, and room waitlist updates via WhatsApp and Email.</li>
+              <li>Reconciling financial transactions and maintaining audited bookkeeping records.</li>
+            </ul>
+          </Section>
+
+          {/* 3. Data Protection & Security */}
+          <Section icon={<Lock className="w-4 h-4" />} title="3. Security &amp; Encryption Standards">
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li><strong>Encrypted Communications:</strong> The platform operates exclusively over HTTPS with TLS 1.3 encryption, ensuring all data transmitted between your browser and our servers is protected against interception.</li>
+              <li><strong>Payment Gateway Compliance:</strong> Payments are handled by **Razorpay Software Private Limited**, certified under PCI-DSS Level 1 (the highest standard in payment security).</li>
+              <li><strong>Sanitized Server Logs:</strong> Server activity logging automatically redacts sensitive data (such as passwords, tokens, and cryptographic signatures) before writing to daily rotating logs.</li>
+              <li><strong>Cloud Storage:</strong> Player photos and documents are secured on enterprise cloud storage with authenticated access controls.</li>
+            </ul>
+          </Section>
+
+          {/* 4. Third-Party Disclosures */}
+          <Section icon={<Share2 className="w-4 h-4" />} title="4. Third-Party Sharing &amp; Non-Disclosure">
+            <p>We strictly respect your privacy. <strong>We do not sell, rent, monetize, or trade your personal data to commercial advertisers or marketing agencies.</strong> Your data is shared only with trusted operational entities necessary to conduct the tournament:</p>
+            <ul className="list-disc pl-5 space-y-1.5 mt-2">
+              <li><strong>Auction Platform (<a href="https://auctionarena.in/" target="_blank" rel="noopener noreferrer" className="text-amber-600 underline font-medium hover:text-amber-700">https://auctionarena.in/</a>):</strong> Player name, photograph, and athletic profile details are shared with the third-party auction platform for player rosters, team bidding, and live auction management.</li>
+              <li><strong>Host Institution:</strong> The administration of Shrimad Rajchandra Aatma Tatva Research Centre for room reservations, dining hall access, and Research Centre security clearance.</li>
+              <li><strong>Payment Gateway Partner:</strong> Razorpay Software Private Limited for authorizing and settling online payment transactions.</li>
+              <li><strong>Communication Gateways:</strong> WhatsApp Cloud API and Email providers solely for communication purposes such as schedule updates, announcements, and emergency notifications.</li>
+              <li><strong>Legal Obligations:</strong> Regulatory authorities or law enforcement agencies if compelled by applicable law or judicial orders.</li>
+            </ul>
+          </Section>
+
+          {/* 5. Data Retention & User Rights */}
+          <Section icon={<Bell className="w-4 h-4" />} title="5. Data Retention &amp; Participant Rights">
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>We retain tournament registration and financial audit records for the duration necessary to satisfy sports organization and financial compliance obligations.</li>
+              <li>Participants have the right to request access to their registration data, request corrections to inaccurate contact information, or seek clarification on data handling.</li>
+            </ul>
+          </Section>
+
+          {/* 6. Grievance Redressal & Contact */}
+          <Section icon={<MapPin className="w-4 h-4" />} title="6. Grievance Officer &amp; Research Centre Contact">
+            <p>If you have any questions, concerns, or inquiries regarding your privacy or our data practices, please reach out to our grievance team:</p>
+            <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <p><strong>Organization:</strong> Raj Premier League (RPL) Organizing Committee</p>
+              <p><strong>Host Institution:</strong> Shrimad Rajchandra Aatma Tatva Research Centre</p>
+              <p><strong>Contact Helpline:</strong> <a href="tel:+919321001499" className="text-amber-600 font-semibold hover:underline">+91 9321001499</a></p>
+              <p><strong>Email Address:</strong> <a href="mailto:info.rplevents@gmail.com" className="text-amber-600 font-semibold hover:underline">info.rplevents@gmail.com</a></p>
+              <p><strong>Research Centre Address:</strong> Raj Nagar, Parli, Post Gothavade, Taluka Sudhagad, Off Khopoli-Pali Road, Dist. Raigad - 410205, Maharashtra, India.</p>
+              <p><strong>Support Response:</strong> Within 24–48 working hours.</p>
+            </div>
+          </Section>
+
         </div>
       </div>
     </div>
