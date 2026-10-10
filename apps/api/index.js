@@ -25,6 +25,7 @@ import uploadRoutes from './src/routes/upload.routes.js';
 import registrationRoutes from './src/routes/registration.routes.js';
 import razorpayRoutes from './src/routes/razorpay.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
+import cricketRoutes from './src/routes/cricket.routes.js';
 import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter } from './src/middleware/rateLimiter.js';
 import { notFoundHandler, globalErrorHandler } from './src/middleware/errorHandler.js';
 import { securityHeadersMiddleware, corsOptions } from './src/middleware/security.js';
@@ -65,6 +66,7 @@ app.use('/api', uploadRoutes);
 app.use('/api', registrationRoutes);
 app.use('/api', razorpayRoutes);
 app.use('/api', adminRoutes);
+app.use('/api', cricketRoutes);
 
 // 4. Fallback Root-Level Aliases for Lookups (backward compatibility)
 app.get('/mumukshu-lookup', handlePlayerLookup);
