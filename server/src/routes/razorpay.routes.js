@@ -480,7 +480,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
             `UPDATE ${RPL_DB}.rpl_registrations 
              SET full_name = ?, email = ?, mobile = ?, check_in_date = ?, check_out_date = ?, 
                  player_photo_url = ?, payment_status = 'approved', payment_utr = ?, 
-                 general_details = ?, sport_answers = ?, is_archived = FALSE, submitted_at = NOW() 
+                 general_details = ?, sport_answers = ?, submitted_at = NOW() 
              WHERE id = ?`,
             [
               full_name.trim(),
@@ -498,8 +498,8 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         } else {
           await connection.query(
             `INSERT INTO ${RPL_DB}.rpl_registrations 
-             (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, general_details, sport_answers, is_archived, submitted_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, FALSE, NOW())`,
+             (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, general_details, sport_answers, submitted_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, NOW())`,
             [
               regId,
               full_name.trim(),
