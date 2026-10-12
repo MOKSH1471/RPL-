@@ -318,7 +318,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const totalPayableFee = isReturningPaidUser
     ? newlyAddedSportsCount * 400
-    : 2500 + Math.max(0, totalSportsCount - 1) * 400;
+    : 1; // TEMPORARY 1 RUPEE LIVE TEST (Normal: 2500 + Math.max(0, totalSportsCount - 1) * 400)
 
   const cumulativeTotalFee = 2500 + Math.max(0, totalSportsCount - 1) * 400;
   const previousPaidAmount = isReturningPaidUser
