@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     payment_receipt_url VARCHAR(500) DEFAULT NULL,
     general_details JSON DEFAULT NULL,
     sport_answers JSON DEFAULT NULL,
+    is_archived BOOLEAN DEFAULT FALSE,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
