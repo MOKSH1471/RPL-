@@ -35,7 +35,7 @@ test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,500', async
     body: JSON.stringify({
       fullName: 'Single Sport Player',
       email: 'player@example.com',
-      mobile: '9876543210',
+      mobile: '9811111111',
       selectedSports: ['cricket'],
     }),
   });
@@ -53,7 +53,7 @@ test('Razorpay Fee Calculation: 3 Sports calculates ₹2,500 + (2 * ₹400) = �
     body: JSON.stringify({
       fullName: 'Multi Sport Player',
       email: 'player@example.com',
-      mobile: '9876543210',
+      mobile: '9822222222',
       selectedSports: ['cricket', 'football', 'badminton'],
     }),
   });

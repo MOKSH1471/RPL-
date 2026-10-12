@@ -286,6 +286,7 @@ export interface CreateOrderParams {
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   registrationId?: string;
+  registrationPayload?: Record<string, any>;
 }
 
 export async function createRazorpayOrder(params: CreateOrderParams) {
