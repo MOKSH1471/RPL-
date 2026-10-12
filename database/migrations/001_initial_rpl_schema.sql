@@ -32,5 +32,37 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     payment_receipt_url VARCHAR(500) DEFAULT NULL,
     general_details JSON DEFAULT NULL,
     sport_answers JSON DEFAULT NULL,
+    is_archived BOOLEAN DEFAULT FALSE,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rpl_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cardno VARCHAR(50) NOT NULL,
+    bookingid VARCHAR(50) NOT NULL,
+    category VARCHAR(50) DEFAULT 'sports',
+    amount DECIMAL(10,2) NOT NULL,
+    discount DECIMAL(10,2) DEFAULT 0,
+    upi_ref VARCHAR(100) DEFAULT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    updatedBy VARCHAR(100) DEFAULT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    razorpay_order_id VARCHAR(100) DEFAULT NULL,
+    INDEX idx_rpl_tx_order_id (razorpay_order_id),
+    INDEX idx_rpl_tx_bookingid (bookingid),
+    INDEX idx_rpl_tx_cardno (cardno)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rpl_razorpay_webhook (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    payment_id VARCHAR(100) NULL,
+    order_id VARCHAR(100) NULL,
+    event VARCHAR(100) NOT NULL,
+    json LONGTEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_rpl_webhook_payment_id (payment_id),
+    INDEX idx_rpl_webhook_order_id (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
