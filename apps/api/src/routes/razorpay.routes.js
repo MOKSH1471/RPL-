@@ -60,16 +60,20 @@ router.post('/razorpay/create-order', async (req, res) => {
     let existingReg = null;
 
     if (targetRegId || mobile10) {
-      const [existingRegs] = await db.query(
-        `SELECT id, full_name, email, mobile, payment_status, player_photo_url, general_details, sport_answers 
-         FROM ${RPL_DB}.rpl_registrations 
-         WHERE id = ? OR mobile = ? OR mobile LIKE ? 
-         ORDER BY submitted_at DESC LIMIT 1`,
-        [targetRegId || '', cleanMobile, `%${mobile10}`]
-      );
-      if (existingRegs.length > 0) {
-        existingReg = existingRegs[0];
-        targetRegId = existingReg.id;
+      try {
+        const [existingRegs] = await db.query(
+          `SELECT id, full_name, email, mobile, payment_status, player_photo_url, general_details, sport_answers 
+           FROM ${RPL_DB}.rpl_registrations 
+           WHERE id = ? OR mobile = ? OR mobile LIKE ? 
+           ORDER BY submitted_at DESC LIMIT 1`,
+          [targetRegId || '', cleanMobile, `%${mobile10}`]
+        );
+        if (existingRegs.length > 0) {
+          existingReg = existingRegs[0];
+          targetRegId = existingReg.id;
+        }
+      } catch (dbErr) {
+        logger.warn(`[REGISTRATION LOOKUP NOTICE] DB lookup failed or offline: ${dbErr.message}`);
       }
     }
 
