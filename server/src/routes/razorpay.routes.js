@@ -28,7 +28,8 @@ router.post('/razorpay/create-order', async (req, res) => {
       const newlyAddedSports = Math.max(0, sportsCount - Number(previouslyPaidSportsCount || 0));
       computedFee = newlyAddedSports * 400;
     } else {
-      computedFee = 2500 + Math.max(0, sportsCount - 1) * 400;
+      // TEMPORARY 1 RUPEE LIVE TEST (Normal: 2500 + Math.max(0, sportsCount - 1) * 400)
+      computedFee = 1;
     }
 
     if (computedFee <= 0) {

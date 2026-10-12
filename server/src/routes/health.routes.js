@@ -3,6 +3,11 @@ import db from '../config/db.js';
 
 const router = Router();
 
+// Root health probe (for Render load-balancer & ping probes)
+router.all('/', (req, res) => {
+  res.status(200).json({ status: 'ok', service: 'rpl-api', timestamp: new Date().toISOString() });
+});
+
 // Health check endpoint (lightweight, outside rate limits)
 router.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
