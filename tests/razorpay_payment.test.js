@@ -79,7 +79,7 @@ test('POST /api/razorpay/webhook receives event (200 on DB write, 500 on offline
 });
 
 test('POST /api/razorpay/create-order persists draft registration in rpl_registrations (Aashray Standard)', async () => {
-  const testPhone = '9876543210';
+  const testPhone = `95${Date.now().toString().slice(-8)}`;
   const { status, data } = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
