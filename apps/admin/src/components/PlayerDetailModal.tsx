@@ -48,7 +48,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
       ? Object.keys(sportAns)
       : [player.sport_id || 'cricket'];
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
-  const calculatedFee = gen.totalAmount || (2500 + Math.max(0, calculatedSportsCount - 1) * 400);
+  const calculatedFee = gen.totalAmount || 2700;
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0

@@ -42,6 +42,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
+  Camera,
   Sparkles,
   ShieldCheck,
   Mail,
@@ -67,6 +68,7 @@ import {
   ZoomIn,
   Maximize2,
   Clock,
+  Info,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -194,23 +196,68 @@ const AVAILABLE_SPORTS: SportOption[] = [
   */
   {
     id: 'womens-sports',
-    name: "Women's Multi-Sport League",
-    category: "Women's Cricket, Football & Throwball",
-    emoji: '🏆',
+    name: "Women's Cricket League",
+    category: "Women's Multi-Sport League",
+    emoji: '🏏',
     colorBg: 'bg-pink-50',
     colorBorder: 'border-pink-400',
     colorBadge: 'bg-pink-100 text-pink-900 border-pink-300',
+  },
+  {
+    id: 'kaccha-pakka',
+    name: 'Kaccha Pakka League',
+    category: 'Junior & Veteran League (Age ≤16 & ≥56)',
+    emoji: '🏏',
+    colorBg: 'bg-amber-50',
+    colorBorder: 'border-amber-400',
+    colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
   },
 ];
 
 const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
-const isSportAllowedForGender = (sportId: SportType, gender?: string) => {
+export function calculateAge(dobString?: string): number | null {
+  if (!dobString || typeof dobString !== 'string') return null;
+  const parts = dobString.trim().split('-');
+  if (parts.length < 3) {
+    const d = new Date(dobString);
+    if (isNaN(d.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    return age;
+  }
+  const birthYear = parseInt(parts[0], 10);
+  const birthMonth = parseInt(parts[1], 10);
+  const birthDay = parseInt(parts[2], 10);
+  if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  let age = currentYear - birthYear;
+  if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
+    age--;
+  }
+  return age;
+}
+
+const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: number | null) => {
   if (gender === 'Male' && (sportId === 'womens-sports' || (sportId as string) === 'womens')) {
     return false;
   }
-  if (gender === 'Female' && sportId === 'football') {
+  if (gender === 'Female' && (sportId === 'cricket' || sportId === 'football')) {
     return false;
+  }
+  // Kaccha Pakka League: only for age 16 and below (<= 16) and 56 and above (>= 56)
+  if (sportId === 'kaccha-pakka') {
+    if (age === null || age === undefined) {
+      return false;
+    }
+    return age <= 16 || age >= 56;
   }
   return true;
 };
@@ -223,12 +270,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const initialGender = initialLeague === 'womens' ? 'Female' : 'Male';
 
   // Normalize initial sport
-  const mapInitialSport = (id: string, gender?: string): SportType => {
+  const mapInitialSport = (id: string, gender?: string, age?: number | null): SportType => {
     let target = id;
     if (target === 'womens') target = 'womens-sports';
-    if (!AVAILABLE_SPORTS.some((s) => s.id === target)) target = 'cricket';
-    if (!isSportAllowedForGender(target as SportType, gender)) {
-      target = 'cricket';
+    if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
+      target = gender === 'Female' ? 'womens-sports' : 'cricket';
+    }
+    if (!isSportAllowedForPlayer(target as SportType, gender, age)) {
+      target = gender === 'Female' ? 'womens-sports' : 'cricket';
     }
     return target as SportType;
   };
@@ -303,31 +352,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
 
-  // Dynamic fee calculation:
-  // 1. Returning Paid Participant Adding New Sports:
-  //    - Base fee already paid for previouslyPaidSportsCount
-  //    - Newly added sports count = max(0, totalSports - previouslyPaidSportsCount)
-  //    - Amount Due Now: newlyAddedSportsCount * 400 (If 0 new sports, fee is 0)
-  // 2. Unpaid or Brand New Registration:
-  //    - Standard fee: 2,500 for first sport + 400 for each additional sport
-  const totalSportsCount = Math.max(1, selectedSports.length);
-  const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
-  const newlyAddedSportsCount = isReturningPaidUser
-    ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
-    : 0;
-
-  const totalPayableFee = isReturningPaidUser
-    ? newlyAddedSportsCount * 400
-    : 1; // TEMPORARY 1 RUPEE LIVE TEST
-
-  const cumulativeTotalFee = 2500 + Math.max(0, totalSportsCount - 1) * 400;
-  const previousPaidAmount = isReturningPaidUser
-    ? 2500 + Math.max(0, previouslyPaidSportsCount - 1) * 400
-    : 0;
-
-  const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
-  const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
-
   useEffect(() => {
     fetchRegistrationFields().then((fields) => {
       if (fields && fields.length > 0) {
@@ -358,6 +382,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       email: '',
       centre: '',
       tshirtSize: 'L',
+      extraTshirt: 'No',
       dateOfBirth: '',
       gender: initialGender,
       foodPreference: 'Regular',
@@ -394,7 +419,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       volleyballExperience: 'Intermediate (Club / College)',
       // Women's Defaults
       womensCategory: "Women's Cricket",
-      womensPlayingRole: 'All-rounder',
+      womensPlayingRole: 'All rounder',
       womensExperience: 'Intermediate (Club / College)',
       // Customizations
       customJerseyName: '',
@@ -409,28 +434,52 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   });
 
   const currentTshirtSize = watch('tshirtSize');
+  const currentExtraTshirt = watch('extraTshirt') || 'No';
   const currentGender = watch('gender');
 
-  // Filter available sports dynamically based on player's gender
-  const allowedSports = useMemo(() => {
-    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForGender(s.id, currentGender));
-  }, [currentGender]);
+  // Dynamic fee calculation:
+  // Flat ₹2,700 All-Inclusive Event Fee (All sports included)
+  // Extra T-Shirt Option: ₹500 extra
+  // If any mumukshu or non-mumukshu selects Yes -> ₹2,700 + ₹500 = ₹3,200
+  // If selects No -> ₹2,700
+  const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
+  const totalSportsCount = Math.max(1, selectedSports.length);
+  const newlyAddedSportsCount = isReturningPaidUser
+    ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
+    : 0;
 
-  // When gender changes, automatically remove any disallowed sports from selectedSports
+  const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
+  const totalPayableFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
+  const cumulativeTotalFee = 2700 + extraTshirtCost;
+  const previousPaidAmount = isReturningPaidUser ? 2700 : 0;
+
+  const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
+  const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
+
+  const currentDateOfBirth = watch('dateOfBirth');
+  const playerAge = useMemo(() => calculateAge(currentDateOfBirth), [currentDateOfBirth]);
+  const isKacchaPakkaEligible = playerAge !== null && (playerAge <= 16 || playerAge >= 56);
+
+  // Filter available sports dynamically based on player's gender and age
+  const allowedSports = useMemo(() => {
+    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge));
+  }, [currentGender, playerAge]);
+
+  // When gender or age/DOB changes, automatically remove any disallowed sports from selectedSports
   useEffect(() => {
     setSelectedSports((prev) => {
-      const valid = prev.filter((s) => isSportAllowedForGender(s, currentGender));
+      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
       if (valid.length > 0) {
         if (valid.length !== prev.length) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
       }
-      const fallback = allowedSports[0]?.id || 'cricket';
+      const fallback = allowedSports[0]?.id || (currentGender === 'Female' ? 'womens-sports' : 'cricket');
       setValue('selectedSports', [fallback], { shouldValidate: true });
       return [fallback];
     });
-  }, [currentGender, allowedSports, setValue]);
+  }, [currentGender, playerAge, allowedSports, setValue]);
   const currentAcc = watch('accommodationRequired');
   const currentExistingFamily = watch('existingRplFamily');
   const currentFood = watch('foodPreference');
@@ -457,7 +506,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     const field = dbFields.find((f) => f.field_key === fieldKey);
     return field?.label || defaultLabel;
   };
-  const currentDateOfBirth = watch('dateOfBirth');
   const currentCheckInDate = watch('checkInDate') || '2026-12-25';
   const currentCheckOutDate = watch('checkOutDate') || '2026-12-27';
 
@@ -607,6 +655,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
             if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
             if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.extraTshirt) setValue('extraTshirt', gen.extraTshirt as any, { shouldValidate: true, shouldDirty: true });
             if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
             if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
@@ -750,6 +799,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setValue('dateOfBirth', '', { shouldValidate: false });
           setValue('gender', 'Male', { shouldValidate: false });
           setValue('tshirtSize', '' as any, { shouldValidate: false });
+          setValue('extraTshirt', 'No' as any, { shouldValidate: false });
         }
       })
       .catch((err) => {
@@ -769,6 +819,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('dateOfBirth', '', { shouldValidate: false });
         setValue('gender', 'Male', { shouldValidate: false });
         setValue('tshirtSize', '' as any, { shouldValidate: false });
+        setValue('extraTshirt', 'No' as any, { shouldValidate: false });
       });
   }, [currentMobile, currentCountryCode, setValue]);
 
@@ -937,6 +988,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentVolleyballRole = watch('volleyballRole');
   const currentVolleyballExp = watch('volleyballExperience');
   const currentWomensCat = watch('womensCategory');
+  const currentWomensRole = watch('womensPlayingRole');
   const currentWomensExp = watch('womensExperience');
 
   useEffect(() => {
@@ -994,7 +1046,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   }, []);
 
   const toggleSportSelection = (sportId: SportType) => {
-    if (!isSportAllowedForGender(sportId, currentGender)) return;
+    if (!isSportAllowedForPlayer(sportId, currentGender, playerAge)) return;
     let updated: SportType[];
     if (selectedSports.includes(sportId)) {
       if (selectedSports.length === 1) {
@@ -1103,6 +1155,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       email: data.email,
       centre: data.centre,
       tshirtSize: data.tshirtSize,
+      extraTshirt: data.extraTshirt || 'No',
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       foodPreference: data.foodPreference,
@@ -1160,6 +1213,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
       tshirtSize: data.tshirtSize,
+      extraTshirt: data.extraTshirt || 'No',
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
       stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
@@ -1235,6 +1289,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         category: data.womensCategory,
         playingRole: data.womensPlayingRole,
         experience: data.womensExperience,
+      };
+    }
+    if (selectedSports.includes('kaccha-pakka')) {
+      sportAnswers['kaccha-pakka'] = {
+        league: 'Kaccha Pakka League',
+        enrolled: true,
       };
     }
 
@@ -1374,6 +1434,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           email: data.email.trim(),
           mobile: cleanPhoneNumber(data.mobileNumber),
           selectedSports,
+          extraTshirt: data.extraTshirt || 'No',
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
@@ -2108,6 +2169,45 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </p>
                 )}
 
+                {/* Extra T-Shirt Option */}
+                <div className="pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <Shirt className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Do you need an extra T-Shirt?</span>
+                      <span className="text-pink-600">*</span>
+                    </label>
+                    <span className="text-slate-500 font-semibold text-[11px] normal-case">
+                      Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentExtraTshirt === 'Yes' ? 'Yes (+₹500)' : 'No'}</strong>
+                    </span>
+                  </div>
+
+                  <OptionSelector
+                    options={[
+                      { value: 'No', label: 'No' },
+                      { value: 'Yes', label: 'Yes (+₹500)' },
+                    ]}
+                    value={currentExtraTshirt}
+                    onChange={(val) => setValue('extraTshirt', val as any, { shouldValidate: true })}
+                    layoutId="extra-tshirt-indicator"
+                    activeColor="bg-slate-900"
+                    activeTextColor="text-amber-300"
+                  />
+
+                  {/* Informational Note for Extra T-Shirt */}
+                  <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
+                    <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <p className="font-bold text-amber-950">
+                        Note: Extra T-shirt will cost ₹500 extra.
+                      </p>
+                      <p className="text-amber-800 text-[11px] mt-0.5">
+                        Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
                 <div className="mt-3">
                   <div
@@ -2160,8 +2260,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     error={errors.dateOfBirth?.message}
                     placeholder="Select Date of Birth"
                     isDOB={true}
-                    minYear={1950}
-                    maxYear={2020}
+                    minYear={1930}
+                    maxYear={new Date().getFullYear()}
                     defaultYear={2002}
                   />
                   {errors.dateOfBirth && (
@@ -2169,6 +2269,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.dateOfBirth.message}</span>
                     </p>
+                  )}
+                  {playerAge !== null && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                      <span>Age: <strong className="text-slate-900">{playerAge} yrs</strong></span>
+                      {isKacchaPakkaEligible && (
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px]">
+                          <span>🌟</span>
+                          <span>Eligible for Kaccha Pakka League</span>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -2182,12 +2293,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     // Lock gender — auto-filled from verified mumukshu/RPL record, not editable
                     <div className="flex items-center space-x-2 px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm">
                       <User className="w-4 h-4 text-slate-400" />
-                      <span>{currentGender || 'Not set'}</span>
+                      <span>{currentGender ? (currentGender === 'Female' ? 'Female (MeeraBen)' : 'Male (HariBhai)') : 'Not set'}</span>
                       <span className="ml-auto text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Locked</span>
                     </div>
                   ) : (
                     <OptionSelector
-                      options={['Male', 'Female', 'Other']}
+                      options={[
+                        { value: 'Male', label: 'Male (HariBhai)' },
+                        { value: 'Female', label: 'Female (MeeraBen)' },
+                      ]}
                       value={currentGender}
                       onChange={(genderOption) => setValue('gender', genderOption as any, { shouldValidate: true })}
                       layoutId="gender-indicator"
@@ -2372,11 +2486,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
                 <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <Upload className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
-                  </label>
-                  <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-600 rounded-2xl p-4 text-center transition-all bg-slate-50 hover:bg-white min-h-[100px] flex items-center justify-center">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <Camera className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                      Square • 600×600 to 1200×1200 px
+                    </span>
+                  </div>
+
+                  {/* Photo Requirement Specification Box */}
+                  <div className="p-3.5 mb-3 rounded-2xl bg-amber-500/10 border border-amber-300/90 text-xs text-amber-950 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center space-x-1.5 font-extrabold text-amber-950 text-[11px] uppercase tracking-wider">
+                      <Info className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>Photo Requirements:</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-slate-800">
+                      Photos must be in <strong>color</strong>, <strong>square (600 × 600 to 1200 × 1200 pixels)</strong>, taken within the <strong>last six months</strong>, with a <strong>plain white or off-white background</strong> and a <strong>neutral expression facing the camera</strong>.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 shadow-2xs">✓ Color &amp; Square (600×600 – 1200×1200 px)</span>
+                      <span className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 shadow-2xs">✓ Plain white / off-white background</span>
+                      <span className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 shadow-2xs">✓ Taken within last 6 months</span>
+                      <span className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 shadow-2xs">✓ Neutral expression facing camera</span>
+                    </div>
+                  </div>
+
+                  <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-600 rounded-2xl p-4 text-center transition-all bg-slate-50 hover:bg-white min-h-[105px] flex items-center justify-center">
                     <input
                       type="file"
                       accept="image/jpeg,image/png"
@@ -2389,7 +2526,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <img
                             src={photoPreview}
                             alt="Preview"
-                            className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm"
+                            className="w-13 h-13 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square"
                           />
                           <div className="text-left">
                             <span className="text-xs font-bold text-slate-900 block truncate max-w-[150px]">
@@ -2398,6 +2535,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
                               <CheckCircle2 className="w-3 h-3" />
                               <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                            </span>
+                            <span className="text-[9.5px] text-slate-500 font-medium block">
+                              Square ID Photo
                             </span>
                           </div>
                         </div>
@@ -2424,10 +2564,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-1">
-                        <Upload className="w-5 h-5 text-slate-600 mx-auto" />
-                        <p className="text-xs text-slate-800 font-bold">Click to upload photo</p>
-                        <span className="text-[10px] text-slate-400 block">JPG, PNG up to 5MB</span>
+                      <div className="space-y-1 py-1">
+                        <Camera className="w-6 h-6 text-amber-600 mx-auto" />
+                        <p className="text-xs text-slate-900 font-bold">Click to upload photo</p>
+                        <span className="text-[10px] text-slate-500 block">
+                          Square photo • Plain white/off-white background • JPG, PNG up to 5MB
+                        </span>
                       </div>
                     )}
                   </div>
@@ -2457,6 +2599,56 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Women's Registration Selection Note */}
+              {currentGender === 'Female' && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-amber-500/10 border-2 border-pink-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    🏏
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-pink-950 block text-[11px] mb-0.5">
+                      Note for Women's Registration:
+                    </span>
+                    <p className="font-semibold text-pink-900 leading-snug">
+                      18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Football Only Schedule Note */}
+              {selectedSports.length === 1 && selectedSports.includes('football') && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-2 border-emerald-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    ⚽
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-emerald-950 block text-[11px] mb-0.5">
+                      Schedule Note for Football:
+                    </span>
+                    <p className="font-semibold text-emerald-900 leading-snug">
+                      Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Kaccha Pakka League Special Division Callout */}
+              {isKacchaPakkaEligible && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    🌟
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
+                      Kaccha Pakka League Available (Age: {playerAge} years):
+                    </span>
+                    <p className="font-semibold text-amber-900 leading-snug">
+                      Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Multi-Select Dropdown Container */}
               <div ref={dropdownRef} className="relative">
@@ -2743,6 +2935,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             Tactical pitch position, preferred shooting foot & turf experience
                           </p>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Football Matches Schedule Note */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-emerald-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                        📅
+                      </div>
+                      <div>
+                        <strong className="text-emerald-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                          Tournament Schedule Notice:
+                        </strong>
+                        <p className="text-emerald-900 font-semibold">
+                          Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                        </p>
                       </div>
                     </div>
 
@@ -3141,6 +3348,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                     </div>
 
+                    {/* Committee Selection Note */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-pink-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                      <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                        📢
+                      </div>
+                      <div>
+                        <strong className="text-pink-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                          Selection Notice:
+                        </strong>
+                        <p className="text-pink-900 font-semibold">
+                          18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                        </p>
+                      </div>
+                    </div>
+
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
@@ -3161,11 +3383,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
                           Specialty / Role <span className="text-pink-600">*</span>
                         </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Attacker, Setter, Bowler, Striker"
-                          {...register('womensPlayingRole')}
-                          className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-white border border-pink-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium text-sm"
+                        <BasicDropdown
+                          label="Select Role"
+                          items={[
+                            { id: 'All rounder', label: 'All rounder' },
+                            { id: 'Bowler', label: 'Bowler' },
+                            { id: 'Batsman', label: 'Batsman' },
+                            { id: 'Fielder', label: 'Fielder' },
+                          ]}
+                          value={
+                            currentWomensRole
+                              ? {
+                                  id: currentWomensRole,
+                                  label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
+                                }
+                              : null
+                          }
+                          onChange={(item) => setValue('womensPlayingRole', String(item.id), { shouldValidate: true })}
                         />
                       </div>
 
@@ -3230,17 +3464,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                        {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
+                        {isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary'}
                       </span>
                       <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                         {isReturningPaidUser ? (
-                          newlyAddedSportsCount > 0 ? (
-                            `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
-                          ) : (
-                            `All ${selectedSports.length} Sports Previously Paid (No Payment Required)`
-                          )
+                          currentExtraTshirt === 'Yes'
+                            ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
+                            : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)`
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹2,700${currentExtraTshirt === 'Yes' ? ' + ₹500 Extra T-Shirt = ₹3,200' : ' - All sports included'})`
                         )}
                       </h4>
                     </div>
@@ -3248,7 +3480,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                   <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
                     <span className="text-xs font-semibold text-slate-600">
-                      {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
+                      {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
                     </span>
                     <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
                       ₹{totalPayableFee.toLocaleString('en-IN')}
@@ -3258,68 +3490,45 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 {/* Returning User Notification Callout */}
                 {isReturningPaidUser && (
-                  <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${newlyAddedSportsCount > 0
-                      ? 'bg-amber-100/70 border-amber-300 text-amber-950'
-                      : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
-                    }`}>
-                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                  <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
+                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                     <div>
-                      {newlyAddedSportsCount > 0 ? (
-                        <span>
-                          <strong>Incremental Multi-Sport Registration:</strong> You previously paid <strong>₹{previousPaidAmount.toLocaleString('en-IN')}</strong> for {previouslyPaidSportsCount} sport(s). For the <strong>{newlyAddedSportsCount}</strong> newly selected sport(s), only <strong>₹{totalPayableFee.toLocaleString('en-IN')}</strong> (₹400 × {newlyAddedSportsCount}) is required. Please click below to complete the payment via Razorpay.
-                        </span>
-                      ) : (
-                        <span>
-                          <strong>Zero Additional Payment:</strong> Your registration for these {selectedSports.length} sport(s) has already been verified (₹{previousPaidAmount.toLocaleString('en-IN')}). You can edit your player profile, jersey specs, or accommodation dates without paying again.
-                        </span>
-                      )}
+                      <span>
+                        <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                      </span>
                     </div>
+                  </div>
+                )}
+
+                {/* Extra T-Shirt Line Item if selected */}
+                {currentExtraTshirt === 'Yes' && (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                    <span className="flex items-center space-x-2">
+                      <Shirt className="w-4 h-4 text-amber-700" />
+                      <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                    </span>
+                    <span className="text-amber-900 font-extrabold">+₹500</span>
                   </div>
                 )}
 
                 {/* Sport Breakdown List */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                    Selected Sports & Rate Applied:
+                    Selected Sports ({selectedSports.length}):
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {selectedSports.map((sportId, idx) => {
+                    {selectedSports.map((sportId) => {
                       const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                      const isPreviouslyCovered = isReturningPaidUser && idx < previouslyPaidSportsCount;
-                      const isNewlyAdded = isReturningPaidUser && idx >= previouslyPaidSportsCount;
-                      const isPrimary = !isReturningPaidUser && idx === 0;
 
                       return (
                         <div
                           key={sportId}
-                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${isPreviouslyCovered
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                              : isNewlyAdded
-                                ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
-                                : isPrimary
-                                  ? 'bg-amber-100/80 border-amber-300 text-amber-900'
-                                  : 'bg-slate-50 border-slate-300 text-slate-800'
-                            }`}
+                          className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
                         >
                           <span>{sportObj?.emoji || '🏅'}</span>
                           <span>{sportObj?.name || sportId}</span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${isPreviouslyCovered
-                                ? 'bg-emerald-200 text-emerald-950'
-                                : isNewlyAdded
-                                  ? 'bg-amber-300 text-amber-950'
-                                  : isPrimary
-                                    ? 'bg-amber-200 text-amber-950'
-                                    : 'bg-slate-200 text-slate-900'
-                              }`}
-                          >
-                            {isPreviouslyCovered
-                              ? 'Paid'
-                              : isNewlyAdded
-                                ? '+₹400 Due'
-                                : isPrimary
-                                  ? 'Base: ₹2,500'
-                                  : '+₹400'}
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                            Included in Pass
                           </span>
                         </div>
                       );
@@ -3351,6 +3560,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Tournament Cancellation & Refund Policy Notice */}
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
+                  <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                      Tournament Policy:
+                    </span>
+                    <p className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
+                      No refund in case of no show or cancellation.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {totalPayableFee === 0 && (
@@ -3378,9 +3600,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 pt-2 border-t border-amber-200/80">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-amber-200/80">
+                <div className="flex items-center space-x-2 text-xs font-bold text-slate-700">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
+                </div>
+                <div className="flex items-center space-x-1.5 text-[11px] font-bold text-amber-900 bg-amber-100/90 px-3 py-1 rounded-xl border border-amber-300 shrink-0">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>No refund in case of no show or cancellation</span>
+                </div>
               </div>
 
               {/* Primary Pay Now button */}

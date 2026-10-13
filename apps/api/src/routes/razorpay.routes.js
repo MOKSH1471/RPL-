@@ -18,6 +18,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       email,
       mobile,
       selectedSports = [],
+      extraTshirt,
       isExistingPlayer = false,
       previouslyPaidSportsCount = 0,
       hasPreviouslyPaid = false,
@@ -25,17 +26,17 @@ router.post('/razorpay/create-order', async (req, res) => {
       registrationPayload,
     } = req.body;
 
-    const sportsCount = Math.max(1, Array.isArray(selectedSports) ? selectedSports.length : 1);
+    const regPayload = registrationPayload || {};
+    const cleanGeneral = regPayload.general_details || regPayload.answers || {};
+    const extraTshirtChoice = extraTshirt || regPayload.extraTshirt || cleanGeneral.extraTshirt || 'No';
+    const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+
     let computedFee;
 
     if (isExistingPlayer && hasPreviouslyPaid) {
-      const newlyAddedSports = Math.max(0, sportsCount - Number(previouslyPaidSportsCount || 0));
-      computedFee = newlyAddedSports * 400;
-    } else if (process.env.NODE_ENV === 'test') {
-      computedFee = 2500 + Math.max(0, sportsCount - 1) * 400;
+      computedFee = extraTshirtCost;
     } else {
-      // TEMPORARY 1 RUPEE LIVE TEST
-      computedFee = 1;
+      computedFee = 2700 + extraTshirtCost;
     }
 
     if (computedFee <= 0) {
@@ -48,8 +49,6 @@ router.post('/razorpay/create-order', async (req, res) => {
         message: 'No payment required',
       });
     }
-
-    const regPayload = registrationPayload || {};
     const cleanFullName = (regPayload.full_name || regPayload.fullName || fullName || '').trim();
     const cleanEmail = (regPayload.email || email || '').trim();
     const cleanMobile = (regPayload.mobile || regPayload.mobileNumber || mobile || '').trim();
@@ -82,7 +81,6 @@ router.post('/razorpay/create-order', async (req, res) => {
     }
 
     // Resolve Card Number (Aashray standard card or guest card)
-    const cleanGeneral = regPayload.general_details || regPayload.answers || {};
     let cardNoVal = cleanGeneral.cardNo || null;
 
     if (!cardNoVal && existingReg) {
@@ -520,7 +518,9 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         // Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
         const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
-        const finalAmount = cleanGeneralDetails.incrementalFee || cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2500;
+        const finalAmount = cleanGeneralDetails.incrementalFee !== undefined && cleanGeneralDetails.incrementalFee !== null
+          ? cleanGeneralDetails.incrementalFee
+          : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2700);
 
         await connection.query(
           `INSERT INTO ${RPL_DB}.rpl_transactions 
@@ -683,7 +683,7 @@ router.post('/razorpay/webhook', async (req, res) => {
           }
 
           // Prepare transaction data & insert/upsert into rpl_transactions
-          const finalAmount = Math.round(Number(payment.amount || 250000) / 100);
+          const finalAmount = Math.round(Number(payment.amount || 270000) / 100);
           let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
           let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
 

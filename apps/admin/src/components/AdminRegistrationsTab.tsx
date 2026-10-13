@@ -206,6 +206,7 @@ export function AdminRegistrationsTab({
               <option value="pickleball">Pickleball</option>
               <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
+              <option value="kaccha-pakka">Kaccha Pakka League</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -424,7 +425,7 @@ export function AdminRegistrationsTab({
                               </span>
                             )}
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
-                              ₹{(gen.totalAmount || (2500 + Math.max(0, (sports.length || 1) - 1) * 400)).toLocaleString('en-IN')}
+                              ₹{(gen.totalAmount || 2700).toLocaleString('en-IN')}
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">

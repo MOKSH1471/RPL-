@@ -41,6 +41,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     pickleball: 'Pickleball',
     volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",
+    'kaccha-pakka': 'Kaccha Pakka League',
   };
 
   return (
@@ -58,7 +59,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
             <span className="text-2xl sm:text-3xl font-black text-emerald-300 tracking-tight">
-              {formatINR(financials?.totalRevenue || (payment?.approved || 0) * 2500)}
+              {formatINR(financials?.totalRevenue || (payment?.approved || 0) * 2700)}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-emerald-400/80 font-medium">Bank-cleared registration fees</p>
@@ -74,7 +75,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
             <span className="text-2xl sm:text-3xl font-black text-amber-300 tracking-tight">
-              {formatINR(financials?.pendingRevenue || (payment?.pending || 0) * 2500)}
+              {formatINR(financials?.pendingRevenue || (payment?.pending || 0) * 2700)}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-amber-400/80 font-medium">Under review / UTR verification</p>
@@ -90,7 +91,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
             <span className="text-2xl sm:text-3xl font-black text-indigo-300 tracking-tight">
-              {formatINR(financials?.potentialRevenue || ((payment?.approved || 0) + (payment?.pending || 0)) * 2500)}
+              {formatINR(financials?.potentialRevenue || ((payment?.approved || 0) + (payment?.pending || 0)) * 2700)}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-indigo-400/80 font-medium">100% verified conversion potential</p>

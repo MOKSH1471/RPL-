@@ -9,6 +9,7 @@ const VALID_SPORTS = [
   'pickleball',
   'volleyball',
   'womens-sports',
+  'kaccha-pakka',
 ];
 
 const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -92,4 +93,25 @@ test('Sports Validation: validates and normalizes T-shirt sizes against official
   assert.strictEqual(validateTshirtSize('XXXXXL').valid, false);
   assert.strictEqual(validateTshirtSize('MEDIUM').valid, false);
   assert.strictEqual(validateTshirtSize('').valid, false);
+});
+
+test('Sports Validation: accepts kaccha-pakka in valid sports', () => {
+  assert.strictEqual(validateSportsSelection(['kaccha-pakka']).valid, true);
+  assert.strictEqual(validateSportsSelection(['cricket', 'kaccha-pakka']).valid, true);
+});
+
+test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka League', () => {
+  function isKacchaPakkaEligible(age) {
+    if (age === null || age === undefined) return false;
+    return age <= 16 || age >= 56;
+  }
+
+  assert.strictEqual(isKacchaPakkaEligible(10), true);
+  assert.strictEqual(isKacchaPakkaEligible(16), true);
+  assert.strictEqual(isKacchaPakkaEligible(17), false);
+  assert.strictEqual(isKacchaPakkaEligible(25), false);
+  assert.strictEqual(isKacchaPakkaEligible(55), false);
+  assert.strictEqual(isKacchaPakkaEligible(56), true);
+  assert.strictEqual(isKacchaPakkaEligible(65), true);
+  assert.strictEqual(isKacchaPakkaEligible(null), false);
 });

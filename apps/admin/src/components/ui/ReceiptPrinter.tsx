@@ -93,6 +93,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'womens-sports':
       case 'womens':
         return "Women's Multi-Sport";
+      case 'kaccha-pakka':
+        return 'Kaccha Pakka League';
       default:
         return s;
     }
@@ -448,8 +450,13 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
 
 
 
+                {/* Cancellation Policy on Pass */}
+                <div className="text-[7px] font-bold text-center text-neutral-600 uppercase tracking-wider mt-2 pt-1 border-t border-dashed border-neutral-300">
+                  * NO REFUND IN CASE OF NO SHOW OR CANCELLATION *
+                </div>
+
                 {/* Footer Greeting */}
-                <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
+                <div className="text-center mt-2 pt-1.5 border-t border-dashed border-neutral-300">
                   <div className="text-[8px] font-black text-slate-900 tracking-wider uppercase">
                     ★ PLAY WITH PASSION • WIN WITH GRACE ★
                   </div>

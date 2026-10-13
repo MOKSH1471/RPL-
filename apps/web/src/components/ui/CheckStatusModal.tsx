@@ -336,13 +336,9 @@ export function CheckStatusModal({
                               const prevUtrs = String(matchedRecord.payment_utr || gen.payment_utr || '').split(',').map((s: string) => s.trim()).filter(Boolean);
                               const hadPrevPayment = prevUtrs.length > 0;
                               if (isApprovedDue && hadPrevPayment) {
-                                // Incremental fee = total - already paid
-                                const totalFee = 2500 + Math.max(0, sports.length - 1) * 400;
-                                const prevSports = gen.previouslyPaidSportsCount || (sports.length - 1);
-                                const prevFee = 2500 + Math.max(0, prevSports - 1) * 400;
-                                return totalFee - prevFee;
+                                return 0;
                               }
-                              return gen.incrementalFee || gen.calculatedFee || gen.totalAmount || 2500;
+                              return gen.incrementalFee !== undefined ? gen.incrementalFee : (gen.calculatedFee || gen.totalAmount || 2700);
                             }
                           )()}
                         </h3>
@@ -370,6 +366,10 @@ export function CheckStatusModal({
                     <p className="text-[11px] text-slate-500 leading-relaxed">
                       Instant auto-approval via UPI, Netbanking, Cards. Your official pass and QR code will unlock immediately upon payment.
                     </p>
+                    <p className="text-[10px] text-amber-800 font-bold flex items-center space-x-1 pt-0.5">
+                      <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+                    </p>
                   </div>
                 )}
 
@@ -391,6 +391,7 @@ export function CheckStatusModal({
                         email: matchedRecord.email,
                         centre: matchedRecord.generalDetails?.centre || 'Mumbai',
                         tshirtSize: matchedRecord.generalDetails?.tshirtSize,
+                        extraTshirt: matchedRecord.generalDetails?.extraTshirt,
                         customJerseyName: matchedRecord.generalDetails?.customJerseyName,
                         preferredJerseyNumber: matchedRecord.generalDetails?.preferredJerseyNumber,
                         accommodationRequired: matchedRecord.generalDetails?.accommodationRequired,

@@ -1,5 +1,5 @@
 export type LeagueType = 'cricket' | 'football' | 'womens';
-export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports';
+export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka';
 export interface SportOptionInfo {
     id: SportType;
     name: string;
@@ -22,6 +22,7 @@ export interface RegistrationFormData {
     email: string;
     centre: string;
     tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
+    extraTshirt?: 'Yes' | 'No' | string;
     dateOfBirth: string;
     gender: 'Male' | 'Female' | 'Other' | string;
     foodPreference: 'Regular' | 'Non-Spicy' | string;

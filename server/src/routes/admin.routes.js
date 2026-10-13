@@ -26,6 +26,7 @@ router.get('/admin/stats', async (req, res) => {
       pickleball: 0,
       volleyball: 0,
       'womens-sports': 0,
+      'kaccha-pakka': 0,
     };
 
     const tshirtSizes = {
@@ -58,7 +59,7 @@ router.get('/admin/stats', async (req, res) => {
 
       const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
       const sportCount = Math.max(1, selected.length);
-      const calculatedFee = 2500 + Math.max(0, sportCount - 1) * 400;
+      const calculatedFee = 2700;
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 
       const pStatus = (r.payment_status || 'pending').toLowerCase();

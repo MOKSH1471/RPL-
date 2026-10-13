@@ -7,7 +7,8 @@ export type SportType =
   | 'table-tennis'
   | 'pickleball'
   | 'volleyball'
-  | 'womens-sports';
+  | 'womens-sports'
+  | 'kaccha-pakka';
 
 export interface SportOptionInfo {
   id: SportType;
@@ -51,6 +52,7 @@ export interface RegistrationFormData {
   email: string;
   centre: string;
   tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
+  extraTshirt?: 'Yes' | 'No' | string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other' | string;
   foodPreference: 'Regular' | 'Non-Spicy' | string;

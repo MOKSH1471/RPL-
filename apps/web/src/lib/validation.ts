@@ -70,10 +70,11 @@ export const registrationSchema = z
     tshirtSize: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], {
       required_error: 'Please select your Jersey / T-Shirt Size',
     }),
+    extraTshirt: z.enum(['Yes', 'No']).optional().default('No'),
     dateOfBirth: z
       .string()
       .min(1, { message: 'Please select Date of Birth' }),
-    gender: z.enum(['Male', 'Female', 'Other'], {
+    gender: z.enum(['Male', 'Female'], {
       required_error: 'Please select Gender',
     }),
     foodPreference: z.string().min(1, {
