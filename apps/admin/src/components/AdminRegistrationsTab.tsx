@@ -271,7 +271,7 @@ export function AdminRegistrationsTab({
                 <th className="py-3.5 px-4">Contact</th>
                 <th className="py-3.5 px-4">Centre & Info</th>
                 <th className="py-3.5 px-4">Selected Sports</th>
-                <th className="py-3.5 px-4">Jersey Specs</th>
+                <th className="py-3.5 px-4">Jersey Size</th>
                 <th className="py-3.5 px-4">Payment & UTR</th>
                 <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
@@ -408,9 +408,11 @@ export function AdminRegistrationsTab({
                               +1 Extra
                             </span>
                           )}
-                          <span className="text-slate-800 font-bold truncate max-w-[100px]">
-                            {gen.customJerseyName || '-'}
-                          </span>
+                          {gen.customJerseyName && (
+                            <span className="text-slate-800 font-bold truncate max-w-[100px]">
+                              {gen.customJerseyName}
+                            </span>
+                          )}
                           {gen.preferredJerseyNumber && (
                             <span className="text-slate-400 font-mono">#{gen.preferredJerseyNumber}</span>
                           )}

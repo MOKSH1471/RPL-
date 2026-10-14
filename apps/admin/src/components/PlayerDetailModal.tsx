@@ -531,14 +531,6 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       )}
                     </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-medium block">Jersey Name</span>
-                    <span className="font-bold text-slate-900">{gen.customJerseyName || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium block">Jersey Number</span>
-                    <span className="font-bold text-slate-900">{gen.preferredJerseyNumber || '-'}</span>
-                  </div>
                   {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                     <div>
                       <span className="text-slate-400 font-medium block">90s Nostalgia</span>
@@ -710,25 +702,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   </select>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Custom Jersey Name</label>
-                  <input
-                    type="text"
-                    value={formData.customJerseyName}
-                    onChange={(e) => setFormData({ ...formData, customJerseyName: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
-                  />
-                </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Preferred Number</label>
-                  <input
-                    type="text"
-                    value={formData.preferredJerseyNumber}
-                    onChange={(e) => setFormData({ ...formData, preferredJerseyNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
-                  />
-                </div>
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Payment Status</label>
