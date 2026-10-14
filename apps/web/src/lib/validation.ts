@@ -91,9 +91,7 @@ export const registrationSchema = z
     stayingRoomNumber: z.string().optional(),
     checkInDate: z.string().optional(),
     checkOutDate: z.string().optional(),
-    existingRplFamily: z.enum(['Yes', 'No'], {
-      required_error: 'Please select if you are existing RPL Family',
-    }),
+    existingRplFamily: z.enum(['Yes', 'No']).optional().default('No'),
 
     // Multi-Sport Selection
     selectedSports: z
