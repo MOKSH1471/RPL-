@@ -1,6 +1,6 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, Clock, MessageCircle, Trophy } from 'lucide-react';
+import { CheckCircle2, Clock, MessageCircle, Trophy, AlertCircle } from 'lucide-react';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
@@ -54,6 +54,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       case 'womens-sports':
       case 'womens':
         return "Women's League";
+      case 'kaccha-pakka':
+        return 'Kaccha Pakka League';
       default:
         return sport;
     }
@@ -173,7 +175,10 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
               Jersey Size
             </span>
-            <span className="font-bold text-amber-700 text-base font-mono">{data.tshirtSize}</span>
+            <span className="font-bold text-amber-700 text-base font-mono">
+              {data.tshirtSize}
+              {data.extraTshirt === 'Yes' && ' (+1 Extra)'}
+            </span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
@@ -203,21 +208,31 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             </span>
           </div>
 
+          {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
+              <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
+                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90s Nostalgia Sports' : '90s Nostalgia Sport'}
+              </span>
+              <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+                <span>🕹️</span>
+                <span>{Array.isArray(data.nostalgiaSport) ? data.nostalgiaSport.join(', ') : data.nostalgiaSport}</span>
+              </span>
+            </div>
+          )}
+
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
-                  Registration Fee ({sportsList.length} {sportsList.length === 1 ? 'Sport' : 'Sports'})
+                  Tournament Pass ({sportsList.length} {sportsList.length === 1 ? 'Sport' : 'Sports'})
                 </span>
                 <span className="text-[11px] text-amber-800 font-medium">
-                  {sportsList.length > 1
-                    ? `Base ₹2,500 + ₹${(sportsList.length - 1) * 400} (${sportsList.length - 1} extra ${sportsList.length - 1 === 1 ? 'sport' : 'sports'})`
-                    : 'Base Registration Fee (Single Sport)'}
+                  All selected sports included in event pass
                 </span>
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (2500 + Math.max(0, sportsList.length - 1) * 400)).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || 2700).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -226,13 +241,19 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       </div>
 
       {/* Bottom Information & Action Buttons */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4">
+      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
         {/* Official Registration Confirmation Note */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-start space-x-3 text-xs text-emerald-900">
-          <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
-          <p className="leading-relaxed">
-            Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
-          </p>
+        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col space-y-2.5 text-xs text-emerald-900">
+          <div className="flex items-start space-x-3">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
+            <p className="leading-relaxed">
+              Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
+            </p>
+          </div>
+          <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+          </div>
         </div>
 
         {/* Action Buttons */}

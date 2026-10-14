@@ -84,6 +84,24 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
 
   const paperRef = useRef<HTMLDivElement>(null);
   const cutterFlashRef = useRef<HTMLDivElement>(null);
+  const [paperHeight, setPaperHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (!paperRef.current) return;
+    const updateHeight = () => {
+      if (paperRef.current) {
+        setPaperHeight(paperRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null;
+    if (ro && paperRef.current) {
+      ro.observe(paperRef.current);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+    };
+  }, [qrCodeDataUrl, data]);
 
   const effectiveUtr =
     (data.payment_utr && data.payment_utr.trim()) ||
@@ -127,6 +145,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'womens-sports':
       case 'womens':
         return "Women's Multi-Sport";
+      case 'kaccha-pakka':
+        return 'Kaccha Pakka League';
       default:
         return s;
     }
@@ -267,7 +287,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       `👤 *Player:* ${data.fullName || 'Participant'}`,
       `🎫 *Pass ID:* ${registrationId}`,
       `⚡ *Sports:* ${sportsList.map(formatSportName).join(', ')}`,
-      `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
+      `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.extraTshirt === 'Yes' ? ' (+1 Extra T-Shirt)' : ''}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
       `📍 *Centre:* ${data.centre || 'Mumbai'}`,
       `🏨 *Stay:* ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}`,
       `✅ *Status:* ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL / VERIFIED' : '⏳ PAYMENT DUE'}`,
@@ -460,6 +480,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                     <span className="text-neutral-500 font-bold uppercase">JERSEY:</span>
                     <span className="font-mono font-bold text-amber-800">
                       SIZE {data.tshirtSize || 'L'}
+                      {data.extraTshirt === 'Yes' ? ' (+1 Extra)' : ''}
                       {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
                       {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
                     </span>
@@ -550,8 +571,13 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
                 </div>
 
+                {/* Cancellation Policy on Pass */}
+                <div className="text-[7px] font-bold text-center text-neutral-600 uppercase tracking-wider mt-2 pt-1 border-t border-dashed border-neutral-300">
+                  * NO REFUND IN CASE OF NO SHOW OR CANCELLATION *
+                </div>
+
                 {/* Footer Greeting */}
-                <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
+                <div className="text-center mt-2 pt-1.5 border-t border-dashed border-neutral-300">
                   <div className="text-[8px] font-black text-slate-900 tracking-wider uppercase">
                     ★ PLAY WITH PASSION • WIN WITH GRACE ★
                   </div>
@@ -565,9 +591,14 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
         </div>
 
         {/* Minimal Pointer Tear Helper Text positioned below the dispensed receipt */}
-        <p className={`text-[11px] text-slate-500 font-medium text-center transition-all ${
-          isPrinted || isPrinting ? 'mt-[820px] sm:mt-[860px] pb-4' : 'mt-3'
-        }`}>
+        <p
+          style={{
+            marginTop: isPrinted || isPrinting
+              ? (paperHeight > 0 ? `${41 + paperHeight + 14}px` : '520px')
+              : '12px',
+          }}
+          className="text-[11px] text-slate-500 font-medium text-center transition-all duration-300 pb-2"
+        >
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
             : isPrinted

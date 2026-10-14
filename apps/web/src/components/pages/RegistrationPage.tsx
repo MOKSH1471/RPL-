@@ -42,6 +42,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
+  Camera,
   Sparkles,
   ShieldCheck,
   Mail,
@@ -67,6 +68,7 @@ import {
   ZoomIn,
   Maximize2,
   Clock,
+  Info,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -194,23 +196,87 @@ const AVAILABLE_SPORTS: SportOption[] = [
   */
   {
     id: 'womens-sports',
-    name: "Women's Multi-Sport League",
-    category: "Women's Cricket, Football & Throwball",
-    emoji: '🏆',
+    name: "Women's Cricket League",
+    category: "Women's Multi-Sport League",
+    emoji: '🏏',
     colorBg: 'bg-pink-50',
     colorBorder: 'border-pink-400',
     colorBadge: 'bg-pink-100 text-pink-900 border-pink-300',
   },
+  {
+    id: 'kaccha-pakka',
+    name: 'Kaccha Pakka League',
+    category: 'Junior & Veteran League (Age ≤16 & ≥56)',
+    emoji: '🏏',
+    colorBg: 'bg-amber-50',
+    colorBorder: 'border-amber-400',
+    colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
+  },
 ];
+
+export const NOSTALGIA_SPORTS = [
+  { id: 'Carrom', name: 'Carrom', emoji: '🎯', isLeagueMatch: true },
+  { id: 'Lemon Spoon with Book on Head', name: 'Lemon spoon with book on head', emoji: '🍋', isLeagueMatch: false },
+  { id: 'Duckwalk', name: 'Duckwalk', emoji: '🦆', isLeagueMatch: false },
+  { id: 'Skipping', name: 'Skipping', emoji: '🪢', isLeagueMatch: false },
+  { id: 'Ring Race (Couple or 2 ppl)', name: 'Ring race (Couple or 2 ppl)', emoji: '💍', isLeagueMatch: false },
+  { id: 'Relay Race (Names may change)', name: 'Relay race (Names may change)', emoji: '🏃', isLeagueMatch: false },
+  { id: 'Table Tennis', name: 'Table tennis', emoji: '🏓', isLeagueMatch: true },
+] as const;
+
+export function normalizeNostalgiaSport(val: string): string {
+  if (!val) return '';
+  const clean = val.trim();
+  const match = NOSTALGIA_SPORTS.find(
+    (s) => s.id.toLowerCase() === clean.toLowerCase() || s.name.toLowerCase() === clean.toLowerCase()
+  );
+  return match ? match.name : clean;
+}
 
 const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
-const isSportAllowedForGender = (sportId: SportType, gender?: string) => {
+export function calculateAge(dobString?: string): number | null {
+  if (!dobString || typeof dobString !== 'string') return null;
+  const parts = dobString.trim().split('-');
+  if (parts.length < 3) {
+    const d = new Date(dobString);
+    if (isNaN(d.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    return age;
+  }
+  const birthYear = parseInt(parts[0], 10);
+  const birthMonth = parseInt(parts[1], 10);
+  const birthDay = parseInt(parts[2], 10);
+  if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+
+  let age = currentYear - birthYear;
+  if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
+    age--;
+  }
+  return age;
+}
+
+const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: number | null) => {
   if (gender === 'Male' && (sportId === 'womens-sports' || (sportId as string) === 'womens')) {
     return false;
   }
-  if (gender === 'Female' && sportId === 'football') {
+  if (gender === 'Female' && (sportId === 'cricket' || sportId === 'football')) {
     return false;
+  }
+  // Kaccha Pakka League: only for age 16 and below (<= 16) and 56 and above (>= 56)
+  if (sportId === 'kaccha-pakka') {
+    if (age === null || age === undefined) {
+      return false;
+    }
+    return age <= 16 || age >= 56;
   }
   return true;
 };
@@ -223,18 +289,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const initialGender = initialLeague === 'womens' ? 'Female' : 'Male';
 
   // Normalize initial sport
-  const mapInitialSport = (id: string, gender?: string): SportType => {
+  const mapInitialSport = (id: string, gender?: string, age?: number | null): SportType => {
     let target = id;
     if (target === 'womens') target = 'womens-sports';
-    if (!AVAILABLE_SPORTS.some((s) => s.id === target)) target = 'cricket';
-    if (!isSportAllowedForGender(target as SportType, gender)) {
-      target = 'cricket';
+    if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
+      target = gender === 'Female' ? 'womens-sports' : 'cricket';
+    }
+    if (!isSportAllowedForPlayer(target as SportType, gender, age)) {
+      target = gender === 'Female' ? 'womens-sports' : 'cricket';
     }
     return target as SportType;
   };
 
   const [selectedSports, setSelectedSports] = useState<SportType[]>([mapInitialSport(initialLeague, initialGender)]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [nostalgiaDropdownOpen, setNostalgiaDropdownOpen] = useState(false);
   const [sportSearch, setSportSearch] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<RegistrationFormData | null>(null);
@@ -303,31 +372,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
 
-  // Dynamic fee calculation:
-  // 1. Returning Paid Participant Adding New Sports:
-  //    - Base fee already paid for previouslyPaidSportsCount
-  //    - Newly added sports count = max(0, totalSports - previouslyPaidSportsCount)
-  //    - Amount Due Now: newlyAddedSportsCount * 400 (If 0 new sports, fee is 0)
-  // 2. Unpaid or Brand New Registration:
-  //    - Standard fee: 2,500 for first sport + 400 for each additional sport
-  const totalSportsCount = Math.max(1, selectedSports.length);
-  const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
-  const newlyAddedSportsCount = isReturningPaidUser
-    ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
-    : 0;
-
-  const totalPayableFee = isReturningPaidUser
-    ? newlyAddedSportsCount * 400
-    : 1; // TEMPORARY 1 RUPEE LIVE TEST
-
-  const cumulativeTotalFee = 2500 + Math.max(0, totalSportsCount - 1) * 400;
-  const previousPaidAmount = isReturningPaidUser
-    ? 2500 + Math.max(0, previouslyPaidSportsCount - 1) * 400
-    : 0;
-
-  const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
-  const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
-
   useEffect(() => {
     fetchRegistrationFields().then((fields) => {
       if (fields && fields.length > 0) {
@@ -337,6 +381,20 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   }, []);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const nostalgiaDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+      if (nostalgiaDropdownRef.current && !nostalgiaDropdownRef.current.contains(event.target as Node)) {
+        setNostalgiaDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const {
     register,
@@ -358,6 +416,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       email: '',
       centre: '',
       tshirtSize: 'L',
+      extraTshirt: 'No',
       dateOfBirth: '',
       gender: initialGender,
       foodPreference: 'Regular',
@@ -394,7 +453,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       volleyballExperience: 'Intermediate (Club / College)',
       // Women's Defaults
       womensCategory: "Women's Cricket",
-      womensPlayingRole: 'All-rounder',
+      womensPlayingRole: 'All rounder',
       womensExperience: 'Intermediate (Club / College)',
       // Customizations
       customJerseyName: '',
@@ -405,32 +464,89 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: '',
       referrerName: '',
       referrerCardNo: '',
+      nostalgiaSport: '',
     },
   });
 
   const currentTshirtSize = watch('tshirtSize');
+  const currentExtraTshirt = watch('extraTshirt') || 'No';
+  const currentNostalgiaSport = watch('nostalgiaSport');
+  const selectedNostalgiaSports: string[] = useMemo(() => {
+    if (!currentNostalgiaSport || currentNostalgiaSport === 'None') return [];
+    if (Array.isArray(currentNostalgiaSport)) {
+      return currentNostalgiaSport.map(normalizeNostalgiaSport).filter(Boolean);
+    }
+    return String(currentNostalgiaSport)
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s && s !== 'None')
+      .map(normalizeNostalgiaSport);
+  }, [currentNostalgiaSport]);
+
+  const toggleNostalgiaSport = (sportName: string) => {
+    const normalized = normalizeNostalgiaSport(sportName);
+    let next: string[];
+    if (selectedNostalgiaSports.some((s) => s.toLowerCase() === normalized.toLowerCase())) {
+      next = selectedNostalgiaSports.filter((s) => s.toLowerCase() !== normalized.toLowerCase());
+    } else {
+      next = [...selectedNostalgiaSports, normalized];
+    }
+    setValue('nostalgiaSport', next.join(', '), { shouldValidate: true, shouldDirty: true });
+  };
+
+  const handleSelectAllNostalgia = () => {
+    const all = NOSTALGIA_SPORTS.map((s) => s.name);
+    setValue('nostalgiaSport', all.join(', '), { shouldValidate: true, shouldDirty: true });
+  };
+
+  const handleClearNostalgia = () => {
+    setValue('nostalgiaSport', '', { shouldValidate: true, shouldDirty: true });
+  };
   const currentGender = watch('gender');
 
-  // Filter available sports dynamically based on player's gender
-  const allowedSports = useMemo(() => {
-    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForGender(s.id, currentGender));
-  }, [currentGender]);
+  // Dynamic fee calculation:
+  // Flat ₹2,700 All-Inclusive Event Fee (All sports included)
+  // Extra T-Shirt Option: ₹500 extra
+  // If any mumukshu or non-mumukshu selects Yes -> ₹2,700 + ₹500 = ₹3,200
+  // If selects No -> ₹2,700
+  const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
+  const totalSportsCount = Math.max(1, selectedSports.length);
+  const newlyAddedSportsCount = isReturningPaidUser
+    ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
+    : 0;
 
-  // When gender changes, automatically remove any disallowed sports from selectedSports
+  const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
+  const totalPayableFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
+  const cumulativeTotalFee = 2700 + extraTshirtCost;
+  const previousPaidAmount = isReturningPaidUser ? 2700 : 0;
+
+  const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
+  const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
+
+  const currentDateOfBirth = watch('dateOfBirth');
+  const playerAge = useMemo(() => calculateAge(currentDateOfBirth), [currentDateOfBirth]);
+  const isKacchaPakkaEligible = playerAge !== null && (playerAge <= 16 || playerAge >= 56);
+
+  // Filter available sports dynamically based on player's gender and age
+  const allowedSports = useMemo(() => {
+    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge));
+  }, [currentGender, playerAge]);
+
+  // When gender or age/DOB changes, automatically remove any disallowed sports from selectedSports
   useEffect(() => {
     setSelectedSports((prev) => {
-      const valid = prev.filter((s) => isSportAllowedForGender(s, currentGender));
+      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
       if (valid.length > 0) {
         if (valid.length !== prev.length) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
       }
-      const fallback = allowedSports[0]?.id || 'cricket';
+      const fallback = allowedSports[0]?.id || (currentGender === 'Female' ? 'womens-sports' : 'cricket');
       setValue('selectedSports', [fallback], { shouldValidate: true });
       return [fallback];
     });
-  }, [currentGender, allowedSports, setValue]);
+  }, [currentGender, playerAge, allowedSports, setValue]);
   const currentAcc = watch('accommodationRequired');
   const currentExistingFamily = watch('existingRplFamily');
   const currentFood = watch('foodPreference');
@@ -457,7 +573,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     const field = dbFields.find((f) => f.field_key === fieldKey);
     return field?.label || defaultLabel;
   };
-  const currentDateOfBirth = watch('dateOfBirth');
   const currentCheckInDate = watch('checkInDate') || '2026-12-25';
   const currentCheckOutDate = watch('checkOutDate') || '2026-12-27';
 
@@ -607,6 +722,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
             if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
             if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.extraTshirt) setValue('extraTshirt', gen.extraTshirt as any, { shouldValidate: true, shouldDirty: true });
             if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
             if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
@@ -626,6 +742,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
             if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
             if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+            if (gen.nostalgiaSport || gen.nostalgia_sport) {
+              setValue('nostalgiaSport', gen.nostalgiaSport || gen.nostalgia_sport, { shouldValidate: true, shouldDirty: true });
+            }
 
             // Restore selected sports
             const savedSports = gen.selectedSports || Object.keys(sports);
@@ -750,6 +869,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setValue('dateOfBirth', '', { shouldValidate: false });
           setValue('gender', 'Male', { shouldValidate: false });
           setValue('tshirtSize', '' as any, { shouldValidate: false });
+          setValue('extraTshirt', 'No' as any, { shouldValidate: false });
+          setValue('nostalgiaSport', '', { shouldValidate: false });
         }
       })
       .catch((err) => {
@@ -769,6 +890,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('dateOfBirth', '', { shouldValidate: false });
         setValue('gender', 'Male', { shouldValidate: false });
         setValue('tshirtSize', '' as any, { shouldValidate: false });
+        setValue('extraTshirt', 'No' as any, { shouldValidate: false });
+        setValue('nostalgiaSport', '', { shouldValidate: false });
       });
   }, [currentMobile, currentCountryCode, setValue]);
 
@@ -937,6 +1060,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentVolleyballRole = watch('volleyballRole');
   const currentVolleyballExp = watch('volleyballExperience');
   const currentWomensCat = watch('womensCategory');
+  const currentWomensRole = watch('womensPlayingRole');
   const currentWomensExp = watch('womensExperience');
 
   useEffect(() => {
@@ -994,7 +1118,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   }, []);
 
   const toggleSportSelection = (sportId: SportType) => {
-    if (!isSportAllowedForGender(sportId, currentGender)) return;
+    if (!isSportAllowedForPlayer(sportId, currentGender, playerAge)) return;
     let updated: SportType[];
     if (selectedSports.includes(sportId)) {
       if (selectedSports.length === 1) {
@@ -1103,6 +1227,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       email: data.email,
       centre: data.centre,
       tshirtSize: data.tshirtSize,
+      extraTshirt: data.extraTshirt || 'No',
+      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       foodPreference: data.foodPreference,
@@ -1160,6 +1286,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
       tshirtSize: data.tshirtSize,
+      extraTshirt: data.extraTshirt || 'No',
+      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
+      nostalgia_sport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
       stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
@@ -1235,6 +1364,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         category: data.womensCategory,
         playingRole: data.womensPlayingRole,
         experience: data.womensExperience,
+      };
+    }
+    if (selectedSports.includes('kaccha-pakka')) {
+      sportAnswers['kaccha-pakka'] = {
+        league: 'Kaccha Pakka League',
+        enrolled: true,
+      };
+    }
+    if (data.nostalgiaSport && data.nostalgiaSport !== 'None') {
+      sportAnswers['90s-nostalgia'] = {
+        sport: data.nostalgiaSport,
       };
     }
 
@@ -1374,6 +1514,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           email: data.email.trim(),
           mobile: cleanPhoneNumber(data.mobileNumber),
           selectedSports,
+          extraTshirt: data.extraTshirt || 'No',
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
@@ -1572,7 +1713,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   );
 
   return (
-    <div className="min-h-screen pb-28 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20">
+    <div className="min-h-screen pb-12 sm:pb-16 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20">
       <div className="max-w-4xl mx-auto">
         {/* Navigation Breadcrumb Bar with InView entrance */}
         <InView
@@ -1640,24 +1781,42 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             </div>
           )}
 
-          {/* Sleek Milestone Progress Track */}
-          <div className="max-w-md mx-auto px-1">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
-              <span className="flex items-center space-x-1.5 text-slate-900 font-extrabold">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Form Progress</span>
-              </span>
-              <span className="font-mono text-amber-700 font-extrabold text-xs">
-                {progress}% Complete
-              </span>
-            </div>
-            <div className="w-full h-2.5 rounded-full bg-slate-200/90 overflow-hidden p-0.5 border border-slate-200/80 shadow-inner">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 shadow-xs"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+          {/* 4-Step Interactive Flow Tracker */}
+          <div className="max-w-xl mx-auto px-2 pt-4">
+            <div className="grid grid-cols-4 relative">
+              <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 -z-0" />
+              <div
+                className="absolute top-4 left-6 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500 -z-0 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.max(0, (progress - 15) * 1.25))}%`,
+                }}
               />
+
+              {[
+                { step: 1, label: 'Details & Stay', done: progress >= 25, active: progress < 45 },
+                { step: 2, label: 'Select Sports', done: selectedSports.length > 0, active: progress >= 25 && progress < 65 },
+                { step: 3, label: 'Sport Questions', done: progress >= 75, active: progress >= 65 && progress < 90 },
+                { step: 4, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 90 },
+              ].map((s) => (
+                <div key={s.step} className="flex flex-col items-center text-center relative z-10">
+                  <div
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-black transition-all shadow-xs ${s.done
+                      ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                      : s.active
+                        ? 'bg-amber-500 text-white ring-4 ring-amber-100 shadow-amber-500/30'
+                        : 'bg-white border-2 border-slate-300 text-slate-500'
+                      }`}
+                  >
+                    {s.done ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : s.step}
+                  </div>
+                  <span
+                    className={`mt-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight transition-colors ${s.active || s.done ? 'text-slate-900 font-extrabold' : 'text-slate-500'
+                      }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </InView>
@@ -1705,8 +1864,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <h4 className="text-sm font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
                         <span>Existing Registration Found ({existingRegistrationId?.slice(0, 8)})</span>
                         <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${existingPaymentStatus === 'approved'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 border border-amber-300'
                           }`}>
                           {existingPaymentStatus === 'approved' ? '✅ Payment Verified' : '⏳ Payment Pending / Edit Mode'}
                         </span>
@@ -1718,6 +1877,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Sub-section 1.1: Personal & Contact Details */}
+              <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 pb-2 border-b border-slate-100">
+                <User className="w-4 h-4 text-amber-600" />
+                <span>1.1 Personal &amp; Contact Details</span>
+              </div>
 
               {/* Mobile Number & Full Name */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2068,6 +2233,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Sub-section 1.2: Official Tournament Kit & Sizing */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
+                  <Shirt className="w-4 h-4 text-amber-600" />
+                  <span>1.2 Official Tournament Kit &amp; Sizing</span>
+                </div>
+              </div>
+
               {/* Jersey / T-Shirt Size Selector */}
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2108,6 +2281,45 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </p>
                 )}
 
+                {/* Extra T-Shirt Option */}
+                <div className="pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <Shirt className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Do you need an extra T-Shirt?</span>
+                      <span className="text-pink-600">*</span>
+                    </label>
+                    <span className="text-slate-500 font-semibold text-[11px] normal-case">
+                      Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentExtraTshirt === 'Yes' ? 'Yes (+₹500)' : 'No'}</strong>
+                    </span>
+                  </div>
+
+                  <OptionSelector
+                    options={[
+                      { value: 'No', label: 'No' },
+                      { value: 'Yes', label: 'Yes (+₹500)' },
+                    ]}
+                    value={currentExtraTshirt}
+                    onChange={(val) => setValue('extraTshirt', val as any, { shouldValidate: true })}
+                    layoutId="extra-tshirt-indicator"
+                    activeColor="bg-slate-900"
+                    activeTextColor="text-amber-300"
+                  />
+
+                  {/* Informational Note for Extra T-Shirt */}
+                  <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
+                    <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <p className="font-bold text-amber-950">
+                        Note: Extra T-shirt will cost ₹500 extra.
+                      </p>
+                      <p className="text-amber-800 text-[11px] mt-0.5">
+                        Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
                 <div className="mt-3">
                   <div
@@ -2146,6 +2358,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Sub-section 1.3: Player Demographics & Status */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
+                  <Users className="w-4 h-4 text-amber-600" />
+                  <span>1.3 Player Demographics &amp; Gender</span>
+                </div>
+              </div>
+
               {/* Date of Birth & Gender */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -2160,8 +2380,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     error={errors.dateOfBirth?.message}
                     placeholder="Select Date of Birth"
                     isDOB={true}
-                    minYear={1950}
-                    maxYear={2020}
+                    minYear={1930}
+                    maxYear={new Date().getFullYear()}
                     defaultYear={2002}
                   />
                   {errors.dateOfBirth && (
@@ -2169,6 +2389,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.dateOfBirth.message}</span>
                     </p>
+                  )}
+                  {playerAge !== null && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                      <span>Age: <strong className="text-slate-900">{playerAge} yrs</strong></span>
+                      {isKacchaPakkaEligible && (
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px]">
+                          <span>🌟</span>
+                          <span>Eligible for Kaccha Pakka League</span>
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -2182,12 +2413,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     // Lock gender — auto-filled from verified mumukshu/RPL record, not editable
                     <div className="flex items-center space-x-2 px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm">
                       <User className="w-4 h-4 text-slate-400" />
-                      <span>{currentGender || 'Not set'}</span>
+                      <span>{currentGender ? (currentGender === 'Female' ? 'Female (MeeraBen)' : 'Male (HariBhai)') : 'Not set'}</span>
                       <span className="ml-auto text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Locked</span>
                     </div>
                   ) : (
                     <OptionSelector
-                      options={['Male', 'Female', 'Other']}
+                      options={[
+                        { value: 'Male', label: 'Male (HariBhai)' },
+                        { value: 'Female', label: 'Female (MeeraBen)' },
+                      ]}
                       value={currentGender}
                       onChange={(genderOption) => setValue('gender', genderOption as any, { shouldValidate: true })}
                       layoutId="gender-indicator"
@@ -2198,6 +2432,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Sub-section 1.4: Meals & Ashram Accommodation */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
+                  <Home className="w-4 h-4 text-amber-600" />
+                  <span>1.4 Meals &amp; Ashram Accommodation</span>
+                </div>
+              </div>
 
               {/* Food Preference (Spice Level) & Accommodation */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2264,8 +2505,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           type="text"
                           {...register('stayingRoomNumber')}
                           className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${errors.stayingRoomNumber
-                              ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
-                              : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
+                            ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
+                            : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
                             }`}
                         />
                         {errors.stayingRoomNumber && (
@@ -2334,18 +2575,29 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 {/* Stay Billing / Policy Clarification */}
                 <div className={`md:col-span-2 p-4 rounded-2xl flex items-start space-x-3 text-xs transition-all duration-300 ${currentAcc === 'Yes'
-                    ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
-                    : 'bg-slate-50 border border-slate-200 text-slate-700'
+                  ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
+                  : 'bg-slate-50 border border-slate-200 text-slate-700'
                   }`}>
                   <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600' : 'text-slate-400'}`} />
                   <div className="space-y-1.5 leading-relaxed flex-1">
                     <div>
                       <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
                     </div>
-                    <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 font-medium">
-                      <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> By default, your booking will be created on a <strong>waitlist</strong>. It will be reviewed and confirmed by <strong>The Research Centre office</strong>. You will be notified on <strong>WhatsApp</strong> with payment details if your stay is confirmed.
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2.5">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="text-xs leading-relaxed">
+                        <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Sub-section 1.5: Season Enrollment & ID Photo */}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
+                  <Camera className="w-4 h-4 text-amber-600" />
+                  <span>1.5 Season Enrollment &amp; ID Photo</span>
                 </div>
               </div>
 
@@ -2368,68 +2620,112 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     activeColor="bg-slate-900"
                     activeTextColor="text-white"
                   />
+                  <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex items-start space-x-2.5">
+                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      {currentExistingFamily === 'Yes' ? (
+                        <span><strong>Returning Participant:</strong> Your player profile and previous season records will be linked.</span>
+                      ) : (
+                        <span><strong>New Participant:</strong> Welcome! Your entry will be enrolled as an open player draft for Season 9.</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
 
-
                 <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <Upload className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
-                  </label>
-                  <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-600 rounded-2xl p-4 text-center transition-all bg-slate-50 hover:bg-white min-h-[100px] flex items-center justify-center">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png"
-                      onChange={handlePhotoChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    {photoPreview ? (
-                      <div className="flex items-center justify-between w-full px-2">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={photoPreview}
-                            alt="Preview"
-                            className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm"
-                          />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                      <Camera className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                      Square • 600×600 to 1200×1200 px
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+                    {/* Compact Micro Guidelines */}
+                    <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Color &amp; square photo</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Plain light background</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Within last 6 months</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Neutral expression</span>
+                      </span>
+                    </div>
+
+                    {/* Modern Dropzone & Avatar Preview */}
+                    <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px]">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        onChange={handlePhotoChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      {photoPreview ? (
+                        <div className="flex items-center justify-between w-full px-1 z-20">
+                          <div className="flex items-center space-x-3">
+                            <img
+                              src={photoPreview}
+                              alt="Preview"
+                              className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square"
+                            />
+                            <div className="text-left">
+                              <span className="text-xs font-bold text-slate-900 block truncate max-w-[140px]">
+                                {photoName || 'Player Photo'}
+                              </span>
+                              <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
+                              Change
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png"
+                                onChange={handlePhotoChange}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePhoto();
+                              }}
+                              className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center space-x-3 py-1">
+                          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
+                            <Camera className="w-5 h-5" />
+                          </div>
                           <div className="text-left">
-                            <span className="text-xs font-bold text-slate-900 block truncate max-w-[150px]">
-                              {photoName || 'Player Photo'}
-                            </span>
-                            <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                            <p className="text-xs text-slate-900 font-bold">Click to upload photo</p>
+                            <span className="text-[10px] text-slate-500 block">
+                              JPG, PNG up to 5MB (Square ID format)
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
-                            Change
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png"
-                              onChange={handlePhotoChange}
-                              className="hidden"
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemovePhoto();
-                            }}
-                            className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <Upload className="w-5 h-5 text-slate-600 mx-auto" />
-                        <p className="text-xs text-slate-800 font-bold">Click to upload photo</p>
-                        <span className="text-[10px] text-slate-400 block">JPG, PNG up to 5MB</span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2457,6 +2753,56 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Women's Registration Selection Note */}
+              {currentGender === 'Female' && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-amber-500/10 border-2 border-pink-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    🏏
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-pink-950 block text-[11px] mb-0.5">
+                      Note for Women's Registration:
+                    </span>
+                    <p className="font-semibold text-pink-900 leading-snug">
+                      18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Football Only Schedule Note */}
+              {selectedSports.length === 1 && selectedSports.includes('football') && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-2 border-emerald-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    ⚽
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-emerald-950 block text-[11px] mb-0.5">
+                      Schedule Note for Football:
+                    </span>
+                    <p className="font-semibold text-emerald-900 leading-snug">
+                      Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Kaccha Pakka League Special Division Callout */}
+              {isKacchaPakkaEligible && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                    🌟
+                  </div>
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
+                      Kaccha Pakka League Available (Age: {playerAge} years):
+                    </span>
+                    <p className="font-semibold text-amber-900 leading-snug">
+                      Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Multi-Select Dropdown Container */}
               <div ref={dropdownRef} className="relative">
@@ -2468,8 +2814,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${dropdownOpen
-                      ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
-                      : 'border-slate-300 hover:border-slate-400'
+                    ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
+                    : 'border-slate-300 hover:border-slate-400'
                     }`}
                 >
                   <div className="flex flex-wrap items-center gap-1.5 flex-1">
@@ -2559,8 +2905,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               key={sport.id}
                               onClick={() => toggleSportSelection(sport.id)}
                               className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
-                                  ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
-                                  : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
+                                ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
+                                : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
                                 }`}
                             >
                               <div className="flex items-center space-x-3">
@@ -2577,8 +2923,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                               <div
                                 className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${isChecked
-                                    ? 'bg-slate-900 border-slate-900 text-amber-300'
-                                    : 'border-slate-300 bg-white'
+                                  ? 'bg-slate-900 border-slate-900 text-amber-300'
+                                  : 'border-slate-300 bg-white'
                                   }`}
                               >
                                 {isChecked && <Check className="w-4 h-4" />}
@@ -2604,6 +2950,22 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             {/* ========================================================================= */}
             {/* SECTION 3: DYNAMIC SPORT-SPECIFIC QUESTIONS (FOR EACH SELECTED SPORT) */}
             {/* ========================================================================= */}
+            {selectedSports.length > 0 && (
+              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex items-start space-x-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
+                  3
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
+                    Sport-Specific Questions
+                  </h2>
+                  <p className="text-slate-600 text-xs sm:text-sm font-medium">
+                    Experience levels, playing roles, and preferences for your chosen championships
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-6">
               {/* Cricket Questions with BasicDropdown */}
               <AnimatePresence>
@@ -2743,6 +3105,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             Tactical pitch position, preferred shooting foot & turf experience
                           </p>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Football Matches Schedule Note */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-emerald-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                        📅
+                      </div>
+                      <div>
+                        <strong className="text-emerald-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                          Tournament Schedule Notice:
+                        </strong>
+                        <p className="text-emerald-900 font-semibold">
+                          Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                        </p>
                       </div>
                     </div>
 
@@ -3135,9 +3512,24 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </span>
                           </div>
                           <p className="text-pink-800 text-xs font-semibold leading-relaxed">
-                            Select discipline (Cricket, Football, Throwball) & specific role
+                            Select discipline & specific role
                           </p>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Committee Selection Note */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-pink-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                      <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                        📢
+                      </div>
+                      <div>
+                        <strong className="text-pink-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                          Selection Notice:
+                        </strong>
+                        <p className="text-pink-900 font-semibold">
+                          18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                        </p>
                       </div>
                     </div>
 
@@ -3161,11 +3553,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
                           Specialty / Role <span className="text-pink-600">*</span>
                         </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Attacker, Setter, Bowler, Striker"
-                          {...register('womensPlayingRole')}
-                          className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-white border border-pink-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium text-sm"
+                        <BasicDropdown
+                          label="Select Role"
+                          items={[
+                            { id: 'All rounder', label: 'All rounder' },
+                            { id: 'Bowler', label: 'Bowler' },
+                            { id: 'Batsman', label: 'Batsman' },
+                            { id: 'Fielder', label: 'Fielder' },
+                          ]}
+                          value={
+                            currentWomensRole
+                              ? {
+                                id: currentWomensRole,
+                                label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
+                              }
+                              : null
+                          }
+                          onChange={(item) => setValue('womensPlayingRole', String(item.id), { shouldValidate: true })}
                         />
                       </div>
 
@@ -3192,24 +3596,216 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
             {/* ========================================================================= */}
+            {/* 90s NOSTALGIA SPORTS DIVISION */}
+            {/* ========================================================================= */}
+            <InView
+              viewOptions={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+              className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6"
+            >
+              <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 border border-amber-400 text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-md shadow-orange-500/20 shrink-0 aspect-square mt-0.5">
+                  🕹️
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                      90s Nostalgia
+                    </h3>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
+                      🎈 Traditional &amp; Fun Games
+                    </span>
+                  </div>
+                  <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
+                    Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90s Nostalgia division (open for all Mumukshu and Non-Mumukshu participants).
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div ref={nostalgiaDropdownRef} className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Select 90s Nostalgia Sports <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
+                    </label>
+                    {selectedNostalgiaSports.length > 0 && (
+                      <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300">
+                        {selectedNostalgiaSports.length} Selected
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Dropdown Trigger Box */}
+                  <div
+                    onClick={() => setNostalgiaDropdownOpen(!nostalgiaDropdownOpen)}
+                    className={`w-full min-h-[54px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${nostalgiaDropdownOpen
+                      ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
+                      : 'border-slate-300 hover:border-slate-400'
+                      }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                      {selectedNostalgiaSports.length === 0 ? (
+                        <span className="text-xs text-slate-400 font-medium pl-1">
+                          Choose 90s Nostalgia Sports (select one or multiple)...
+                        </span>
+                      ) : (
+                        selectedNostalgiaSports.map((sportName) => {
+                          const sport = NOSTALGIA_SPORTS.find(
+                            (s) => s.name.toLowerCase() === sportName.toLowerCase() || s.id.toLowerCase() === sportName.toLowerCase()
+                          );
+                          return (
+                            <span
+                              key={sportName}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold shadow-xs"
+                            >
+                              <span>{sport?.emoji || '🎯'}</span>
+                              <span>{sport?.name || sportName}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleNostalgiaSport(sport?.name || sportName);
+                                }}
+                                className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </span>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-slate-500 shrink-0">
+                      <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg">
+                        {selectedNostalgiaSports.length} selected
+                      </span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-slate-600 transition-transform ${nostalgiaDropdownOpen ? 'rotate-180 text-amber-600' : ''
+                          }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dropdown Popover with Checkboxes */}
+                  <AnimatePresence>
+                    {nostalgiaDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                        exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border-2 border-slate-300 shadow-xl z-50 p-3 space-y-2 origin-top"
+                      >
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 px-1">
+                          <span className="text-xs font-extrabold text-slate-800">
+                            90s Nostalgia Games ({NOSTALGIA_SPORTS.length})
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={handleSelectAllNostalgia}
+                              className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Select All
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleClearNostalgia}
+                              className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* List of games */}
+                        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                          {NOSTALGIA_SPORTS.map((sport) => {
+                            const isChecked = selectedNostalgiaSports.some(
+                              (s) => s.toLowerCase() === sport.name.toLowerCase() || s.toLowerCase() === sport.id.toLowerCase()
+                            );
+                            return (
+                              <div
+                                key={sport.name}
+                                onClick={() => toggleNostalgiaSport(sport.name)}
+                                className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
+                                  ? 'bg-amber-50 border-amber-300 shadow-xs'
+                                  : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
+                                  }`}
+                              >
+                                <div className="flex items-center space-x-2.5">
+                                  <span className="text-xl">{sport.emoji}</span>
+                                  <div>
+                                    <span className="font-extrabold text-xs text-slate-900 block">
+                                      {sport.name}
+                                    </span>
+                                    {sport.isLeagueMatch && (
+                                      <span className="text-[10px] text-amber-700 font-semibold">
+                                        Championship League Match
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${isChecked
+                                    ? 'bg-slate-900 border-slate-900 text-amber-300'
+                                    : 'border-slate-300 bg-white'
+                                    }`}
+                                >
+                                  {isChecked && <Check className="w-3.5 h-3.5" />}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Tournament Schedule Note for TT and Carrom */}
+                <div
+                  className={`p-3.5 rounded-2xl border text-xs flex items-start space-x-2.5 transition-all ${selectedNostalgiaSports.some(
+                    (s) => s.toLowerCase().includes('carrom') || s.toLowerCase().includes('table tennis')
+                  )
+                    ? 'bg-amber-500/15 border-2 border-amber-400 text-amber-950 shadow-xs'
+                    : 'bg-amber-50/80 border border-amber-200/90 text-amber-900'
+                    }`}
+                >
+                  <Info className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                      Note: TT and Carrom league matches will be decided on basis registrations received.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </InView>
+
+
+            {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
+              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-6 sm:mb-8"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
                 <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                  <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">💳</span>
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
+                    4
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
                         Payment & Registration Fee
                       </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
-                          ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                        ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                        : 'bg-amber-100 text-amber-900 border border-amber-300'
                         }`}>
                         {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
                       </span>
@@ -3230,17 +3826,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                        {isReturningPaidUser ? 'Returning Participant Fee Breakdown' : 'Registration Fee Breakdown'}
+                        {isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary'}
                       </span>
                       <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                         {isReturningPaidUser ? (
-                          newlyAddedSportsCount > 0 ? (
-                            `Adding ${newlyAddedSportsCount} New Sport(s) @ ₹400 each (Previously Paid for ${previouslyPaidSportsCount} sports)`
-                          ) : (
-                            `All ${selectedSports.length} Sports Previously Paid (No Payment Required)`
-                          )
+                          currentExtraTshirt === 'Yes'
+                            ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
+                            : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (Base ₹2,500 + ₹400 / extra sport)`
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹2,700${currentExtraTshirt === 'Yes' ? ' + ₹500 Extra T-Shirt = ₹3,200' : ' - All sports included'})`
                         )}
                       </h4>
                     </div>
@@ -3248,7 +3842,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                   <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
                     <span className="text-xs font-semibold text-slate-600">
-                      {isReturningPaidUser && newlyAddedSportsCount === 0 ? 'Amount Due:' : 'Total Payable:'}
+                      {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
                     </span>
                     <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
                       ₹{totalPayableFee.toLocaleString('en-IN')}
@@ -3258,68 +3852,45 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 {/* Returning User Notification Callout */}
                 {isReturningPaidUser && (
-                  <div className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 ${newlyAddedSportsCount > 0
-                      ? 'bg-amber-100/70 border-amber-300 text-amber-950'
-                      : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
-                    }`}>
-                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                  <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
+                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                     <div>
-                      {newlyAddedSportsCount > 0 ? (
-                        <span>
-                          <strong>Incremental Multi-Sport Registration:</strong> You previously paid <strong>₹{previousPaidAmount.toLocaleString('en-IN')}</strong> for {previouslyPaidSportsCount} sport(s). For the <strong>{newlyAddedSportsCount}</strong> newly selected sport(s), only <strong>₹{totalPayableFee.toLocaleString('en-IN')}</strong> (₹400 × {newlyAddedSportsCount}) is required. Please click below to complete the payment via Razorpay.
-                        </span>
-                      ) : (
-                        <span>
-                          <strong>Zero Additional Payment:</strong> Your registration for these {selectedSports.length} sport(s) has already been verified (₹{previousPaidAmount.toLocaleString('en-IN')}). You can edit your player profile, jersey specs, or accommodation dates without paying again.
-                        </span>
-                      )}
+                      <span>
+                        <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                      </span>
                     </div>
+                  </div>
+                )}
+
+                {/* Extra T-Shirt Line Item if selected */}
+                {currentExtraTshirt === 'Yes' && (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                    <span className="flex items-center space-x-2">
+                      <Shirt className="w-4 h-4 text-amber-700" />
+                      <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                    </span>
+                    <span className="text-amber-900 font-extrabold">+₹500</span>
                   </div>
                 )}
 
                 {/* Sport Breakdown List */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                    Selected Sports & Rate Applied:
+                    Selected Sports ({selectedSports.length}):
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {selectedSports.map((sportId, idx) => {
+                    {selectedSports.map((sportId) => {
                       const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                      const isPreviouslyCovered = isReturningPaidUser && idx < previouslyPaidSportsCount;
-                      const isNewlyAdded = isReturningPaidUser && idx >= previouslyPaidSportsCount;
-                      const isPrimary = !isReturningPaidUser && idx === 0;
 
                       return (
                         <div
                           key={sportId}
-                          className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${isPreviouslyCovered
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                              : isNewlyAdded
-                                ? 'bg-amber-100/90 border-amber-400 text-amber-950 shadow-xs'
-                                : isPrimary
-                                  ? 'bg-amber-100/80 border-amber-300 text-amber-900'
-                                  : 'bg-slate-50 border-slate-300 text-slate-800'
-                            }`}
+                          className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
                         >
                           <span>{sportObj?.emoji || '🏅'}</span>
                           <span>{sportObj?.name || sportId}</span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${isPreviouslyCovered
-                                ? 'bg-emerald-200 text-emerald-950'
-                                : isNewlyAdded
-                                  ? 'bg-amber-300 text-amber-950'
-                                  : isPrimary
-                                    ? 'bg-amber-200 text-amber-950'
-                                    : 'bg-slate-200 text-slate-900'
-                              }`}
-                          >
-                            {isPreviouslyCovered
-                              ? 'Paid'
-                              : isNewlyAdded
-                                ? '+₹400 Due'
-                                : isPrimary
-                                  ? 'Base: ₹2,500'
-                                  : '+₹400'}
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                            Included in Pass
                           </span>
                         </div>
                       );
@@ -3351,6 +3922,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Tournament Cancellation & Refund Policy Notice */}
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
+                  <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                      Tournament Policy: No refund in case of no show or cancellation.
+                    </span>
+
+                  </div>
+                </div>
               </div>
 
               {totalPayableFee === 0 && (
@@ -3361,113 +3943,102 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </div>
               )}
-            </InView>
 
-            {/* ========================================================================= */}
-            {/* SUBMIT BUTTON & CONFIRMATION CALLOUT */}
-            {/* ========================================================================= */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-              className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/10 border-2 border-amber-300 shadow-md space-y-4 text-slate-800"
-            >
-              <div className="flex items-start space-x-3 text-slate-700">
-                <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
-                <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                  Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
-                </p>
-              </div>
+              {/* Submission Controls & Assurance */}
+              <div className="pt-4 border-t border-emerald-200/80 space-y-4">
+                <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
+                  <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
+                  <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                    Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
+                  </p>
+                </div>
 
-              <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 pt-2 border-t border-amber-200/80">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>{isExistingPlayerRegistration ? 'Verified RPL Season 9 Player Record' : 'Verified RPL Season 9 Multi-Sport Entry'}</span>
-              </div>
-
-              {/* Primary Pay Now button */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
-                  onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
-                  className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
-                >
-                  {isRazorpayLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Opening Razorpay Gateway...</span>
-                    </div>
-                  ) : isUploadingReceipt ? (
-                    <span>Uploading Payment Receipt to Drive...</span>
-                  ) : isUploadingPhoto ? (
-                    <span>Uploading Player Photo to Drive...</span>
-                  ) : isSubmitting && !isPayLater ? (
-                    <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
-                  ) : totalPayableFee > 0 ? (
-                    <>
-                      <span>Pay ₹{totalPayableFee} & Complete Registration</span>
-                      <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                    </>
-                  ) : (
-                    <>
-                      <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</span>
-                      <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                    </>
-                  )}
-                </button>
-
-                {/* Pay Later button — only shown when there is an outstanding fee */}
-                {totalPayableFee > 0 && (
+                {/* Primary Pay Now button & Pay Later */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
-                    type="button"
+                    type="submit"
                     disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
-                    onClick={() => {
-                      isPayLaterRef.current = true;
-                      setIsPayLater(true);
-                      // Trigger form validation + submit via handleSubmit wrapper
-                      handleSubmit(onSubmit, onInvalid)();
-                    }}
-                    className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
+                    onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
+                    className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                   >
-                    {isSubmitting && isPayLater ? (
+                    {isRazorpayLoading ? (
                       <div className="flex items-center space-x-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving Registration...</span>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Opening Razorpay Gateway...</span>
                       </div>
+                    ) : isUploadingReceipt ? (
+                      <span>Uploading Payment Receipt to Drive...</span>
+                    ) : isUploadingPhoto ? (
+                      <span>Uploading Player Photo to Drive...</span>
+                    ) : isSubmitting && !isPayLater ? (
+                      <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
+                    ) : totalPayableFee > 0 ? (
+                      <>
+                        <span>Pay ₹{totalPayableFee} & Complete Registration</span>
+                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                      </>
                     ) : (
                       <>
-                        <Clock className="w-4 h-4 text-slate-500" />
-                        <span>Pay Later</span>
+                        <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</span>
+                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                       </>
                     )}
                   </button>
+
+                  {/* Pay Later button — only shown when there is an outstanding fee */}
+                  {totalPayableFee > 0 && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
+                      onClick={() => {
+                        isPayLaterRef.current = true;
+                        setIsPayLater(true);
+                        // Trigger form validation + submit via handleSubmit wrapper
+                        handleSubmit(onSubmit, onInvalid)();
+                      }}
+                      className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
+                    >
+                      {isSubmitting && isPayLater ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Registration...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4 text-slate-500" />
+                          <span>Pay Later</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Pay Later hint */}
+                {totalPayableFee > 0 && (
+                  <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed mt-4 pt-3.5 border-t border-emerald-200/60">
+                    💡 Prefer to pay later?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                        onOpenCheckStatus?.(mob);
+                      }}
+                      className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
+                    >
+                      Check Pass / Pay Due
+                    </button>
+                    {' '}— register now and complete payment anytime using your mobile number.
+                  </p>
+                )}
+
+                {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+                {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
+                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                    <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
+                  </div>
                 )}
               </div>
-
-              {/* Pay Later hint */}
-              {totalPayableFee > 0 && (
-                <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed mt-4 pt-3 border-t border-slate-100">
-                  💡 Prefer to pay later?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                      onOpenCheckStatus?.(mob);
-                    }}
-                    className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
-                  >
-                    Check Pass / Pay Due
-                  </button>
-                  {' '}— register now and complete payment anytime using your mobile number.
-                </p>
-              )}
-
-              {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
-              {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
-                  <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
-                  <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
-                </div>
-              )}
             </InView>
 
 

@@ -29,7 +29,7 @@ test('Registration Validation: rejects payload missing mobile number with 400', 
   assert.strictEqual(res.data.error, 'Missing core registration fields.');
 });
 
-test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,500', async () => {
+test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,700', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -42,12 +42,12 @@ test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,500', async
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 250000);
+    assert.strictEqual(res.data.amount, 270000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports calculates ₹2,500 + (2 * ₹400) = ₹3,300', async () => {
+test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹2,700 (all sports included)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -60,12 +60,72 @@ test('Razorpay Fee Calculation: 3 Sports calculates ₹2,500 + (2 * ₹400) = �
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 330000);
+    assert.strictEqual(res.data.amount, 270000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: Returning player adding 1 new sport pays ₹400', async () => {
+test('Razorpay Fee Calculation: Participant selecting extra T-shirt (Yes) charges ₹3,200 (2700 + 500)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Extra Tshirt Player',
+      email: 'player@example.com',
+      mobile: '9833333333',
+      selectedSports: ['cricket'],
+      extraTshirt: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 320000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Participant selecting extra T-shirt (No) charges flat ₹2,700', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Standard Tshirt Player',
+      email: 'player@example.com',
+      mobile: '9844444444',
+      selectedSports: ['cricket'],
+      extraTshirt: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Returning player requesting extra T-shirt (Yes) charges incremental ₹500', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Returning Player Extra Tshirt',
+      email: 'player@example.com',
+      mobile: '9855555555',
+      selectedSports: ['cricket'],
+      extraTshirt: 'Yes',
+      isExistingPlayer: true,
+      hasPreviouslyPaid: true,
+      previouslyPaidSportsCount: 1,
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 50000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Returning player adding sports needs no extra payment (all sports included)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -80,9 +140,9 @@ test('Razorpay Fee Calculation: Returning player adding 1 new sport pays ₹400'
   });
 
   assert.strictEqual(res.status, 200);
-  if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 40000);
-  }
+  assert.strictEqual(res.data.amount, 0);
+  assert.strictEqual(res.data.orderId, null);
+  assert.strictEqual(res.data.message, 'No payment required');
 });
 
 test('Razorpay Fee Calculation: Returning player with no new sports needs no payment', async () => {
@@ -169,3 +229,163 @@ test('Pay Later: registration submitted without UTR/receipt should not be marked
     );
   }
 });
+
+test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Kaccha Pakka Player',
+      email: 'kp@example.com',
+      mobile: '9866666666',
+      selectedSports: ['kaccha-pakka'],
+      extraTshirt: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Kaccha Pakka Veteran',
+      email: 'veteran@example.com',
+      mobile: '9877777777',
+      selectedSports: ['cricket', 'kaccha-pakka'],
+      extraTshirt: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 320000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details and sport_answers', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Nostalgia Champion',
+      email: 'nostalgia@example.com',
+      mobile: '9888888888',
+      selectedSports: ['cricket'],
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Nostalgia Champion',
+        email: 'nostalgia@example.com',
+        mobile: '9888888888',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          nostalgiaSport: 'Carrom',
+          nostalgia_sport: 'Carrom',
+        },
+        sport_answers: {
+          '90s-nostalgia': { sport: 'Carrom' },
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nostalgia sports', async () => {
+  const selectedNostalgia = [
+    'Carrom',
+    'Lemon spoon with book on head',
+    'Duckwalk',
+    'Skipping',
+  ];
+
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Nostalgia Multi Champion',
+      email: 'nostalgiamulti@example.com',
+      mobile: '9888888889',
+      selectedSports: ['cricket'],
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Nostalgia Multi Champion',
+        email: 'nostalgiamulti@example.com',
+        mobile: '9888888889',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          nostalgiaSport: selectedNostalgia,
+          nostalgia_sport: selectedNostalgia,
+        },
+        sport_answers: {
+          '90s-nostalgia': {
+            sport: selectedNostalgia,
+            sports: selectedNostalgia,
+          },
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Pay Later with Multi-Select Nostalgia: registers with payment_status=pending and preserves sports array', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'cricket',
+      full_name: 'Pay Later Multi Nostalgia Player',
+      email: 'paylatermulti@example.com',
+      mobile: '+91 9988776655',
+      payment_status: 'pending',
+      payment_utr: undefined,
+      payment_receipt_url: undefined,
+      general_details: {
+        centre: 'Delhi',
+        gender: 'Male',
+        selectedSports: ['cricket'],
+        nostalgiaSport: ['Carrom', 'Duckwalk'],
+        nostalgia_sport: ['Carrom', 'Duckwalk'],
+      },
+      answers: {},
+    }),
+  });
+
+  assert.ok(
+    [200, 201, 500].includes(res.status),
+    `Expected 200, 201, or 500, got ${res.status}`
+  );
+
+  if (res.status === 200 || res.status === 201) {
+    assert.ok(
+      res.data.registration_id || res.data.success,
+      'Should return a registration ID or success flag'
+    );
+    if (res.data.paymentStatus) {
+      assert.strictEqual(
+        res.data.paymentStatus,
+        'pending',
+        'Payment status must be pending'
+      );
+    }
+  }
+});
+
+

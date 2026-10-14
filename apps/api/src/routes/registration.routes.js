@@ -198,7 +198,9 @@ router.post('/register', async (req, res) => {
         const computedSportsCount = Math.max(1, allSelectedSports.length);
         const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
         const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
-        const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
+        const extraTshirtChoice = mergedGeneralDetails.extraTshirt || cleanGeneralDetails.extraTshirt || 'No';
+        const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+        const computedFee = 2700 + extraTshirtCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -227,7 +229,9 @@ router.post('/register', async (req, res) => {
         const finalReceiptUrl = mergedReceiptList.length > 0 ? mergedReceiptList.join(', ') : null;
 
         const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
-        const incrementalFee = isAlreadyPaid ? newlyAddedSportsCount * 400 : computedFee;
+        const prevHadExtraTshirt = prevGeneral.extraTshirt === 'Yes';
+        const newlyAddedExtraTshirt = !prevHadExtraTshirt && extraTshirtChoice === 'Yes';
+        const incrementalFee = isAlreadyPaid ? (newlyAddedExtraTshirt ? 500 : 0) : computedFee;
 
         mergedGeneralDetails.totalAmount = computedFee;
         mergedGeneralDetails.calculatedFee = computedFee;
@@ -246,11 +250,7 @@ router.post('/register', async (req, res) => {
         const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
 
         if (prevRow.payment_status === 'approved') {
-          if (hasNewSports && !hasNewPayment && incomingStatusIsPending) {
-            finalPaymentStatus = 'approved_due';
-          } else {
-            finalPaymentStatus = 'approved';
-          }
+          finalPaymentStatus = 'approved';
         } else {
           finalPaymentStatus = 'pending';
         }
@@ -280,10 +280,12 @@ router.post('/register', async (req, res) => {
         logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
       } else {
         id = uuidv4();
-        const newSportsCount = Math.max(1, Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.length : 1);
-        const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
+        const extraTshirtChoice = cleanGeneralDetails.extraTshirt || 'No';
+        const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+        const newFee = 2700 + extraTshirtCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
+        cleanGeneralDetails.incrementalFee = newFee;
 
         // Auto-create an Aashray guest card within the transaction
         if (!cleanGeneralDetails.cardNo) {
@@ -334,7 +336,7 @@ router.post('/register', async (req, res) => {
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
-        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || 2500);
+        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? 3200 : 2700));
 
       await connection.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 

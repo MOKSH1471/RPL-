@@ -48,7 +48,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
       ? Object.keys(sportAns)
       : [player.sport_id || 'cricket'];
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
-  const calculatedFee = gen.totalAmount || (2500 + Math.max(0, calculatedSportsCount - 1) * 400);
+  const calculatedFee = player.total_amount || gen.totalAmount || (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' ? 3200 : 2700);
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
@@ -520,18 +520,26 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   </div>
                   <div>
                     <span className="text-slate-400 font-medium block">Jersey Size</span>
-                    <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
-                      {gen.tshirtSize || 'L'}
-                    </span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
+                        {gen.tshirtSize || 'L'}
+                      </span>
+                      {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
+                        <span className="font-bold text-[10px] text-orange-800 bg-orange-100 border border-orange-300 px-1.5 py-0.5 rounded-full">
+                          +1 Extra
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400 font-medium block">Jersey Name</span>
-                    <span className="font-bold text-slate-900">{gen.customJerseyName || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium block">Jersey Number</span>
-                    <span className="font-bold text-slate-900">{gen.preferredJerseyNumber || '-'}</span>
-                  </div>
+                  {(gen.nostalgiaSport || gen.nostalgia_sport) && (
+                    <div>
+                      <span className="text-slate-400 font-medium block">90s Nostalgia</span>
+                      <span className="font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs inline-flex items-center space-x-1 mt-0.5">
+                        <span>🕹️</span>
+                        <span>{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
+                      </span>
+                    </div>
+                  )}
 
                   {(gen.referrerName || gen.referrerMobile) && (
                     <div className="col-span-2 sm:col-span-4 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
@@ -694,25 +702,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   </select>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Custom Jersey Name</label>
-                  <input
-                    type="text"
-                    value={formData.customJerseyName}
-                    onChange={(e) => setFormData({ ...formData, customJerseyName: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
-                  />
-                </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Preferred Number</label>
-                  <input
-                    type="text"
-                    value={formData.preferredJerseyNumber}
-                    onChange={(e) => setFormData({ ...formData, preferredJerseyNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
-                  />
-                </div>
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Payment Status</label>
