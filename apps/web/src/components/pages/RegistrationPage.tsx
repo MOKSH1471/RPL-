@@ -318,7 +318,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const totalPayableFee = isReturningPaidUser
     ? newlyAddedSportsCount * 400
-    : 2500 + Math.max(0, totalSportsCount - 1) * 400;
+    : 1; // TEMPORARY 1 RUPEE LIVE TEST
 
   const cumulativeTotalFee = 2500 + Math.max(0, totalSportsCount - 1) * 400;
   const previousPaidAmount = isReturningPaidUser
@@ -1355,22 +1355,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
 
       try {
-        const orderData = await createRazorpayOrder({
-          fullName: data.fullName.trim(),
-          email: data.email.trim(),
-          mobile: cleanPhoneNumber(data.mobileNumber),
-          selectedSports,
-          isExistingPlayer: isExistingPlayerRegistration,
-          previouslyPaidSportsCount,
-          hasPreviouslyPaid,
-          registrationId: existingRegistrationId || undefined,
-        });
-
-        if (!orderData || !orderData.orderId) {
-          throw new Error(orderData?.error || 'Failed to generate Razorpay order ID.');
-        }
-
-        const registrationPayload = {
+        const registrationPayload: Record<string, any> = {
           registration_id: existingRegistrationId || undefined,
           sport_id: selectedSports[0] || 'cricket',
           full_name: data.fullName.trim(),
@@ -1383,6 +1368,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           sport_answers: sportAnswers,
           answers: sanitizedAnswers,
         };
+
+        const orderData = await createRazorpayOrder({
+          fullName: data.fullName.trim(),
+          email: data.email.trim(),
+          mobile: cleanPhoneNumber(data.mobileNumber),
+          selectedSports,
+          isExistingPlayer: isExistingPlayerRegistration,
+          previouslyPaidSportsCount,
+          hasPreviouslyPaid,
+          registrationId: existingRegistrationId || undefined,
+          registrationPayload,
+        });
+
+        if (!orderData || !orderData.orderId) {
+          throw new Error(orderData?.error || 'Failed to generate Razorpay order ID.');
+        }
+
+        if (orderData.registrationId && !existingRegistrationId) {
+          setExistingRegistrationId(orderData.registrationId);
+          activeRegistrationId = orderData.registrationId;
+          registrationPayload.registration_id = orderData.registrationId;
+        }
 
         const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TivKrz1oOVPG55';
 

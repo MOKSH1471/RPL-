@@ -15,6 +15,16 @@ jobs:
     name: Test & Build Verification
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: RPL
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,12 +38,23 @@ jobs:
       - name: Install Monorepo Dependencies
         run: npm install
 
-      - name: Run Test Suite (24 Integration & Unit Tests)
+      - name: Run Database Migrations
+        run: npm run db:migrate
+        env:
+          NODE_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: test
+          DB_NAME: RPL
+
+      - name: Run Test Suite (Integration & Unit Tests)
         run: npm test
         env:
           NODE_ENV: test
           PORT: 5005
-          DB_HOST: localhost
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
           DB_USER: root
           DB_PASSWORD: test
           DB_NAME: RPL
