@@ -312,6 +312,8 @@ router.post('/register', async (req, res) => {
       const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
         ? finalGeneralDetails.selectedSports.join(', ')
         : (req.body.sport_id || 'Cricket');
+      const isSpectator = finalGeneralDetails.registrationType === 'spectator' || req.body.sport_id === 'spectator' || (Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.includes('spectator'));
+      const txnCategory = isSpectator ? 'spectator' : 'sports';
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cleanMobDigits = cleanMobile.replace(/\D/g, '');
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${cleanMobDigits.slice(-6) || 'RPL'}`;
@@ -324,6 +326,7 @@ router.post('/register', async (req, res) => {
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
          ON DUPLICATE KEY UPDATE 
+           category = VALUES(category),
            amount = VALUES(amount),
            upi_ref = VALUES(upi_ref),
            description = VALUES(description),
@@ -333,7 +336,7 @@ router.post('/register', async (req, res) => {
         [
           cardNoVal,
           id,
-          'sports',
+          txnCategory,
           finalFeeVal,
           0,
           finalPaymentUtr || 'NA',
