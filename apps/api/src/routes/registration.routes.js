@@ -198,9 +198,14 @@ router.post('/register', async (req, res) => {
         const computedSportsCount = Math.max(1, allSelectedSports.length);
         const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
         const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
-        const extraTshirtChoice = mergedGeneralDetails.extraTshirt || cleanGeneralDetails.extraTshirt || 'No';
+        const regType = mergedGeneralDetails.registrationType || cleanGeneralDetails.registrationType || (allSelectedSports.includes('spectator') ? 'spectator' : 'player');
+        const isSpectator = regType === 'spectator';
+        const accomRequired = mergedGeneralDetails.accommodationRequired || cleanGeneralDetails.accommodationRequired || 'No';
+        const extraTshirtChoice = mergedGeneralDetails.extraTshirt || mergedGeneralDetails.spectatorTshirt || cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No';
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
-        const computedFee = 2700 + extraTshirtCost;
+        const computedFee = isSpectator
+          ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+          : 2700 + extraTshirtCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -280,9 +285,14 @@ router.post('/register', async (req, res) => {
         logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
       } else {
         id = uuidv4();
-        const extraTshirtChoice = cleanGeneralDetails.extraTshirt || 'No';
+        const regType = cleanGeneralDetails.registrationType || (cleanGeneralDetails.selectedSports?.includes('spectator') ? 'spectator' : 'player');
+        const isSpectator = regType === 'spectator';
+        const accomRequired = cleanGeneralDetails.accommodationRequired || 'No';
+        const extraTshirtChoice = cleanGeneralDetails.extraTshirt || cleanGeneralDetails.spectatorTshirt || 'No';
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
-        const newFee = 2700 + extraTshirtCost;
+        const newFee = isSpectator
+          ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+          : 2700 + extraTshirtCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;

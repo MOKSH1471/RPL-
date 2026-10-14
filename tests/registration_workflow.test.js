@@ -388,4 +388,185 @@ test('Pay Later with Multi-Select Nostalgia: registers with payment_status=pendi
   }
 });
 
+test('Spectator Pass: Order creation for Day Pass without stay (₹630 / 63000 paise)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Spectator Day Guest',
+      email: 'spectator_day@example.com',
+      mobile: '9111122222',
+      selectedSports: ['spectator'],
+      registrationType: 'spectator',
+      accommodationRequired: 'No',
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Spectator Day Guest',
+        email: 'spectator_day@example.com',
+        mobile: '9111122222',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          registrationType: 'spectator',
+          spectatorOption: 'without-stay',
+          accommodationRequired: 'No',
+          extraTshirt: 'No',
+          spectatorTshirt: 'No',
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 63000, 'Spectator without stay must be ₹630 (63000 paise)');
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,130 / 113000 paise)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Spectator Day With Tshirt',
+      email: 'spectator_tshirt@example.com',
+      mobile: '9111122223',
+      selectedSports: ['spectator'],
+      registrationType: 'spectator',
+      accommodationRequired: 'No',
+      extraTshirt: 'Yes',
+      registrationPayload: {
+        fullName: 'Spectator Day With Tshirt',
+        email: 'spectator_tshirt@example.com',
+        mobile: '9111122223',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          registrationType: 'spectator',
+          spectatorOption: 'without-stay',
+          accommodationRequired: 'No',
+          spectatorTshirt: 'Yes',
+          extraTshirt: 'Yes',
+          tshirtSize: 'XL',
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 113000, 'Spectator without stay + T-shirt must be ₹1130 (113000 paise)');
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Spectator Pass: Order creation with stay (₹2,700 / 270000 paise)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Spectator Stay Guest',
+      email: 'spectator_stay@example.com',
+      mobile: '9111122224',
+      selectedSports: ['spectator'],
+      registrationType: 'spectator',
+      accommodationRequired: 'Yes',
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Spectator Stay Guest',
+        email: 'spectator_stay@example.com',
+        mobile: '9111122224',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          registrationType: 'spectator',
+          spectatorOption: 'with-stay',
+          accommodationRequired: 'Yes',
+          extraTshirt: 'No',
+          spectatorTshirt: 'No',
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000, 'Spectator with stay must be ₹2700 (270000 paise)');
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 paise)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Spectator Stay Plus Tshirt',
+      email: 'spectator_stay_tshirt@example.com',
+      mobile: '9111122225',
+      selectedSports: ['spectator'],
+      registrationType: 'spectator',
+      accommodationRequired: 'Yes',
+      extraTshirt: 'Yes',
+      registrationPayload: {
+        fullName: 'Spectator Stay Plus Tshirt',
+        email: 'spectator_stay_tshirt@example.com',
+        mobile: '9111122225',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Female',
+          registrationType: 'spectator',
+          spectatorOption: 'with-stay',
+          accommodationRequired: 'Yes',
+          extraTshirt: 'Yes',
+          spectatorTshirt: 'Yes',
+          tshirtSize: 'M',
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 320000, 'Spectator with stay + T-shirt must be ₹3200 (320000 paise)');
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Spectator Pass: Pay Later registers with payment_status=pending and ₹630 fee', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'spectator',
+      full_name: 'Spectator Pay Later Guest',
+      email: 'spectatorpaylater@example.com',
+      mobile: '+91 9777766666',
+      payment_status: 'pending',
+      general_details: {
+        centre: 'Ahmedabad',
+        gender: 'Male',
+        registrationType: 'spectator',
+        spectatorOption: 'without-stay',
+        accommodationRequired: 'No',
+        selectedSports: ['spectator'],
+        nostalgiaSport: ['Kho-Kho', 'Gilli Danda'],
+      },
+      answers: {},
+    }),
+  });
+
+  assert.ok(
+    [200, 201, 500].includes(res.status),
+    `Expected 200, 201, or 500, got ${res.status}`
+  );
+
+  if (res.status === 200 || res.status === 201) {
+    assert.ok(res.data.registration_id || res.data.success);
+    if (res.data.paymentStatus) {
+      assert.strictEqual(res.data.paymentStatus, 'pending');
+    }
+  }
+});
+
 

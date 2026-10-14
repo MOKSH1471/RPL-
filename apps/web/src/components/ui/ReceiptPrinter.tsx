@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import { RegistrationFormData } from '@/types';
+import { RegistrationFormData, SportType } from '@/types';
 import { printerAudio } from '@/lib/printerAudio';
 import {
   Printer,
@@ -123,10 +123,12 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
     (data as any).paymentReceipt
   );
 
-  const sportsList =
+  const sportsList: (string | SportType)[] =
     data.selectedSports && data.selectedSports.length > 0
-      ? data.selectedSports
+      ? (data.selectedSports as (string | SportType)[])
       : [data.league || 'cricket'];
+
+  const isSpectator = (data as any).registrationType === 'spectator' || sportsList.includes('spectator');
 
   const formatSportName = (s: string) => {
     switch (s) {
@@ -147,6 +149,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
         return "Women's Multi-Sport";
       case 'kaccha-pakka':
         return 'Kaccha Pakka League';
+      case 'spectator':
+        return 'Spectator Pass (Retro Games & Meals)';
       default:
         return s;
     }
@@ -419,7 +423,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       RAJ PREMIER LEAGUE
                     </div>
                     <div className="text-[9px] font-bold text-amber-800 tracking-wider">
-                      SEASON 9 • TOURNAMENT PASS
+                      SEASON 9 • {isSpectator ? 'SPECTATOR PASS' : 'TOURNAMENT PASS'}
                     </div>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
@@ -455,9 +459,9 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Participant Details Rows */}
                 <div className="space-y-1 text-[9.5px]">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PLAYER:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'SPECTATOR:' : 'PLAYER:'}</span>
                     <span className="font-extrabold text-slate-950 text-right max-w-[190px] truncate">
-                      {data.fullName || 'RPL Athlete'}
+                      {data.fullName || 'Participant'}
                     </span>
                   </div>
 
@@ -477,19 +481,27 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
 
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">JERSEY:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'T-SHIRT:' : 'JERSEY:'}</span>
                     <span className="font-mono font-bold text-amber-800">
-                      SIZE {data.tshirtSize || 'L'}
-                      {data.extraTshirt === 'Yes' ? ' (+1 Extra)' : ''}
-                      {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
-                      {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                      {isSpectator ? (
+                        (data.spectatorTshirt === 'Yes' || data.extraTshirt === 'Yes')
+                          ? `PURCHASED (SIZE ${data.tshirtSize || 'L'})`
+                          : 'NOT ORDERED'
+                      ) : (
+                        <>
+                          SIZE {data.tshirtSize || 'L'}
+                          {data.extraTshirt === 'Yes' ? ' (+1 Extra)' : ''}
+                          {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
+                          {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                        </>
+                      )}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
+                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27 (Compulsory)' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Day Pass (Without Stay)')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
                     </span>
                   </div>
 
@@ -514,7 +526,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Registered Sports */}
                 <div className="mb-2">
                   <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    CHAMPIONSHIP ARENAS (1X INCLUDED)
+                    {isSpectator ? 'ARENAS & RETRO GAMES' : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
                   </div>
                   <div className="space-y-1">
                     {sportsList.map((sport, idx) => (
@@ -533,11 +545,11 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Status / Total breakdown */}
                 <div className="space-y-0.5 text-[9px] mb-2">
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Tournament Registration</span>
+                    <span>{isSpectator ? 'Spectator Entry' : 'Tournament Registration'}</span>
                     <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Player Kit & Pass</span>
+                    <span>{isSpectator ? 'Meals & Retro Games' : 'Player Kit & Pass'}</span>
                     <span className="font-mono">INCLUDED</span>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">
