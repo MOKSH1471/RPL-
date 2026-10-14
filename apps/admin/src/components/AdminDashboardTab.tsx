@@ -28,7 +28,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     );
   }
 
-  const { totalRegistrations, payment, financials, accommodationCount, sportsCount, tshirtSizes, centresCount } = stats;
+  const { totalRegistrations, activeRegistrations, payment, financials, accommodationCount, sportsCount, tshirtSizes, centresCount } = stats;
 
   const formatINR = (val: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
@@ -111,7 +111,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">{totalRegistrations}</span>
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{activeRegistrations ?? totalRegistrations}</span>
             <span className="text-xs font-semibold text-slate-400">entries</span>
           </div>
         </div>

@@ -78,10 +78,12 @@ export function AdminRegistrationsTab({
     // Status / Archive filter
     if (statusFilter === 'archived') {
       if (!isArchived) return false;
-    } else if (statusFilter !== 'all') {
-      if (isArchived) return false; // Exclude archived from specific payment status views
-      const pStatus = (r.payment_status || 'pending').toLowerCase();
-      if (pStatus !== statusFilter) return false;
+    } else {
+      if (isArchived) return false; // Exclude archived from active roster views by default
+      if (statusFilter !== 'all') {
+        const pStatus = (r.payment_status || 'pending').toLowerCase();
+        if (pStatus !== statusFilter) return false;
+      }
     }
 
     // Sport filter
