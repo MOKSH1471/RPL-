@@ -569,4 +569,15 @@ test('Spectator Pass: Pay Later registers with payment_status=pending and ₹630
   }
 });
 
+test('Spectator Pass: Lookup by mobile retrieves spectator registration details', async () => {
+  const { status, data } = await apiRequest('/api/player-lookup?mobile=9777766666');
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.found, true);
+  assert.strictEqual(data.isExistingRegistration, true);
+  assert.strictEqual(data.registration.fullName, 'Spectator Pay Later Guest');
+  assert.strictEqual(data.registration.generalDetails.registrationType, 'spectator');
+  assert.deepStrictEqual(data.registration.selectedSports, ['spectator']);
+});
+
+
 
