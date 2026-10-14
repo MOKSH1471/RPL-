@@ -536,7 +536,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       <span className="text-slate-400 font-medium block">90s Nostalgia</span>
                       <span className="font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs inline-flex items-center space-x-1 mt-0.5">
                         <span>🕹️</span>
-                        <span>{gen.nostalgiaSport || gen.nostalgia_sport}</span>
+                        <span>{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
                       </span>
                     </div>
                   )}

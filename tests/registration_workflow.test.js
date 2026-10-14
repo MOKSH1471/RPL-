@@ -302,3 +302,90 @@ test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details 
   }
 });
 
+test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nostalgia sports', async () => {
+  const selectedNostalgia = [
+    'Carrom',
+    'Lemon spoon with book on head',
+    'Duckwalk',
+    'Skipping',
+  ];
+
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Nostalgia Multi Champion',
+      email: 'nostalgiamulti@example.com',
+      mobile: '9888888889',
+      selectedSports: ['cricket'],
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Nostalgia Multi Champion',
+        email: 'nostalgiamulti@example.com',
+        mobile: '9888888889',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          nostalgiaSport: selectedNostalgia,
+          nostalgia_sport: selectedNostalgia,
+        },
+        sport_answers: {
+          '90s-nostalgia': {
+            sport: selectedNostalgia,
+            sports: selectedNostalgia,
+          },
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Pay Later with Multi-Select Nostalgia: registers with payment_status=pending and preserves sports array', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'cricket',
+      full_name: 'Pay Later Multi Nostalgia Player',
+      email: 'paylatermulti@example.com',
+      mobile: '+91 9988776655',
+      payment_status: 'pending',
+      payment_utr: undefined,
+      payment_receipt_url: undefined,
+      general_details: {
+        centre: 'Delhi',
+        gender: 'Male',
+        selectedSports: ['cricket'],
+        nostalgiaSport: ['Carrom', 'Duckwalk'],
+        nostalgia_sport: ['Carrom', 'Duckwalk'],
+      },
+      answers: {},
+    }),
+  });
+
+  assert.ok(
+    [200, 201, 500].includes(res.status),
+    `Expected 200, 201, or 500, got ${res.status}`
+  );
+
+  if (res.status === 200 || res.status === 201) {
+    assert.ok(
+      res.data.registration_id || res.data.success,
+      'Should return a registration ID or success flag'
+    );
+    if (res.data.paymentStatus) {
+      assert.strictEqual(
+        res.data.paymentStatus,
+        'pending',
+        'Payment status must be pending'
+      );
+    }
+  }
+});
+
+

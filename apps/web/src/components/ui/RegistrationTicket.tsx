@@ -211,11 +211,11 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
               <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
-                90s Nostalgia Sport
+                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90s Nostalgia Sports' : '90s Nostalgia Sport'}
               </span>
               <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
                 <span>🕹️</span>
-                <span>{data.nostalgiaSport}</span>
+                <span>{Array.isArray(data.nostalgiaSport) ? data.nostalgiaSport.join(', ') : data.nostalgiaSport}</span>
               </span>
             </div>
           )}
@@ -241,7 +241,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       </div>
 
       {/* Bottom Information & Action Buttons */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4">
+      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
         {/* Official Registration Confirmation Note */}
         <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col space-y-2.5 text-xs text-emerald-900">
           <div className="flex items-start space-x-3">

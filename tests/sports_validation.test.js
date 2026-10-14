@@ -116,13 +116,13 @@ test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pa
   assert.strictEqual(isKacchaPakkaEligible(null), false);
 });
 
-test('90s Nostalgia: verifies the 7 nostalgia sports and TT/Carrom league note', () => {
+test('90s Nostalgia: verifies the 7 nostalgia sports and TT/Carrom league note with canonical capitalization', () => {
   const NOSTALGIA_SPORTS = [
     'Carrom',
-    'lemon spoon with book on head',
-    'duckwalk',
+    'Lemon spoon with book on head',
+    'Duckwalk',
     'Skipping',
-    'Ring race(Couple or 2 ppl)',
+    'Ring race (Couple or 2 ppl)',
     'Relay race (Names may change)',
     'Table tennis',
   ];
@@ -136,8 +136,70 @@ test('90s Nostalgia: verifies the 7 nostalgia sports and TT/Carrom league note',
   assert.strictEqual(hasRegistrationBasisNote('Carrom'), true);
   assert.strictEqual(hasRegistrationBasisNote('Table tennis'), true);
   assert.strictEqual(hasRegistrationBasisNote('Skipping'), false);
-  assert.strictEqual(hasRegistrationBasisNote('duckwalk'), false);
-  assert.strictEqual(hasRegistrationBasisNote('Ring race(Couple or 2 ppl)'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Duckwalk'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Ring race (Couple or 2 ppl)'), false);
   assert.strictEqual(hasRegistrationBasisNote('Relay race (Names may change)'), false);
-  assert.strictEqual(hasRegistrationBasisNote('lemon spoon with book on head'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Lemon spoon with book on head'), false);
 });
+
+test('90s Nostalgia: formatNostalgiaSports helper formats array, legacy string, and empty selections correctly', () => {
+  function formatNostalgiaSports(val) {
+    if (!val) return 'None';
+    if (Array.isArray(val)) {
+      const filtered = val.filter((s) => s && s !== 'None');
+      return filtered.length > 0 ? filtered.join(', ') : 'None';
+    }
+    return typeof val === 'string' && val.trim() ? val : 'None';
+  }
+
+  // Multi-select array tests
+  assert.strictEqual(
+    formatNostalgiaSports(['Carrom', 'Duckwalk', 'Skipping']),
+    'Carrom, Duckwalk, Skipping'
+  );
+  assert.strictEqual(
+    formatNostalgiaSports(['Lemon spoon with book on head']),
+    'Lemon spoon with book on head'
+  );
+  assert.strictEqual(formatNostalgiaSports(['None']), 'None');
+  assert.strictEqual(formatNostalgiaSports([]), 'None');
+
+  // Legacy single string tests
+  assert.strictEqual(formatNostalgiaSports('Carrom'), 'Carrom');
+  assert.strictEqual(formatNostalgiaSports('None'), 'None');
+
+  // Edge cases
+  assert.strictEqual(formatNostalgiaSports(null), 'None');
+  assert.strictEqual(formatNostalgiaSports(undefined), 'None');
+});
+
+test('90s Nostalgia: canonical capitalization mapping normalizes legacy lowercase strings', () => {
+  const CANONICAL_MAP = {
+    'carrom': 'Carrom',
+    'lemon spoon with book on head': 'Lemon spoon with book on head',
+    'duckwalk': 'Duckwalk',
+    'skipping': 'Skipping',
+    'ring race(couple or 2 ppl)': 'Ring race (Couple or 2 ppl)',
+    'ring race (couple or 2 ppl)': 'Ring race (Couple or 2 ppl)',
+    'relay race (names may change)': 'Relay race (Names may change)',
+    'table tennis': 'Table tennis',
+  };
+
+  function normalizeNostalgiaSport(sport) {
+    if (!sport || typeof sport !== 'string') return sport;
+    const lower = sport.trim().toLowerCase();
+    return CANONICAL_MAP[lower] || sport;
+  }
+
+  assert.strictEqual(normalizeNostalgiaSport('duckwalk'), 'Duckwalk');
+  assert.strictEqual(
+    normalizeNostalgiaSport('lemon spoon with book on head'),
+    'Lemon spoon with book on head'
+  );
+  assert.strictEqual(
+    normalizeNostalgiaSport('ring race(couple or 2 ppl)'),
+    'Ring race (Couple or 2 ppl)'
+  );
+  assert.strictEqual(normalizeNostalgiaSport('Duckwalk'), 'Duckwalk');
+});
+

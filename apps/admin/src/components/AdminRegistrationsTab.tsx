@@ -388,10 +388,10 @@ export function AdminRegistrationsTab({
                           {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                             <span
                               className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
-                              title={`90s Nostalgia: ${gen.nostalgiaSport || gen.nostalgia_sport}`}
+                              title={`90s Nostalgia: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
                             >
                               <span>🕹️</span>
-                              <span className="truncate max-w-[90px]">{gen.nostalgiaSport || gen.nostalgia_sport}</span>
+                              <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
                             </span>
                           )}
                         </div>

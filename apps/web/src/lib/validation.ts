@@ -71,7 +71,8 @@ export const registrationSchema = z
       required_error: 'Please select your Jersey / T-Shirt Size',
     }),
     extraTshirt: z.enum(['Yes', 'No']).optional().default('No'),
-    nostalgiaSport: z.string().optional(),
+    nostalgiaSport: z.union([z.string(), z.array(z.string())]).optional(),
+    nostalgiaSports: z.array(z.string()).optional(),
     dateOfBirth: z
       .string()
       .min(1, { message: 'Please select Date of Birth' }),

@@ -84,6 +84,24 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
 
   const paperRef = useRef<HTMLDivElement>(null);
   const cutterFlashRef = useRef<HTMLDivElement>(null);
+  const [paperHeight, setPaperHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (!paperRef.current) return;
+    const updateHeight = () => {
+      if (paperRef.current) {
+        setPaperHeight(paperRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null;
+    if (ro && paperRef.current) {
+      ro.observe(paperRef.current);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+    };
+  }, [qrCodeDataUrl, data]);
 
   const effectiveUtr =
     (data.payment_utr && data.payment_utr.trim()) ||
@@ -573,9 +591,14 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
         </div>
 
         {/* Minimal Pointer Tear Helper Text positioned below the dispensed receipt */}
-        <p className={`text-[11px] text-slate-500 font-medium text-center transition-all ${
-          isPrinted || isPrinting ? 'mt-[820px] sm:mt-[860px] pb-4' : 'mt-3'
-        }`}>
+        <p
+          style={{
+            marginTop: isPrinted || isPrinting
+              ? (paperHeight > 0 ? `${41 + paperHeight + 14}px` : '520px')
+              : '12px',
+          }}
+          className="text-[11px] text-slate-500 font-medium text-center transition-all duration-300 pb-2"
+        >
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
             : isPrinted
