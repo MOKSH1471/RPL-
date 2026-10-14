@@ -2,7 +2,9 @@ process.env.NODE_ENV = 'test';
 
 import http from 'http';
 import app from '../apps/api/index.js';
-import db from '../apps/api/src/config/db.js';
+import db, { RPL_DB } from '../apps/api/src/config/db.js';
+
+export { db, RPL_DB };
 
 let server;
 let baseUrl;

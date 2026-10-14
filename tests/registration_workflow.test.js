@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { apiRequest, stopTestServer } from './testHelper.js';
+import { apiRequest, stopTestServer, db, RPL_DB } from './testHelper.js';
 
 after(async () => {
   await stopTestServer();
@@ -578,6 +578,23 @@ test('Spectator Pass: Lookup by mobile retrieves spectator registration details'
   assert.strictEqual(data.registration.generalDetails.registrationType, 'spectator');
   assert.deepStrictEqual(data.registration.selectedSports, ['spectator']);
 });
+
+test('Spectator Pass Ledger: records category="spectator" in rpl_transactions for spectator registration', async () => {
+  const [rows] = await db.query(
+    `SELECT category, amount, description FROM ${RPL_DB}.rpl_transactions WHERE description LIKE '%(spectator)%' ORDER BY id DESC LIMIT 1`
+  );
+  assert.ok(rows.length > 0, 'Should find at least one transaction record for spectator registration');
+  assert.strictEqual(rows[0].category, 'spectator', 'Spectator transaction category must be "spectator"');
+});
+
+test('Player Pass Ledger: records category="sports" in rpl_transactions for player registration', async () => {
+  const [rows] = await db.query(
+    `SELECT category, amount, description FROM ${RPL_DB}.rpl_transactions WHERE description NOT LIKE '%(spectator)%' ORDER BY id DESC LIMIT 1`
+  );
+  assert.ok(rows.length > 0, 'Should find at least one transaction record for player registration');
+  assert.strictEqual(rows[0].category, 'sports', 'Player transaction category must be "sports"');
+});
+
 
 
 
