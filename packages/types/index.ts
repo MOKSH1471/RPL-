@@ -63,6 +63,7 @@ export interface RegistrationFormData {
   existingRplFamily: 'Yes' | 'No' | string;
   photoName?: string;
   photoDataUrl?: string;
+  nostalgiaSport?: string;
 
   // Selected Sports
   selectedSports: SportType[];

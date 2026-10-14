@@ -214,6 +214,16 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
 ];
 
+export const NOSTALGIA_SPORTS = [
+  { id: 'Carrom', name: 'Carrom', emoji: '🎯', isLeagueMatch: true },
+  { id: 'lemon spoon with book on head', name: 'Lemon spoon with book on head', emoji: '🍋', isLeagueMatch: false },
+  { id: 'duckwalk', name: 'Duckwalk', emoji: '🦆', isLeagueMatch: false },
+  { id: 'Skipping', name: 'Skipping', emoji: '🪢', isLeagueMatch: false },
+  { id: 'Ring race(Couple or 2 ppl)', name: 'Ring race (Couple or 2 ppl)', emoji: '💍', isLeagueMatch: false },
+  { id: 'Relay race (Names may change)', name: 'Relay race (Names may change)', emoji: '🏃', isLeagueMatch: false },
+  { id: 'Table tennis', name: 'Table tennis', emoji: '🏓', isLeagueMatch: true },
+] as const;
+
 const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
 export function calculateAge(dobString?: string): number | null {
@@ -430,11 +440,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: '',
       referrerName: '',
       referrerCardNo: '',
+      nostalgiaSport: '',
     },
   });
 
   const currentTshirtSize = watch('tshirtSize');
   const currentExtraTshirt = watch('extraTshirt') || 'No';
+  const currentNostalgiaSport = watch('nostalgiaSport');
   const currentGender = watch('gender');
 
   // Dynamic fee calculation:
@@ -675,6 +687,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
             if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
             if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+            if (gen.nostalgiaSport || gen.nostalgia_sport) {
+              setValue('nostalgiaSport', gen.nostalgiaSport || gen.nostalgia_sport, { shouldValidate: true, shouldDirty: true });
+            }
 
             // Restore selected sports
             const savedSports = gen.selectedSports || Object.keys(sports);
@@ -800,6 +815,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setValue('gender', 'Male', { shouldValidate: false });
           setValue('tshirtSize', '' as any, { shouldValidate: false });
           setValue('extraTshirt', 'No' as any, { shouldValidate: false });
+          setValue('nostalgiaSport', '', { shouldValidate: false });
         }
       })
       .catch((err) => {
@@ -820,6 +836,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('gender', 'Male', { shouldValidate: false });
         setValue('tshirtSize', '' as any, { shouldValidate: false });
         setValue('extraTshirt', 'No' as any, { shouldValidate: false });
+        setValue('nostalgiaSport', '', { shouldValidate: false });
       });
   }, [currentMobile, currentCountryCode, setValue]);
 
@@ -1156,6 +1173,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       centre: data.centre,
       tshirtSize: data.tshirtSize,
       extraTshirt: data.extraTshirt || 'No',
+      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       foodPreference: data.foodPreference,
@@ -1214,6 +1232,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       dateOfBirth: data.dateOfBirth,
       tshirtSize: data.tshirtSize,
       extraTshirt: data.extraTshirt || 'No',
+      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
+      nostalgia_sport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
       stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
@@ -1295,6 +1315,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       sportAnswers['kaccha-pakka'] = {
         league: 'Kaccha Pakka League',
         enrolled: true,
+      };
+    }
+    if (data.nostalgiaSport && data.nostalgiaSport !== 'None') {
+      sportAnswers['90s-nostalgia'] = {
+        sport: data.nostalgiaSport,
       };
     }
 
@@ -3423,6 +3448,103 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 )}
               </AnimatePresence>
             </div>
+
+
+            {/* ========================================================================= */}
+            {/* 90s NOSTALGIA SPORTS DIVISION */}
+            {/* ========================================================================= */}
+            <InView
+              viewOptions={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+              className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6"
+            >
+              <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 border border-amber-400 text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-md shadow-orange-500/20 shrink-0 aspect-square mt-0.5">
+                  🕹️
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                      90s Nostalgia
+                    </h3>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
+                      🎈 Traditional &amp; Fun Games
+                    </span>
+                  </div>
+                  <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
+                    Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90s Nostalgia division (open for all Mumukshu and Non-Mumukshu participants).
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Select 90s Nostalgia Sport <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                  </label>
+
+                  <BasicDropdown
+                    label="Choose 90s Nostalgia Sport"
+                    items={[
+                      { id: 'None', label: 'None / Not Participating in 90s Nostalgia' },
+                      ...NOSTALGIA_SPORTS.map((s) => ({
+                        id: s.id,
+                        label: `${s.emoji} ${s.name}`,
+                      })),
+                    ]}
+                    value={
+                      currentNostalgiaSport && currentNostalgiaSport !== 'None'
+                        ? {
+                            id: currentNostalgiaSport,
+                            label: `${NOSTALGIA_SPORTS.find((s) => s.id === currentNostalgiaSport)?.emoji || '🎯'} ${currentNostalgiaSport}`,
+                          }
+                        : currentNostalgiaSport === 'None'
+                        ? { id: 'None', label: 'None / Not Participating in 90s Nostalgia' }
+                        : null
+                    }
+                    onChange={(item) => setValue('nostalgiaSport', String(item.id), { shouldValidate: true })}
+                  />
+                </div>
+
+                {/* Tournament Schedule Note for TT and Carrom */}
+                <div className={`p-3.5 rounded-2xl border text-xs flex items-start space-x-2.5 transition-all ${
+                  (currentNostalgiaSport === 'Carrom' || currentNostalgiaSport === 'Table tennis')
+                    ? 'bg-amber-500/15 border-2 border-amber-400 text-amber-950 shadow-xs'
+                    : 'bg-amber-50/80 border border-amber-200/90 text-amber-900'
+                }`}>
+                  <Info className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                  <div>
+                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                      TT and Carrom Note:
+                    </span>
+                    <p className="font-semibold text-slate-800 leading-snug">
+                      TT and Carrom (league matches will be decided on basis registrations received).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selected Sport Active Badge */}
+                {currentNostalgiaSport && currentNostalgiaSport !== 'None' && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-300 text-xs flex items-center justify-between text-amber-950 animate-in fade-in">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-base">
+                        {NOSTALGIA_SPORTS.find((s) => s.id === currentNostalgiaSport)?.emoji || '🏅'}
+                      </span>
+                      <span className="font-bold text-slate-900">
+                        Selected 90s Nostalgia: <strong>{currentNostalgiaSport}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setValue('nostalgiaSport', 'None', { shouldValidate: true })}
+                      className="text-[11px] font-bold text-pink-600 hover:text-pink-800 underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+            </InView>
 
 
             {/* ========================================================================= */}

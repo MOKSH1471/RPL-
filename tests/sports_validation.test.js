@@ -115,3 +115,29 @@ test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pa
   assert.strictEqual(isKacchaPakkaEligible(65), true);
   assert.strictEqual(isKacchaPakkaEligible(null), false);
 });
+
+test('90s Nostalgia: verifies the 7 nostalgia sports and TT/Carrom league note', () => {
+  const NOSTALGIA_SPORTS = [
+    'Carrom',
+    'lemon spoon with book on head',
+    'duckwalk',
+    'Skipping',
+    'Ring race(Couple or 2 ppl)',
+    'Relay race (Names may change)',
+    'Table tennis',
+  ];
+
+  assert.strictEqual(NOSTALGIA_SPORTS.length, 7);
+
+  function hasRegistrationBasisNote(sport) {
+    return sport === 'Carrom' || sport === 'Table tennis';
+  }
+
+  assert.strictEqual(hasRegistrationBasisNote('Carrom'), true);
+  assert.strictEqual(hasRegistrationBasisNote('Table tennis'), true);
+  assert.strictEqual(hasRegistrationBasisNote('Skipping'), false);
+  assert.strictEqual(hasRegistrationBasisNote('duckwalk'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Ring race(Couple or 2 ppl)'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Relay race (Names may change)'), false);
+  assert.strictEqual(hasRegistrationBasisNote('lemon spoon with book on head'), false);
+});

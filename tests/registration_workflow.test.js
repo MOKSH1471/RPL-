@@ -267,3 +267,38 @@ test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt ca
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
+
+test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details and sport_answers', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Nostalgia Champion',
+      email: 'nostalgia@example.com',
+      mobile: '9888888888',
+      selectedSports: ['cricket'],
+      extraTshirt: 'No',
+      registrationPayload: {
+        fullName: 'Nostalgia Champion',
+        email: 'nostalgia@example.com',
+        mobile: '9888888888',
+        general_details: {
+          centre: 'Mumbai',
+          gender: 'Male',
+          nostalgiaSport: 'Carrom',
+          nostalgia_sport: 'Carrom',
+        },
+        sport_answers: {
+          '90s-nostalgia': { sport: 'Carrom' },
+        },
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+

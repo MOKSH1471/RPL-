@@ -385,15 +385,29 @@ export function AdminRegistrationsTab({
                               {s}
                             </span>
                           ))}
+                          {(gen.nostalgiaSport || gen.nostalgia_sport) && (
+                            <span
+                              className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
+                              title={`90s Nostalgia: ${gen.nostalgiaSport || gen.nostalgia_sport}`}
+                            >
+                              <span>🕹️</span>
+                              <span className="truncate max-w-[90px]">{gen.nostalgiaSport || gen.nostalgia_sport}</span>
+                            </span>
+                          )}
                         </div>
                       </td>
 
                       {/* 5. Jersey Specs */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center space-x-1.5">
+                        <div className="flex items-center space-x-1.5 flex-wrap gap-1">
                           <span className="font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px]">
                             {gen.tshirtSize || 'L'}
                           </span>
+                          {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
+                            <span className="font-black text-[9px] bg-orange-100 text-orange-900 border border-orange-300 px-1.5 py-0.5 rounded-full">
+                              +1 Extra
+                            </span>
+                          )}
                           <span className="text-slate-800 font-bold truncate max-w-[100px]">
                             {gen.customJerseyName || '-'}
                           </span>

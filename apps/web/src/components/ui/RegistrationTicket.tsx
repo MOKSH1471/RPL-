@@ -208,6 +208,18 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             </span>
           </div>
 
+          {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
+              <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
+                90s Nostalgia Sport
+              </span>
+              <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+                <span>🕹️</span>
+                <span>{data.nostalgiaSport}</span>
+              </span>
+            </div>
+          )}
+
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center justify-between">
               <div>
