@@ -47,6 +47,7 @@ export const registrationSchema = z
     registrationType: z.enum(['player', 'spectator']).optional().default('player'),
     spectatorOption: z.string().optional(),
     spectatorTshirt: z.enum(['Yes', 'No']).optional().default('No'),
+    spectatorDates: z.array(z.string()).optional(),
 
     // Basic / Common Questions (Required for everyone)
     fullName: z
@@ -119,6 +120,11 @@ export const registrationSchema = z
     ttCategory: z.string().optional(),
     ttGrip: z.string().optional(),
     ttExperience: z.string().optional(),
+
+    // Dynamic Carrom Specifics
+    carromCategory: z.string().optional(),
+    carromGrip: z.string().optional(),
+    carromExperience: z.string().optional(),
 
     // Dynamic Pickleball Specifics
     pickleballCategory: z.string().optional(),

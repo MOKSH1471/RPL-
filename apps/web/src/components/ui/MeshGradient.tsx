@@ -33,6 +33,12 @@ export const MeshGradient: React.FC<MeshGradientProps> = ({ activeLeague }) => {
           secondary: 'rgba(192, 132, 252, 0.12)',
           accent: 'rgba(236, 72, 153, 0.10)',
         };
+      case 'kaccha-pakka':
+        return {
+          primary: 'rgba(245, 158, 11, 0.18)',
+          secondary: 'rgba(234, 88, 12, 0.14)',
+          accent: 'rgba(251, 191, 36, 0.12)',
+        };
       case 'cricket':
       default:
         return {

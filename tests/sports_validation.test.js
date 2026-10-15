@@ -6,6 +6,7 @@ const VALID_SPORTS = [
   'football',
   'badminton',
   'table-tennis',
+  'carrom',
   'pickleball',
   'volleyball',
   'womens-sports',
@@ -101,16 +102,56 @@ test('Sports Validation: accepts kaccha-pakka in valid sports', () => {
   assert.strictEqual(validateSportsSelection(['cricket', 'kaccha-pakka']).valid, true);
 });
 
+test('Sports Validation: accepts carrom in valid sports', () => {
+  assert.strictEqual(validateSportsSelection(['carrom']).valid, true);
+  assert.strictEqual(validateSportsSelection(['table-tennis', 'carrom']).valid, true);
+});
+
+test('Category Availability: tennis and carrom are available to all categories (male, female, kachapaka)', () => {
+  function isSportAllowed(sportId, gender, age) {
+    if (sportId === 'table-tennis' || sportId === 'carrom') return true;
+    if (gender === 'Male' && sportId === 'womens-sports') return false;
+    if (gender === 'Female' && (sportId === 'cricket' || sportId === 'football')) return false;
+    if (sportId === 'kaccha-pakka') {
+      if (age === null || age === undefined) return false;
+      return age <= 16 || age >= 56;
+    }
+    return true;
+  }
+
+  // Male
+  assert.strictEqual(isSportAllowed('table-tennis', 'Male', 25), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Male', 25), true);
+
+  // Female
+  assert.strictEqual(isSportAllowed('table-tennis', 'Female', 25), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Female', 25), true);
+
+  // Kaccha Pakka (Junior <= 16)
+  assert.strictEqual(isSportAllowed('table-tennis', 'Male', 12), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Male', 12), true);
+  assert.strictEqual(isSportAllowed('table-tennis', 'Female', 14), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Female', 14), true);
+
+  // Kaccha Pakka (Senior >= 56)
+  assert.strictEqual(isSportAllowed('table-tennis', 'Male', 60), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Male', 60), true);
+  assert.strictEqual(isSportAllowed('table-tennis', 'Female', 62), true);
+  assert.strictEqual(isSportAllowed('carrom', 'Female', 62), true);
+});
+
 test('Sports Validation: accepts spectator in valid sports', () => {
   assert.strictEqual(validateSportsSelection(['spectator']).valid, true);
 });
 
-test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
+test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,260, ₹1,890), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
   function validateSpectatorRules(payload) {
     if (payload.registrationType !== 'spectator') return { valid: false, error: 'Not spectator' };
 
     // Fee calculation
-    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : 630;
+    const specDates = payload.spectatorDates || payload.spectatorDays || [];
+    const daysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : (payload.daysCount || 1);
+    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : (daysCount * 630);
     const tshirtCost = (payload.spectatorTshirt === 'Yes' || payload.extraTshirt === 'Yes') ? 500 : 0;
     const totalFee = baseFee + tshirtCost;
 
@@ -121,6 +162,7 @@ test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700
     return {
       valid: true,
       totalFee,
+      daysCount,
       requiresPhoto,
       requiresFamilyEnrollment,
       inclusions: [
@@ -132,26 +174,49 @@ test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700
     };
   }
 
-  // 1. Day Pass without stay, without T-shirt (₹630)
-  const dayPass = validateSpectatorRules({
+  // 1. Day Pass: 1 Day without stay, without T-shirt (₹630)
+  const dayPass1 = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
+    spectatorDates: ['2026-12-25'],
     spectatorTshirt: 'No',
   });
-  assert.strictEqual(dayPass.valid, true);
-  assert.strictEqual(dayPass.totalFee, 630);
-  assert.strictEqual(dayPass.requiresPhoto, false);
-  assert.strictEqual(dayPass.requiresFamilyEnrollment, false);
+  assert.strictEqual(dayPass1.valid, true);
+  assert.strictEqual(dayPass1.totalFee, 630);
+  assert.strictEqual(dayPass1.daysCount, 1);
+  assert.strictEqual(dayPass1.requiresPhoto, false);
+  assert.strictEqual(dayPass1.requiresFamilyEnrollment, false);
 
-  // 2. Day Pass without stay, with T-shirt (₹1,130)
+  // 2. Day Pass: 2 Days without stay, without T-shirt (₹1,260)
+  const dayPass2 = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorDates: ['2026-12-25', '2026-12-26'],
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(dayPass2.totalFee, 1260);
+  assert.strictEqual(dayPass2.daysCount, 2);
+
+  // 3. Day Pass: 3 Days (All Dates) without stay, without T-shirt (₹1,890)
+  const dayPass3 = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorDates: ['2026-12-25', '2026-12-26', '2026-12-27'],
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(dayPass3.totalFee, 1890);
+  assert.strictEqual(dayPass3.daysCount, 3);
+
+  // 4. Day Pass: 2 Days without stay, with T-shirt (₹1,260 + ₹500 = ₹1,760)
   const dayPassTshirt = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
+    spectatorDates: ['2026-12-25', '2026-12-26'],
     spectatorTshirt: 'Yes',
   });
-  assert.strictEqual(dayPassTshirt.totalFee, 1130);
+  assert.strictEqual(dayPassTshirt.totalFee, 1760);
 
-  // 3. Pass with stay, without T-shirt (₹2,700)
+  // 5. Pass with stay, without T-shirt (₹2,700)
   const stayPass = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'Yes',
@@ -159,7 +224,7 @@ test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700
   });
   assert.strictEqual(stayPass.totalFee, 2700);
 
-  // 4. Pass with stay, with T-shirt (₹3,200)
+  // 6. Pass with stay, with T-shirt (₹3,200)
   const stayPassTshirt = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'Yes',
@@ -314,13 +379,14 @@ test('Cricket Turf Rules: accepts only approved spin bowling variations for Bowl
   assert.strictEqual(validateCricketBowlingStyle('All-Rounder', null).valid, true);
 });
 
-test('League Types: verifies all 6 official RPL league types including spectator', () => {
+test('League Types: verifies all 7 official RPL league types including spectator', () => {
   const VALID_LEAGUE_TYPES = [
     'cricket',
     'football',
     'womens',
     'table-tennis',
     'carrom',
+    'kaccha-pakka',
     'spectator',
   ];
 
@@ -333,6 +399,7 @@ test('League Types: verifies all 6 official RPL league types including spectator
   assert.strictEqual(isValidLeagueType('womens'), true);
   assert.strictEqual(isValidLeagueType('table-tennis'), true);
   assert.strictEqual(isValidLeagueType('carrom'), true);
+  assert.strictEqual(isValidLeagueType('kaccha-pakka'), true);
   assert.strictEqual(isValidLeagueType('spectator'), true);
 
   assert.strictEqual(isValidLeagueType('badminton'), false);

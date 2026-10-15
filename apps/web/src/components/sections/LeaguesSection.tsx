@@ -21,7 +21,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
             CHAMPIONSHIP LEAGUES
           </span>
           <h2 className="font-display font-extrabold text-slate-900 mb-4 sm:mb-6 tracking-tight" style={{ fontSize: 'clamp(1.5rem, 4vw + 0.25rem, 3.75rem)' }}>
-            Five Championship <span className="text-gradient-vibrant">Leagues</span>
+            Six Championship <span className="text-gradient-vibrant">Leagues</span>
           </h2>
           <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl">
             Select your arena. Tapping any league pre-configures your official RPL Season 9 registration form.
@@ -169,8 +169,8 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
           </div>
         </div>
 
-        {/* Row 2: Table Tennis & Carrom Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-6 lg:mt-8 items-stretch">
+        {/* Row 2: Table Tennis, Carrom & Kaccha Pakka Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mt-6 lg:mt-8 items-stretch">
           {/* Table Tennis Card */}
           <InView
             viewOptions={{ once: true, amount: 0.05 }}
@@ -238,6 +238,42 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
               >
                 <span>Register for Carrom</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </InView>
+
+          {/* Kaccha Pakka League Card */}
+          <InView
+            viewOptions={{ once: true, amount: 0.05 }}
+            transition={{ duration: 0.45, delay: 0.2, ease: 'easeOut' }}
+            className="flex flex-col"
+          >
+            <div
+              onClick={() => onSelectLeague('kaccha-pakka')}
+              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#FFFBEB] border-2 border-amber-300 hover:border-amber-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
+            >
+              <div>
+                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-700 block mb-2">
+                  JUNIOR & VETERAN CRICKET
+                </span>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-amber-700 transition-colors">
+                  Kaccha Pakka League
+                </h3>
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                  Special cricket division dedicated to our young stars (age 16 & below) and elders (age 56 & above)! High joy, energy, and community fun.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectLeague('kaccha-pakka');
+                }}
+                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
+              >
+                <span>Register for Kaccha Pakka</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

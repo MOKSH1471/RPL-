@@ -23,6 +23,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     "Women's Cricket League",
     'Carrom League',
     'Table Tennis League',
+    'Kaccha Pakka League',
     'Register Now',
   ];
 
@@ -40,7 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <div className="max-w-3xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2 space-y-1">
           <p className="block">The ultimate community turf championship.</p>
           <p className="block">
-            Five epic leagues —{' '}
+            Six championship leagues —{' '}
             <span className="text-amber-600 font-bold">Main Cricket League</span>,
           </p>
           <p className="block">
@@ -48,8 +49,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <span className="text-pink-600 font-bold">Women's Cricket League</span>,
           </p>
           <p className="block">
-            <span className="text-indigo-600 font-bold">Carrom League</span>, and{' '}
-            <span className="text-cyan-600 font-bold">Table Tennis League</span>.
+            <span className="text-purple-600 font-bold">Carrom League</span>,{' '}
+            <span className="text-sky-600 font-bold">Table Tennis League</span>, and{' '}
+            <span className="text-amber-700 font-bold">Kaccha Pakka League</span>.
           </p>
           <p className="block font-semibold text-slate-800 pt-0.5">
             Step up and claim your glory.

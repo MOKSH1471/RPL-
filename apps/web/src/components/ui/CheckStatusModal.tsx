@@ -129,6 +129,7 @@ export function CheckStatusModal({
       const prevUtrs = String(record.payment_utr || gen.payment_utr || '').split(',').map((s: string) => s.trim()).filter(Boolean);
       const hasPreviouslyPaid = prevUtrs.length > 0 || ['approved', 'approved_due'].includes((record.paymentStatus || record.payment_status || '').toLowerCase());
       const prevSportsCount = hasPreviouslyPaid ? Math.max(1, (gen.previouslyPaidSportsCount || (sports.length - 1)) ) : 0;
+      const isSpectator = gen.registrationType === 'spectator' || sports.includes('spectator');
 
       const orderData = await createRazorpayOrder({
         fullName: record.fullName,
@@ -139,6 +140,18 @@ export function CheckStatusModal({
         hasPreviouslyPaid,
         previouslyPaidSportsCount: prevSportsCount,
         registrationId: record.id,
+        registrationType: isSpectator ? 'spectator' : 'player',
+        accommodationRequired: gen.accommodationRequired || 'No',
+        spectatorDates: gen.spectatorDates || gen.spectatorDays || [],
+        extraTshirt: isSpectator ? (gen.spectatorTshirt || gen.extraTshirt || 'No') : (gen.extraTshirt || 'No'),
+        registrationPayload: {
+          registration_id: record.id,
+          full_name: record.fullName,
+          mobile: record.mobile,
+          email: record.email,
+          general_details: gen,
+          sport_answers: record.sportAnswers || {},
+        },
       });
 
       if (!orderData || !orderData.orderId) {

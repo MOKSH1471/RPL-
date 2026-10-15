@@ -175,6 +175,15 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBorder: 'border-indigo-400',
     colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
   },
+  {
+    id: 'carrom',
+    name: 'Carrom League',
+    category: 'Strike & Pocket Mastery',
+    emoji: '🎯',
+    colorBg: 'bg-purple-50',
+    colorBorder: 'border-purple-400',
+    colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
+  },
   /*
   {
     id: 'badminton',
@@ -248,6 +257,12 @@ export function normalizeNostalgiaSport(val: string): string {
   return match ? match.name : clean;
 }
 
+export const SPECTATOR_EVENT_DATES = [
+  { id: '2026-12-25', label: '25 Dec 2026', day: 'Day 1 (Friday)' },
+  { id: '2026-12-26', label: '26 Dec 2026', day: 'Day 2 (Saturday)' },
+  { id: '2026-12-27', label: '27 Dec 2026', day: 'Day 3 (Sunday)' },
+] as const;
+
 const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
 
 export function calculateAge(dobString?: string): number | null {
@@ -280,6 +295,10 @@ export function calculateAge(dobString?: string): number | null {
 }
 
 const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: number | null) => {
+  // Table Tennis and Carrom are open to all categories of people: male, female, kachapaka (any age)
+  if (sportId === 'table-tennis' || sportId === 'carrom') {
+    return true;
+  }
   if (gender === 'Male' && (sportId === 'womens-sports' || (sportId as string) === 'womens')) {
     return false;
   }
@@ -289,7 +308,7 @@ const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: numb
   // Kaccha Pakka League: only for age 16 and below (<= 16) and 56 and above (>= 56)
   if (sportId === 'kaccha-pakka') {
     if (age === null || age === undefined) {
-      return false;
+      return true;
     }
     return age <= 16 || age >= 56;
   }
@@ -310,6 +329,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     let target = id;
     if (target === 'spectator') return 'spectator' as SportType;
     if (target === 'womens') target = 'womens-sports';
+    if (target === 'kaccha-pakka') return 'kaccha-pakka';
     if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
       target = gender === 'Female' ? 'womens-sports' : 'cricket';
     }
@@ -370,7 +390,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     loadRazorpayScript().catch((err) => console.warn('[Razorpay Load Warning]', err));
   }, []);
 
-  // Guarantee scrolling to the top of the registration page on open
+  // Guarantee scrolling to the top of the registration page on open and sync selected league
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
@@ -380,6 +400,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
     }, 20);
+
+    if (initialLeague === 'spectator') {
+      setValue('registrationType', 'spectator', { shouldValidate: true });
+      setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
+      setSelectedSports(['spectator' as any]);
+    } else {
+      setValue('registrationType', 'player', { shouldValidate: true });
+      const sport = mapInitialSport(initialLeague, initialGender, null);
+      setValue('selectedSports', [sport], { shouldValidate: true });
+      setSelectedSports([sport]);
+    }
+
     return () => clearTimeout(t);
   }, [initialLeague]);
 
@@ -402,6 +434,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [isLookingUpReferrer, setIsLookingUpReferrer] = useState(false);
   const [referrerFoundInfo, setReferrerFoundInfo] = useState<{ name: string; cardNo?: string; centre?: string } | null>(null);
   const [referrerLookupError, setReferrerLookupError] = useState<string | null>(null);
+
+  // Spectator single-day attendance dates state (Defaults to Day 1: 25 Dec 2026)
+  const [spectatorDates, setSpectatorDates] = useState<string[]>(['2026-12-25']);
+
+  const isAllDatesSelected = spectatorDates.length === 3;
+
+  const toggleAllSpectatorDates = () => {
+    if (isAllDatesSelected) {
+      setSpectatorDates([]);
+    } else {
+      setSpectatorDates(['2026-12-25', '2026-12-26', '2026-12-27']);
+    }
+  };
+
+  const toggleSpectatorDate = (dateId: string) => {
+    if (spectatorDates.includes(dateId)) {
+      setSpectatorDates(spectatorDates.filter((d) => d !== dateId));
+    } else {
+      setSpectatorDates([...spectatorDates, dateId].sort());
+    }
+  };
 
 
 
@@ -448,6 +501,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       registrationType: isInitialSpectator ? 'spectator' : 'player',
       spectatorOption: 'without-stay',
       spectatorTshirt: 'No',
+      spectatorDates: ['2026-12-25'],
       mobileNumber: '',
       email: '',
       centre: '',
@@ -479,6 +533,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ttCategory: 'Singles',
       ttGrip: 'Shakehand Grip',
       ttExperience: 'Intermediate (Club / College)',
+      // Carrom Defaults
+      carromCategory: 'Singles',
+      carromGrip: 'Right Hand',
+      carromExperience: 'Intermediate (Club / College)',
       // Pickleball Defaults
       pickleballCategory: 'Men Doubles',
       pickleballSkill: '3.5 (Intermediate)',
@@ -500,7 +558,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: '',
       referrerName: '',
       referrerCardNo: '',
-      nostalgiaSport: initialLeague === 'carrom' ? 'Carrom' : '',
+      nostalgiaSport: '',
     },
   });
 
@@ -572,11 +630,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // Registration Mode & Fee calculation:
   // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
-  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630 (Meals & Retro games). Optional T-Shirt = +₹500.
+  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630/day (Meals & Retro games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
   const currentSpectatorTshirt = watch('spectatorTshirt') || 'No';
+
+  // Synchronize spectator single-day selections with check-in and check-out dates
+  useEffect(() => {
+    if (isSpectator && currentAcc === 'No') {
+      setValue('spectatorDates', spectatorDates, { shouldValidate: true });
+      if (spectatorDates.length > 0) {
+        const sorted = [...spectatorDates].sort();
+        setValue('checkInDate', sorted[0], { shouldValidate: true });
+        setValue('checkOutDate', sorted[sorted.length - 1], { shouldValidate: true });
+      }
+    }
+  }, [isSpectator, currentAcc, spectatorDates, setValue]);
 
   const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
   const totalSportsCount = Math.max(1, selectedSports.length);
@@ -584,8 +654,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
     : 0;
 
-  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : 630;
-  const spectatorTshirtCost = (currentSpectatorTshirt === 'Yes' || currentExtraTshirt === 'Yes') ? 500 : 0;
+  const spectatorSelectedDaysCount = (isSpectator && currentAcc === 'No')
+    ? spectatorDates.length
+    : 1;
+  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 630);
+  const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
   const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
 
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
@@ -797,6 +870,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
             if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
             if (gen.extraTshirt) setValue('extraTshirt', gen.extraTshirt as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.spectatorTshirt) {
+              setValue('spectatorTshirt', gen.spectatorTshirt as any, { shouldValidate: true, shouldDirty: true });
+            } else if (gen.registrationType === 'spectator' || (reg as any).sport_id === 'spectator') {
+              setValue('spectatorTshirt', (gen.extraTshirt || 'No') as any, { shouldValidate: true, shouldDirty: true });
+            }
             if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
             if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.foodPreference) setValue('foodPreference', gen.foodPreference, { shouldValidate: true, shouldDirty: true });
@@ -865,6 +943,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               if (sports['table-tennis'].category) setValue('ttCategory', sports['table-tennis'].category);
               if (sports['table-tennis'].grip) setValue('ttGrip', sports['table-tennis'].grip);
               if (sports['table-tennis'].experience) setValue('ttExperience', sports['table-tennis'].experience);
+            }
+            if (sports.carrom) {
+              if (sports.carrom.category) setValue('carromCategory', sports.carrom.category);
+              if (sports.carrom.grip) setValue('carromGrip', sports.carrom.grip);
+              if (sports.carrom.experience) setValue('carromExperience', sports.carrom.experience);
             }
             if (sports.pickleball) {
               if (sports.pickleball.category) setValue('pickleballCategory', sports.pickleball.category);
@@ -1129,6 +1212,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentTtCat = watch('ttCategory');
   const currentTtGrip = watch('ttGrip');
   const currentTtExp = watch('ttExperience');
+  const currentCarromCat = watch('carromCategory');
+  const currentCarromGrip = watch('carromGrip');
+  const currentCarromExp = watch('carromExperience');
   const currentPickleballCat = watch('pickleballCategory');
   const currentPickleballSkill = watch('pickleballSkill');
   const currentVolleyballRole = watch('volleyballRole');
@@ -1275,6 +1361,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
     }
 
+    if (isSpectator && data.accommodationRequired === 'No' && spectatorDates.length === 0) {
+      alert('Please select at least one tournament day to attend.');
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1341,6 +1433,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ttCategory: selectedSports.includes('table-tennis') ? (data.ttCategory as any) : undefined,
       ttGrip: selectedSports.includes('table-tennis') ? (data.ttGrip as any) : undefined,
       ttExperience: selectedSports.includes('table-tennis') ? data.ttExperience : undefined,
+      carromCategory: selectedSports.includes('carrom') ? (data.carromCategory as any) : undefined,
+      carromGrip: selectedSports.includes('carrom') ? (data.carromGrip as any) : undefined,
+      carromExperience: selectedSports.includes('carrom') ? data.carromExperience : undefined,
       pickleballCategory: selectedSports.includes('pickleball') ? (data.pickleballCategory as any) : undefined,
       pickleballSkill: selectedSports.includes('pickleball') ? (data.pickleballSkill as any) : undefined,
       pickleballPartner: selectedSports.includes('pickleball') ? data.pickleballPartner : undefined,
@@ -1366,6 +1461,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       registrationType: isSpectator ? 'spectator' : 'player',
       spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
       spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
+      spectatorDates: isSpectator && data.accommodationRequired === 'No' ? spectatorDates : undefined,
+      spectatorDays: isSpectator && data.accommodationRequired === 'No' ? spectatorDates : undefined,
       centre: data.centre,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
@@ -1427,6 +1524,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         category: data.ttCategory,
         grip: data.ttGrip,
         experience: data.ttExperience,
+      };
+    }
+    if (selectedSports.includes('carrom')) {
+      sportAnswers.carrom = {
+        category: data.carromCategory || 'Singles',
+        grip: data.carromGrip || 'Right Hand',
+        experience: data.carromExperience || 'Intermediate (Club / College)',
       };
     }
     if (selectedSports.includes('pickleball')) {
@@ -1600,8 +1704,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           mobile: cleanPhoneNumber(data.mobileNumber),
           selectedSports: effectiveSelectedSports,
           extraTshirt: (isSpectator ? data.spectatorTshirt : data.extraTshirt) || 'No',
+          spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
           registrationType: isSpectator ? 'spectator' : 'player',
           accommodationRequired: data.accommodationRequired,
+          spectatorDates: isSpectator && data.accommodationRequired === 'No' ? spectatorDates : undefined,
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
@@ -1800,7 +1906,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   );
 
   return (
-    <div className="min-h-screen pb-12 sm:pb-16 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20 max-w-full overflow-x-hidden">
+    <div className="min-h-screen pb-24 sm:pb-32 md:pb-40 pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20 max-w-full overflow-x-hidden">
       <div className="max-w-4xl mx-auto w-full">
         {/* Navigation Breadcrumb Bar with InView entrance */}
         <InView
@@ -1870,6 +1976,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   setValue('registrationType', 'spectator', { shouldValidate: true });
                   setValue('selectedSports', ['spectator'], { shouldValidate: true });
                   setSelectedSports(['spectator']);
+                  setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
                 }}
                 className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${isSpectator
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
@@ -1942,7 +2049,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             onReset={handleReset}
           />
         ) : (
-          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 pb-8 sm:pb-12">
             {/* ========================================================================= */}
             {/* SECTION 1: BASIC / COMMON QUESTIONS (COMMON IN EVERY SPORT) */}
             {/* ========================================================================= */}
@@ -2376,7 +2483,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             { value: 'Yes', label: 'Yes (+₹500)' },
                           ]}
                           value={currentSpectatorTshirt}
-                          onChange={(val) => setValue('spectatorTshirt', val as any, { shouldValidate: true })}
+                          onChange={(val) => {
+                            setValue('spectatorTshirt', val as any, { shouldValidate: true });
+                            setValue('extraTshirt', val as any, { shouldValidate: true });
+                          }}
                           layoutId="spectator-tshirt-indicator"
                           activeColor="bg-slate-900"
                           activeTextColor="text-amber-300"
@@ -2658,8 +2768,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={isSpectator ? [
-                      { value: 'No', label: 'Without Stay (₹630)' },
-                      { value: 'Yes', label: 'With RPL Stay (₹2,700)' },
+                      { value: 'No', label: 'Without Stay (₹630/day)' },
+                      { value: 'Yes', label: 'With Stay (₹2,700)' },
                     ] : [
                       { value: 'No', label: 'No, Self-Arranged' },
                       { value: 'Yes', label: 'Yes, Needed' },
@@ -2718,7 +2828,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹630 (Without Stay)
+                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹630/day)
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
                             Games & Snacks Included
@@ -2791,79 +2901,206 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 )}
               </div>
 
-              {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Check-In Date</span>
-                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 25 Dec)</span>
-                  </label>
-                  <ModernDatePicker
-                    value={currentCheckInDate}
-                    onChange={(val) => {
-                      setValue('checkInDate', val, { shouldValidate: true });
-                    }}
-                    placeholder="Select Check-In Date"
-                    minYear={2026}
-                    maxYear={2028}
-                    defaultYear={2026}
-                    error={errors.checkInDate?.message}
-                  />
-                  {errors.checkInDate && (
-                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{errors.checkInDate.message}</span>
-                    </p>
+              {/* Conditional: For Spectator without stay -> 4 Checkboxes (All Days + 3 individual dates)
+                  For Players or Spectator with stay -> Standard Check-in / Check-out pickers & Stay info */}
+              {isSpectator && currentAcc === 'No' ? (
+                <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border-2 border-emerald-300 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/80 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-700 shrink-0" />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wide">
+                          Select Attending Dates <span className="text-pink-600">*</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-600 font-medium">
+                          Choose tournament days you will attend (Single Day Pass: ₹630 / Day)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
+                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 630).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 4 Checkboxes Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {/* 1. All Dates Option */}
+                    <div
+                      onClick={toggleAllSpectatorDates}
+                      className={`sm:col-span-2 p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${isAllDatesSelected
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-600/20'
+                        : 'bg-white hover:bg-emerald-50/70 border-emerald-200 text-slate-800'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${isAllDatesSelected
+                            ? 'bg-white text-emerald-700 border-white'
+                            : 'border-slate-300 bg-slate-50'
+                            }`}
+                        >
+                          {isAllDatesSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
+                            <span>All 3 Days (25, 26 &amp; 27 Dec 2026)</span>
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${isAllDatesSelected
+                                ? 'bg-white/20 text-white'
+                                : 'bg-emerald-100 text-emerald-900'
+                                }`}
+                            >
+                              Full Tournament
+                            </span>
+                          </div>
+                          <div
+                            className={`text-[11px] truncate ${isAllDatesSelected ? 'text-emerald-100' : 'text-slate-500'
+                              }`}
+                          >
+                            Attend all matches, night snacks &amp; 90's retro games throughout the season
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`font-black text-xs sm:text-sm ${isAllDatesSelected ? 'text-white' : 'text-emerald-800'
+                            }`}
+                        >
+                          ₹1,890
+                        </span>
+                        <span
+                          className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'
+                            }`}
+                        >
+                          (3 × ₹630)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 2, 3, 4: Individual Day Checkboxes */}
+                    {SPECTATOR_EVENT_DATES.map((dayOpt) => {
+                      const isSelected = spectatorDates.includes(dayOpt.id);
+                      return (
+                        <div
+                          key={dayOpt.id}
+                          onClick={() => toggleSpectatorDate(dayOpt.id)}
+                          className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2.5 ${isSelected
+                            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs'
+                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                            }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${isSelected
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : 'border-slate-300 bg-slate-50'
+                                }`}
+                            >
+                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
+                                <span>{dayOpt.label}</span>
+                                <span className="text-[10px] font-bold text-slate-500">
+                                  • {dayOpt.day}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-xs text-emerald-800">₹630</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {spectatorDates.length === 0 && (
+                    <div className="p-2.5 rounded-xl bg-pink-50 border border-pink-200 text-pink-700 text-xs font-semibold flex items-center gap-2 animate-shake">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-pink-600" />
+                      <span>Please select at least one day to attend the championship.</span>
+                    </div>
                   )}
                 </div>
+              ) : (
+                <>
+                  {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Check-In Date</span>
+                        <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 25 Dec)</span>
+                      </label>
+                      <ModernDatePicker
+                        value={currentCheckInDate}
+                        onChange={(val) => {
+                          setValue('checkInDate', val, { shouldValidate: true });
+                        }}
+                        placeholder="Select Check-In Date"
+                        minYear={2026}
+                        maxYear={2028}
+                        defaultYear={2026}
+                        error={errors.checkInDate?.message}
+                      />
+                      {errors.checkInDate && (
+                        <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{errors.checkInDate.message}</span>
+                        </p>
+                      )}
+                    </div>
 
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Check-Out Date</span>
-                    <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 27 Dec)</span>
-                  </label>
-                  <ModernDatePicker
-                    value={currentCheckOutDate}
-                    onChange={(val) => {
-                      setValue('checkOutDate', val, { shouldValidate: true });
-                    }}
-                    placeholder="Select Check-Out Date"
-                    minYear={2026}
-                    maxYear={2028}
-                    defaultYear={2026}
-                    error={errors.checkOutDate?.message}
-                  />
-                  {errors.checkOutDate && (
-                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{errors.checkOutDate.message}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Stay Billing / Policy Clarification */}
-              <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-4 rounded-2xl space-y-2.5 text-xs transition-all duration-300 ${currentAcc === 'Yes'
-                ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
-                : 'bg-slate-50 border border-slate-200 text-slate-700'
-                }`}>
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600' : 'text-slate-400'}`} />
-                  <div className="leading-relaxed flex-1 min-w-0">
-                    <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Check-Out Date</span>
+                        <span className="text-amber-600 font-medium lowercase text-[11px]">(default: 27 Dec)</span>
+                      </label>
+                      <ModernDatePicker
+                        value={currentCheckOutDate}
+                        onChange={(val) => {
+                          setValue('checkOutDate', val, { shouldValidate: true });
+                        }}
+                        placeholder="Select Check-Out Date"
+                        minYear={2026}
+                        maxYear={2028}
+                        defaultYear={2026}
+                        error={errors.checkOutDate?.message}
+                      />
+                      {errors.checkOutDate && (
+                        <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{errors.checkOutDate.message}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Brown Pre / Post Stay Callout (Full-Width & Centered in Announcement) */}
-                <div className="w-full p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2 sm:gap-2.5">
-                  <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                  <div className="text-xs leading-relaxed flex-1 min-w-0 break-words">
-                    <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
+                  {/* Stay Billing / Policy Clarification */}
+                  <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-4 rounded-2xl space-y-2.5 text-xs transition-all duration-300 ${currentAcc === 'Yes'
+                    ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
+                    : 'bg-slate-50 border border-slate-200 text-slate-700'
+                    }`}>
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600' : 'text-slate-400'}`} />
+                      <div className="leading-relaxed flex-1 min-w-0">
+                        <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
+                      </div>
+                    </div>
+
+                    {/* Brown Pre / Post Stay Callout (Full-Width & Centered in Announcement) */}
+                    <div className="w-full p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2 sm:gap-2.5">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="text-xs leading-relaxed flex-1 min-w-0 break-words">
+                        <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
 
               {/* Sub-section 1.5: Season Enrollment & ID Photo (Players Only) */}
               {!isSpectator && (
@@ -3650,6 +3887,87 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     )}
                   </AnimatePresence>
 
+                  {/* Carrom Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('carrom') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-purple-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-purple-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-purple-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎯</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Carrom League Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-purple-800 text-xs font-semibold leading-relaxed">
+                                Singles / doubles format, striking hand & tournament experience
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Format <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Format"
+                              items={[
+                                { id: 'Singles', label: 'Singles Championship' },
+                                { id: 'Doubles', label: 'Doubles Championship' },
+                              ]}
+                              value={currentCarromCat ? { id: currentCarromCat, label: currentCarromCat } : null}
+                              onChange={(item) => setValue('carromCategory', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Striking Hand <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Hand"
+                              items={[
+                                { id: 'Right Hand', label: 'Right Hand' },
+                                { id: 'Left Hand', label: 'Left Hand' },
+                                { id: 'Both / Ambidextrous', label: 'Both / Ambidextrous' },
+                              ]}
+                              value={currentCarromGrip ? { id: currentCarromGrip, label: currentCarromGrip } : null}
+                              onChange={(item) => setValue('carromGrip', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Casual' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (Club Player)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Tournament Pro' },
+                              ]}
+                              value={currentCarromExp ? { id: currentCarromExp, label: currentCarromExp } : null}
+                              onChange={(item) => setValue('carromExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Pickleball Questions with BasicDropdown */}
                   <AnimatePresence>
                     {selectedSports.includes('pickleball') && (
@@ -4075,23 +4393,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     )}
                   </AnimatePresence>
                 </div>
-
-                {/* Tournament Schedule Note for TT and Carrom */}
-                <div
-                  className={`p-3.5 rounded-2xl border text-xs flex items-start space-x-2.5 transition-all ${selectedNostalgiaSports.some(
-                    (s) => s.toLowerCase().includes('carrom') || s.toLowerCase().includes('table tennis')
-                  )
-                    ? 'bg-amber-500/15 border-2 border-amber-400 text-amber-950 shadow-xs'
-                    : 'bg-amber-50/80 border border-amber-200/90 text-amber-900'
-                    }`}
-                >
-                  <Info className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
-                      Note: TT and Carrom league matches will be decided on basis registrations received.
-                    </span>
-                  </div>
-                </div>
               </div>
             </InView>
 
@@ -4102,7 +4403,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-6 sm:mb-8"
+              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
                 <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
@@ -4143,7 +4444,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {isSpectator ? (
                           currentAcc === 'Yes'
                             ? `Spectator Pass with Stay: ₹2,700 (3 Days Compulsory Stay)${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
-                            : `Spectator Day Pass: ₹630 (Without Stay)${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹1,130' : ''}`
+                            : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹630 = ₹${(spectatorDates.length * 630).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                         ) : isReturningPaidUser ? (
                           currentExtraTshirt === 'Yes'
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
@@ -4377,8 +4678,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               </div>
             </InView>
 
-
-
+            {/* Physical spacer to guarantee clear separation between Section 3 and the footer on mobile */}
+            <div className="h-16 sm:h-24 w-full block clear-both pointer-events-none" aria-hidden="true" />
 
           </form>
         )}

@@ -140,6 +140,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
         return 'Badminton Championship';
       case 'table-tennis':
         return 'Table Tennis';
+      case 'carrom':
+        return 'Carrom League';
       case 'pickleball':
         return 'Pickleball Open';
       case 'volleyball':

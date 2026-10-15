@@ -1,10 +1,11 @@
-export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'spectator';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'kaccha-pakka' | 'spectator';
 
 export type SportType =
   | 'cricket'
   | 'football'
   | 'badminton'
   | 'table-tennis'
+  | 'carrom'
   | 'pickleball'
   | 'volleyball'
   | 'womens-sports'
@@ -50,6 +51,7 @@ export interface RegistrationFormData {
   registrationType?: 'player' | 'spectator';
   spectatorOption?: 'with-stay' | 'without-stay' | string;
   spectatorTshirt?: 'Yes' | 'No' | string;
+  spectatorDates?: string[];
 
   // Basic / Common Info
   fullName: string;
@@ -97,6 +99,11 @@ export interface RegistrationFormData {
   ttCategory?: 'Singles' | 'Doubles' | string;
   ttGrip?: 'Shakehand Grip' | 'Penhold Grip' | string;
   ttExperience?: ExperienceLevel | string;
+
+  // Dynamic Carrom Specifics
+  carromCategory?: 'Singles' | 'Doubles' | string;
+  carromGrip?: 'Right Hand' | 'Left Hand' | 'Both / Ambidextrous' | string;
+  carromExperience?: ExperienceLevel | string;
 
   // Dynamic Pickleball Specifics
   pickleballCategory?: 'Men Singles' | 'Women Singles' | 'Men Doubles' | 'Women Doubles' | 'Mixed Doubles' | string;
