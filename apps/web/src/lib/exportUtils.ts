@@ -50,7 +50,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Selected Sports',
     'Pass / Stay Option',
     'Spectator T-Shirt (+₹500)',
-    '1980s Retro Games',
+    '90’s Nostalgia Games',
     'Jersey Size',
     'Custom Jersey Name',
     'Preferred Jersey Number',
@@ -197,7 +197,7 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const sportDetails = r.sport_answers?.[sportKey] || {};
     const formattedDetails = isSpectator
-      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | Retro Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
+      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
       : Object.entries(sportDetails)
           .map(([k, v]) => `${k}: ${v}`)
           .join(' | ');

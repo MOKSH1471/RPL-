@@ -1,5 +1,5 @@
-export type LeagueType = 'cricket' | 'football' | 'womens';
-export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'kaccha-pakka' | 'spectator';
+export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'carrom' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
 export interface SportOptionInfo {
     id: SportType;
     name: string;
@@ -7,7 +7,7 @@ export interface SportOptionInfo {
     iconEmoji: string;
     accent: 'amber' | 'emerald' | 'cyan' | 'indigo' | 'orange' | 'purple' | 'pink';
 }
-export type CricketRole = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+export type CricketRole = 'Batsman' | 'Bowler' | 'Wicketkeeper' | 'Batter' | 'All-rounder';
 export type BattingStyle = 'Right-hand bat' | 'Left-hand bat';
 export type BowlingStyle = 'Right-arm Fast / Medium' | 'Left-arm Fast / Medium' | 'Right-arm Off-Spin' | 'Right-arm Leg-Spin' | 'Left-arm Orthodox' | 'Wicketkeeper / Non-bowler';
 export type FootballPosition = 'Forward / Striker' | 'Winger (LW / RW)' | 'Attacking Midfielder (CAM)' | 'Central / Defensive Midfielder (CM / CDM)' | 'Fullback (LB / RB)' | 'Centre Back (CB)' | 'Goalkeeper (GK)';
@@ -19,6 +19,7 @@ export interface RegistrationFormData {
     registrationType?: 'player' | 'spectator';
     spectatorOption?: 'with-stay' | 'without-stay' | string;
     spectatorTshirt?: 'Yes' | 'No' | string;
+    spectatorDates?: string[];
     fullName: string;
     countryCode?: string;
     mobileNumber: string;
@@ -54,6 +55,9 @@ export interface RegistrationFormData {
     ttCategory?: 'Singles' | 'Doubles' | string;
     ttGrip?: 'Shakehand Grip' | 'Penhold Grip' | string;
     ttExperience?: ExperienceLevel | string;
+    carromCategory?: 'Singles' | 'Doubles' | string;
+    carromGrip?: 'Right Hand' | 'Left Hand' | 'Both / Ambidextrous' | string;
+    carromExperience?: ExperienceLevel | string;
     pickleballCategory?: 'Men Singles' | 'Women Singles' | 'Men Doubles' | 'Women Doubles' | 'Mixed Doubles' | string;
     pickleballSkill?: '2.5 - 3.0 (Beginner)' | '3.5 (Intermediate)' | '4.0+ (Advanced)' | string;
     pickleballPartner?: string;

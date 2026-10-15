@@ -21,6 +21,24 @@ export const MeshGradient: React.FC<MeshGradientProps> = ({ activeLeague }) => {
           secondary: 'rgba(244, 114, 182, 0.12)',
           accent: 'rgba(251, 113, 133, 0.10)',
         };
+      case 'table-tennis':
+        return {
+          primary: 'rgba(14, 165, 233, 0.15)',
+          secondary: 'rgba(56, 189, 248, 0.12)',
+          accent: 'rgba(99, 102, 241, 0.10)',
+        };
+      case 'carrom':
+        return {
+          primary: 'rgba(168, 85, 247, 0.15)',
+          secondary: 'rgba(192, 132, 252, 0.12)',
+          accent: 'rgba(236, 72, 153, 0.10)',
+        };
+      case 'kaccha-pakka':
+        return {
+          primary: 'rgba(245, 158, 11, 0.18)',
+          secondary: 'rgba(234, 88, 12, 0.14)',
+          accent: 'rgba(251, 191, 36, 0.12)',
+        };
       case 'cricket':
       default:
         return {

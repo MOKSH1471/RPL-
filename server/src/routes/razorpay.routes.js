@@ -31,14 +31,18 @@ router.post('/razorpay/create-order', async (req, res) => {
     const regType = req.body.registrationType || regPayload.registrationType || cleanGeneral.registrationType || (selectedSports.includes('spectator') ? 'spectator' : 'player');
     const isSpectator = regType === 'spectator';
     const accomRequired = req.body.accommodationRequired || regPayload.accommodationRequired || cleanGeneral.accommodationRequired || 'No';
-    const extraTshirtChoice = extraTshirt || regPayload.extraTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || cleanGeneral.extraTshirt || 'No';
+    const extraTshirtChoice = isSpectator
+      ? (req.body.spectatorTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || extraTshirt || 'No')
+      : (extraTshirt || regPayload.extraTshirt || cleanGeneral.extraTshirt || 'No');
     const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
 
     let computedFee;
 
     if (isSpectator) {
-      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 2700 : 630;
+      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630 per day. T-Shirt optional = +₹500.
+      const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
+      const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {
@@ -81,6 +85,30 @@ router.post('/razorpay/create-order', async (req, res) => {
         if (existingRegs.length > 0) {
           existingReg = existingRegs[0];
           targetRegId = existingReg.id;
+
+          // Fail-safe fee reconciliation from existing registration record (only when caller did NOT pass explicit parameters or registrationPayload)
+          const hasExplicitDetails = Boolean(
+            req.body.registrationPayload ||
+            req.body.spectatorTshirt ||
+            req.body.extraTshirt ||
+            (Array.isArray(req.body.spectatorDates) && req.body.spectatorDates.length > 0)
+          );
+
+          if (!hasExplicitDetails && existingReg.general_details) {
+            try {
+              const prevGen = typeof existingReg.general_details === 'string'
+                ? JSON.parse(existingReg.general_details)
+                : (existingReg.general_details || {});
+
+              if (prevGen.incrementalFee !== undefined && Number(prevGen.incrementalFee) > 0) {
+                computedFee = Number(prevGen.incrementalFee);
+              } else if (prevGen.calculatedFee !== undefined && Number(prevGen.calculatedFee) > 0) {
+                computedFee = Number(prevGen.calculatedFee);
+              }
+            } catch (pErr) {
+              logger.warn(`[REGISTRATION DETAILS PARSE NOTICE] ${pErr.message}`);
+            }
+          }
         }
       } catch (dbErr) {
         logger.warn(`[REGISTRATION LOOKUP NOTICE] DB lookup failed or offline: ${dbErr.message}`);
@@ -215,8 +243,14 @@ router.post('/razorpay/create-order', async (req, res) => {
       const mergedGeneral = {
         ...prevGeneral,
         ...cleanGeneral,
+        registrationType: regType,
         selectedSports: selectedSports.length > 0 ? selectedSports : (prevGeneral.selectedSports || ['cricket']),
+        extraTshirt: extraTshirtChoice,
+        spectatorTshirt: isSpectator ? extraTshirtChoice : undefined,
         cardNo: cardNoVal,
+        totalAmount: computedFee,
+        calculatedFee: computedFee,
+        incrementalFee: computedFee,
         razorpay_order_id: order.id,
         paymentMethod: 'Razorpay',
       };
