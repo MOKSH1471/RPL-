@@ -217,7 +217,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
 
 export const NOSTALGIA_SPORTS = [
   { id: 'Carrom', name: 'Carrom', emoji: '🎯', isLeagueMatch: true },
-  { id: 'Lemon Spoon with Book on Head Race', name: 'Lemon spoon with book on head race', emoji: '🍋', isLeagueMatch: false },
+  { id: 'Lemon Spoon with Book Balancing Race', name: 'Lemon and spoon race with book balancing', emoji: '🍋', isLeagueMatch: false },
   { id: 'Duckwalk', name: 'Duckwalk', emoji: '🦆', isLeagueMatch: false },
   { id: 'Skipping', name: 'Skipping', emoji: '🪢', isLeagueMatch: false },
   { id: 'Ring Race', name: 'Ring race', emoji: '⭕', isLeagueMatch: false },
