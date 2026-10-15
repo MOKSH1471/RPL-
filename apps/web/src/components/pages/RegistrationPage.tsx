@@ -1738,26 +1738,26 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   );
 
   return (
-    <div className="min-h-screen pb-12 sm:pb-16 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen pb-12 sm:pb-16 safe-bottom pt-20 sm:pt-28 md:pt-32 px-3 sm:px-6 lg:px-8 relative z-20 max-w-full overflow-x-hidden">
+      <div className="max-w-4xl mx-auto w-full">
         {/* Navigation Breadcrumb Bar with InView entrance */}
         <InView
           viewOptions={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="flex items-center justify-between gap-3 mb-6 bg-white/90 backdrop-blur-xs p-3 rounded-2xl border border-slate-200 shadow-sm"
+          className="flex items-center justify-between gap-2 mb-5 sm:mb-6 bg-white/90 backdrop-blur-xs p-2 sm:p-3 rounded-2xl border border-slate-200 shadow-sm w-full"
         >
           <button
             type="button"
             onClick={onBackToHome}
-            className="flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-xl bg-slate-100 hover:bg-amber-500 hover:text-white hover:border-amber-500 border border-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition-all active:scale-95 touch-manipulation cursor-pointer group min-h-[44px]"
+            className="flex items-center gap-1.5 sm:space-x-2 px-2.5 sm:px-4 py-2 rounded-xl bg-slate-100 hover:bg-amber-500 hover:text-white hover:border-amber-500 border border-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition-all active:scale-95 touch-manipulation cursor-pointer group min-h-[40px] sm:min-h-[44px] shrink-0 whitespace-nowrap"
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
             <span>Back to Home</span>
           </button>
 
-          <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>Season 9 Official Portal</span>
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 text-amber-900 font-extrabold text-[10px] sm:text-[11px] uppercase tracking-wider shadow-xs shrink-0 whitespace-nowrap">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 animate-pulse shrink-0" />
+            <span>Season 9 <span className="hidden xs:inline">Official </span>Portal</span>
           </span>
         </InView>
 
@@ -1765,27 +1765,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         <InView
           viewOptions={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-          className="text-center max-w-2xl mx-auto mb-8"
+          className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 px-1 sm:px-0"
         >
-          <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500 block mb-2">
+          <span className="text-[10px] sm:text-xs uppercase font-extrabold tracking-widest text-slate-500 block mb-1.5 sm:mb-2">
             {isSpectator ? 'SPECTATOR PASS REGISTRATION' : 'PLAYER REGISTRATION'}
           </span>
-          <h1 className="font-display text-3xl sm:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight">
+          <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-3 tracking-tight leading-tight">
             {isSpectator ? (
               <>Official Spectator <span className="text-gradient-vibrant">Pass</span></>
             ) : (
               <>Official Championship <span className="text-gradient-vibrant">Entry</span></>
             )}
           </h1>
-          <p className="text-slate-600 text-xs sm:text-base font-medium mb-6">
+          <p className="text-slate-600 text-xs sm:text-base font-medium mb-4 sm:mb-6 leading-relaxed max-w-xl mx-auto px-1">
             {isSpectator
               ? 'Join RPL Season 9 as a spectator with full meals, night snacks & refreshments, retro nostalgia games, and event access.'
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
           {/* Registration Mode Switcher: Player Pass vs Spectator Pass */}
-          <div className="flex justify-center mb-6">
-            <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-md w-full">
+          <div className="flex justify-center mb-6 w-full px-1">
+            <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-md w-full gap-1 sm:gap-1.5">
               <button
                 type="button"
                 onClick={() => {
@@ -1795,14 +1795,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     setSelectedSports(['cricket']);
                   }
                 }}
-                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer ${!isSpectator
+                className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col xs:flex-row items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer ${!isSpectator
                     ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
                     : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <Trophy className={`w-4 h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
-                <span>Player Entry</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${!isSpectator ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600'}`}>
+                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                  <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <span className="whitespace-nowrap">Player Entry</span>
+                </div>
+                <span className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap shrink-0 ${!isSpectator ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600'}`}>
                   ₹2,700
                 </span>
               </button>
@@ -1814,14 +1816,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   setValue('selectedSports', ['spectator'], { shouldValidate: true });
                   setSelectedSports(['spectator']);
                 }}
-                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer ${isSpectator
+                className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col xs:flex-row items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer ${isSpectator
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
                     : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>Spectator Pass</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${isSpectator ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="whitespace-nowrap">Spectator</span>
+                </div>
+                <span className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap shrink-0 ${isSpectator ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
                   From ₹630
                 </span>
               </button>
@@ -1857,49 +1861,24 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             </div>
           )}
 
-          {/* Interactive Flow Tracker (3 Steps for Spectator, 4 Steps for Player) */}
-          <div className="max-w-xl mx-auto px-2 pt-4">
-            <div className={`grid ${isSpectator ? 'grid-cols-3' : 'grid-cols-4'} relative`}>
-              <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 -z-0" />
-              <div
-                className="absolute top-4 left-6 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500 -z-0 transition-all duration-500"
-                style={{
-                  width: `${Math.min(100, Math.max(0, (progress - 15) * 1.25))}%`,
-                }}
+          {/* Sleek Milestone Progress Track */}
+          <div className="max-w-md mx-auto px-1">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
+              <span className="flex items-center space-x-1.5 text-slate-900 font-extrabold">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>Form Progress</span>
+              </span>
+              <span className="font-mono text-amber-700 font-extrabold text-xs">
+                {progress}% Complete
+              </span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-slate-200/90 overflow-hidden p-0.5 border border-slate-200/80 shadow-inner">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 shadow-xs"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ type: 'spring', stiffness: 120, damping: 20 }}
               />
-
-              {(isSpectator
-                ? [
-                  { step: 1, label: 'Details & Stay', done: progress >= 30, active: progress < 50 },
-                  { step: 2, label: 'Retro & Nostalgia', done: progress >= 50, active: progress >= 50 && progress < 85 },
-                  { step: 3, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 85 },
-                ]
-                : [
-                  { step: 1, label: 'Details & Stay', done: progress >= 25, active: progress < 45 },
-                  { step: 2, label: 'Select Sports', done: selectedSports.length > 0, active: progress >= 25 && progress < 65 },
-                  { step: 3, label: 'Sport Questions', done: progress >= 75, active: progress >= 65 && progress < 90 },
-                  { step: 4, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 90 },
-                ]
-              ).map((s) => (
-                <div key={s.step} className="flex flex-col items-center text-center relative z-10">
-                  <div
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-black transition-all shadow-xs ${s.done
-                      ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                      : s.active
-                        ? 'bg-amber-500 text-white ring-4 ring-amber-100 shadow-amber-500/30'
-                        : 'bg-white border-2 border-slate-300 text-slate-500'
-                      }`}
-                  >
-                    {s.done ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : s.step}
-                  </div>
-                  <span
-                    className={`mt-1.5 text-[10px] sm:text-[11px] font-bold tracking-tight transition-colors ${s.active || s.done ? 'text-slate-900 font-extrabold' : 'text-slate-500'
-                      }`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         </InView>
@@ -1920,7 +1899,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-              className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8"
+              className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden"
             >
               <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
@@ -2798,23 +2777,25 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* Stay Billing / Policy Clarification */}
-                <div className={`md:col-span-2 p-4 rounded-2xl flex items-start space-x-3 text-xs transition-all duration-300 ${currentAcc === 'Yes'
-                  ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
-                  : 'bg-slate-50 border border-slate-200 text-slate-700'
-                  }`}>
+              {/* Stay Billing / Policy Clarification */}
+              <div className={`w-full max-w-full overflow-hidden p-3.5 sm:p-4 rounded-2xl space-y-2.5 text-xs transition-all duration-300 ${currentAcc === 'Yes'
+                ? 'bg-amber-50/95 border-2 border-amber-300 shadow-sm text-amber-950 ring-2 ring-amber-400/20'
+                : 'bg-slate-50 border border-slate-200 text-slate-700'
+                }`}>
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${currentAcc === 'Yes' ? 'text-amber-600' : 'text-slate-400'}`} />
-                  <div className="space-y-1.5 leading-relaxed flex-1">
-                    <div>
-                      <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
-                    </div>
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2.5">
-                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                      <div className="text-xs leading-relaxed">
-                        <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
-                      </div>
-                    </div>
+                  <div className="leading-relaxed flex-1 min-w-0">
+                    <span className="font-bold text-slate-900">Tournament Stay (25–27 Dec):</span> Room allocation for official RPL tournament dates will be handled by the RPL team.
+                  </div>
+                </div>
+
+                {/* Brown Pre / Post Stay Callout (Full-Width & Centered in Announcement) */}
+                <div className="w-full p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2 sm:gap-2.5">
+                  <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="text-xs leading-relaxed flex-1 min-w-0 break-words">
+                    <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
                   </div>
                 </div>
               </div>
@@ -2861,7 +2842,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                         <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                           <Camera className="w-3.5 h-3.5 text-amber-600" />
                           <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
@@ -2871,7 +2852,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </span>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden">
                         {/* Compact Micro Guidelines */}
                         <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
                           <span className="flex items-center gap-1.5">
@@ -2893,7 +2874,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </div>
 
                         {/* Modern Dropzone & Avatar Preview */}
-                        <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px]">
+                        <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-2.5 sm:p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px] w-full max-w-full overflow-hidden">
                           <input
                             type="file"
                             accept="image/jpeg,image/png"
@@ -2901,25 +2882,25 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           />
                           {photoPreview ? (
-                            <div className="flex items-center justify-between w-full px-1 z-20">
-                              <div className="flex items-center space-x-3">
+                            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2.5 sm:gap-3 w-full min-w-0 z-20">
+                              <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto flex-1">
                                 <img
                                   src={photoPreview}
                                   alt="Preview"
-                                  className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square"
+                                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square shrink-0"
                                 />
-                                <div className="text-left">
-                                  <span className="text-xs font-bold text-slate-900 block truncate max-w-[140px]">
+                                <div className="text-left min-w-0 flex-1 overflow-hidden">
+                                  <span className="text-xs font-bold text-slate-900 block truncate">
                                     {photoName || 'Player Photo'}
                                   </span>
                                   <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-1.5">
-                                <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
+                              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                                <label className="flex-1 sm:flex-initial text-center text-xs font-bold text-amber-700 hover:text-amber-800 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-200 cursor-pointer shadow-2xs transition-colors">
                                   Change
                                   <input
                                     type="file"
@@ -2934,7 +2915,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                     e.stopPropagation();
                                     handleRemovePhoto();
                                   }}
-                                  className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
+                                  className="flex-1 sm:flex-initial text-center text-xs font-bold text-pink-600 hover:text-pink-700 px-3 py-1.5 bg-pink-50 hover:bg-pink-100 rounded-lg border border-pink-200 cursor-pointer shadow-2xs transition-colors"
                                 >
                                   Remove
                                 </button>
