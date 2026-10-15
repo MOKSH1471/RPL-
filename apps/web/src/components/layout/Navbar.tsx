@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Menu, X, ArrowRight, Search } from 'lucide-react';
+import { Menu, X, ArrowRight, Search } from 'lucide-react';
 import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
@@ -209,19 +209,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <a
               href="#"
               onClick={handleLogoClick}
-              className="flex items-center space-x-1.5 sm:space-x-3 group shrink-0 min-w-0"
+              className="flex items-center space-x-2 sm:space-x-3 group shrink-0 min-w-0"
             >
-              <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 border border-slate-200 shadow-xs shrink-0">
-                <div className="w-full h-full bg-white rounded-[9px] sm:rounded-[14px] flex items-center justify-center">
-                  <Trophy className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-amber-600 group-hover:scale-110 transition-transform" />
-                </div>
-              </div>
+              <img
+                src="/rpl-logo.png"
+                alt="RPL Logo"
+                className="h-8 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-xs"
+              />
               <div className="flex flex-col min-w-0">
-                <span className="font-display font-extrabold text-xs sm:text-lg text-slate-900 tracking-tight whitespace-nowrap">
+                <span className="font-display font-extrabold text-xs sm:text-lg text-slate-900 tracking-tight whitespace-nowrap leading-tight">
                   RPL <span className="text-amber-600">Season 9</span>
                 </span>
-                <span className="text-[7px] sm:text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-0.5 whitespace-nowrap">
-                  Sports Championship
+                <span className="text-[8px] sm:text-[10.5px] font-semibold text-slate-600 mt-0.5 whitespace-nowrap tracking-normal">
+                  <span className="text-amber-600 font-extrabold">#</span>जीतने वाले से जिताने वाला महान है
                 </span>
               </div>
             </a>

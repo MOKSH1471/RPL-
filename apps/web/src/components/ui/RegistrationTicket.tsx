@@ -221,7 +221,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
               <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
-                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? 'Retro & Nostalgia Games' : 'Retro & Nostalgia Game'}
+                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90’s Nostalgia Games' : '90’s Nostalgia Game'}
               </span>
               <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
                 <span>🕹️</span>
@@ -237,7 +237,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                   {data.registrationType === 'spectator' ? 'Official Spectator Pass' : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
                 </span>
                 <span className="text-[11px] text-amber-800 font-medium">
-                  {data.registrationType === 'spectator' ? 'Full Meals, Night Snacks & Retro Games Included' : 'All selected sports included in event pass'}
+                  {data.registrationType === 'spectator' ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included' : 'All selected sports included in event pass'}
                 </span>
               </div>
               <div className="text-right">

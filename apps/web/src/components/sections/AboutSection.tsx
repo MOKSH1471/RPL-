@@ -6,10 +6,9 @@ import { Users, Flame, HeartHandshake } from 'lucide-react';
 
 export const AboutSection: React.FC = () => {
   const stats: StatItem[] = [
-    { id: '1', label: 'Seasons of Excellence', value: 9, suffix: '', accent: 'amber' },
+    { id: '1', label: 'Seasons of Excellence', value: 8, suffix: '', accent: 'amber' },
     { id: '2', label: 'Registered Athletes', value: 300, prefix: '', suffix: '+', accent: 'magenta' },
-    { id: '3', label: 'Sports Leagues', value: 3, suffix: '', accent: 'emerald' },
-    { id: '4', label: 'Championship Matches', value: 50, prefix: '', suffix: '+', accent: 'cyan' },
+    { id: '3', label: 'Sports Leagues', value: 5, suffix: '', accent: 'emerald' },
   ];
 
   return (
@@ -28,12 +27,12 @@ export const AboutSection: React.FC = () => {
             Where Passion Meets <span className="text-gradient-vibrant">Purpose</span>
           </h2>
           <p className="text-slate-700 text-base md:text-lg font-medium leading-relaxed">
-            Raj Premier League (RPL) returns for Season 9! Uniting players across regions to compete, excel, and build lifelong bonds through world-class sportsmanship.
+            Raj Premier League (RPL) returns for Season 9! Uniting players across the globe to compete, excel, and build lifelong bonds through world-class sportsmanship.
           </p>
         </div>
 
         {/* Stat Counters Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-10 md:mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6 mb-10 md:mb-16">
           {stats.map((stat) => (
             <StatCounter key={stat.id} stat={stat} />
           ))}

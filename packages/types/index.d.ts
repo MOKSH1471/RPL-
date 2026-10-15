@@ -1,4 +1,4 @@
-export type LeagueType = 'cricket' | 'football' | 'womens';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom';
 export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
 export interface SportOptionInfo {
     id: SportType;
@@ -7,7 +7,7 @@ export interface SportOptionInfo {
     iconEmoji: string;
     accent: 'amber' | 'emerald' | 'cyan' | 'indigo' | 'orange' | 'purple' | 'pink';
 }
-export type CricketRole = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+export type CricketRole = 'Batsman' | 'Bowler' | 'Wicketkeeper' | 'Batter' | 'All-rounder';
 export type BattingStyle = 'Right-hand bat' | 'Left-hand bat';
 export type BowlingStyle = 'Right-arm Fast / Medium' | 'Left-arm Fast / Medium' | 'Right-arm Off-Spin' | 'Right-arm Leg-Spin' | 'Left-arm Orthodox' | 'Wicketkeeper / Non-bowler';
 export type FootballPosition = 'Forward / Striker' | 'Winger (LW / RW)' | 'Attacking Midfielder (CAM)' | 'Central / Defensive Midfielder (CM / CDM)' | 'Fullback (LB / RB)' | 'Centre Back (CB)' | 'Goalkeeper (GK)';

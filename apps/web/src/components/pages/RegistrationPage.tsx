@@ -141,7 +141,7 @@ const CENTRE_LIST = [
 const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'cricket',
-    name: 'Underarm Turf Cricket',
+    name: 'Main Cricket League',
     category: 'High-Energy Turf Arena',
     emoji: '🏏',
     colorBg: 'bg-amber-50',
@@ -150,12 +150,21 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
   {
     id: 'football',
-    name: 'Turf Football',
+    name: 'Football',
     category: 'Turf Football Championship',
     emoji: '⚽',
     colorBg: 'bg-emerald-50',
     colorBorder: 'border-emerald-400',
     colorBadge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+  },
+  {
+    id: 'table-tennis',
+    name: 'Table Tennis Championship',
+    category: 'Fast-Paced Speed & Spin Arena',
+    emoji: '🏓',
+    colorBg: 'bg-indigo-50',
+    colorBorder: 'border-indigo-400',
+    colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
   },
   /*
   {
@@ -166,15 +175,6 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-cyan-50',
     colorBorder: 'border-cyan-400',
     colorBadge: 'bg-cyan-100 text-cyan-900 border-cyan-300',
-  },
-  {
-    id: 'table-tennis',
-    name: 'Table Tennis Championship',
-    category: 'Fast-Paced Speed & Spin Arena',
-    emoji: '🏓',
-    colorBg: 'bg-indigo-50',
-    colorBorder: 'border-indigo-400',
-    colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
   },
   {
     id: 'pickleball',
@@ -217,10 +217,10 @@ const AVAILABLE_SPORTS: SportOption[] = [
 
 export const NOSTALGIA_SPORTS = [
   { id: 'Carrom', name: 'Carrom', emoji: '🎯', isLeagueMatch: true },
-  { id: 'Lemon Spoon with Book on Head', name: 'Lemon spoon with book on head', emoji: '🍋', isLeagueMatch: false },
+  { id: 'Lemon Spoon with Book on Head Race', name: 'Lemon spoon with book on head race', emoji: '🍋', isLeagueMatch: false },
   { id: 'Duckwalk', name: 'Duckwalk', emoji: '🦆', isLeagueMatch: false },
   { id: 'Skipping', name: 'Skipping', emoji: '🪢', isLeagueMatch: false },
-  { id: 'Ring Race (Couple or 2 ppl)', name: 'Ring race (Couple or 2 ppl)', emoji: '💍', isLeagueMatch: false },
+  { id: 'Ring Race', name: 'Ring race', emoji: '⭕', isLeagueMatch: false },
   { id: 'Relay Race (Names may change)', name: 'Relay race (Names may change)', emoji: '🏃', isLeagueMatch: false },
   { id: 'Table Tennis', name: 'Table tennis', emoji: '🏓', isLeagueMatch: true },
 ] as const;
@@ -229,7 +229,11 @@ export function normalizeNostalgiaSport(val: string): string {
   if (!val) return '';
   const clean = val.trim();
   const match = NOSTALGIA_SPORTS.find(
-    (s) => s.id.toLowerCase() === clean.toLowerCase() || s.name.toLowerCase() === clean.toLowerCase()
+    (s) =>
+      s.id.toLowerCase() === clean.toLowerCase() ||
+      s.name.toLowerCase() === clean.toLowerCase() ||
+      (clean.toLowerCase().includes('lemon') && s.name.toLowerCase().includes('lemon')) ||
+      (clean.toLowerCase().includes('ring') && s.name.toLowerCase().includes('ring'))
   );
   return match ? match.name : clean;
 }
@@ -351,6 +355,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     loadRazorpayScript().catch((err) => console.warn('[Razorpay Load Warning]', err));
   }, []);
 
+  // Guarantee scrolling to the top of the registration page on open
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const t = setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 20);
+    return () => clearTimeout(t);
+  }, [initialLeague]);
+
   // Prevent background scrolling when size guide modal is open
   useEffect(() => {
     if (showSizeGuideModal) {
@@ -431,7 +448,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       existingRplFamily: 'No',
       selectedSports: [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
-      cricketRole: 'Batter',
+      cricketRole: 'Batsman',
       battingStyle: 'Right-hand bat',
       bowlingStyle: 'Right-arm Off-Spin',
       cricketExperience: 'Intermediate (Club / College)',
@@ -468,7 +485,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: '',
       referrerName: '',
       referrerCardNo: '',
-      nostalgiaSport: '',
+      nostalgiaSport: initialLeague === 'carrom' ? 'Carrom' : '',
     },
   });
 
@@ -1779,7 +1796,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           </h1>
           <p className="text-slate-600 text-xs sm:text-base font-medium mb-4 sm:mb-6 leading-relaxed max-w-xl mx-auto px-1">
             {isSpectator
-              ? 'Join RPL Season 9 as a spectator with full meals, night snacks & refreshments, retro nostalgia games, and event access.'
+              ? 'Join RPL Season 9 as a spectator with full meals, night snacks & refreshments, 90’s Nostalgia games, and event access.'
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
@@ -2651,8 +2668,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <strong>Compulsory 3-Day Stay:</strong> Stay fee is ₹2,700 and all 3 days are compulsory as per event guidelines even if attending for 2 days.
                             </span>
                           </div>
-                          <p>✓ <strong>All Meals & Snacks:</strong> Full day meals (Breakfast, Lunch, Dinner) & night snacks and refreshments included.</p>
-                          <p>✓ <strong>Retro Games:</strong> Free participation in 1980s Retro & Nostalgia childhood games.</p>
+                          <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
+                          <p>✓ <strong>90’s Nostalgia Games:</strong> Free participation in 90’s Nostalgia games.</p>
+                        </div>
+
+                        {/* Note: Full day meal bookings to be done on Aashray app */}
+                        <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
+                          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>Note:</strong> Full day meal bookings to be done on Aashray app.
+                          </span>
                         </div>
                       </div>
                     ) : (
@@ -2663,14 +2688,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             Spectator Day Pass • ₹630 (Without Stay)
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                            Meals & Games Included
+                            Games & Snacks Included
                           </span>
                         </div>
                         <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                          <p>✓ <strong>Full Day Meals:</strong> Breakfast, Lunch, and Dinner included.</p>
                           <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
-                          <p>✓ <strong>1980s Retro Games:</strong> Full participation in 1980s Retro & Nostalgia traditional games.</p>
+                          <p>✓ <strong>90’s Nostalgia Games:</strong> Full participation in 90’s Nostalgia traditional games.</p>
                           <p className="text-slate-500 text-[11px]">• Self-arranged stay (or visiting for event sessions).</p>
+                        </div>
+
+                        {/* Note: Full day meal bookings to be done on Aashray app */}
+                        <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
+                          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>Note:</strong> Full day meal bookings to be done on Aashray app.
+                          </span>
                         </div>
 
                         {/* Optional room number for self-arranged spectator */}
@@ -3217,12 +3249,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <BasicDropdown
                               label="Select Role"
                               items={[
-                                { id: 'Batter', label: 'Batter (Top / Middle Order)' },
-                                { id: 'Bowler', label: 'Bowler (Fast / Swing / Spin)' },
-                                { id: 'All-rounder', label: 'All-rounder (Bat & Bowl)' },
-                                { id: 'Wicketkeeper', label: 'Wicketkeeper Batter' },
+                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'Bowler', label: 'Bowler' },
+                                { id: 'Wicketkeeper', label: 'Wicketkeeper' },
                               ]}
-                              value={currentCricketRole ? { id: currentCricketRole, label: currentCricketRole } : null}
+                              value={
+                                currentCricketRole
+                                  ? {
+                                      id: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
+                                      label: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
+                                    }
+                                  : null
+                              }
                               onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
                             />
                           </div>
@@ -3239,23 +3277,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               ]}
                               value={currentBattingStyle ? { id: currentBattingStyle, label: currentBattingStyle } : null}
                               onChange={(item) => setValue('battingStyle', String(item.id), { shouldValidate: true })}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                              Bowling Variation / Style <span className="text-pink-600">*</span>
-                            </label>
-                            <BasicDropdown
-                              label="Select Bowling Style"
-                              items={[
-                                { id: 'Right-arm Off-Spin', label: 'Right-Arm Off-Spin' },
-                                { id: 'Right-arm Leg-Spin', label: 'Right-Arm Leg-Spin / Googly' },
-                                { id: 'Left-arm Orthodox', label: 'Left-Arm Orthodox Spin / Chinaman' },
-                                { id: 'Wicketkeeper / Non-bowler', label: 'Pure Wicketkeeper / Non-Bowler' },
-                              ]}
-                              value={currentBowlingStyle ? { id: currentBowlingStyle, label: currentBowlingStyle } : null}
-                              onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
                             />
                           </div>
 
@@ -3810,7 +3831,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             )}
 
             {/* ========================================================================= */}
-            {/* RETRO & NOSTALGIA GAMES DIVISION */}
+            {/* 90’S NOSTALGIA GAMES DIVISION */}
             {/* ========================================================================= */}
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
@@ -3824,16 +3845,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                      {isSpectator ? '2. Retro and Nostalgia Games' : 'Retro and Nostalgia Games'}
+                      {isSpectator ? '2. 90’s Nostalgia Games' : '90’s Nostalgia Games'}
                     </h3>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
-                      🎈 1980s &amp; 90s Traditional Games
+                      🎈 90’s Traditional Games
                     </span>
                   </div>
                   <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
                     {isSpectator
                       ? "Included with your Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
-                      : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special Retro & Nostalgia division (open for all participants)."}
+                      : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90’s Nostalgia games division (open for all participants)."}
                   </p>
                 </div>
               </div>
@@ -3842,7 +3863,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div ref={nostalgiaDropdownRef} className="relative">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Select Retro &amp; Nostalgia Games <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
+                      Select 90’s Nostalgia Games <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
                     </label>
                     {selectedNostalgiaSports.length > 0 && (
                       <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300">
@@ -3862,7 +3883,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
                       {selectedNostalgiaSports.length === 0 ? (
                         <span className="text-xs text-slate-400 font-medium pl-1">
-                          Choose Retro &amp; Nostalgia Games (select one or multiple)...
+                          Choose 90’s Nostalgia Games (select one or multiple)...
                         </span>
                       ) : (
                         selectedNostalgiaSports.map((sportName) => {
@@ -4078,9 +4099,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <span>Official Spectator Pass Inclusions:</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] pt-1">
-                      <div className="flex items-center gap-1.5">✓ <strong>Full Day Meals:</strong> Breakfast, Lunch &amp; Dinner</div>
+                      <div className="flex items-center gap-1.5 font-semibold text-amber-900">📌 <strong>Meals:</strong> Book on Aashray app</div>
                       <div className="flex items-center gap-1.5">✓ <strong>Night Snacks:</strong> Evening &amp; late night refreshments</div>
-                      <div className="flex items-center gap-1.5">✓ <strong>Retro Games:</strong> 1980s Retro &amp; Nostalgia childhood games</div>
+                      <div className="flex items-center gap-1.5">✓ <strong>90’s Nostalgia Games:</strong> 90’s Nostalgia childhood games</div>
                       <div className="flex items-center gap-1.5">{currentAcc === 'Yes' ? '✓ 3 Days Stay: Dec 25–27 (Compulsory 3 Days)' : '✓ Self-Arranged Stay / Day Pass'}</div>
                       {currentSpectatorTshirt === 'Yes' && (
                         <div className="flex items-center gap-1.5 font-bold text-amber-900 sm:col-span-2">✓ Official Tournament T-Shirt ({currentTshirtSize || 'L'}) Included (+₹500)</div>

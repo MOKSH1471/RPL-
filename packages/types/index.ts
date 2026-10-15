@@ -1,4 +1,4 @@
-export type LeagueType = 'cricket' | 'football' | 'womens';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom';
 
 export type SportType =
   | 'cricket'
@@ -19,7 +19,7 @@ export interface SportOptionInfo {
   accent: 'amber' | 'emerald' | 'cyan' | 'indigo' | 'orange' | 'purple' | 'pink';
 }
 
-export type CricketRole = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+export type CricketRole = 'Batsman' | 'Bowler' | 'Wicketkeeper' | 'Batter' | 'All-rounder';
 export type BattingStyle = 'Right-hand bat' | 'Left-hand bat';
 export type BowlingStyle =
   | 'Right-arm Fast / Medium'

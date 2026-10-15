@@ -1,9 +1,10 @@
 import React from 'react';
 import { KineticText } from '@/components/ui/KineticText';
 import { Calendar, MapPin, ChevronRight, Zap } from 'lucide-react';
+import { LeagueType } from '@/types';
 
 interface HeroSectionProps {
-  onSelectLeague: (league: 'cricket' | 'football' | 'womens') => void;
+  onSelectLeague: (league: LeagueType) => void;
   onRegisterClick?: () => void;
 }
 
@@ -13,10 +14,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const tickerItems = [
     'Raj Premier League',
-    'Underarm Turf Cricket',
-    'Turf Football',
+    'Main Cricket League',
+    'Football',
     "Women's Sports",
-    'Season 9 Championship',
+    'Carrom',
+    'Table Tennis',
     'Register Now',
   ];
 
@@ -28,17 +30,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words uppercase">
             Raj Premier League
           </span>
-          <span className="block text-gradient-vibrant text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase">
-            Season 9
-          </span>
         </h1>
 
         {/* Subtitle Description */}
         <p className="max-w-2xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2">
-          The ultimate community sports championship. Three epic leagues —{' '}
-          <span className="text-amber-600 font-bold">Underarm Turf Cricket</span>,{' '}
-          <span className="text-emerald-600 font-bold">Turf Football</span>, and{' '}
-          <span className="text-pink-600 font-bold">Women's Sports</span>. Step up and claim your glory.
+          The ultimate turf championship. Five epic leagues —{' '}
+          <span className="text-amber-600 font-bold">Main Cricket League</span>,{' '}
+          <span className="text-emerald-600 font-bold">Football</span>,{' '}
+          <span className="text-pink-600 font-bold">Women's Sports</span>,{' '}
+          <span className="text-indigo-600 font-bold">Carrom</span>, and{' '}
+          <span className="text-cyan-600 font-bold">Table Tennis</span>. Step up and claim your glory.
         </p>
 
         {/* Info Chips: Dates & Venue — cleanly wrapping without overflow */}
