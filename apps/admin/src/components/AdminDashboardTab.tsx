@@ -38,6 +38,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     football: 'Turf Football',
     badminton: 'Badminton',
     'table-tennis': 'Table Tennis',
+    carrom: 'Carrom League',
     pickleball: 'Pickleball',
     volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",

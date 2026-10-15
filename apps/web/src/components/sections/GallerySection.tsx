@@ -105,7 +105,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
 };
 
 export const GallerySection: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'winners' | 'cricket' | 'football' | 'womens' | 'ceremony'>('all');
+  const [activeFilter, setActiveFilter] = useState<'winners' | 'cricket' | 'football' | 'womens' | 'ceremony' | 'all'>('winners');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -389,12 +389,12 @@ export const GallerySection: React.FC = () => {
           className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center items-center gap-2 sm:gap-2.5 mb-10 md:mb-12 overflow-x-auto mobile-hide-scrollbar px-1 pb-1"
         >
           {[
-            { id: 'all', label: 'All Highlights', count: galleryItems.length },
             { id: 'winners', label: '🏆 Season Winners (S1–S8)', count: galleryItems.filter((i) => i.category === 'winners').length },
             { id: 'cricket', label: '🏏 Cricket', count: galleryItems.filter((i) => i.category === 'cricket').length },
             { id: 'football', label: '⚽ Football', count: galleryItems.filter((i) => i.category === 'football').length },
             { id: 'womens', label: "🏆 Women's League", count: galleryItems.filter((i) => i.category === 'womens').length },
             { id: 'ceremony', label: '✨ Ceremonies & Trophies', count: galleryItems.filter((i) => i.category === 'ceremony').length },
+            { id: 'all', label: 'All Highlights', count: galleryItems.length },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -441,7 +441,7 @@ export const GallerySection: React.FC = () => {
               <span>
                 {showAll
                   ? 'Show Fewer Photos'
-                  : `View All ${filteredItems.length} Highlights (${filteredItems.length - 8} more)`}
+                  : `View All ${filteredItems.length} Photos (${filteredItems.length - 8} more)`}
               </span>
               <span className="text-amber-600 font-bold">{showAll ? '▲' : '▼'}</span>
             </button>

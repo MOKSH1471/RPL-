@@ -272,10 +272,16 @@ export interface CreateOrderParams {
   email: string;
   mobile: string;
   selectedSports: string[];
+  extraTshirt?: string;
+  spectatorTshirt?: string;
+  registrationType?: string;
+  accommodationRequired?: string;
+  spectatorDates?: string[];
   isExistingPlayer?: boolean;
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   registrationId?: string;
+  registrationPayload?: Record<string, any>;
 }
 
 export async function createRazorpayOrder(params: CreateOrderParams) {

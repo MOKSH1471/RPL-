@@ -1,22 +1,29 @@
 import React from 'react';
 import { KineticText } from '@/components/ui/KineticText';
-import { Calendar, MapPin, ChevronRight, Zap } from 'lucide-react';
+import { Calendar, MapPin, ChevronRight, Zap, Ticket, ArrowRight, Sparkles } from 'lucide-react';
+import { LeagueType } from '@/types';
 
 interface HeroSectionProps {
-  onSelectLeague: (league: 'cricket' | 'football' | 'womens') => void;
+  onSelectLeague: (league: LeagueType) => void;
   onRegisterClick?: () => void;
+  onSpectatorClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onSelectLeague,
   onRegisterClick,
+  onSpectatorClick,
+  onCheckPassClick,
 }) => {
   const tickerItems = [
     'Raj Premier League',
-    'Underarm Turf Cricket',
-    'Turf Football',
-    "Women's Sports",
-    'Season 9 Championship',
+    'Main Cricket League',
+    'Football League',
+    "Women's Cricket League",
+    'Carrom League',
+    'Table Tennis League',
+    'Kaccha Pakka League',
     'Register Now',
   ];
 
@@ -28,18 +35,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words uppercase">
             Raj Premier League
           </span>
-          <span className="block text-gradient-vibrant text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase">
-            Season 9
-          </span>
         </h1>
 
         {/* Subtitle Description */}
-        <p className="max-w-2xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2">
-          The ultimate community sports championship. Three epic leagues —{' '}
-          <span className="text-amber-600 font-bold">Underarm Turf Cricket</span>,{' '}
-          <span className="text-emerald-600 font-bold">Turf Football</span>, and{' '}
-          <span className="text-pink-600 font-bold">Women's Sports</span>. Step up and claim your glory.
-        </p>
+        <div className="max-w-3xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2 space-y-1">
+          <p className="block">The ultimate community turf championship.</p>
+          <p className="block">
+            Six championship leagues —{' '}
+            <span className="text-amber-600 font-bold">Main Cricket League</span>,
+          </p>
+          <p className="block">
+            <span className="text-emerald-600 font-bold">Football League</span>,{' '}
+            <span className="text-pink-600 font-bold">Women's Cricket League</span>,
+          </p>
+          <p className="block">
+            <span className="text-purple-600 font-bold">Carrom League</span>,{' '}
+            <span className="text-sky-600 font-bold">Table Tennis League</span>, and{' '}
+            <span className="text-amber-700 font-bold">Kaccha Pakka League</span>.
+          </p>
+          <p className="block font-semibold text-slate-800 pt-0.5">
+            Step up and claim your glory.
+          </p>
+        </div>
 
         {/* Info Chips: Dates & Venue — cleanly wrapping without overflow */}
         <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-8 sm:mb-12 max-w-full px-1">
@@ -73,6 +90,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             Direct Registration
           </button>
+        </div>
+
+        {/* Spectator Pass & Already Registered Prompt */}
+        <div className="mt-5 sm:mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full px-2">
+          {onSpectatorClick && (
+            <button
+              type="button"
+              onClick={onSpectatorClick}
+              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-slate-800 hover:text-amber-950 border border-amber-300/80 hover:border-amber-400 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 animate-pulse" />
+              <span>Attending as a supporter? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Get Spectator Pass</strong></span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
+
+          {onCheckPassClick && (
+            <button
+              type="button"
+              onClick={onCheckPassClick}
+              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-amber-900 border border-slate-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+            >
+              <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 group-hover:rotate-12 transition-transform" />
+              <span>Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass / Pay Due</strong></span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -23,6 +23,7 @@ router.get('/admin/stats', async (req, res) => {
       football: 0,
       badminton: 0,
       'table-tennis': 0,
+      carrom: 0,
       pickleball: 0,
       volleyball: 0,
       'womens-sports': 0,
@@ -73,7 +74,9 @@ router.get('/admin/stats', async (req, res) => {
       if (isSpectator) {
         const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
-        calculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
+        const specDates = gen.spectatorDates || gen.spectatorDays || [];
+        const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+        calculatedFee = (hasStay ? 2700 : (specDaysCount * 630)) + (hasTshirt ? 500 : 0);
       }
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 

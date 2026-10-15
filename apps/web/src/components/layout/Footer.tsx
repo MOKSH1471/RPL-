@@ -1,7 +1,7 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
 import { FlipLink } from '@/components/ui/RevealLinks';
-import { Trophy, MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'lucide-react';
+import { MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'lucide-react';
 
 interface FooterProps {
   onRegisterClick?: () => void;
@@ -10,7 +10,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
   return (
-    <footer className="relative z-10 border-t border-slate-200 bg-white py-10 sm:py-16 safe-bottom w-full max-w-full overflow-hidden">
+    <footer className="relative z-10 border-t border-slate-200 bg-white pt-10 sm:pt-16 pb-24 sm:pb-16 safe-bottom w-full max-w-full overflow-hidden">
       <InView
         viewOptions={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
@@ -59,7 +59,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 Player Community
               </span>
               <FlipLink
-                href="https://chat.whatsapp.com"
+                href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-900 hover:text-emerald-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
@@ -96,11 +96,11 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
           {/* Column 1: Brand & Logo */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 p-0.5 border border-slate-200 shadow-sm">
-                <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-amber-600" />
-                </div>
-              </div>
+              <img
+                src="/rpl-logo.png"
+                alt="Raj Premier League"
+                className="h-10 w-auto object-contain drop-shadow-xs"
+              />
               <span className="font-display font-extrabold text-2xl text-slate-900 tracking-wider">
                 Raj Premier League
               </span>
