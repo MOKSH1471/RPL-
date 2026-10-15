@@ -1,4 +1,4 @@
-export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'spectator';
 export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
 export interface SportOptionInfo {
     id: SportType;

@@ -10,7 +10,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
   return (
-    <footer className="relative z-10 border-t border-slate-200 bg-white py-10 sm:py-16 safe-bottom w-full max-w-full overflow-hidden">
+    <footer className="relative z-10 border-t border-slate-200 bg-white pt-10 sm:pt-16 pb-24 sm:pb-16 safe-bottom w-full max-w-full overflow-hidden">
       <InView
         viewOptions={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
@@ -59,7 +59,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 Player Community
               </span>
               <FlipLink
-                href="https://chat.whatsapp.com"
+                href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-900 hover:text-emerald-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"

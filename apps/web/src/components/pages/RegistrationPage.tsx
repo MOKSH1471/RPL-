@@ -74,6 +74,15 @@ import {
 
 interface RegistrationPageProps {
   initialLeague?: string;
+  initialPrefillData?: {
+    mobile?: string;
+    fullName?: string;
+    email?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    centre?: string;
+    cardNo?: string;
+  } | null;
   onBackToHome: () => void;
   onOpenCheckStatus?: (mobile?: string) => void;
 }
@@ -216,13 +225,11 @@ const AVAILABLE_SPORTS: SportOption[] = [
 ];
 
 export const NOSTALGIA_SPORTS = [
-  { id: 'Carrom', name: 'Carrom', emoji: '🎯', isLeagueMatch: true },
-  { id: 'Lemon Spoon with Book Balancing Race', name: 'Lemon and spoon race with book balancing', emoji: '🍋', isLeagueMatch: false },
-  { id: 'Duckwalk', name: 'Duckwalk', emoji: '🦆', isLeagueMatch: false },
-  { id: 'Skipping', name: 'Skipping', emoji: '🪢', isLeagueMatch: false },
-  { id: 'Ring Race', name: 'Ring race', emoji: '⭕', isLeagueMatch: false },
-  { id: 'Relay Race (Names may change)', name: 'Relay race (Names may change)', emoji: '🏃', isLeagueMatch: false },
-  { id: 'Table Tennis', name: 'Table tennis', emoji: '🏓', isLeagueMatch: true },
+  { id: 'Lemon & Spoon Race with Book Balancing', name: 'Lemon & Spoon Race with Book Balancing', emoji: '🍋', isLeagueMatch: false },
+  { id: 'Duckwalk Race', name: 'Duckwalk Race', emoji: '🦆', isLeagueMatch: false },
+  { id: 'Skipping Competition', name: 'Skipping Competition', emoji: '🪢', isLeagueMatch: false },
+  { id: 'Ring Race', name: 'Ring Race', emoji: '⭕', isLeagueMatch: false },
+  { id: 'Relay Race', name: 'Relay Race', emoji: '🏃', isLeagueMatch: false },
 ] as const;
 
 export function normalizeNostalgiaSport(val: string): string {
@@ -233,7 +240,10 @@ export function normalizeNostalgiaSport(val: string): string {
       s.id.toLowerCase() === clean.toLowerCase() ||
       s.name.toLowerCase() === clean.toLowerCase() ||
       (clean.toLowerCase().includes('lemon') && s.name.toLowerCase().includes('lemon')) ||
-      (clean.toLowerCase().includes('ring') && s.name.toLowerCase().includes('ring'))
+      (clean.toLowerCase().includes('duck') && s.name.toLowerCase().includes('duck')) ||
+      (clean.toLowerCase().includes('skip') && s.name.toLowerCase().includes('skip')) ||
+      (clean.toLowerCase().includes('ring') && s.name.toLowerCase().includes('ring')) ||
+      (clean.toLowerCase().includes('relay') && s.name.toLowerCase().includes('relay'))
   );
   return match ? match.name : clean;
 }
@@ -288,14 +298,17 @@ const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: numb
 
 export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   initialLeague = 'cricket',
+  initialPrefillData,
   onBackToHome,
   onOpenCheckStatus,
 }) => {
+  const isInitialSpectator = initialLeague === 'spectator';
   const initialGender = initialLeague === 'womens' ? 'Female' : 'Male';
 
   // Normalize initial sport
   const mapInitialSport = (id: string, gender?: string, age?: number | null): SportType => {
     let target = id;
+    if (target === 'spectator') return 'spectator' as SportType;
     if (target === 'womens') target = 'womens-sports';
     if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
       target = gender === 'Female' ? 'womens-sports' : 'cricket';
@@ -306,7 +319,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return target as SportType;
   };
 
-  const [selectedSports, setSelectedSports] = useState<SportType[]>([mapInitialSport(initialLeague, initialGender)]);
+  const [selectedSports, setSelectedSports] = useState<SportType[]>(
+    isInitialSpectator ? ['spectator' as any] : [mapInitialSport(initialLeague, initialGender)]
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [nostalgiaDropdownOpen, setNostalgiaDropdownOpen] = useState(false);
   const [sportSearch, setSportSearch] = useState('');
@@ -430,7 +445,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ccEmail: '',
       fullName: '',
       countryCode: '+91',
-      registrationType: 'player',
+      registrationType: isInitialSpectator ? 'spectator' : 'player',
       spectatorOption: 'without-stay',
       spectatorTshirt: 'No',
       mobileNumber: '',
@@ -446,11 +461,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       checkInDate: '2026-12-25',
       checkOutDate: '2026-12-27',
       existingRplFamily: 'No',
-      selectedSports: [mapInitialSport(initialLeague, initialGender)],
+      selectedSports: isInitialSpectator ? (['spectator'] as any) : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
       cricketRole: 'Batsman',
       battingStyle: 'Right-hand bat',
-      bowlingStyle: 'Right-arm Off-Spin',
+      bowlingStyle: 'Off Spin (Off break)',
       cricketExperience: 'Intermediate (Club / College)',
       // Football Defaults
       footballPosition: 'Forward / Striker',
@@ -523,6 +538,36 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const handleClearNostalgia = () => {
     setValue('nostalgiaSport', '', { shouldValidate: true, shouldDirty: true });
   };
+
+  // Pre-fill form details if navigated from CheckStatusModal (e.g. unregistered player lookup)
+  useEffect(() => {
+    if (initialPrefillData?.mobile) {
+      const cleanMob = initialPrefillData.mobile.replace(/\D/g, '').slice(-10);
+      if (cleanMob) {
+        setValue('mobileNumber', cleanMob, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.fullName) {
+        setValue('fullName', initialPrefillData.fullName, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.email) {
+        setValue('email', initialPrefillData.email, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.centre) {
+        setValue('centre', initialPrefillData.centre, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.gender) {
+        const gen = initialPrefillData.gender === 'Female' ? 'Female' : 'Male';
+        setValue('gender', gen as any, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.dateOfBirth) {
+        setValue('dateOfBirth', initialPrefillData.dateOfBirth, { shouldValidate: true, shouldDirty: true });
+      }
+      if (initialPrefillData.cardNo) {
+        setMumukshuCardInfo({ cardNo: initialPrefillData.cardNo, name: initialPrefillData.fullName || '' });
+      }
+    }
+  }, [initialPrefillData]);
+
   const currentGender = watch('gender');
 
   // Registration Mode & Fee calculation:
@@ -1784,9 +1829,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
           className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 px-1 sm:px-0"
         >
-          <span className="text-[10px] sm:text-xs uppercase font-extrabold tracking-widest text-slate-500 block mb-1.5 sm:mb-2">
-            {isSpectator ? 'SPECTATOR PASS REGISTRATION' : 'PLAYER REGISTRATION'}
-          </span>
+
           <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-3 tracking-tight leading-tight">
             {isSpectator ? (
               <>Official Spectator <span className="text-gradient-vibrant">Pass</span></>
@@ -1796,13 +1839,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           </h1>
           <p className="text-slate-600 text-xs sm:text-base font-medium mb-4 sm:mb-6 leading-relaxed max-w-xl mx-auto px-1">
             {isSpectator
-              ? 'Join RPL Season 9 as a spectator with full meals, night snacks & refreshments, 90’s Nostalgia games, and event access.'
+              ? 'Join RPL Season 9 as a spectator with night snacks & refreshments, 90’s Nostalgia games, and event access.'
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
           {/* Registration Mode Switcher: Player Pass vs Spectator Pass */}
           <div className="flex justify-center mb-6 w-full px-1">
-            <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-md w-full gap-1 sm:gap-1.5">
+            <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-lg w-full gap-1 sm:gap-1.5">
               <button
                 type="button"
                 onClick={() => {
@@ -1812,18 +1855,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     setSelectedSports(['cricket']);
                   }
                 }}
-                className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col xs:flex-row items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer ${!isSpectator
-                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${!isSpectator
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                  <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
-                  <span className="whitespace-nowrap">Player Entry</span>
-                </div>
-                <span className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap shrink-0 ${!isSpectator ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600'}`}>
-                  ₹2,700
-                </span>
+                <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
+                <span className="whitespace-nowrap">Player Registration</span>
               </button>
 
               <button
@@ -1833,18 +1871,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   setValue('selectedSports', ['spectator'], { shouldValidate: true });
                   setSelectedSports(['spectator']);
                 }}
-                className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex flex-col xs:flex-row items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer ${isSpectator
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${isSpectator
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="whitespace-nowrap">Spectator</span>
-                </div>
-                <span className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap shrink-0 ${isSpectator ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                  From ₹630
-                </span>
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="whitespace-nowrap">Spectator Registration</span>
               </button>
             </div>
           </div>
@@ -2588,7 +2621,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
-              {/* Sub-section 1.4: Meals & Ashram Accommodation */}
+              {/* Sub-section 1.4: Meals & Research Centre Accommodation */}
               <div className="pt-3 border-t border-slate-100">
                 <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
                   <Home className="w-4 h-4 text-amber-600" />
@@ -2660,7 +2693,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </div>
                         <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
                           <p className="font-semibold text-slate-900">
-                            ✓ <strong>Ashram Accommodation:</strong> Stay arrangements for Dec 25–27, 2026.
+                            ✓ <strong>Research Centre Accommodation:</strong> Stay arrangements for Dec 25–27, 2026.
                           </p>
                           <div className="p-2.5 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 font-bold text-[11px] flex items-start gap-2">
                             <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -2676,7 +2709,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
                           <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                           <span>
-                            <strong>Note:</strong> Full day meal bookings to be done on Aashray app.
+                            <strong>Note:</strong> Please book your meals (Breakfast, Lunch & Dinner) separately on the Aashray App.
                           </span>
                         </div>
                       </div>
@@ -2701,7 +2734,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
                           <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                           <span>
-                            <strong>Note:</strong> Full day meal bookings to be done on Aashray app.
+                            <strong>Note:</strong> Please book your meals (Breakfast, Lunch & Dinner) separately on the Aashray App.
                           </span>
                         </div>
 
@@ -3228,7 +3261,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                                  Underarm Turf Cricket Questions
+                                  Main Cricket League Questions
                                 </h3>
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] sm:text-xs shrink-0">
                                   Active Sport
@@ -3256,9 +3289,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               value={
                                 currentCricketRole
                                   ? {
-                                      id: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
-                                      label: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
-                                    }
+                                    id: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
+                                    label: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
+                                  }
                                   : null
                               }
                               onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
@@ -3280,7 +3313,48 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             />
                           </div>
 
-                          <div>
+                          {/* Dynamically add Bowling Style when Bowler is selected */}
+                          {currentCricketRole === 'Bowler' && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                                Bowling Variation / Style <span className="text-pink-600">*</span>
+                              </label>
+                              <BasicDropdown
+                                label="Select Bowling Style"
+                                items={[
+                                  { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                  { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                  { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                  { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                                ]}
+                                value={
+                                  currentBowlingStyle
+                                    ? [
+                                      { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                      { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                      { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                      { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                                    ].find(
+                                      (opt) =>
+                                        opt.id.toLowerCase() === currentBowlingStyle.toLowerCase() ||
+                                        (currentBowlingStyle.toLowerCase().includes('off') && opt.id.includes('Off')) ||
+                                        (currentBowlingStyle.toLowerCase().includes('leg') && opt.id.includes('Leg')) ||
+                                        (currentBowlingStyle.toLowerCase().includes('orthodox') && opt.id.includes('Orthodox')) ||
+                                        (currentBowlingStyle.toLowerCase().includes('chinaman') && opt.id.includes('Unorthodox'))
+                                    ) || { id: currentBowlingStyle, label: currentBowlingStyle }
+                                    : null
+                                }
+                                onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
+                              />
+                            </motion.div>
+                          )}
+
+                          <div className={currentCricketRole === 'Bowler' ? '' : 'md:col-span-2'}>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
                               Cricket Experience Level <span className="text-pink-600">*</span>
                             </label>

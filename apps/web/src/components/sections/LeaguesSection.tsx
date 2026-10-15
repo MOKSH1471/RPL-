@@ -1,7 +1,7 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
 import { LeagueType } from '@/types';
-import { ArrowRight, Star, MessageCircle } from 'lucide-react';
+import { ArrowRight, Star, MessageCircle, Sparkles } from 'lucide-react';
 
 interface LeaguesSectionProps {
   onSelectLeague: (league: LeagueType) => void;
@@ -107,7 +107,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     Exciting Football
                   </span>
                   <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">
-                    Football
+                    Football League
                   </h3>
                   <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                     Step onto the turf for fast-paced football, great teamwork, and pure excitement! Play with passion, cheer on your squad, and make amazing memories with friends.
@@ -143,7 +143,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     HER GAME. HER VOICE. HER POWER.
                   </span>
                   <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-pink-700 transition-colors">
-                    Women's League
+                    Women's Cricket League
                   </h3>
                   <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                     <span className="font-bold text-slate-900 block mb-1">
@@ -186,7 +186,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   SPEED, REFLEX & SPIN
                 </span>
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-sky-700 transition-colors">
-                  Table Tennis
+                  Table Tennis League
                 </h3>
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                   Step up to the table for thrilling rallies, lightning-fast reflexes, and intense spin battles! Showcase your precision in singles and doubles format.
@@ -222,7 +222,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   STRIKE & POCKET MASTERY
                 </span>
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-purple-700 transition-colors">
-                  Carrom
+                  Carrom League
                 </h3>
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                   Aim, strike, and pocket the queen! Bring your finest angles, board control, and tactical skill to the classic carrom board championship.
@@ -243,6 +243,40 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
             </div>
           </InView>
         </div>
+
+        {/* Official Spectator Pass Highlight Card */}
+        <InView
+          viewOptions={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' }}
+          className="mt-8 sm:mt-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-300/80 shadow-md flex flex-col md:flex-row items-center justify-between gap-6"
+        >
+          <div className="space-y-2 text-center md:text-left">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-white font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Non-Playing Event Pass</span>
+              </span>
+              <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                Cheer, Relax & Relive 90’s Games
+              </span>
+            </div>
+            <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900">
+              Official Spectator Pass
+            </h3>
+            <p className="text-slate-700 text-sm sm:text-base font-medium max-w-2xl leading-relaxed">
+              Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy evening & late-night snacks, access opening ceremonies, and arrange optional stay.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectLeague('spectator')}
+            className="w-full md:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all active:scale-95 shrink-0 cursor-pointer touch-manipulation"
+          >
+            <span>Get Spectator Pass</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </InView>
 
         {/* Team Ownership and Sponsorship Callout Banner */}
         <InView

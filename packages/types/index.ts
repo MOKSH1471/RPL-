@@ -1,4 +1,4 @@
-export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'spectator';
 
 export type SportType =
   | 'cricket'

@@ -17,11 +17,22 @@ import confetti from 'canvas-confetti';
 import { lookupMumukshu, createRazorpayOrder, verifyRazorpayPayment, reportRazorpayPaymentFailure } from '@/lib/api';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
+interface UnregisteredPlayerData {
+  mobile: string;
+  fullName?: string;
+  email?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  centre?: string;
+  cardNo?: string;
+}
+
 interface CheckStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMobile?: string;
   autoTriggerPay?: boolean;
+  onRegisterNewPlayer?: (data: UnregisteredPlayerData) => void;
 }
 
 export function CheckStatusModal({
@@ -29,11 +40,13 @@ export function CheckStatusModal({
   onClose,
   initialMobile = '',
   autoTriggerPay = false,
+  onRegisterNewPlayer,
 }: CheckStatusModalProps) {
   const [mobile, setMobile] = useState(initialMobile);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [matchedRecord, setMatchedRecord] = useState<any | null>(null);
+  const [unregisteredData, setUnregisteredData] = useState<UnregisteredPlayerData | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any | null>(null);
   const [serverWakingHint, setServerWakingHint] = useState(false);
@@ -49,6 +62,12 @@ export function CheckStatusModal({
   }, [loading, isProcessingPayment]);
 
   useEffect(() => {
+    if (!isOpen) {
+      setSearchError(null);
+      setMatchedRecord(null);
+      setUnregisteredData(null);
+      return;
+    }
     if (initialMobile) {
       setMobile(initialMobile);
       handleSearchMobile(initialMobile);
@@ -59,17 +78,20 @@ export function CheckStatusModal({
     const cleanDigits = queryMobile.replace(/\D/g, '').slice(-10);
     if (cleanDigits.length < 10) {
       setSearchError('Please enter a valid 10-digit mobile number.');
+      setUnregisteredData(null);
       return;
     }
 
     setLoading(true);
     setSearchError(null);
     setMatchedRecord(null);
+    setUnregisteredData(null);
 
     try {
       const res = await lookupMumukshu(cleanDigits);
       if (res.found && res.isExistingRegistration && res.registration) {
         setMatchedRecord(res.registration);
+        setUnregisteredData(null);
 
         if (autoTriggerPay && (res.registration.paymentStatus || 'pending') === 'pending') {
           // Trigger checkout automatically if deep-linked with ?pay=1
@@ -78,6 +100,17 @@ export function CheckStatusModal({
           }, 300);
         }
       } else {
+        // Player not registered for RPL Season 9
+        const details: UnregisteredPlayerData = {
+          mobile: cleanDigits,
+          fullName: res.data?.fullName,
+          email: res.data?.email,
+          gender: res.data?.gender,
+          dateOfBirth: res.data?.dateOfBirth,
+          centre: res.data?.centre,
+          cardNo: res.data?.cardNo,
+        };
+        setUnregisteredData(details);
         setSearchError('No RPL Season 9 registration found with this mobile number. Please register as a new player.');
       }
     } catch (err: any) {
@@ -253,18 +286,42 @@ export function CheckStatusModal({
                   maxLength={10}
                   placeholder="Enter 10-digit mobile number..."
                   value={mobile}
-                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setMobile(val);
+                    if (unregisteredData && val !== unregisteredData.mobile) {
+                      setUnregisteredData(null);
+                      setSearchError(null);
+                    }
+                  }}
                   className="w-full pl-4 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-slate-900 font-bold"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={loading || mobile.length < 10}
-                className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-98 disabled:opacity-50 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                <span>{loading ? 'Searching...' : 'Find Pass'}</span>
-              </button>
+
+              {/* When number is not registered for RPL, replace Find Pass button with Register Now */}
+              {unregisteredData && mobile === unregisteredData.mobile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onRegisterNewPlayer?.(unregisteredData);
+                  }}
+                  className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all whitespace-nowrap animate-in fade-in zoom-in-95"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Register Now</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading || mobile.length < 10}
+                  className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-98 disabled:opacity-50 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all whitespace-nowrap"
+                >
+                  {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  <span>{loading ? 'Searching...' : 'Find Pass'}</span>
+                </button>
+              )}
             </form>
 
             {/* Server Waking Indicator (Render Free Tier Cold-Start) */}

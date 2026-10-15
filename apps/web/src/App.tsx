@@ -12,6 +12,7 @@ import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { Footer } from '@/components/layout/Footer';
+import { MobileStickyBar } from '@/components/layout/MobileStickyBar';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
@@ -23,6 +24,7 @@ export function App() {
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
   const [checkStatusMobile, setCheckStatusMobile] = useState('');
   const [autoTriggerPay, setAutoTriggerPay] = useState(false);
+  const [registrationPrefill, setRegistrationPrefill] = useState<any>(null);
 
   // Background server spin-up on visit
   useEffect(() => {
@@ -112,6 +114,22 @@ export function App() {
     }, 20);
   };
 
+  const handleRegisterNewPlayer = (prefillData: any) => {
+    setIsCheckStatusOpen(false);
+    setAutoTriggerPay(false);
+    setRegistrationPrefill(prefillData);
+    setCurrentPage('register');
+    window.location.hash = '/register';
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 20);
+  };
+
   const handleBackToHome = () => {
     setCurrentPage('home');
     if (window.location.pathname !== '/' && window.location.pathname !== '') {
@@ -150,6 +168,7 @@ export function App() {
           {currentPage === 'register' ? (
             <RegistrationPage
               initialLeague={selectedLeague}
+              initialPrefillData={registrationPrefill}
               onBackToHome={handleBackToHome}
               onOpenCheckStatus={(mobile) => {
                 if (mobile) setCheckStatusMobile(mobile);
@@ -161,6 +180,8 @@ export function App() {
               <HeroSection
                 onSelectLeague={handleSelectLeague}
                 onRegisterClick={handleRegisterClick}
+                onSpectatorClick={() => handleSelectLeague('spectator')}
+                onCheckPassClick={() => setIsCheckStatusOpen(true)}
               />
               <AboutSection />
               <LeaguesSection onSelectLeague={handleSelectLeague} />
@@ -173,6 +194,14 @@ export function App() {
 
         <Footer onRegisterClick={handleRegisterClick} />
 
+        {/* Mobile Sticky Quick Action Bar (Option 1) */}
+        {currentPage === 'home' && (
+          <MobileStickyBar
+            onCheckPassClick={() => setIsCheckStatusOpen(true)}
+            onRegisterClick={handleRegisterClick}
+          />
+        )}
+
         {/* Global Check Pass / Pay Due Modal */}
         <CheckStatusModal
           isOpen={isCheckStatusOpen}
@@ -182,6 +211,7 @@ export function App() {
           }}
           initialMobile={checkStatusMobile}
           autoTriggerPay={autoTriggerPay}
+          onRegisterNewPlayer={handleRegisterNewPlayer}
         />
       </div>
     </div>
