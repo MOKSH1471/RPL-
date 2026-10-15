@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import { RegistrationFormData } from '@/types';
+import { RegistrationFormData, SportType } from '@/types';
 import { printerAudio } from '@/lib/printerAudio';
 import {
   Printer,
@@ -84,6 +84,24 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
 
   const paperRef = useRef<HTMLDivElement>(null);
   const cutterFlashRef = useRef<HTMLDivElement>(null);
+  const [paperHeight, setPaperHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (!paperRef.current) return;
+    const updateHeight = () => {
+      if (paperRef.current) {
+        setPaperHeight(paperRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null;
+    if (ro && paperRef.current) {
+      ro.observe(paperRef.current);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+    };
+  }, [qrCodeDataUrl, data]);
 
   const effectiveUtr =
     (data.payment_utr && data.payment_utr.trim()) ||
@@ -105,10 +123,12 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
     (data as any).paymentReceipt
   );
 
-  const sportsList =
+  const sportsList: (string | SportType)[] =
     data.selectedSports && data.selectedSports.length > 0
-      ? data.selectedSports
+      ? (data.selectedSports as (string | SportType)[])
       : [data.league || 'cricket'];
+
+  const isSpectator = (data as any).registrationType === 'spectator' || sportsList.includes('spectator');
 
   const formatSportName = (s: string) => {
     switch (s) {
@@ -127,6 +147,10 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'womens-sports':
       case 'womens':
         return "Women's Multi-Sport";
+      case 'kaccha-pakka':
+        return 'Kaccha Pakka League';
+      case 'spectator':
+        return 'Spectator Pass (Retro Games & Meals)';
       default:
         return s;
     }
@@ -267,7 +291,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       `👤 *Player:* ${data.fullName || 'Participant'}`,
       `🎫 *Pass ID:* ${registrationId}`,
       `⚡ *Sports:* ${sportsList.map(formatSportName).join(', ')}`,
-      `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
+      `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.extraTshirt === 'Yes' ? ' (+1 Extra T-Shirt)' : ''}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
       `📍 *Centre:* ${data.centre || 'Mumbai'}`,
       `🏨 *Stay:* ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}`,
       `✅ *Status:* ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL / VERIFIED' : '⏳ PAYMENT DUE'}`,
@@ -399,7 +423,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       RAJ PREMIER LEAGUE
                     </div>
                     <div className="text-[9px] font-bold text-amber-800 tracking-wider">
-                      SEASON 9 • TOURNAMENT PASS
+                      SEASON 9 • {isSpectator ? 'SPECTATOR PASS' : 'TOURNAMENT PASS'}
                     </div>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
@@ -435,9 +459,9 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Participant Details Rows */}
                 <div className="space-y-1 text-[9.5px]">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PLAYER:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'SPECTATOR:' : 'PLAYER:'}</span>
                     <span className="font-extrabold text-slate-950 text-right max-w-[190px] truncate">
-                      {data.fullName || 'RPL Athlete'}
+                      {data.fullName || 'Participant'}
                     </span>
                   </div>
 
@@ -457,18 +481,27 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
 
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">JERSEY:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'T-SHIRT:' : 'JERSEY:'}</span>
                     <span className="font-mono font-bold text-amber-800">
-                      SIZE {data.tshirtSize || 'L'}
-                      {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
-                      {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                      {isSpectator ? (
+                        (data.spectatorTshirt === 'Yes' || data.extraTshirt === 'Yes')
+                          ? `PURCHASED (SIZE ${data.tshirtSize || 'L'})`
+                          : 'NOT ORDERED'
+                      ) : (
+                        <>
+                          SIZE {data.tshirtSize || 'L'}
+                          {data.extraTshirt === 'Yes' ? ' (+1 Extra)' : ''}
+                          {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
+                          {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                        </>
+                      )}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
+                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27 (Compulsory)' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Day Pass (Without Stay)')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
                     </span>
                   </div>
 
@@ -493,7 +526,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Registered Sports */}
                 <div className="mb-2">
                   <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    CHAMPIONSHIP ARENAS (1X INCLUDED)
+                    {isSpectator ? 'ARENAS & RETRO GAMES' : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
                   </div>
                   <div className="space-y-1">
                     {sportsList.map((sport, idx) => (
@@ -512,11 +545,11 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Status / Total breakdown */}
                 <div className="space-y-0.5 text-[9px] mb-2">
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Tournament Registration</span>
+                    <span>{isSpectator ? 'Spectator Entry' : 'Tournament Registration'}</span>
                     <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Player Kit & Pass</span>
+                    <span>{isSpectator ? 'Meals & Retro Games' : 'Player Kit & Pass'}</span>
                     <span className="font-mono">INCLUDED</span>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">
@@ -550,8 +583,13 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
                 </div>
 
+                {/* Cancellation Policy on Pass */}
+                <div className="text-[7px] font-bold text-center text-neutral-600 uppercase tracking-wider mt-2 pt-1 border-t border-dashed border-neutral-300">
+                  * NO REFUND IN CASE OF NO SHOW OR CANCELLATION *
+                </div>
+
                 {/* Footer Greeting */}
-                <div className="text-center mt-3 pt-2 border-t border-dashed border-neutral-300">
+                <div className="text-center mt-2 pt-1.5 border-t border-dashed border-neutral-300">
                   <div className="text-[8px] font-black text-slate-900 tracking-wider uppercase">
                     ★ PLAY WITH PASSION • WIN WITH GRACE ★
                   </div>
@@ -565,9 +603,14 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
         </div>
 
         {/* Minimal Pointer Tear Helper Text positioned below the dispensed receipt */}
-        <p className={`text-[11px] text-slate-500 font-medium text-center transition-all ${
-          isPrinted || isPrinting ? 'mt-[820px] sm:mt-[860px] pb-4' : 'mt-3'
-        }`}>
+        <p
+          style={{
+            marginTop: isPrinted || isPrinting
+              ? (paperHeight > 0 ? `${41 + paperHeight + 14}px` : '520px')
+              : '12px',
+          }}
+          className="text-[11px] text-slate-500 font-medium text-center transition-all duration-300 pb-2"
+        >
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
             : isPrinted

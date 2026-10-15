@@ -1,5 +1,5 @@
 export type LeagueType = 'cricket' | 'football' | 'womens';
-export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports';
+export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
 export interface SportOptionInfo {
     id: SportType;
     name: string;
@@ -16,12 +16,16 @@ export type ExperienceLevel = 'Beginner / Casual' | 'Intermediate (Club / Colleg
 export interface RegistrationFormData {
     recipientGmail?: string;
     ccEmail?: string;
+    registrationType?: 'player' | 'spectator';
+    spectatorOption?: 'with-stay' | 'without-stay' | string;
+    spectatorTshirt?: 'Yes' | 'No' | string;
     fullName: string;
     countryCode?: string;
     mobileNumber: string;
     email: string;
     centre: string;
     tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
+    extraTshirt?: 'Yes' | 'No' | string;
     dateOfBirth: string;
     gender: 'Male' | 'Female' | 'Other' | string;
     foodPreference: 'Regular' | 'Non-Spicy' | string;
@@ -32,6 +36,8 @@ export interface RegistrationFormData {
     existingRplFamily: 'Yes' | 'No' | string;
     photoName?: string;
     photoDataUrl?: string;
+    nostalgiaSport?: string | string[];
+    nostalgiaSports?: string[];
     selectedSports: SportType[];
     primarySport?: SportType | string;
     league?: LeagueType;

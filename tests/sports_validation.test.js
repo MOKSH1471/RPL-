@@ -9,6 +9,8 @@ const VALID_SPORTS = [
   'pickleball',
   'volleyball',
   'womens-sports',
+  'kaccha-pakka',
+  'spectator',
 ];
 
 const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -93,3 +95,179 @@ test('Sports Validation: validates and normalizes T-shirt sizes against official
   assert.strictEqual(validateTshirtSize('MEDIUM').valid, false);
   assert.strictEqual(validateTshirtSize('').valid, false);
 });
+
+test('Sports Validation: accepts kaccha-pakka in valid sports', () => {
+  assert.strictEqual(validateSportsSelection(['kaccha-pakka']).valid, true);
+  assert.strictEqual(validateSportsSelection(['cricket', 'kaccha-pakka']).valid, true);
+});
+
+test('Sports Validation: accepts spectator in valid sports', () => {
+  assert.strictEqual(validateSportsSelection(['spectator']).valid, true);
+});
+
+test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
+  function validateSpectatorRules(payload) {
+    if (payload.registrationType !== 'spectator') return { valid: false, error: 'Not spectator' };
+    
+    // Fee calculation
+    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : 630;
+    const tshirtCost = (payload.spectatorTshirt === 'Yes' || payload.extraTshirt === 'Yes') ? 500 : 0;
+    const totalFee = baseFee + tshirtCost;
+
+    // Sub-section 1.5 fields (Photo & Existing RPL Family) are omitted for spectators
+    const requiresPhoto = false;
+    const requiresFamilyEnrollment = false;
+
+    return {
+      valid: true,
+      totalFee,
+      requiresPhoto,
+      requiresFamilyEnrollment,
+      inclusions: [
+        'Full Day Meals (Breakfast, Lunch, Dinner)',
+        'Night Snacks & Refreshments',
+        '1980s Retro & Nostalgia Games',
+        payload.accommodationRequired === 'Yes' ? 'Ashram Stay (Compulsory 3 Days)' : 'Self-Arranged Stay',
+      ],
+    };
+  }
+
+  // 1. Day Pass without stay, without T-shirt (₹630)
+  const dayPass = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(dayPass.valid, true);
+  assert.strictEqual(dayPass.totalFee, 630);
+  assert.strictEqual(dayPass.requiresPhoto, false);
+  assert.strictEqual(dayPass.requiresFamilyEnrollment, false);
+
+  // 2. Day Pass without stay, with T-shirt (₹1,130)
+  const dayPassTshirt = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorTshirt: 'Yes',
+  });
+  assert.strictEqual(dayPassTshirt.totalFee, 1130);
+
+  // 3. Pass with stay, without T-shirt (₹2,700)
+  const stayPass = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'Yes',
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(stayPass.totalFee, 2700);
+
+  // 4. Pass with stay, with T-shirt (₹3,200)
+  const stayPassTshirt = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'Yes',
+    spectatorTshirt: 'Yes',
+  });
+  assert.strictEqual(stayPassTshirt.totalFee, 3200);
+});
+
+test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka League', () => {
+  function isKacchaPakkaEligible(age) {
+    if (age === null || age === undefined) return false;
+    return age <= 16 || age >= 56;
+  }
+
+  assert.strictEqual(isKacchaPakkaEligible(10), true);
+  assert.strictEqual(isKacchaPakkaEligible(16), true);
+  assert.strictEqual(isKacchaPakkaEligible(17), false);
+  assert.strictEqual(isKacchaPakkaEligible(25), false);
+  assert.strictEqual(isKacchaPakkaEligible(55), false);
+  assert.strictEqual(isKacchaPakkaEligible(56), true);
+  assert.strictEqual(isKacchaPakkaEligible(65), true);
+  assert.strictEqual(isKacchaPakkaEligible(null), false);
+});
+
+test('90s Nostalgia: verifies the 7 nostalgia sports and TT/Carrom league note with canonical capitalization', () => {
+  const NOSTALGIA_SPORTS = [
+    'Carrom',
+    'Lemon spoon with book on head',
+    'Duckwalk',
+    'Skipping',
+    'Ring race (Couple or 2 ppl)',
+    'Relay race (Names may change)',
+    'Table tennis',
+  ];
+
+  assert.strictEqual(NOSTALGIA_SPORTS.length, 7);
+
+  function hasRegistrationBasisNote(sport) {
+    return sport === 'Carrom' || sport === 'Table tennis';
+  }
+
+  assert.strictEqual(hasRegistrationBasisNote('Carrom'), true);
+  assert.strictEqual(hasRegistrationBasisNote('Table tennis'), true);
+  assert.strictEqual(hasRegistrationBasisNote('Skipping'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Duckwalk'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Ring race (Couple or 2 ppl)'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Relay race (Names may change)'), false);
+  assert.strictEqual(hasRegistrationBasisNote('Lemon spoon with book on head'), false);
+});
+
+test('90s Nostalgia: formatNostalgiaSports helper formats array, legacy string, and empty selections correctly', () => {
+  function formatNostalgiaSports(val) {
+    if (!val) return 'None';
+    if (Array.isArray(val)) {
+      const filtered = val.filter((s) => s && s !== 'None');
+      return filtered.length > 0 ? filtered.join(', ') : 'None';
+    }
+    return typeof val === 'string' && val.trim() ? val : 'None';
+  }
+
+  // Multi-select array tests
+  assert.strictEqual(
+    formatNostalgiaSports(['Carrom', 'Duckwalk', 'Skipping']),
+    'Carrom, Duckwalk, Skipping'
+  );
+  assert.strictEqual(
+    formatNostalgiaSports(['Lemon spoon with book on head']),
+    'Lemon spoon with book on head'
+  );
+  assert.strictEqual(formatNostalgiaSports(['None']), 'None');
+  assert.strictEqual(formatNostalgiaSports([]), 'None');
+
+  // Legacy single string tests
+  assert.strictEqual(formatNostalgiaSports('Carrom'), 'Carrom');
+  assert.strictEqual(formatNostalgiaSports('None'), 'None');
+
+  // Edge cases
+  assert.strictEqual(formatNostalgiaSports(null), 'None');
+  assert.strictEqual(formatNostalgiaSports(undefined), 'None');
+});
+
+test('90s Nostalgia: canonical capitalization mapping normalizes legacy lowercase strings', () => {
+  const CANONICAL_MAP = {
+    'carrom': 'Carrom',
+    'lemon spoon with book on head': 'Lemon spoon with book on head',
+    'duckwalk': 'Duckwalk',
+    'skipping': 'Skipping',
+    'ring race(couple or 2 ppl)': 'Ring race (Couple or 2 ppl)',
+    'ring race (couple or 2 ppl)': 'Ring race (Couple or 2 ppl)',
+    'relay race (names may change)': 'Relay race (Names may change)',
+    'table tennis': 'Table tennis',
+  };
+
+  function normalizeNostalgiaSport(sport) {
+    if (!sport || typeof sport !== 'string') return sport;
+    const lower = sport.trim().toLowerCase();
+    return CANONICAL_MAP[lower] || sport;
+  }
+
+  assert.strictEqual(normalizeNostalgiaSport('duckwalk'), 'Duckwalk');
+  assert.strictEqual(
+    normalizeNostalgiaSport('lemon spoon with book on head'),
+    'Lemon spoon with book on head'
+  );
+  assert.strictEqual(
+    normalizeNostalgiaSport('ring race(couple or 2 ppl)'),
+    'Ring race (Couple or 2 ppl)'
+  );
+  assert.strictEqual(normalizeNostalgiaSport('Duckwalk'), 'Duckwalk');
+});
+

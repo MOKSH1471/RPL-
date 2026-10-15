@@ -43,3 +43,34 @@ test('sanitizeDate: returns null for invalid or null inputs', () => {
   assert.equal(sanitizeDate(''), null);
   assert.equal(sanitizeDate('invalid-date-string'), null);
 });
+
+test('calculateAge: correctly calculates age from YYYY-MM-DD string', () => {
+  function calculateAge(dobString) {
+    if (!dobString || typeof dobString !== 'string') return null;
+    const parts = dobString.trim().split('-');
+    if (parts.length < 3) return null;
+    const birthYear = parseInt(parts[0], 10);
+    const birthMonth = parseInt(parts[1], 10);
+    const birthDay = parseInt(parts[2], 10);
+    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+
+    let age = currentYear - birthYear;
+    if (currentMonth < birthMonth || (currentMonth === birthMonth && currentDay < birthDay)) {
+      age--;
+    }
+    return age;
+  }
+
+  const currentYear = new Date().getFullYear();
+  assert.equal(calculateAge(`${currentYear - 15}-01-01`), 15);
+  assert.equal(calculateAge(`${currentYear - 16}-01-01`), 16);
+  assert.equal(calculateAge(`${currentYear - 56}-01-01`), 56);
+  assert.equal(calculateAge(`${currentYear - 60}-01-01`), 60);
+  assert.equal(calculateAge(null), null);
+  assert.equal(calculateAge(''), null);
+});

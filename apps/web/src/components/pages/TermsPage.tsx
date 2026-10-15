@@ -79,8 +79,8 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
           {/* 2. Fee Structure & Payment Processing */}
           <Section icon={<CreditCard className="w-4 h-4" />} title="2. Fee Structure &amp; Secure Payment Processing">
             <ul className="list-disc pl-5 space-y-1.5">
-              <li><strong>Base Registration Fee:</strong> ₹2,500 includes enrollment in your primary sport, 2 nights of official tournament stay (Dec 25–27, 2026), meals, and the official player jersey kit.</li>
-              <li><strong>Multi-Sport Add-ons:</strong> Additional sports are ₹400 per extra sport. Returning players adding sports only pay the incremental ₹400/sport.</li>
+              <li><strong>All-Inclusive Tournament Pass:</strong> Flat ₹2,700 covers enrollment in all selected sports, 2 nights of official tournament stay (Dec 25–27, 2026), meals, and the official player jersey kit. All sports are included with no additional extra fees.</li>
+              <li><strong>All Sports Included:</strong> There are no extra charges for participating in multiple sports. Returning players updating their sports selection incur ₹0 additional charge.</li>
               <li><strong>Payment Gateway:</strong> Online transactions are encrypted and processed through <strong>Razorpay</strong> (supporting UPI, Net Banking, Debit Cards, and Credit Cards). We adhere to PCI-DSS security standards and do not store sensitive card credentials or CVVs on our servers.</li>
               <li><strong>Pay Later / Offline Verification:</strong> Registrations submitted under offline/pay later terms remain in <code>PENDING</code> status until verified by the administration. Tournament passes are validated upon confirmation of payment proof.</li>
             </ul>
@@ -88,8 +88,13 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
 
           {/* 3. Cancellation & Refund Policy */}
           <Section icon={<RefreshCw className="w-4 h-4" />} title="3. Cancellation &amp; Refund Policy">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300 text-xs font-extrabold text-amber-950 flex items-center space-x-2.5 shadow-2xs">
+              <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>Strict Policy: No refund in case of no show or cancellation.</span>
+            </div>
             <p>We maintain a clear cancellation and refund policy:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
+              <li><strong>No Refund on No Show or Cancellation:</strong> Registration fees are non-refundable in the event of participant no show or cancellation.</li>
               <li><strong>Partial Refund at Committee Discretion:</strong> All cancellations are evaluated on an individual basis. Any eligible refund is partial, subject to deduction of jersey manufacturing, accommodation commitment, and administrative overheads, and remains under the sole discretion of the RPL Organizing Committee.</li>
               <li><strong>Cancellations Close to Tournament:</strong> Registrations cancelled once player rosters, customized kits, and room allocations are finalized are non-refundable, except when approved specifically by the RPL Committee.</li>
               <li><strong>Refund Processing Timeline:</strong> Approved partial refunds will be processed within <strong>5 to 7 working days</strong> and credited back directly to the original payment source (UPI account, Bank Account, or Card) via Razorpay.</li>

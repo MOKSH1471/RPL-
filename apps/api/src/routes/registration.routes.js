@@ -198,7 +198,14 @@ router.post('/register', async (req, res) => {
         const computedSportsCount = Math.max(1, allSelectedSports.length);
         const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
         const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
-        const computedFee = 2500 + Math.max(0, computedSportsCount - 1) * 400;
+        const regType = mergedGeneralDetails.registrationType || cleanGeneralDetails.registrationType || (allSelectedSports.includes('spectator') ? 'spectator' : 'player');
+        const isSpectator = regType === 'spectator';
+        const accomRequired = mergedGeneralDetails.accommodationRequired || cleanGeneralDetails.accommodationRequired || 'No';
+        const extraTshirtChoice = mergedGeneralDetails.extraTshirt || mergedGeneralDetails.spectatorTshirt || cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No';
+        const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+        const computedFee = isSpectator
+          ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+          : 2700 + extraTshirtCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -227,7 +234,9 @@ router.post('/register', async (req, res) => {
         const finalReceiptUrl = mergedReceiptList.length > 0 ? mergedReceiptList.join(', ') : null;
 
         const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
-        const incrementalFee = isAlreadyPaid ? newlyAddedSportsCount * 400 : computedFee;
+        const prevHadExtraTshirt = prevGeneral.extraTshirt === 'Yes';
+        const newlyAddedExtraTshirt = !prevHadExtraTshirt && extraTshirtChoice === 'Yes';
+        const incrementalFee = isAlreadyPaid ? (newlyAddedExtraTshirt ? 500 : 0) : computedFee;
 
         mergedGeneralDetails.totalAmount = computedFee;
         mergedGeneralDetails.calculatedFee = computedFee;
@@ -246,11 +255,7 @@ router.post('/register', async (req, res) => {
         const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
 
         if (prevRow.payment_status === 'approved') {
-          if (hasNewSports && !hasNewPayment && incomingStatusIsPending) {
-            finalPaymentStatus = 'approved_due';
-          } else {
-            finalPaymentStatus = 'approved';
-          }
+          finalPaymentStatus = 'approved';
         } else {
           finalPaymentStatus = 'pending';
         }
@@ -280,10 +285,17 @@ router.post('/register', async (req, res) => {
         logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
       } else {
         id = uuidv4();
-        const newSportsCount = Math.max(1, Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.length : 1);
-        const newFee = 2500 + Math.max(0, newSportsCount - 1) * 400;
+        const regType = cleanGeneralDetails.registrationType || (cleanGeneralDetails.selectedSports?.includes('spectator') ? 'spectator' : 'player');
+        const isSpectator = regType === 'spectator';
+        const accomRequired = cleanGeneralDetails.accommodationRequired || 'No';
+        const extraTshirtChoice = cleanGeneralDetails.extraTshirt || cleanGeneralDetails.spectatorTshirt || 'No';
+        const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+        const newFee = isSpectator
+          ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+          : 2700 + extraTshirtCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
+        cleanGeneralDetails.incrementalFee = newFee;
 
         // Auto-create an Aashray guest card within the transaction
         if (!cleanGeneralDetails.cardNo) {
@@ -330,17 +342,20 @@ router.post('/register', async (req, res) => {
       const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
         ? finalGeneralDetails.selectedSports.join(', ')
         : (req.body.sport_id || 'Cricket');
+      const isSpectator = finalGeneralDetails.registrationType === 'spectator' || req.body.sport_id === 'spectator' || (Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.includes('spectator'));
+      const txnCategory = isSpectator ? 'spectator' : 'sports';
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
-        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || 2500);
+        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? 3200 : 2700));
 
       await connection.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
          ON DUPLICATE KEY UPDATE 
+           category = VALUES(category),
            amount = VALUES(amount),
            upi_ref = VALUES(upi_ref),
            description = VALUES(description),
@@ -350,7 +365,7 @@ router.post('/register', async (req, res) => {
         [
           cardNoVal,
           id,
-          'sports',
+          txnCategory,
           finalFeeVal,
           0,
           finalGeneralDetails.payment_utr || 'NA',

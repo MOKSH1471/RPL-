@@ -7,7 +7,9 @@ export type SportType =
   | 'table-tennis'
   | 'pickleball'
   | 'volleyball'
-  | 'womens-sports';
+  | 'womens-sports'
+  | 'kaccha-pakka'
+  | 'spectator';
 
 export interface SportOptionInfo {
   id: SportType;
@@ -44,6 +46,11 @@ export interface RegistrationFormData {
   recipientGmail?: string;
   ccEmail?: string;
 
+  // Registration Mode
+  registrationType?: 'player' | 'spectator';
+  spectatorOption?: 'with-stay' | 'without-stay' | string;
+  spectatorTshirt?: 'Yes' | 'No' | string;
+
   // Basic / Common Info
   fullName: string;
   countryCode?: string;
@@ -51,6 +58,7 @@ export interface RegistrationFormData {
   email: string;
   centre: string;
   tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
+  extraTshirt?: 'Yes' | 'No' | string;
   dateOfBirth: string;
   gender: 'Male' | 'Female' | 'Other' | string;
   foodPreference: 'Regular' | 'Non-Spicy' | string;
@@ -61,6 +69,8 @@ export interface RegistrationFormData {
   existingRplFamily: 'Yes' | 'No' | string;
   photoName?: string;
   photoDataUrl?: string;
+  nostalgiaSport?: string | string[];
+  nostalgiaSports?: string[];
 
   // Selected Sports
   selectedSports: SportType[];

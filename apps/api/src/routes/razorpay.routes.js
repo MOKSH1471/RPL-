@@ -18,6 +18,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       email,
       mobile,
       selectedSports = [],
+      extraTshirt,
       isExistingPlayer = false,
       previouslyPaidSportsCount = 0,
       hasPreviouslyPaid = false,
@@ -25,17 +26,28 @@ router.post('/razorpay/create-order', async (req, res) => {
       registrationPayload,
     } = req.body;
 
-    const sportsCount = Math.max(1, Array.isArray(selectedSports) ? selectedSports.length : 1);
+    const regPayload = registrationPayload || {};
+    const cleanGeneral = regPayload.general_details || regPayload.answers || {};
+    const regType = req.body.registrationType || regPayload.registrationType || cleanGeneral.registrationType || (selectedSports.includes('spectator') ? 'spectator' : 'player');
+    const isSpectator = regType === 'spectator';
+    const accomRequired = req.body.accommodationRequired || regPayload.accommodationRequired || cleanGeneral.accommodationRequired || 'No';
+    const extraTshirtChoice = extraTshirt || regPayload.extraTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || cleanGeneral.extraTshirt || 'No';
+    const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+
     let computedFee;
 
-    if (isExistingPlayer && hasPreviouslyPaid) {
-      const newlyAddedSports = Math.max(0, sportsCount - Number(previouslyPaidSportsCount || 0));
-      computedFee = newlyAddedSports * 400;
-    } else if (process.env.NODE_ENV === 'test') {
-      computedFee = 2500 + Math.max(0, sportsCount - 1) * 400;
+    if (isSpectator) {
+      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : 630;
+      if (isExistingPlayer && hasPreviouslyPaid) {
+        computedFee = extraTshirtCost;
+      } else {
+        computedFee = spectatorBase + extraTshirtCost;
+      }
+    } else if (isExistingPlayer && hasPreviouslyPaid) {
+      computedFee = extraTshirtCost;
     } else {
-      // TEMPORARY 1 RUPEE LIVE TEST
-      computedFee = 1;
+      computedFee = 2700 + extraTshirtCost;
     }
 
     if (computedFee <= 0) {
@@ -48,8 +60,6 @@ router.post('/razorpay/create-order', async (req, res) => {
         message: 'No payment required',
       });
     }
-
-    const regPayload = registrationPayload || {};
     const cleanFullName = (regPayload.full_name || regPayload.fullName || fullName || '').trim();
     const cleanEmail = (regPayload.email || email || '').trim();
     const cleanMobile = (regPayload.mobile || regPayload.mobileNumber || mobile || '').trim();
@@ -82,7 +92,6 @@ router.post('/razorpay/create-order', async (req, res) => {
     }
 
     // Resolve Card Number (Aashray standard card or guest card)
-    const cleanGeneral = regPayload.general_details || regPayload.answers || {};
     let cardNoVal = cleanGeneral.cardNo || null;
 
     if (!cardNoVal && existingReg) {
@@ -275,19 +284,22 @@ router.post('/razorpay/create-order', async (req, res) => {
     // Persist Transaction Intent with real registration ID & Card Number in rpl_transactions
     try {
       const sportsList = Array.isArray(selectedSports) ? selectedSports.join(', ') : 'Cricket';
+      const txnCategory = isSpectator ? 'spectator' : 'sports';
 
       await db.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 
          (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-         VALUES (?, ?, 'sports', ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_PRE_ORDER', NOW(), NOW(), ?)
+         VALUES (?, ?, ?, ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_PRE_ORDER', NOW(), NOW(), ?)
          ON DUPLICATE KEY UPDATE 
            cardno = VALUES(cardno),
+           category = VALUES(category),
            amount = VALUES(amount),
            description = VALUES(description),
            updatedAt = NOW()`,
         [
           cardNoVal,
           targetRegId,
+          txnCategory,
           computedFee,
           `RPL Season 9 Registration (${sportsList}) - Order Initiated (${cleanFullName || 'Participant'})`,
           order.id,
@@ -519,14 +531,19 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         // Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
+        const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator'));
+        const txnCategory = isSpectator ? 'spectator' : 'sports';
         const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
-        const finalAmount = cleanGeneralDetails.incrementalFee || cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2500;
+        const finalAmount = cleanGeneralDetails.incrementalFee !== undefined && cleanGeneralDetails.incrementalFee !== null
+          ? cleanGeneralDetails.incrementalFee
+          : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2700);
 
         await connection.query(
           `INSERT INTO ${RPL_DB}.rpl_transactions 
            (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-           VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
+           VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
            ON DUPLICATE KEY UPDATE 
+             category = VALUES(category),
              amount = VALUES(amount),
              upi_ref = VALUES(upi_ref),
              description = VALUES(description),
@@ -536,6 +553,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           [
             cardNoVal,
             regId,
+            txnCategory,
             finalAmount,
             razorpay_payment_id,
             `RPL Season 9 Registration (${sportsList}) - Paid via Razorpay`,
@@ -683,23 +701,30 @@ router.post('/razorpay/webhook', async (req, res) => {
           }
 
           // Prepare transaction data & insert/upsert into rpl_transactions
-          const finalAmount = Math.round(Number(payment.amount || 250000) / 100);
+          const finalAmount = Math.round(Number(payment.amount || 270000) / 100);
           let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
           let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
 
+          let isSpectator = false;
           if (targetReg?.general_details) {
             try {
               const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
               if (gd.cardNo) cardNoVal = gd.cardNo;
+              if (gd.registrationType === 'spectator' || (Array.isArray(gd.selectedSports) && gd.selectedSports.includes('spectator'))) {
+                isSpectator = true;
+              }
             } catch (e) {}
           }
+          if (targetReg?.sport_id === 'spectator') isSpectator = true;
+          const txnCategory = isSpectator ? 'spectator' : 'sports';
 
           await connection.query(
             `INSERT INTO ${RPL_DB}.rpl_transactions 
              (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-             VALUES (?, ?, 'sports', ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
+             VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
              ON DUPLICATE KEY UPDATE 
                bookingid = COALESCE(VALUES(bookingid), bookingid),
+               category = VALUES(category),
                amount = VALUES(amount),
                upi_ref = COALESCE(VALUES(upi_ref), upi_ref),
                status = 'completed',
@@ -707,6 +732,7 @@ router.post('/razorpay/webhook', async (req, res) => {
             [
               cardNoVal,
               targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
+              txnCategory,
               finalAmount,
               paymentId,
               `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
