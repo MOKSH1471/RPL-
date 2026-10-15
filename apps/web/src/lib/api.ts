@@ -283,6 +283,8 @@ export interface CreateOrderParams {
   mobile: string;
   selectedSports: string[];
   extraTshirt?: string;
+  registrationType?: string;
+  accommodationRequired?: string;
   isExistingPlayer?: boolean;
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;

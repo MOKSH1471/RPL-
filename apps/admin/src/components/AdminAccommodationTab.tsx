@@ -597,8 +597,15 @@ export function AdminAccommodationTab({
                         
                         {/* 1. Participant Name & Phone */}
                         <td className="py-3.5 px-4">
-                          <span className="font-extrabold text-slate-900 block">{item.full_name}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">{item.mobile}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-extrabold text-slate-900">{item.full_name}</span>
+                            {(item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator') && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-indigo-100 text-indigo-800 border border-indigo-300">
+                                Spectator
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono block">{item.mobile}</span>
                         </td>
 
                         {/* 2. Centre & Gender Wing */}
@@ -621,8 +628,14 @@ export function AdminAccommodationTab({
                             <span className="font-bold block">
                               {item.check_in_date || '2026-12-24'} → {item.check_out_date || '2026-12-26'}
                             </span>
-                            <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-sans font-semibold">
-                              Official RPL Stay
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-sans font-semibold inline-block ${
+                              item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator'
+                                ? 'text-indigo-800 bg-indigo-50 border border-indigo-200'
+                                : 'text-amber-700 bg-amber-50'
+                            }`}>
+                              {item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator'
+                                ? '🎟️ Spectator Stay (Dec 25 - Dec 27)'
+                                : 'Official RPL Stay'}
                             </span>
                           </div>
                         </td>

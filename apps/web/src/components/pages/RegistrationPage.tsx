@@ -69,6 +69,7 @@ import {
   Maximize2,
   Clock,
   Info,
+  Trophy,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -412,6 +413,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       ccEmail: '',
       fullName: '',
       countryCode: '+91',
+      registrationType: 'player',
+      spectatorOption: 'without-stay',
+      spectatorTshirt: 'No',
       mobileNumber: '',
       email: '',
       centre: '',
@@ -504,20 +508,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   };
   const currentGender = watch('gender');
 
-  // Dynamic fee calculation:
-  // Flat ₹2,700 All-Inclusive Event Fee (All sports included)
-  // Extra T-Shirt Option: ₹500 extra
-  // If any mumukshu or non-mumukshu selects Yes -> ₹2,700 + ₹500 = ₹3,200
-  // If selects No -> ₹2,700
+  // Registration Mode & Fee calculation:
+  // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
+  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630 (Meals & Retro games). Optional T-Shirt = +₹500.
+  const currentRegistrationType = watch('registrationType') || 'player';
+  const isSpectator = currentRegistrationType === 'spectator';
+  const currentAcc = watch('accommodationRequired');
+  const currentSpectatorTshirt = watch('spectatorTshirt') || 'No';
+
   const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
   const totalSportsCount = Math.max(1, selectedSports.length);
   const newlyAddedSportsCount = isReturningPaidUser
     ? Math.max(0, totalSportsCount - previouslyPaidSportsCount)
     : 0;
 
+  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : 630;
+  const spectatorTshirtCost = (currentSpectatorTshirt === 'Yes' || currentExtraTshirt === 'Yes') ? 500 : 0;
+  const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
+
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
-  const totalPayableFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
-  const cumulativeTotalFee = 2700 + extraTshirtCost;
+  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
+  const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
+  const cumulativeTotalFee = totalPayableFee;
   const previousPaidAmount = isReturningPaidUser ? 2700 : 0;
 
   const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
@@ -534,6 +546,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // When gender or age/DOB changes, automatically remove any disallowed sports from selectedSports
   useEffect(() => {
+    if (isSpectator) return;
     setSelectedSports((prev) => {
       const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
       if (valid.length > 0) {
@@ -546,8 +559,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('selectedSports', [fallback], { shouldValidate: true });
       return [fallback];
     });
-  }, [currentGender, playerAge, allowedSports, setValue]);
-  const currentAcc = watch('accommodationRequired');
+  }, [currentGender, playerAge, allowedSports, setValue, isSpectator]);
   const currentExistingFamily = watch('existingRplFamily');
   const currentFood = watch('foodPreference');
   const currentCentre = watch('centre');
@@ -1088,13 +1100,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     fieldsCount++;
     if (currentDateOfBirth && currentDateOfBirth.trim().length > 0) filledCount++;
 
-    // 5. Jersey size
-    fieldsCount++;
-    if (currentTshirtSize) filledCount++;
+    // 5. Jersey size (only if player or spectator opted for t-shirt)
+    if (!isSpectator || currentSpectatorTshirt === 'Yes') {
+      fieldsCount++;
+      if (currentTshirtSize) filledCount++;
+    }
 
-    // 6. Selected sports
-    fieldsCount++;
-    if (selectedSports && selectedSports.length > 0) filledCount++;
+    // 6. Selected sports (only if player)
+    if (!isSpectator) {
+      fieldsCount++;
+      if (selectedSports && selectedSports.length > 0) filledCount++;
+    }
 
     // 7. Centre
     fieldsCount++;
@@ -1219,6 +1235,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       undefined;
 
     const fullData: RegistrationFormData = {
+      registrationType: isSpectator ? 'spectator' : 'player',
+      spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
+      spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
@@ -1239,9 +1258,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       existingRplFamily: data.existingRplFamily,
       photoName: photoName || undefined,
       photoDataUrl: photoPreview || undefined,
-      selectedSports: selectedSports,
-      primarySport: selectedSports[0],
-      league: (selectedSports[0] === 'womens-sports' ? 'womens' : selectedSports[0]) as any,
+      selectedSports: isSpectator ? ['spectator'] : selectedSports,
+      primarySport: isSpectator ? 'spectator' : selectedSports[0],
+      league: (isSpectator ? 'spectator' : (selectedSports[0] === 'womens-sports' ? 'womens' : selectedSports[0])) as any,
       // Referrer details
       referrerMobile: data.referrerMobile || undefined,
       referrerName: data.referrerName || undefined,
@@ -1282,11 +1301,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
     // 1. Clean General Details
     const generalDetails: Record<string, any> = {
+      registrationType: isSpectator ? 'spectator' : 'player',
+      spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
+      spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
       centre: data.centre,
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
       tshirtSize: data.tshirtSize,
-      extraTshirt: data.extraTshirt || 'No',
+      extraTshirt: isSpectator ? (data.spectatorTshirt || 'No') : (data.extraTshirt || 'No'),
       nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       nostalgia_sport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       foodPreference: data.foodPreference,
@@ -1296,7 +1318,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
       cardNo: mumukshuCardInfo?.cardNo || undefined,
-      selectedSports,
+      selectedSports: isSpectator ? ['spectator'] : selectedSports,
       customJerseyName: data.customJerseyName || undefined,
       preferredJerseyNumber: data.preferredJerseyNumber || undefined,
       preferredTeamName: data.preferredTeamName || undefined,
@@ -1495,9 +1517,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
 
       try {
+        const effectiveSelectedSports = isSpectator ? ['spectator'] : selectedSports;
         const registrationPayload: Record<string, any> = {
           registration_id: existingRegistrationId || undefined,
-          sport_id: selectedSports[0] || 'cricket',
+          sport_id: isSpectator ? 'spectator' : (selectedSports[0] || 'cricket'),
           full_name: data.fullName.trim(),
           email: data.email.trim(),
           mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
@@ -1513,8 +1536,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           fullName: data.fullName.trim(),
           email: data.email.trim(),
           mobile: cleanPhoneNumber(data.mobileNumber),
-          selectedSports,
-          extraTshirt: data.extraTshirt || 'No',
+          selectedSports: effectiveSelectedSports,
+          extraTshirt: (isSpectator ? data.spectatorTshirt : data.extraTshirt) || 'No',
+          registrationType: isSpectator ? 'spectator' : 'player',
+          accommodationRequired: data.accommodationRequired,
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
@@ -1743,14 +1768,65 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           className="text-center max-w-2xl mx-auto mb-8"
         >
           <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500 block mb-2">
-            PLAYER REGISTRATION
+            {isSpectator ? 'SPECTATOR PASS REGISTRATION' : 'PLAYER REGISTRATION'}
           </span>
           <h1 className="font-display text-3xl sm:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight">
-            Official Championship <span className="text-gradient-vibrant">Entry</span>
+            {isSpectator ? (
+              <>Official Spectator <span className="text-gradient-vibrant">Pass</span></>
+            ) : (
+              <>Official Championship <span className="text-gradient-vibrant">Entry</span></>
+            )}
           </h1>
           <p className="text-slate-600 text-xs sm:text-base font-medium mb-6">
-            Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.
+            {isSpectator
+              ? 'Join RPL Season 9 as a spectator with full meals, night snacks & refreshments, retro nostalgia games, and event access.'
+              : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
+
+          {/* Registration Mode Switcher: Player Pass vs Spectator Pass */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-md w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('registrationType', 'player', { shouldValidate: true });
+                  if (selectedSports.includes('spectator') || selectedSports.length === 0) {
+                    setValue('selectedSports', ['cricket'], { shouldValidate: true });
+                    setSelectedSports(['cricket']);
+                  }
+                }}
+                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer ${!isSpectator
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                <Trophy className={`w-4 h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
+                <span>Player Entry</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${!isSpectator ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600'}`}>
+                  ₹2,700
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('registrationType', 'spectator', { shouldValidate: true });
+                  setValue('selectedSports', ['spectator'], { shouldValidate: true });
+                  setSelectedSports(['spectator']);
+                }}
+                className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all cursor-pointer ${isSpectator
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>Spectator Pass</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${isSpectator ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                  From ₹630
+                </span>
+              </button>
+            </div>
+          </div>
 
           {/* Smart In-Form Pending Payment Banner */}
           {isExistingPlayerRegistration && existingPaymentStatus === 'pending' && (
@@ -1781,9 +1857,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             </div>
           )}
 
-          {/* 4-Step Interactive Flow Tracker */}
+          {/* Interactive Flow Tracker (3 Steps for Spectator, 4 Steps for Player) */}
           <div className="max-w-xl mx-auto px-2 pt-4">
-            <div className="grid grid-cols-4 relative">
+            <div className={`grid ${isSpectator ? 'grid-cols-3' : 'grid-cols-4'} relative`}>
               <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-200 -z-0" />
               <div
                 className="absolute top-4 left-6 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500 -z-0 transition-all duration-500"
@@ -1792,12 +1868,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 }}
               />
 
-              {[
-                { step: 1, label: 'Details & Stay', done: progress >= 25, active: progress < 45 },
-                { step: 2, label: 'Select Sports', done: selectedSports.length > 0, active: progress >= 25 && progress < 65 },
-                { step: 3, label: 'Sport Questions', done: progress >= 75, active: progress >= 65 && progress < 90 },
-                { step: 4, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 90 },
-              ].map((s) => (
+              {(isSpectator
+                ? [
+                  { step: 1, label: 'Details & Stay', done: progress >= 30, active: progress < 50 },
+                  { step: 2, label: 'Retro & Nostalgia', done: progress >= 50, active: progress >= 50 && progress < 85 },
+                  { step: 3, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 85 },
+                ]
+                : [
+                  { step: 1, label: 'Details & Stay', done: progress >= 25, active: progress < 45 },
+                  { step: 2, label: 'Select Sports', done: selectedSports.length > 0, active: progress >= 25 && progress < 65 },
+                  { step: 3, label: 'Sport Questions', done: progress >= 75, active: progress >= 65 && progress < 90 },
+                  { step: 4, label: 'Payment & Pass', done: existingPaymentStatus === 'approved', active: progress >= 90 },
+                ]
+              ).map((s) => (
                 <div key={s.step} className="flex flex-col items-center text-center relative z-10">
                   <div
                     className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-black transition-all shadow-xs ${s.done
@@ -2237,123 +2320,200 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="pt-3 border-t border-slate-100">
                 <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
                   <Shirt className="w-4 h-4 text-amber-600" />
-                  <span>1.2 Official Tournament Kit &amp; Sizing</span>
+                  <span>1.2 {isSpectator ? 'Tournament Kit / T-Shirt (Optional)' : 'Official Tournament Kit & Sizing'}</span>
                 </div>
               </div>
 
-              {/* Jersey / T-Shirt Size Selector */}
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                    <Shirt className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('tshirt_size', 'Jersey / T-Shirt Size')}</span>
-                    <span className="text-pink-600">*</span>
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowSizeGuideModal(true)}
-                      className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-200/90 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <ZoomIn className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Size Guide Chart</span>
-                    </button>
-                    <span className="text-slate-500 font-semibold text-[11px] normal-case">
-                      Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentTshirtSize}</strong>
-                    </span>
+              {isSpectator ? (
+                /* Spectator T-Shirt Choice: Optional Purchase at ₹500 */
+                <div className="space-y-4">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-50/80 border-2 border-amber-300 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <Shirt className="w-4 h-4 text-amber-600 shrink-0" />
+                          <h4 className="text-sm font-extrabold text-slate-900">
+                            Do you want to buy an Official RPL Tournament T-Shirt?
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          Spectator pass does not include a free jersey. You can optionally purchase the official RPL Season 9 jersey for <strong className="text-amber-950 font-extrabold">+₹500</strong>.
+                        </p>
+                      </div>
+                      <div className="shrink-0 w-full sm:w-auto">
+                        <OptionSelector
+                          options={[
+                            { value: 'No', label: 'No T-Shirt' },
+                            { value: 'Yes', label: 'Yes (+₹500)' },
+                          ]}
+                          value={currentSpectatorTshirt}
+                          onChange={(val) => setValue('spectatorTshirt', val as any, { shouldValidate: true })}
+                          layoutId="spectator-tshirt-indicator"
+                          activeColor="bg-slate-900"
+                          activeTextColor="text-amber-300"
+                        />
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {currentSpectatorTshirt === 'Yes' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="pt-3 border-t border-amber-200/90 space-y-3"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                              <Shirt className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Select Your T-Shirt Size</span>
+                              <span className="text-pink-600">*</span>
+                            </label>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => setShowSizeGuideModal(true)}
+                                className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-white px-2.5 py-1 rounded-lg border border-amber-300 transition-all cursor-pointer shadow-2xs"
+                              >
+                                <ZoomIn className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Size Guide Chart</span>
+                              </button>
+                              <span className="text-slate-600 font-semibold text-[11px]">
+                                Selected: <strong className="text-slate-900 bg-white px-2 py-0.5 rounded-md font-mono border border-slate-200">{currentTshirtSize || 'L'}</strong>
+                              </span>
+                            </div>
+                          </div>
+
+                          <OptionSelector
+                            options={JERSEY_SIZES}
+                            value={currentTshirtSize || 'L'}
+                            onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
+                            layoutId="spectator-size-indicator"
+                            gridCols="grid-cols-4 sm:grid-cols-7"
+                            activeColor="bg-slate-900"
+                            activeTextColor="text-amber-300"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
-
-                <OptionSelector
-                  options={JERSEY_SIZES}
-                  value={currentTshirtSize}
-                  onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
-                  layoutId="tshirt-size-indicator"
-                  gridCols="grid-cols-4 sm:grid-cols-7"
-                  activeColor="bg-slate-900"
-                  activeTextColor="text-amber-300"
-                />
-
-                {errors.tshirtSize && (
-                  <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{errors.tshirtSize.message}</span>
-                  </p>
-                )}
-
-                {/* Extra T-Shirt Option */}
-                <div className="pt-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              ) : (
+                /* Player Jersey & Extra T-Shirt Selector */
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                      <Shirt className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Do you need an extra T-Shirt?</span>
+                      <Shirt className="w-3.5 h-3.5 text-slate-600" />
+                      <span>{getFieldLabel('tshirt_size', 'Jersey / T-Shirt Size')}</span>
                       <span className="text-pink-600">*</span>
                     </label>
-                    <span className="text-slate-500 font-semibold text-[11px] normal-case">
-                      Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentExtraTshirt === 'Yes' ? 'Yes (+₹500)' : 'No'}</strong>
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowSizeGuideModal(true)}
+                        className="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-200/90 transition-all cursor-pointer shadow-2xs"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Size Guide Chart</span>
+                      </button>
+                      <span className="text-slate-500 font-semibold text-[11px] normal-case">
+                        Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentTshirtSize}</strong>
+                      </span>
+                    </div>
                   </div>
 
                   <OptionSelector
-                    options={[
-                      { value: 'No', label: 'No' },
-                      { value: 'Yes', label: 'Yes (+₹500)' },
-                    ]}
-                    value={currentExtraTshirt}
-                    onChange={(val) => setValue('extraTshirt', val as any, { shouldValidate: true })}
-                    layoutId="extra-tshirt-indicator"
+                    options={JERSEY_SIZES}
+                    value={currentTshirtSize}
+                    onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
+                    layoutId="tshirt-size-indicator"
+                    gridCols="grid-cols-4 sm:grid-cols-7"
                     activeColor="bg-slate-900"
                     activeTextColor="text-amber-300"
                   />
 
-                  {/* Informational Note for Extra T-Shirt */}
-                  <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
-                    <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                    <div className="leading-relaxed">
-                      <p className="font-bold text-amber-950">
-                        Note: Extra T-shirt will cost ₹500 extra.
-                      </p>
-                      <p className="text-amber-800 text-[11px] mt-0.5">
-                        Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
-                      </p>
+                  {errors.tshirtSize && (
+                    <p className="mt-1.5 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.tshirtSize.message}</span>
+                    </p>
+                  )}
+
+                  {/* Extra T-Shirt Option */}
+                  <div className="pt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <Shirt className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Do you need an extra T-Shirt?</span>
+                        <span className="text-pink-600">*</span>
+                      </label>
+                      <span className="text-slate-500 font-semibold text-[11px] normal-case">
+                        Selected: <strong className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md font-mono">{currentExtraTshirt === 'Yes' ? 'Yes (+₹500)' : 'No'}</strong>
+                      </span>
+                    </div>
+
+                    <OptionSelector
+                      options={[
+                        { value: 'No', label: 'No' },
+                        { value: 'Yes', label: 'Yes (+₹500)' },
+                      ]}
+                      value={currentExtraTshirt}
+                      onChange={(val) => setValue('extraTshirt', val as any, { shouldValidate: true })}
+                      layoutId="extra-tshirt-indicator"
+                      activeColor="bg-slate-900"
+                      activeTextColor="text-amber-300"
+                    />
+
+                    {/* Informational Note for Extra T-Shirt */}
+                    <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <p className="font-bold text-amber-950">
+                          Note: Extra T-shirt will cost ₹500 extra.
+                        </p>
+                        <p className="text-amber-800 text-[11px] mt-0.5">
+                          Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
-                <div className="mt-3">
-                  <div
-                    onClick={() => setShowSizeGuideModal(true)}
-                    className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
-                  >
-                    <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
-                      <img
-                        src="/jersey-size-guide.jpg"
-                        alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
-                        className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
-                        loading="lazy"
-                      />
+              {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
+              <div className="mt-3">
+                <div
+                  onClick={() => setShowSizeGuideModal(true)}
+                  className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                >
+                  <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
+                    <img
+                      src="/jersey-size-guide.jpg"
+                      alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
+                      className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
+                      loading="lazy"
+                    />
 
-                      {/* Tap / Click to Zoom Hint Overlay */}
-                      <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
-                        <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
-                          <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Tap to view full chart & zoom</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Size Guide Card Footer */}
-                    <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
-                      <span className="flex items-center space-x-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                        <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
-                      </span>
-                      <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
-                        <span>Click to enlarge</span>
-                        <Maximize2 className="w-3 h-3" />
+                    {/* Tap / Click to Zoom Hint Overlay */}
+                    <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
+                      <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
+                        <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Tap to view full chart & zoom</span>
                       </span>
                     </div>
+                  </div>
+
+                  {/* Size Guide Card Footer */}
+                  <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
+                    <span className="flex items-center space-x-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                      <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
+                    </span>
+                    <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
+                      <span>Click to enlarge</span>
+                      <Maximize2 className="w-3 h-3" />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2436,7 +2596,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="pt-3 border-t border-slate-100">
                 <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
                   <Home className="w-4 h-4 text-amber-600" />
-                  <span>1.4 Meals &amp; Ashram Accommodation</span>
+                  <span>1.4 {isSpectator ? 'Pass Option & Meals' : 'Meals & Ashram Accommodation'}</span>
                 </div>
               </div>
 
@@ -2464,11 +2624,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div>
                   <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     <Home className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('accommodation_required', 'Accommodation Required')}</span>
+                    <span>{isSpectator ? 'Spectator Stay Option' : getFieldLabel('accommodation_required', 'Accommodation Required')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
                   <OptionSelector
-                    options={[
+                    options={isSpectator ? [
+                      { value: 'No', label: 'Without Stay (₹630)' },
+                      { value: 'Yes', label: 'With RPL Stay (₹2,700)' },
+                    ] : [
                       { value: 'No', label: 'No, Self-Arranged' },
                       { value: 'Yes', label: 'Yes, Needed' },
                     ]}
@@ -2485,40 +2648,103 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   />
                 </div>
 
-                {/* Conditional: In which room are you staying? (When accommodation is 'No') */}
-                <AnimatePresence>
-                  {currentAcc === 'No' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0, y: -8 }}
-                      animate={{ opacity: 1, height: 'auto', y: 0 }}
-                      exit={{ opacity: 0, height: 0, y: -8 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden md:col-span-2"
-                    >
-                      <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 border-2 border-amber-300 shadow-xs space-y-2">
-                        <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-amber-950">
-                          <DoorOpen className="w-4 h-4 text-amber-600" />
-                          <span>In Which Room/Flat Are You Staying?</span>
-                          <span className="text-pink-600 font-extrabold">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          {...register('stayingRoomNumber')}
-                          className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${errors.stayingRoomNumber
-                            ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
-                            : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
-                            }`}
-                        />
-                        {errors.stayingRoomNumber && (
-                          <p className="mt-1 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                            <span>{errors.stayingRoomNumber.message}</span>
+                {/* Spectator Stay vs Day Pass Details Banner */}
+                {isSpectator ? (
+                  <div className="md:col-span-2">
+                    {currentAcc === 'Yes' ? (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-400 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-amber-600" />
+                            Official Spectator Pass with Stay • ₹2,700
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900 border border-amber-300">
+                            3 Days Stay Included
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                          <p className="font-semibold text-slate-900">
+                            ✓ <strong>Ashram Accommodation:</strong> Stay arrangements for Dec 25–27, 2026.
                           </p>
-                        )}
+                          <div className="p-2.5 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 font-bold text-[11px] flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                            <span>
+                              <strong>Compulsory 3-Day Stay:</strong> Stay fee is ₹2,700 and all 3 days are compulsory as per event guidelines even if attending for 2 days.
+                            </span>
+                          </div>
+                          <p>✓ <strong>All Meals & Snacks:</strong> Full day meals (Breakfast, Lunch, Dinner) & night snacks and refreshments included.</p>
+                          <p>✓ <strong>Retro Games:</strong> Free participation in 1980s Retro & Nostalgia childhood games.</p>
+                        </div>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    ) : (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-50 border-2 border-emerald-300 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-emerald-600" />
+                            Spectator Day Pass • ₹630 (Without Stay)
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            Meals & Games Included
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                          <p>✓ <strong>Full Day Meals:</strong> Breakfast, Lunch, and Dinner included.</p>
+                          <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
+                          <p>✓ <strong>1980s Retro Games:</strong> Full participation in 1980s Retro & Nostalgia traditional games.</p>
+                          <p className="text-slate-500 text-[11px]">• Self-arranged stay (or visiting for event sessions).</p>
+                        </div>
+
+                        {/* Optional room number for self-arranged spectator */}
+                        <div className="pt-2 border-t border-emerald-200/80">
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Staying self-arranged in Ashram? Enter Room / Flat No. (Optional):
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Flat 204 (Optional)"
+                            {...register('stayingRoomNumber')}
+                            className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-emerald-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Player Conditional: In which room are you staying? (When accommodation is 'No') */
+                  <AnimatePresence>
+                    {currentAcc === 'No' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, y: -8 }}
+                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: -8 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden md:col-span-2"
+                      >
+                        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 border-2 border-amber-300 shadow-xs space-y-2">
+                          <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-amber-950">
+                            <DoorOpen className="w-4 h-4 text-amber-600" />
+                            <span>In Which Room/Flat Are You Staying?</span>
+                            <span className="text-pink-600 font-extrabold">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            {...register('stayingRoomNumber')}
+                            className={`w-full px-4 py-3 bg-white rounded-xl border text-sm font-medium transition-all outline-none ${errors.stayingRoomNumber
+                              ? 'border-pink-500 focus:ring-2 focus:ring-pink-200 bg-pink-50/20 text-pink-900'
+                              : 'border-amber-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 text-slate-800'
+                              }`}
+                          />
+                          {errors.stayingRoomNumber && (
+                            <p className="mt-1 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span>{errors.stayingRoomNumber.message}</span>
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
               </div>
 
               {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
@@ -2593,1010 +2819,1017 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
-              {/* Sub-section 1.5: Season Enrollment & ID Photo */}
-              <div className="pt-3 border-t border-slate-100">
-                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
-                  <Camera className="w-4 h-4 text-amber-600" />
-                  <span>1.5 Season Enrollment &amp; ID Photo</span>
-                </div>
-              </div>
-
-              {/* RPL Family & Photo Upload */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <div>
-                  <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{getFieldLabel('existing_rpl_family', 'Existing RPL Family')}</span>
-                    <span className="text-pink-600">*</span>
-                  </label>
-                  <OptionSelector
-                    options={[
-                      { value: 'No', label: 'No, New Player' },
-                      { value: 'Yes', label: 'Yes, Previous Season' },
-                    ]}
-                    value={currentExistingFamily}
-                    onChange={(opt) => setValue('existingRplFamily', opt as any, { shouldValidate: true })}
-                    layoutId="rpl-family-indicator"
-                    activeColor="bg-slate-900"
-                    activeTextColor="text-white"
-                  />
-                  <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex items-start space-x-2.5">
-                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="leading-relaxed">
-                      {currentExistingFamily === 'Yes' ? (
-                        <span><strong>Returning Participant:</strong> Your player profile and previous season records will be linked.</span>
-                      ) : (
-                        <span><strong>New Participant:</strong> Welcome! Your entry will be enrolled as an open player draft for Season 9.</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                      <Camera className="w-3.5 h-3.5 text-amber-600" />
-                      <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                      Square • 600×600 to 1200×1200 px
-                    </span>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
-                    {/* Compact Micro Guidelines */}
-                    <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Color &amp; square photo</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Plain light background</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Within last 6 months</span>
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Neutral expression</span>
-                      </span>
+              {/* Sub-section 1.5: Season Enrollment & ID Photo (Players Only) */}
+              {!isSpectator && (
+                <>
+                  <div className="pt-3 border-t border-slate-100">
+                    <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-800 mb-3">
+                      <Camera className="w-4 h-4 text-amber-600" />
+                      <span>1.5 Season Enrollment &amp; ID Photo</span>
                     </div>
+                  </div>
 
-                    {/* Modern Dropzone & Avatar Preview */}
-                    <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px]">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={handlePhotoChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  {/* RPL Family & Photo Upload */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
+                        <span>{getFieldLabel('existing_rpl_family', 'Existing RPL Family')}</span>
+                        <span className="text-pink-600">*</span>
+                      </label>
+                      <OptionSelector
+                        options={[
+                          { value: 'No', label: 'No, New Player' },
+                          { value: 'Yes', label: 'Yes, Previous Season' },
+                        ]}
+                        value={currentExistingFamily}
+                        onChange={(opt) => setValue('existingRplFamily', opt as any, { shouldValidate: true })}
+                        layoutId="rpl-family-indicator"
+                        activeColor="bg-slate-900"
+                        activeTextColor="text-white"
                       />
-                      {photoPreview ? (
-                        <div className="flex items-center justify-between w-full px-1 z-20">
-                          <div className="flex items-center space-x-3">
-                            <img
-                              src={photoPreview}
-                              alt="Preview"
-                              className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square"
-                            />
-                            <div className="text-left">
-                              <span className="text-xs font-bold text-slate-900 block truncate max-w-[140px]">
-                                {photoName || 'Player Photo'}
-                              </span>
-                              <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1.5">
-                            <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
-                              Change
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png"
-                                onChange={handlePhotoChange}
-                                className="hidden"
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemovePhoto();
-                              }}
-                              className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center space-x-3 py-1">
-                          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
-                            <Camera className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-xs text-slate-900 font-bold">Click to upload photo</p>
-                            <span className="text-[10px] text-slate-500 block">
-                              JPG, PNG up to 5MB (Square ID format)
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </InView>
-
-            {/* ========================================================================= */}
-            {/* SECTION 2: MULTI-CHOICE SPORT DROPDOWN (7 OPTIONS) */}
-            {/* ========================================================================= */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.15, ease: 'easeOut' }}
-              className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6"
-            >
-              <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
-                  2
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
-                    Select Sports (Multi-Choice Dropdown)
-                  </h2>
-                  <p className="text-slate-600 text-xs sm:text-sm font-medium">
-                    Choose one or more sports you want to participate in. Questions for each chosen sport will appear below.
-                  </p>
-                </div>
-              </div>
-
-              {/* Women's Registration Selection Note */}
-              {currentGender === 'Female' && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-amber-500/10 border-2 border-pink-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
-                    🏏
-                  </div>
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider text-pink-950 block text-[11px] mb-0.5">
-                      Note for Women's Registration:
-                    </span>
-                    <p className="font-semibold text-pink-900 leading-snug">
-                      18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Football Only Schedule Note */}
-              {selectedSports.length === 1 && selectedSports.includes('football') && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-2 border-emerald-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
-                    ⚽
-                  </div>
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider text-emerald-950 block text-[11px] mb-0.5">
-                      Schedule Note for Football:
-                    </span>
-                    <p className="font-semibold text-emerald-900 leading-snug">
-                      Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Kaccha Pakka League Special Division Callout */}
-              {isKacchaPakkaEligible && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
-                    🌟
-                  </div>
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
-                      Kaccha Pakka League Available (Age: {playerAge} years):
-                    </span>
-                    <p className="font-semibold text-amber-900 leading-snug">
-                      Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Multi-Select Dropdown Container */}
-              <div ref={dropdownRef} className="relative">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Championship Sports ({selectedSports.length} of {allowedSports.length} selected) <span className="text-pink-600">*</span>
-                </label>
-
-                {/* Dropdown Trigger Box */}
-                <div
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${dropdownOpen
-                    ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
-                    : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5 flex-1">
-                    {selectedSports.map((sportId) => {
-                      const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-                      if (!sport) return null;
-                      return (
-                        <span
-                          key={sport.id}
-                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 text-xs font-extrabold shadow-xs"
-                        >
-                          <span>{sport.emoji}</span>
-                          <span>{sport.name}</span>
-                          {selectedSports.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveSport(sport.id, e)}
-                              className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
+                      <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 flex items-start space-x-2.5">
+                        <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="leading-relaxed">
+                          {currentExistingFamily === 'Yes' ? (
+                            <span><strong>Returning Participant:</strong> Your player profile and previous season records will be linked.</span>
+                          ) : (
+                            <span><strong>New Participant:</strong> Welcome! Your entry will be enrolled as an open player draft for Season 9.</span>
                           )}
-                        </span>
-                      );
-                    })}
-                  </div>
-
-
-                  <div className="flex items-center space-x-2 text-slate-500 shrink-0">
-                    <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-1 rounded-lg">
-                      {selectedSports.length} selected
-                    </span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-slate-600 transition-transform ${dropdownOpen ? 'rotate-180 text-amber-600' : ''
-                        }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Dropdown Popover Menu with AnimatePresence */}
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                      exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 space-y-3"
-                    >
-                      {/* Search & Actions Bar */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
-                        <div className="relative flex-1 min-w-0">
-                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                          <input
-                            type="text"
-                            placeholder="Search sports..."
-                            value={sportSearch}
-                            onChange={(e) => setSportSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-600 font-medium"
-                          />
-                        </div>
-                        <div className="flex items-center justify-end space-x-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={handleSelectAllSports}
-                            className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            Select All
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleClearSports}
-                            className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      </div>
-
-
-                      {/* Sports Checkbox List */}
-                      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
-                        {filteredSports.map((sport) => {
-                          const isChecked = selectedSports.includes(sport.id);
-                          return (
-                            <div
-                              key={sport.id}
-                              onClick={() => toggleSportSelection(sport.id)}
-                              className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
-                                ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
-                                : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
-                                }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <span className="text-2xl">{sport.emoji}</span>
-                                <div>
-                                  <span className="font-extrabold text-sm text-slate-900 block">
-                                    {sport.name}
-                                  </span>
-                                  <span className="text-[11px] text-slate-500 font-medium">
-                                    {sport.category}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div
-                                className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${isChecked
-                                  ? 'bg-slate-900 border-slate-900 text-amber-300'
-                                  : 'border-slate-300 bg-white'
-                                  }`}
-                              >
-                                {isChecked && <Check className="w-4 h-4" />}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-
-                {errors.selectedSports && (
-                  <p className="mt-2 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{errors.selectedSports.message}</span>
-                  </p>
-                )}
-              </div>
-            </InView>
-
-            {/* ========================================================================= */}
-            {/* SECTION 3: DYNAMIC SPORT-SPECIFIC QUESTIONS (FOR EACH SELECTED SPORT) */}
-            {/* ========================================================================= */}
-            {selectedSports.length > 0 && (
-              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex items-start space-x-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
-                  3
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
-                    Sport-Specific Questions
-                  </h2>
-                  <p className="text-slate-600 text-xs sm:text-sm font-medium">
-                    Experience levels, playing roles, and preferences for your chosen championships
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-6">
-              {/* Cricket Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('cricket') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-amber-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-amber-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-amber-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏏</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Underarm Turf Cricket Questions
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-amber-800 text-xs font-semibold leading-relaxed">
-                            Custom role, batting style, bowling variation & experience
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Primary Playing Role <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Role"
-                          items={[
-                            { id: 'Batter', label: 'Batter (Top / Middle Order)' },
-                            { id: 'Bowler', label: 'Bowler (Fast / Swing / Spin)' },
-                            { id: 'All-rounder', label: 'All-rounder (Bat & Bowl)' },
-                            { id: 'Wicketkeeper', label: 'Wicketkeeper Batter' },
-                          ]}
-                          value={currentCricketRole ? { id: currentCricketRole, label: currentCricketRole } : null}
-                          onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Batting Hand / Style <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Batting Style"
-                          items={[
-                            { id: 'Right-hand bat', label: 'Right-Handed Batter (RHB)' },
-                            { id: 'Left-hand bat', label: 'Left-Handed Batter (LHB)' },
-                          ]}
-                          value={currentBattingStyle ? { id: currentBattingStyle, label: currentBattingStyle } : null}
-                          onChange={(item) => setValue('battingStyle', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Bowling Variation / Style <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Bowling Style"
-                          items={[
-                            { id: 'Right-arm Off-Spin', label: 'Right-Arm Off-Spin' },
-                            { id: 'Right-arm Leg-Spin', label: 'Right-Arm Leg-Spin / Googly' },
-                            { id: 'Left-arm Orthodox', label: 'Left-Arm Orthodox Spin / Chinaman' },
-                            { id: 'Wicketkeeper / Non-bowler', label: 'Pure Wicketkeeper / Non-Bowler' },
-                          ]}
-                          value={currentBowlingStyle ? { id: currentBowlingStyle, label: currentBowlingStyle } : null}
-                          onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Cricket Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience Level"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Box Cricket / Weekend Friendly' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (Club, College, Turf League)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Seasoned RPL Veteran / Division Player' },
-                          ]}
-                          value={currentCricketExp ? { id: currentCricketExp, label: currentCricketExp } : null}
-                          onChange={(item) => setValue('cricketExperience', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      {/* Dynamic Custom Questions for Cricket from Database */}
-                      {dbFields
-                        .filter((f) => f.sport_id === 'cricket' && !['cricket_role', 'batting_style', 'bowling_style', 'cricket_experience'].includes(f.field_key))
-                        .map((field) => (
-                          <div key={field.id} className="md:col-span-2">
-                            <DynamicFieldRenderer
-                              field={field}
-                              value={dynamicAnswers[field.field_key]}
-                              onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
-                            />
-                          </div>
-                        ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Football Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('football') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚽</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Turf Football Questions
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-emerald-800 text-xs font-semibold leading-relaxed">
-                            Tactical pitch position, preferred shooting foot & turf experience
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Football Matches Schedule Note */}
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-emerald-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                        📅
-                      </div>
-                      <div>
-                        <strong className="text-emerald-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
-                          Tournament Schedule Notice:
-                        </strong>
-                        <p className="text-emerald-900 font-semibold">
-                          Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Preferred Field Position <span className="text-pink-600">*</span>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                          <Camera className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
                         </label>
-                        <BasicDropdown
-                          label="Select Position"
-                          items={[
-                            { id: 'Forward / Striker', label: 'Forward / Striker (ST / CF)' },
-                            { id: 'Winger (LW / RW)', label: 'Winger (LW / RW)' },
-                            { id: 'Attacking Midfielder (CAM)', label: 'Attacking Midfielder (CAM / Playmaker)' },
-                            { id: 'Central / Defensive Midfielder (CM / CDM)', label: 'Central / Defensive Midfielder (CM / CDM)' },
-                            { id: 'Fullback (LB / RB)', label: 'Fullback / Wing Back (LB / RB)' },
-                            { id: 'Centre Back (CB)', label: 'Centre Back (CB / Defender)' },
-                            { id: 'Goalkeeper (GK)', label: 'Goalkeeper (GK)' },
-                          ]}
-                          value={currentFootballPos ? { id: currentFootballPos, label: currentFootballPos } : null}
-                          onChange={(item) => setValue('footballPosition', String(item.id), { shouldValidate: true })}
-                        />
+                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                          Square • 600×600 to 1200×1200 px
+                        </span>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Dominant / Preferred Foot <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Preferred Foot"
-                          items={[
-                            { id: 'Right foot', label: 'Right Footed' },
-                            { id: 'Left foot', label: 'Left Footed' },
-                            { id: 'Both / Ambidextrous', label: 'Both / Ambidextrous (Two-Footed)' },
-                          ]}
-                          value={currentFootballFoot ? { id: currentFootballFoot, label: currentFootballFoot } : null}
-                          onChange={(item) => setValue('preferredFoot', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-3">
+                        {/* Compact Micro Guidelines */}
+                        <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Color &amp; square photo</span>
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Plain light background</span>
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Within last 6 months</span>
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Neutral expression</span>
+                          </span>
+                        </div>
 
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Football / Turf Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience Level"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Recreational Turf Player' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (Inter-College / Turf League Regular)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Semi-Pro / Past RPL Champion' },
-                          ]}
-                          value={currentFootballExp ? { id: currentFootballExp, label: currentFootballExp } : null}
-                          onChange={(item) => setValue('footballExperience', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Badminton Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('badminton') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-cyan-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-cyan-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-cyan-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏸</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Badminton Questions
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-cyan-200 text-cyan-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-cyan-800 text-xs font-semibold leading-relaxed">
-                            Singles / doubles category, playing hand & match experience
-                          </p>
+                        {/* Modern Dropzone & Avatar Preview */}
+                        <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px]">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png"
+                            onChange={handlePhotoChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          />
+                          {photoPreview ? (
+                            <div className="flex items-center justify-between w-full px-1 z-20">
+                              <div className="flex items-center space-x-3">
+                                <img
+                                  src={photoPreview}
+                                  alt="Preview"
+                                  className="w-12 h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square"
+                                />
+                                <div className="text-left">
+                                  <span className="text-xs font-bold text-slate-900 block truncate max-w-[140px]">
+                                    {photoName || 'Player Photo'}
+                                  </span>
+                                  <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>{isUploadingPhoto ? 'Uploading to Drive...' : 'Photo Ready'}</span>
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-1.5">
+                                <label className="text-xs font-bold text-amber-700 hover:text-amber-800 px-2.5 py-1.5 bg-amber-50 rounded-lg border border-amber-200 cursor-pointer shadow-2xs">
+                                  Change
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    onChange={handlePhotoChange}
+                                    className="hidden"
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemovePhoto();
+                                  }}
+                                  className="text-xs font-bold text-pink-600 hover:text-pink-700 px-2.5 py-1.5 bg-pink-50 rounded-lg border border-pink-200 cursor-pointer shadow-2xs"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center space-x-3 py-1">
+                              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
+                                <Camera className="w-5 h-5" />
+                              </div>
+                              <div className="text-left">
+                                <p className="text-xs text-slate-900 font-bold">Click to upload photo</p>
+                                <span className="text-[10px] text-slate-500 block">
+                                  JPG, PNG up to 5MB (Square ID format)
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+                  </div>
+                </>
+              )}
+            </InView>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Preferred Event <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Event"
-                          items={[
-                            { id: 'Singles', label: "Men's / Women's Singles" },
-                            { id: 'Doubles', label: "Men's / Women's Doubles" },
-                            { id: 'Mixed Doubles', label: 'Mixed Doubles' },
-                          ]}
-                          value={currentBadmintonCat ? { id: currentBadmintonCat, label: currentBadmintonCat } : null}
-                          onChange={(item) => setValue('badmintonCategory', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Dominant Hand <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Dominant Hand"
-                          items={[
-                            { id: 'Right-handed', label: 'Right-Handed' },
-                            { id: 'Left-handed', label: 'Left-Handed' },
-                          ]}
-                          value={currentBadmintonHand ? { id: currentBadmintonHand, label: currentBadmintonHand } : null}
-                          onChange={(item) => setValue('badmintonHand', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Recreational' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (Club / Tournament)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Competitive' },
-                          ]}
-                          value={currentBadmintonExp ? { id: currentBadmintonExp, label: currentBadmintonExp } : null}
-                          onChange={(item) => setValue('badmintonExperience', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
+            {/* ========================================================================= */}
+            {/* SECTION 2: MULTI-CHOICE SPORT DROPDOWN (7 OPTIONS) - PLAYERS ONLY */}
+            {/* ========================================================================= */}
+            {!isSpectator && (
+              <>
+                <InView
+                  viewOptions={{ once: true, amount: 0.05 }}
+                  transition={{ duration: 0.45, delay: 0.15, ease: 'easeOut' }}
+                  className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6"
+                >
+                  <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
+                      2
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Table Tennis Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('table-tennis') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-indigo-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-indigo-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-indigo-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏓</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Table Tennis Questions
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-indigo-800 text-xs font-semibold leading-relaxed">
-                            Singles / doubles format, paddle grip & tournament level
-                          </p>
-                        </div>
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
+                        Select Sports (Multi-Choice Dropdown)
+                      </h2>
+                      <p className="text-slate-600 text-xs sm:text-sm font-medium">
+                        Choose one or more sports you want to participate in. Questions for each chosen sport will appear below.
+                      </p>
                     </div>
+                  </div>
 
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Format <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Format"
-                          items={[
-                            { id: 'Singles', label: 'Singles Championship' },
-                            { id: 'Doubles', label: 'Doubles Championship' },
-                          ]}
-                          value={currentTtCat ? { id: currentTtCat, label: currentTtCat } : null}
-                          onChange={(item) => setValue('ttCategory', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Paddle Grip Style <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Grip Style"
-                          items={[
-                            { id: 'Shakehand Grip', label: 'Shakehand Grip' },
-                            { id: 'Penhold Grip', label: 'Penhold Grip' },
-                          ]}
-                          value={currentTtGrip ? { id: currentTtGrip, label: currentTtGrip } : null}
-                          onChange={(item) => setValue('ttGrip', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Casual' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (Club Player)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Tournament Pro' },
-                          ]}
-                          value={currentTtExp ? { id: currentTtExp, label: currentTtExp } : null}
-                          onChange={(item) => setValue('ttExperience', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Pickleball Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('pickleball') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-orange-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-orange-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-orange-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎾</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Pickleball Questions
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-orange-800 text-xs font-semibold leading-relaxed">
-                            Skill rating, doubles division & partner details
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Division / Category <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Division"
-                          items={[
-                            { id: 'Men Doubles', label: "Men's Doubles" },
-                            { id: 'Women Doubles', label: "Women's Doubles" },
-                            { id: 'Mixed Doubles', label: 'Mixed Doubles' },
-                            { id: 'Men Singles', label: "Men's Singles" },
-                            { id: 'Women Singles', label: "Women's Singles" },
-                          ]}
-                          value={currentPickleballCat ? { id: currentPickleballCat, label: currentPickleballCat } : null}
-                          onChange={(item) => setValue('pickleballCategory', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Skill Rating / DUPR <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Skill"
-                          items={[
-                            { id: '2.5 - 3.0 (Beginner)', label: '2.5 - 3.0 (Recreational)' },
-                            { id: '3.5 (Intermediate)', label: '3.5 (Intermediate / League)' },
-                            { id: '4.0+ (Advanced)', label: '4.0+ (Advanced / Open)' },
-                          ]}
-                          value={currentPickleballSkill ? { id: currentPickleballSkill, label: currentPickleballSkill } : null}
-                          onChange={(item) => setValue('pickleballSkill', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Preferred Partner Name <span className="text-slate-500 text-[10px]">(Optional)</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Partner's Name (if any)"
-                          {...register('pickleballPartner')}
-                          className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-white border border-orange-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm"
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Volleyball / Throwball Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('volleyball') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-purple-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-purple-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-purple-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏐</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Volleyball & Throwball
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-purple-800 text-xs font-semibold leading-relaxed">
-                            Net position, court specialty & experience
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Playing Role / Specialty <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Role"
-                          items={[
-                            { id: 'Spiker / Attacker', label: 'Spiker / Outside Attacker' },
-                            { id: 'Setter', label: 'Setter / Playmaker' },
-                            { id: 'Libero / Defender', label: 'Libero / Court Defender' },
-                            { id: 'Throwball Player', label: 'Throwball Specialist' },
-                          ]}
-                          value={currentVolleyballRole ? { id: currentVolleyballRole, label: currentVolleyballRole } : null}
-                          onChange={(item) => setValue('volleyballRole', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Casual' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (College / Club)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Seasoned Tournament Regular' },
-                          ]}
-                          value={currentVolleyballExp ? { id: currentVolleyballExp, label: currentVolleyballExp } : null}
-                          onChange={(item) => setValue('volleyballExperience', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Women's Sports Questions with BasicDropdown */}
-              <AnimatePresence>
-                {selectedSports.includes('womens-sports') && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-pink-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-pink-300 shadow-md space-y-6"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-pink-200 pb-4">
-                      <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                        <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏆</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                              Women's League
-                            </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-200 text-pink-900 font-bold text-[10px] sm:text-xs shrink-0">
-                              Active Sport
-                            </span>
-                          </div>
-                          <p className="text-pink-800 text-xs font-semibold leading-relaxed">
-                            Select discipline & specific role
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Committee Selection Note */}
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-pink-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
-                      <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                        📢
+                  {/* Women's Registration Selection Note */}
+                  {currentGender === 'Female' && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-amber-500/10 border-2 border-pink-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                        🏏
                       </div>
                       <div>
-                        <strong className="text-pink-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
-                          Selection Notice:
-                        </strong>
-                        <p className="text-pink-900 font-semibold">
+                        <span className="font-extrabold uppercase tracking-wider text-pink-950 block text-[11px] mb-0.5">
+                          Note for Women's Registration:
+                        </span>
+                        <p className="font-semibold text-pink-900 leading-snug">
                           18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
                         </p>
                       </div>
                     </div>
+                  )}
 
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Football Only Schedule Note */}
+                  {selectedSports.length === 1 && selectedSports.includes('football') && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-2 border-emerald-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                        ⚽
+                      </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Championship Discipline <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Discipline"
-                          items={[
-                            { id: "Women's Cricket", label: "Women's Cricket" },
-                          ]}
-                          value={currentWomensCat ? { id: currentWomensCat, label: currentWomensCat } : null}
-                          onChange={(item) => setValue('womensCategory', String(item.id), { shouldValidate: true })}
-                        />
+                        <span className="font-extrabold uppercase tracking-wider text-emerald-950 block text-[11px] mb-0.5">
+                          Schedule Note for Football:
+                        </span>
+                        <p className="font-semibold text-emerald-900 leading-snug">
+                          Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Kaccha Pakka League Special Division Callout */}
+                  {isKacchaPakkaEligible && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
+                        🌟
+                      </div>
+                      <div>
+                        <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
+                          Kaccha Pakka League Available (Age: {playerAge} years):
+                        </span>
+                        <p className="font-semibold text-amber-900 leading-snug">
+                          Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Multi-Select Dropdown Container */}
+                  <div ref={dropdownRef} className="relative">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      Championship Sports ({selectedSports.length} of {allowedSports.length} selected) <span className="text-pink-600">*</span>
+                    </label>
+
+                    {/* Dropdown Trigger Box */}
+                    <div
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className={`w-full min-h-[56px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${dropdownOpen
+                        ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
+                        : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5 flex-1">
+                        {selectedSports.map((sportId) => {
+                          const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+                          if (!sport) return null;
+                          return (
+                            <span
+                              key={sport.id}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 text-xs font-extrabold shadow-xs"
+                            >
+                              <span>{sport.emoji}</span>
+                              <span>{sport.name}</span>
+                              {selectedSports.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleRemoveSport(sport.id, e)}
+                                  className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </span>
+                          );
+                        })}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Specialty / Role <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Role"
-                          items={[
-                            { id: 'All rounder', label: 'All rounder' },
-                            { id: 'Bowler', label: 'Bowler' },
-                            { id: 'Batsman', label: 'Batsman' },
-                            { id: 'Fielder', label: 'Fielder' },
-                          ]}
-                          value={
-                            currentWomensRole
-                              ? {
-                                id: currentWomensRole,
-                                label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
-                              }
-                              : null
-                          }
-                          onChange={(item) => setValue('womensPlayingRole', String(item.id), { shouldValidate: true })}
-                        />
-                      </div>
 
-                      <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                          Experience Level <span className="text-pink-600">*</span>
-                        </label>
-                        <BasicDropdown
-                          label="Select Experience"
-                          items={[
-                            { id: 'Beginner / Casual', label: 'Beginner / Enthusiastic Participant' },
-                            { id: 'Intermediate (Club / College)', label: 'Intermediate (School / College / Community)' },
-                            { id: 'Advanced / RPL Veteran', label: 'Advanced / Tournament Regular' },
-                          ]}
-                          value={currentWomensExp ? { id: currentWomensExp, label: currentWomensExp } : null}
-                          onChange={(item) => setValue('womensExperience', String(item.id), { shouldValidate: true })}
+                      <div className="flex items-center space-x-2 text-slate-500 shrink-0">
+                        <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-1 rounded-lg">
+                          {selectedSports.length} selected
+                        </span>
+                        <ChevronDown
+                          className={`w-5 h-5 text-slate-600 transition-transform ${dropdownOpen ? 'rotate-180 text-amber-600' : ''
+                            }`}
                         />
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
 
+                    {/* Dropdown Popover Menu with AnimatePresence */}
+                    <AnimatePresence>
+                      {dropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                          exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 space-y-3"
+                        >
+                          {/* Search & Actions Bar */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
+                            <div className="relative flex-1 min-w-0">
+                              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                placeholder="Search sports..."
+                                value={sportSearch}
+                                onChange={(e) => setSportSearch(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-amber-600 font-medium"
+                              />
+                            </div>
+                            <div className="flex items-center justify-end space-x-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={handleSelectAllSports}
+                                className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                Select All
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleClearSports}
+                                className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          </div>
+
+
+                          {/* Sports Checkbox List */}
+                          <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+                            {filteredSports.map((sport) => {
+                              const isChecked = selectedSports.includes(sport.id);
+                              return (
+                                <div
+                                  key={sport.id}
+                                  onClick={() => toggleSportSelection(sport.id)}
+                                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
+                                    ? `${sport.colorBg} ${sport.colorBorder} shadow-xs`
+                                    : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
+                                    }`}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className="text-2xl">{sport.emoji}</span>
+                                    <div>
+                                      <span className="font-extrabold text-sm text-slate-900 block">
+                                        {sport.name}
+                                      </span>
+                                      <span className="text-[11px] text-slate-500 font-medium">
+                                        {sport.category}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all ${isChecked
+                                      ? 'bg-slate-900 border-slate-900 text-amber-300'
+                                      : 'border-slate-300 bg-white'
+                                      }`}
+                                  >
+                                    {isChecked && <Check className="w-4 h-4" />}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+
+                    {errors.selectedSports && (
+                      <p className="mt-2 text-xs text-pink-600 flex items-center space-x-1 font-semibold animate-shake">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{errors.selectedSports.message}</span>
+                      </p>
+                    )}
+                  </div>
+                </InView>
+
+                {/* ========================================================================= */}
+                {/* SECTION 3: DYNAMIC SPORT-SPECIFIC QUESTIONS (FOR EACH SELECTED SPORT) */}
+                {/* ========================================================================= */}
+                {selectedSports.length > 0 && (
+                  <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex items-start space-x-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
+                      3
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-display text-lg sm:text-2xl font-extrabold text-slate-900">
+                        Sport-Specific Questions
+                      </h2>
+                      <p className="text-slate-600 text-xs sm:text-sm font-medium">
+                        Experience levels, playing roles, and preferences for your chosen championships
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-6">
+                  {/* Cricket Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('cricket') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-amber-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-amber-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-amber-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏏</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Underarm Turf Cricket Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-amber-800 text-xs font-semibold leading-relaxed">
+                                Custom role, batting style, bowling variation & experience
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Primary Playing Role <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Role"
+                              items={[
+                                { id: 'Batter', label: 'Batter (Top / Middle Order)' },
+                                { id: 'Bowler', label: 'Bowler (Fast / Swing / Spin)' },
+                                { id: 'All-rounder', label: 'All-rounder (Bat & Bowl)' },
+                                { id: 'Wicketkeeper', label: 'Wicketkeeper Batter' },
+                              ]}
+                              value={currentCricketRole ? { id: currentCricketRole, label: currentCricketRole } : null}
+                              onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Batting Hand / Style <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Batting Style"
+                              items={[
+                                { id: 'Right-hand bat', label: 'Right-Handed Batter (RHB)' },
+                                { id: 'Left-hand bat', label: 'Left-Handed Batter (LHB)' },
+                              ]}
+                              value={currentBattingStyle ? { id: currentBattingStyle, label: currentBattingStyle } : null}
+                              onChange={(item) => setValue('battingStyle', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Bowling Variation / Style <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Bowling Style"
+                              items={[
+                                { id: 'Right-arm Off-Spin', label: 'Right-Arm Off-Spin' },
+                                { id: 'Right-arm Leg-Spin', label: 'Right-Arm Leg-Spin / Googly' },
+                                { id: 'Left-arm Orthodox', label: 'Left-Arm Orthodox Spin / Chinaman' },
+                                { id: 'Wicketkeeper / Non-bowler', label: 'Pure Wicketkeeper / Non-Bowler' },
+                              ]}
+                              value={currentBowlingStyle ? { id: currentBowlingStyle, label: currentBowlingStyle } : null}
+                              onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Cricket Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience Level"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Box Cricket / Weekend Friendly' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (Club, College, Turf League)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Seasoned RPL Veteran / Division Player' },
+                              ]}
+                              value={currentCricketExp ? { id: currentCricketExp, label: currentCricketExp } : null}
+                              onChange={(item) => setValue('cricketExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          {/* Dynamic Custom Questions for Cricket from Database */}
+                          {dbFields
+                            .filter((f) => f.sport_id === 'cricket' && !['cricket_role', 'batting_style', 'bowling_style', 'cricket_experience'].includes(f.field_key))
+                            .map((field) => (
+                              <div key={field.id} className="md:col-span-2">
+                                <DynamicFieldRenderer
+                                  field={field}
+                                  value={dynamicAnswers[field.field_key]}
+                                  onChange={(val) => setDynamicAnswers((prev) => ({ ...prev, [field.field_key]: val }))}
+                                />
+                              </div>
+                            ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Football Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('football') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">⚽</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Turf Football Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-emerald-800 text-xs font-semibold leading-relaxed">
+                                Tactical pitch position, preferred shooting foot & turf experience
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Football Matches Schedule Note */}
+                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-emerald-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                            📅
+                          </div>
+                          <div>
+                            <strong className="text-emerald-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                              Tournament Schedule Notice:
+                            </strong>
+                            <p className="text-emerald-900 font-semibold">
+                              Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Preferred Field Position <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Position"
+                              items={[
+                                { id: 'Forward / Striker', label: 'Forward / Striker (ST / CF)' },
+                                { id: 'Winger (LW / RW)', label: 'Winger (LW / RW)' },
+                                { id: 'Attacking Midfielder (CAM)', label: 'Attacking Midfielder (CAM / Playmaker)' },
+                                { id: 'Central / Defensive Midfielder (CM / CDM)', label: 'Central / Defensive Midfielder (CM / CDM)' },
+                                { id: 'Fullback (LB / RB)', label: 'Fullback / Wing Back (LB / RB)' },
+                                { id: 'Centre Back (CB)', label: 'Centre Back (CB / Defender)' },
+                                { id: 'Goalkeeper (GK)', label: 'Goalkeeper (GK)' },
+                              ]}
+                              value={currentFootballPos ? { id: currentFootballPos, label: currentFootballPos } : null}
+                              onChange={(item) => setValue('footballPosition', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Dominant / Preferred Foot <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Preferred Foot"
+                              items={[
+                                { id: 'Right foot', label: 'Right Footed' },
+                                { id: 'Left foot', label: 'Left Footed' },
+                                { id: 'Both / Ambidextrous', label: 'Both / Ambidextrous (Two-Footed)' },
+                              ]}
+                              value={currentFootballFoot ? { id: currentFootballFoot, label: currentFootballFoot } : null}
+                              onChange={(item) => setValue('preferredFoot', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Football / Turf Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience Level"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Recreational Turf Player' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (Inter-College / Turf League Regular)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Semi-Pro / Past RPL Champion' },
+                              ]}
+                              value={currentFootballExp ? { id: currentFootballExp, label: currentFootballExp } : null}
+                              onChange={(item) => setValue('footballExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Badminton Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('badminton') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-cyan-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-cyan-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-cyan-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏸</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Badminton Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-cyan-200 text-cyan-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-cyan-800 text-xs font-semibold leading-relaxed">
+                                Singles / doubles category, playing hand & match experience
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Preferred Event <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Event"
+                              items={[
+                                { id: 'Singles', label: "Men's / Women's Singles" },
+                                { id: 'Doubles', label: "Men's / Women's Doubles" },
+                                { id: 'Mixed Doubles', label: 'Mixed Doubles' },
+                              ]}
+                              value={currentBadmintonCat ? { id: currentBadmintonCat, label: currentBadmintonCat } : null}
+                              onChange={(item) => setValue('badmintonCategory', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Dominant Hand <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Dominant Hand"
+                              items={[
+                                { id: 'Right-handed', label: 'Right-Handed' },
+                                { id: 'Left-handed', label: 'Left-Handed' },
+                              ]}
+                              value={currentBadmintonHand ? { id: currentBadmintonHand, label: currentBadmintonHand } : null}
+                              onChange={(item) => setValue('badmintonHand', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Recreational' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (Club / Tournament)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Competitive' },
+                              ]}
+                              value={currentBadmintonExp ? { id: currentBadmintonExp, label: currentBadmintonExp } : null}
+                              onChange={(item) => setValue('badmintonExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Table Tennis Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('table-tennis') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-indigo-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-indigo-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-indigo-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏓</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Table Tennis Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-indigo-800 text-xs font-semibold leading-relaxed">
+                                Singles / doubles format, paddle grip & tournament level
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Format <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Format"
+                              items={[
+                                { id: 'Singles', label: 'Singles Championship' },
+                                { id: 'Doubles', label: 'Doubles Championship' },
+                              ]}
+                              value={currentTtCat ? { id: currentTtCat, label: currentTtCat } : null}
+                              onChange={(item) => setValue('ttCategory', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Paddle Grip Style <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Grip Style"
+                              items={[
+                                { id: 'Shakehand Grip', label: 'Shakehand Grip' },
+                                { id: 'Penhold Grip', label: 'Penhold Grip' },
+                              ]}
+                              value={currentTtGrip ? { id: currentTtGrip, label: currentTtGrip } : null}
+                              onChange={(item) => setValue('ttGrip', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Casual' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (Club Player)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Tournament Pro' },
+                              ]}
+                              value={currentTtExp ? { id: currentTtExp, label: currentTtExp } : null}
+                              onChange={(item) => setValue('ttExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Pickleball Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('pickleball') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-orange-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-orange-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-orange-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🎾</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Pickleball Questions
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-orange-200 text-orange-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-orange-800 text-xs font-semibold leading-relaxed">
+                                Skill rating, doubles division & partner details
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Division / Category <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Division"
+                              items={[
+                                { id: 'Men Doubles', label: "Men's Doubles" },
+                                { id: 'Women Doubles', label: "Women's Doubles" },
+                                { id: 'Mixed Doubles', label: 'Mixed Doubles' },
+                                { id: 'Men Singles', label: "Men's Singles" },
+                                { id: 'Women Singles', label: "Women's Singles" },
+                              ]}
+                              value={currentPickleballCat ? { id: currentPickleballCat, label: currentPickleballCat } : null}
+                              onChange={(item) => setValue('pickleballCategory', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Skill Rating / DUPR <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Skill"
+                              items={[
+                                { id: '2.5 - 3.0 (Beginner)', label: '2.5 - 3.0 (Recreational)' },
+                                { id: '3.5 (Intermediate)', label: '3.5 (Intermediate / League)' },
+                                { id: '4.0+ (Advanced)', label: '4.0+ (Advanced / Open)' },
+                              ]}
+                              value={currentPickleballSkill ? { id: currentPickleballSkill, label: currentPickleballSkill } : null}
+                              onChange={(item) => setValue('pickleballSkill', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Preferred Partner Name <span className="text-slate-500 text-[10px]">(Optional)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Partner's Name (if any)"
+                              {...register('pickleballPartner')}
+                              className="w-full px-4 py-3.5 min-h-[48px] rounded-2xl bg-white border border-orange-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium text-sm"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Volleyball / Throwball Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('volleyball') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-purple-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-purple-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-purple-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏐</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Volleyball & Throwball
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-purple-800 text-xs font-semibold leading-relaxed">
+                                Net position, court specialty & experience
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Playing Role / Specialty <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Role"
+                              items={[
+                                { id: 'Spiker / Attacker', label: 'Spiker / Outside Attacker' },
+                                { id: 'Setter', label: 'Setter / Playmaker' },
+                                { id: 'Libero / Defender', label: 'Libero / Court Defender' },
+                                { id: 'Throwball Player', label: 'Throwball Specialist' },
+                              ]}
+                              value={currentVolleyballRole ? { id: currentVolleyballRole, label: currentVolleyballRole } : null}
+                              onChange={(item) => setValue('volleyballRole', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Casual' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (College / Club)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Seasoned Tournament Regular' },
+                              ]}
+                              value={currentVolleyballExp ? { id: currentVolleyballExp, label: currentVolleyballExp } : null}
+                              onChange={(item) => setValue('volleyballExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Women's Sports Questions with BasicDropdown */}
+                  <AnimatePresence>
+                    {selectedSports.includes('womens-sports') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-pink-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-pink-300 shadow-md space-y-6"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-pink-200 pb-4">
+                          <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                            <span className="text-2xl sm:text-3xl shrink-0 mt-0.5">🏆</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                                  Women's League
+                                </h3>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-200 text-pink-900 font-bold text-[10px] sm:text-xs shrink-0">
+                                  Active Sport
+                                </span>
+                              </div>
+                              <p className="text-pink-800 text-xs font-semibold leading-relaxed">
+                                Select discipline & specific role
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Committee Selection Note */}
+                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-pink-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
+                          <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                            📢
+                          </div>
+                          <div>
+                            <strong className="text-pink-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
+                              Selection Notice:
+                            </strong>
+                            <p className="text-pink-900 font-semibold">
+                              18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                            </p>
+                          </div>
+                        </div>
+
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Championship Discipline <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Discipline"
+                              items={[
+                                { id: "Women's Cricket", label: "Women's Cricket" },
+                              ]}
+                              value={currentWomensCat ? { id: currentWomensCat, label: currentWomensCat } : null}
+                              onChange={(item) => setValue('womensCategory', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Specialty / Role <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Role"
+                              items={[
+                                { id: 'All rounder', label: 'All rounder' },
+                                { id: 'Bowler', label: 'Bowler' },
+                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'Fielder', label: 'Fielder' },
+                              ]}
+                              value={
+                                currentWomensRole
+                                  ? {
+                                    id: currentWomensRole,
+                                    label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
+                                  }
+                                  : null
+                              }
+                              onChange={(item) => setValue('womensPlayingRole', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Experience Level <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Experience"
+                              items={[
+                                { id: 'Beginner / Casual', label: 'Beginner / Enthusiastic Participant' },
+                                { id: 'Intermediate (Club / College)', label: 'Intermediate (School / College / Community)' },
+                                { id: 'Advanced / RPL Veteran', label: 'Advanced / Tournament Regular' },
+                              ]}
+                              value={currentWomensExp ? { id: currentWomensExp, label: currentWomensExp } : null}
+                              onChange={(item) => setValue('womensExperience', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
 
             {/* ========================================================================= */}
-            {/* 90s NOSTALGIA SPORTS DIVISION */}
+            {/* RETRO & NOSTALGIA GAMES DIVISION */}
             {/* ========================================================================= */}
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
@@ -3605,19 +3838,21 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             >
               <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 border border-amber-400 text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-md shadow-orange-500/20 shrink-0 aspect-square mt-0.5">
-                  🕹️
+                  {isSpectator ? '2' : '🕹️'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                      90s Nostalgia
+                      {isSpectator ? '2. Retro and Nostalgia Games' : 'Retro and Nostalgia Games'}
                     </h3>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
-                      🎈 Traditional &amp; Fun Games
+                      🎈 1980s &amp; 90s Traditional Games
                     </span>
                   </div>
                   <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
-                    Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90s Nostalgia division (open for all Mumukshu and Non-Mumukshu participants).
+                    {isSpectator
+                      ? "Included with your Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
+                      : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special Retro & Nostalgia division (open for all participants)."}
                   </p>
                 </div>
               </div>
@@ -3626,7 +3861,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div ref={nostalgiaDropdownRef} className="relative">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Select 90s Nostalgia Sports <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
+                      Select Retro &amp; Nostalgia Games <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
                     </label>
                     {selectedNostalgiaSports.length > 0 && (
                       <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300">
@@ -3646,7 +3881,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
                       {selectedNostalgiaSports.length === 0 ? (
                         <span className="text-xs text-slate-400 font-medium pl-1">
-                          Choose 90s Nostalgia Sports (select one or multiple)...
+                          Choose Retro &amp; Nostalgia Games (select one or multiple)...
                         </span>
                       ) : (
                         selectedNostalgiaSports.map((sportName) => {
@@ -3796,12 +4031,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
                 <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
-                    4
+                    {isSpectator ? 3 : 4}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                        Payment & Registration Fee
+                        {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
                       </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
                         ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
@@ -3826,10 +4061,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                        {isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary'}
+                        {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
                       </span>
                       <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                        {isReturningPaidUser ? (
+                        {isSpectator ? (
+                          currentAcc === 'Yes'
+                            ? `Spectator Pass with Stay: ₹2,700 (3 Days Compulsory Stay)${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
+                            : `Spectator Day Pass: ₹630 (Without Stay)${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹1,130' : ''}`
+                        ) : isReturningPaidUser ? (
                           currentExtraTshirt === 'Yes'
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
                             : `All Sports Included in Tournament Pass (Verified)`
@@ -3850,53 +4089,74 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </div>
 
-                {/* Returning User Notification Callout */}
-                {isReturningPaidUser && (
-                  <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
-                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
-                    <div>
-                      <span>
-                        <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
-                      </span>
+                {/* Spectator Inclusions Breakdown Callout */}
+                {isSpectator ? (
+                  <div className="p-3.5 rounded-xl border text-xs leading-relaxed space-y-1.5 bg-amber-50/80 border-amber-300 text-amber-950">
+                    <div className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span>Official Spectator Pass Inclusions:</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] pt-1">
+                      <div className="flex items-center gap-1.5">✓ <strong>Full Day Meals:</strong> Breakfast, Lunch &amp; Dinner</div>
+                      <div className="flex items-center gap-1.5">✓ <strong>Night Snacks:</strong> Evening &amp; late night refreshments</div>
+                      <div className="flex items-center gap-1.5">✓ <strong>Retro Games:</strong> 1980s Retro &amp; Nostalgia childhood games</div>
+                      <div className="flex items-center gap-1.5">{currentAcc === 'Yes' ? '✓ 3 Days Stay: Dec 25–27 (Compulsory 3 Days)' : '✓ Self-Arranged Stay / Day Pass'}</div>
+                      {currentSpectatorTshirt === 'Yes' && (
+                        <div className="flex items-center gap-1.5 font-bold text-amber-900 sm:col-span-2">✓ Official Tournament T-Shirt ({currentTshirtSize || 'L'}) Included (+₹500)</div>
+                      )}
                     </div>
                   </div>
-                )}
-
-                {/* Extra T-Shirt Line Item if selected */}
-                {currentExtraTshirt === 'Yes' && (
-                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
-                    <span className="flex items-center space-x-2">
-                      <Shirt className="w-4 h-4 text-amber-700" />
-                      <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
-                    </span>
-                    <span className="text-amber-900 font-extrabold">+₹500</span>
-                  </div>
-                )}
-
-                {/* Sport Breakdown List */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                    Selected Sports ({selectedSports.length}):
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedSports.map((sportId) => {
-                      const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-
-                      return (
-                        <div
-                          key={sportId}
-                          className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
-                        >
-                          <span>{sportObj?.emoji || '🏅'}</span>
-                          <span>{sportObj?.name || sportId}</span>
-                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
-                            Included in Pass
+                ) : (
+                  <>
+                    {/* Returning User Notification Callout */}
+                    {isReturningPaidUser && (
+                      <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
+                        <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
+                        <div>
+                          <span>
+                            <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                           </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                      </div>
+                    )}
+
+                    {/* Extra T-Shirt Line Item if selected */}
+                    {currentExtraTshirt === 'Yes' && (
+                      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                        <span className="flex items-center space-x-2">
+                          <Shirt className="w-4 h-4 text-amber-700" />
+                          <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                        </span>
+                        <span className="text-amber-900 font-extrabold">+₹500</span>
+                      </div>
+                    )}
+
+                    {/* Sport Breakdown List */}
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                        Selected Sports ({selectedSports.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSports.map((sportId) => {
+                          const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+
+                          return (
+                            <div
+                              key={sportId}
+                              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
+                            >
+                              <span>{sportObj?.emoji || '🏅'}</span>
+                              <span>{sportObj?.name || sportId}</span>
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                Included in Pass
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Razorpay Online Payment Checkout Banner */}
                 {totalPayableFee > 0 && (
@@ -3974,12 +4234,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                     ) : totalPayableFee > 0 ? (
                       <>
-                        <span>Pay ₹{totalPayableFee} & Complete Registration</span>
+                        <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
                         <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                       </>
                     ) : (
                       <>
-                        <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : 'Submit Registration'}</span>
+                        <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
                         <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                       </>
                     )}

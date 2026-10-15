@@ -19,6 +19,7 @@ export function AdminTransactionsTab() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'sports' | 'spectator'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -132,6 +133,17 @@ export function AdminTransactionsTab() {
               {st}
             </button>
           ))}
+
+          {/* Category Filter */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as any)}
+            className="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          >
+            <option value="all">All Categories</option>
+            <option value="sports">🏃 Sports</option>
+            <option value="spectator">🎟️ Spectator</option>
+          </select>
         </div>
 
         {/* Search Input */}
@@ -185,14 +197,16 @@ export function AdminTransactionsTab() {
                     Loading transactions...
                   </td>
                 </tr>
-              ) : transactions.length === 0 ? (
+              ) : transactions.filter((t) => categoryFilter === 'all' || (t.category || 'sports') === categoryFilter).length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     No transaction records found matching your filters.
                   </td>
                 </tr>
               ) : (
-                transactions.map((tx) => {
+                transactions
+                  .filter((t) => categoryFilter === 'all' || (t.category || 'sports') === categoryFilter)
+                  .map((tx) => {
                   const isCompleted = tx.status === 'completed';
                   const isPending = tx.status === 'pending';
                   const isFailed = tx.status === 'failed';
@@ -200,8 +214,19 @@ export function AdminTransactionsTab() {
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-800">
-                          {tx.player_name || 'Guest / Intent User'}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-slate-800">
+                            {tx.player_name || 'Guest / Intent User'}
+                          </span>
+                          {tx.category === 'spectator' ? (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-indigo-100 text-indigo-800 border border-indigo-300">
+                              Spectator
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">
+                              Sports
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-400 font-mono">
                           {tx.player_mobile || tx.cardno || '—'}

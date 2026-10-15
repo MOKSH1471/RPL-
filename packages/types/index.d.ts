@@ -1,5 +1,5 @@
 export type LeagueType = 'cricket' | 'football' | 'womens';
-export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka';
+export type SportType = 'cricket' | 'football' | 'badminton' | 'table-tennis' | 'pickleball' | 'volleyball' | 'womens-sports' | 'kaccha-pakka' | 'spectator';
 export interface SportOptionInfo {
     id: SportType;
     name: string;
@@ -16,6 +16,9 @@ export type ExperienceLevel = 'Beginner / Casual' | 'Intermediate (Club / Colleg
 export interface RegistrationFormData {
     recipientGmail?: string;
     ccEmail?: string;
+    registrationType?: 'player' | 'spectator';
+    spectatorOption?: 'with-stay' | 'without-stay' | string;
+    spectatorTshirt?: 'Yes' | 'No' | string;
     fullName: string;
     countryCode?: string;
     mobileNumber: string;

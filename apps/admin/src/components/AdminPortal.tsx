@@ -207,7 +207,7 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
             <Users className="w-4 h-4" />
             <span>Master Registrations</span>
             <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 font-mono text-[10px]">
-              {registrations.length}
+              {registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived).length}
             </span>
           </button>
 

@@ -27,7 +27,11 @@ router.get('/admin/stats', async (req, res) => {
       volleyball: 0,
       'womens-sports': 0,
       'kaccha-pakka': 0,
+      spectator: 0,
     };
+
+    let playersCount = 0;
+    let spectatorsCount = 0;
 
     const tshirtSizes = {
       XS: 0,
@@ -57,9 +61,20 @@ router.get('/admin/stats', async (req, res) => {
         return; // Exclude archived players from active tallies
       }
 
-      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
-      const sportCount = Math.max(1, selected.length);
-      const calculatedFee = 2700;
+      const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
+      if (isSpectator) {
+        spectatorsCount++;
+      } else {
+        playersCount++;
+      }
+
+      const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : (isSpectator ? ['spectator'] : []);
+      let calculatedFee = 2700;
+      if (isSpectator) {
+        const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
+        const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+        calculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
+      }
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 
       const pStatus = (r.payment_status || 'pending').toLowerCase();
@@ -77,9 +92,15 @@ router.get('/admin/stats', async (req, res) => {
         accommodationCount++;
       }
 
-      const rawSize = (gen.tshirtSize || '').trim();
-      const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize.startsWith(k)) || 'Other';
-      tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
+      // Only count T-shirt for players, or spectators who opted in (+₹500)
+      const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+      if (!isSpectator || spectatorHasTshirt) {
+        const rawSize = (gen.tshirtSize || '').trim();
+        if (rawSize) {
+          const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize.startsWith(k)) || 'Other';
+          tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
+        }
+      }
 
       const centreName = gen.centre || 'Unspecified';
       centresCount[centreName] = (centresCount[centreName] || 0) + 1;
@@ -97,8 +118,11 @@ router.get('/admin/stats', async (req, res) => {
     res.json({
       success: true,
       stats: {
-        totalRegistrations: regs.length,
+        totalRegistrations: regs.length - archivedCount,
         activeRegistrations: regs.length - archivedCount,
+        allRegistrationsCount: regs.length,
+        playersCount,
+        spectatorsCount,
         archivedCount,
         payment: { approved, pending, rejected, archived: archivedCount },
         financials: {

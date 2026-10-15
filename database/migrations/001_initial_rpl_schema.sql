@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS rpl_registrations (
     general_details JSON DEFAULT NULL,
     sport_answers JSON DEFAULT NULL,
     is_archived BOOLEAN DEFAULT FALSE,
+    archived_at DATETIME DEFAULT NULL,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

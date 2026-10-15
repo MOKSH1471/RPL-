@@ -10,6 +10,7 @@ const VALID_SPORTS = [
   'volleyball',
   'womens-sports',
   'kaccha-pakka',
+  'spectator',
 ];
 
 const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -98,6 +99,73 @@ test('Sports Validation: validates and normalizes T-shirt sizes against official
 test('Sports Validation: accepts kaccha-pakka in valid sports', () => {
   assert.strictEqual(validateSportsSelection(['kaccha-pakka']).valid, true);
   assert.strictEqual(validateSportsSelection(['cricket', 'kaccha-pakka']).valid, true);
+});
+
+test('Sports Validation: accepts spectator in valid sports', () => {
+  assert.strictEqual(validateSportsSelection(['spectator']).valid, true);
+});
+
+test('Spectator Pass Validation: verifies Day Pass (₹630), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
+  function validateSpectatorRules(payload) {
+    if (payload.registrationType !== 'spectator') return { valid: false, error: 'Not spectator' };
+    
+    // Fee calculation
+    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : 630;
+    const tshirtCost = (payload.spectatorTshirt === 'Yes' || payload.extraTshirt === 'Yes') ? 500 : 0;
+    const totalFee = baseFee + tshirtCost;
+
+    // Sub-section 1.5 fields (Photo & Existing RPL Family) are omitted for spectators
+    const requiresPhoto = false;
+    const requiresFamilyEnrollment = false;
+
+    return {
+      valid: true,
+      totalFee,
+      requiresPhoto,
+      requiresFamilyEnrollment,
+      inclusions: [
+        'Full Day Meals (Breakfast, Lunch, Dinner)',
+        'Night Snacks & Refreshments',
+        '1980s Retro & Nostalgia Games',
+        payload.accommodationRequired === 'Yes' ? 'Ashram Stay (Compulsory 3 Days)' : 'Self-Arranged Stay',
+      ],
+    };
+  }
+
+  // 1. Day Pass without stay, without T-shirt (₹630)
+  const dayPass = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(dayPass.valid, true);
+  assert.strictEqual(dayPass.totalFee, 630);
+  assert.strictEqual(dayPass.requiresPhoto, false);
+  assert.strictEqual(dayPass.requiresFamilyEnrollment, false);
+
+  // 2. Day Pass without stay, with T-shirt (₹1,130)
+  const dayPassTshirt = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'No',
+    spectatorTshirt: 'Yes',
+  });
+  assert.strictEqual(dayPassTshirt.totalFee, 1130);
+
+  // 3. Pass with stay, without T-shirt (₹2,700)
+  const stayPass = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'Yes',
+    spectatorTshirt: 'No',
+  });
+  assert.strictEqual(stayPass.totalFee, 2700);
+
+  // 4. Pass with stay, with T-shirt (₹3,200)
+  const stayPassTshirt = validateSpectatorRules({
+    registrationType: 'spectator',
+    accommodationRequired: 'Yes',
+    spectatorTshirt: 'Yes',
+  });
+  assert.strictEqual(stayPassTshirt.totalFee, 3200);
 });
 
 test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka League', () => {

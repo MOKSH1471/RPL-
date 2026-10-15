@@ -2,13 +2,36 @@ process.env.NODE_ENV = 'test';
 
 import http from 'http';
 import app from '../apps/api/index.js';
-import db from '../apps/api/src/config/db.js';
+import db, { RPL_DB } from '../apps/api/src/config/db.js';
+
+export { db, RPL_DB };
 
 let server;
 let baseUrl;
 
+export async function archiveTestRegistrations() {
+  try {
+    await db.query(`
+      UPDATE ${RPL_DB}.rpl_registrations
+      SET is_archived = 1, archived_at = NOW()
+      WHERE is_archived = 0
+        AND (
+          email LIKE '%@example.com'
+          OR email LIKE '%@test.com'
+          OR full_name LIKE '%Test%'
+          OR full_name LIKE '%Draft%'
+          OR full_name LIKE '%Player%'
+          OR full_name LIKE '%Champion%'
+          OR full_name LIKE '%Guest%'
+          OR full_name LIKE '%Veteran%'
+        )
+    `);
+  } catch {}
+}
+
 export async function startTestServer() {
   if (server) return baseUrl;
+  await archiveTestRegistrations();
   await new Promise((resolve) => {
     server = http.createServer(app);
     server.listen(0, '127.0.0.1', () => {
@@ -25,6 +48,7 @@ export async function stopTestServer() {
     await new Promise((resolve) => server.close(resolve));
     server = null;
   }
+  await archiveTestRegistrations();
   try {
     await db.end();
   } catch {}

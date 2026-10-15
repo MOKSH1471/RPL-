@@ -49,9 +49,9 @@ async function runMigrations() {
         try {
           await db.query(statement);
         } catch (stmtErr) {
-          // If index or table already exists (errno 1061 / 1050), proceed safely
-          if (stmtErr.errno === 1061 || stmtErr.errno === 1050) {
-            console.log(`ℹ️ [MIGRATIONS] Index or table already exists, skipping: ${stmtErr.sqlMessage}`);
+          // If index, table, or column already exists (errno 1061 / 1050 / 1060), proceed safely
+          if (stmtErr.errno === 1061 || stmtErr.errno === 1050 || stmtErr.errno === 1060) {
+            console.log(`ℹ️ [MIGRATIONS] Already exists, skipping: ${stmtErr.sqlMessage}`);
           } else if (stmtErr.errno === 1146 && statement.toUpperCase().includes('ALTER TABLE')) {
             console.log(`ℹ️ [MIGRATIONS] Table not yet present for ALTER TABLE statement, skipping non-fatal: ${stmtErr.sqlMessage}`);
           } else {

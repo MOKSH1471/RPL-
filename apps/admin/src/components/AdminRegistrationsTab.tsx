@@ -18,6 +18,7 @@ import {
   Printer,
   Archive,
   Download,
+  Ticket,
 } from 'lucide-react';
 import { updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
@@ -42,6 +43,7 @@ export function AdminRegistrationsTab({
   const [statusFilter, setStatusFilter] = useState('all');
   const [sportFilter, setSportFilter] = useState('all');
   const [accFilter, setAccFilter] = useState('all');
+  const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
   const rowsPerPage = 15;
@@ -78,16 +80,23 @@ export function AdminRegistrationsTab({
     // Status / Archive filter
     if (statusFilter === 'archived') {
       if (!isArchived) return false;
-    } else if (statusFilter !== 'all') {
-      if (isArchived) return false; // Exclude archived from specific payment status views
-      const pStatus = (r.payment_status || 'pending').toLowerCase();
-      if (pStatus !== statusFilter) return false;
+    } else {
+      if (isArchived) return false; // Exclude archived from active roster views by default
+      if (statusFilter !== 'all') {
+        const pStatus = (r.payment_status || 'pending').toLowerCase();
+        if (pStatus !== statusFilter) return false;
+      }
     }
 
     // Sport filter
     if (sportFilter !== 'all') {
       if (!Array.isArray(sports) || !sports.includes(sportFilter)) return false;
     }
+
+    // Participant Type filter (Player vs Spectator)
+    const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || r.sport_id === 'spectator';
+    if (regTypeFilter === 'player' && isSpectator) return false;
+    if (regTypeFilter === 'spectator' && !isSpectator) return false;
 
     // Accommodation filter
     if (accFilter !== 'all') {
@@ -173,6 +182,20 @@ export function AdminRegistrationsTab({
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             
+            {/* Participant Type Filter */}
+            <select
+              value={regTypeFilter}
+              onChange={(e) => {
+                setRegTypeFilter(e.target.value as 'all' | 'player' | 'spectator');
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="all">All Participants</option>
+              <option value="player">🏃 Players Only</option>
+              <option value="spectator">🎟️ Spectators Only</option>
+            </select>
+
             {/* Status Filter */}
             <select
               value={statusFilter}
@@ -207,6 +230,7 @@ export function AdminRegistrationsTab({
               <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka League</option>
+              <option value="spectator">🎟️ Spectator Pass</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -232,7 +256,7 @@ export function AdminRegistrationsTab({
             <span>
               Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
             </span>
-            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
@@ -240,6 +264,7 @@ export function AdminRegistrationsTab({
                   setStatusFilter('all');
                   setSportFilter('all');
                   setAccFilter('all');
+                  setRegTypeFilter('all');
                 }}
                 className="text-amber-600 font-bold hover:underline cursor-pointer"
               >
@@ -308,6 +333,7 @@ export function AdminRegistrationsTab({
                     : String(rawUtrs).split(',').map((s) => s.trim()).filter(Boolean);
 
                   const isArchived = Boolean(player.is_archived || gen.isArchived);
+                  const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || player.sport_id === 'spectator';
 
                   return (
                     <tr
@@ -333,6 +359,10 @@ export function AdminRegistrationsTab({
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
+                          ) : isSpectator ? (
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center font-bold shrink-0" title="Spectator Pass (Photo Not Required)">
+                              <Ticket className="w-5 h-5" />
+                            </div>
                           ) : (
                             <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center font-bold shrink-0">
                               <User className="w-5 h-5" />
@@ -341,6 +371,11 @@ export function AdminRegistrationsTab({
                           <div>
                             <span className="font-extrabold text-slate-900 flex items-center gap-1.5 group-hover:text-amber-600 transition-colors">
                               {player.full_name}
+                              {isSpectator && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-indigo-100 text-indigo-800 border border-indigo-300">
+                                  Spectator
+                                </span>
+                              )}
                               {isArchived && (
                                 <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-300">
                                   Archived
@@ -376,47 +411,83 @@ export function AdminRegistrationsTab({
 
                       {/* 4. Selected Sports */}
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap gap-1 max-w-[160px]">
-                          {sports.map((s: string) => (
-                            <span
-                              key={s}
-                              className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-black text-[10px] uppercase tracking-wider"
-                            >
-                              {s}
+                        {isSpectator ? (
+                          <div className="flex flex-col gap-1 max-w-[160px]">
+                            <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 border border-indigo-200 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1">
+                              <Ticket className="w-3 h-3 text-indigo-600" />
+                              <span>Spectator Pass</span>
                             </span>
-                          ))}
-                          {(gen.nostalgiaSport || gen.nostalgia_sport) && (
-                            <span
-                              className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
-                              title={`90s Nostalgia: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
-                            >
-                              <span>🕹️</span>
-                              <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
+                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
+                              {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? '🏨 Stay (₹2,700)' : '☀️ Day Pass (₹630)'}
                             </span>
-                          )}
-                        </div>
+                            {(gen.nostalgiaSport || gen.nostalgia_sport) && (
+                              <span
+                                className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
+                                title={`1980s Retro Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
+                              >
+                                <span>🕹️</span>
+                                <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1 max-w-[160px]">
+                            {sports.map((s: string) => (
+                              <span
+                                key={s}
+                                className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-black text-[10px] uppercase tracking-wider"
+                              >
+                                {s}
+                              </span>
+                            ))}
+                            {(gen.nostalgiaSport || gen.nostalgia_sport) && (
+                              <span
+                                className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
+                                title={`90s Nostalgia: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
+                              >
+                                <span>🕹️</span>
+                                <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* 5. Jersey Specs */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center space-x-1.5 flex-wrap gap-1">
-                          <span className="font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px]">
-                            {gen.tshirtSize || 'L'}
-                          </span>
-                          {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
-                            <span className="font-black text-[9px] bg-orange-100 text-orange-900 border border-orange-300 px-1.5 py-0.5 rounded-full">
-                              +1 Extra
+                        {isSpectator ? (
+                          gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? (
+                            <div className="flex items-center space-x-1.5 flex-wrap gap-1">
+                              <span className="font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px]">
+                                {gen.tshirtSize || 'L'}
+                              </span>
+                              <span className="font-black text-[9px] bg-indigo-100 text-indigo-900 border border-indigo-300 px-1.5 py-0.5 rounded-full">
+                                +₹500 T-Shirt
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-medium italic">No T-Shirt</span>
+                          )
+                        ) : (
+                          <div className="flex items-center space-x-1.5 flex-wrap gap-1">
+                            <span className="font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px]">
+                              {gen.tshirtSize || 'L'}
                             </span>
-                          )}
-                          {gen.customJerseyName && (
-                            <span className="text-slate-800 font-bold truncate max-w-[100px]">
-                              {gen.customJerseyName}
-                            </span>
-                          )}
-                          {gen.preferredJerseyNumber && (
-                            <span className="text-slate-400 font-mono">#{gen.preferredJerseyNumber}</span>
-                          )}
-                        </div>
+                            {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
+                              <span className="font-black text-[9px] bg-orange-100 text-orange-900 border border-orange-300 px-1.5 py-0.5 rounded-full">
+                                +1 Extra
+                              </span>
+                            )}
+                            {gen.customJerseyName && (
+                              <span className="text-slate-800 font-bold truncate max-w-[100px]">
+                                {gen.customJerseyName}
+                              </span>
+                            )}
+                            {gen.preferredJerseyNumber && (
+                              <span className="text-slate-400 font-mono">#{gen.preferredJerseyNumber}</span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* 6. Payment Status & Proof */}

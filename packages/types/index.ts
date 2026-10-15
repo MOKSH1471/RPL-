@@ -8,7 +8,8 @@ export type SportType =
   | 'pickleball'
   | 'volleyball'
   | 'womens-sports'
-  | 'kaccha-pakka';
+  | 'kaccha-pakka'
+  | 'spectator';
 
 export interface SportOptionInfo {
   id: SportType;
@@ -44,6 +45,11 @@ export interface RegistrationFormData {
   // Gmail Config
   recipientGmail?: string;
   ccEmail?: string;
+
+  // Registration Mode
+  registrationType?: 'player' | 'spectator';
+  spectatorOption?: 'with-stay' | 'without-stay' | string;
+  spectatorTshirt?: 'Yes' | 'No' | string;
 
   // Basic / Common Info
   fullName: string;

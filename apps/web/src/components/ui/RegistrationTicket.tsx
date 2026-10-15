@@ -56,6 +56,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         return "Women's League";
       case 'kaccha-pakka':
         return 'Kaccha Pakka League';
+      case 'spectator':
+        return 'Spectator Pass';
       default:
         return sport;
     }
@@ -150,7 +152,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Player Name
+              {data.registrationType === 'spectator' ? 'Spectator Name' : 'Player Name'}
             </span>
             <span className="font-extrabold text-slate-900 text-base">{data.fullName}</span>
           </div>
@@ -173,11 +175,19 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-0.5">
-              Jersey Size
+              {data.registrationType === 'spectator' ? 'Tournament T-Shirt' : 'Jersey Size'}
             </span>
             <span className="font-bold text-amber-700 text-base font-mono">
-              {data.tshirtSize}
-              {data.extraTshirt === 'Yes' && ' (+1 Extra)'}
+              {data.registrationType === 'spectator' ? (
+                (data.spectatorTshirt === 'Yes' || data.extraTshirt === 'Yes')
+                  ? `Purchased (Size ${data.tshirtSize || 'L'})`
+                  : 'Not Ordered'
+              ) : (
+                <>
+                  {data.tshirtSize}
+                  {data.extraTshirt === 'Yes' && ' (+1 Extra)'}
+                </>
+              )}
             </span>
           </div>
 
@@ -203,7 +213,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               {data.accommodationRequired === 'Yes' ? (
                 <span>RPL Stay ({data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'})</span>
               ) : (
-                <span>Self-Arranged {data.stayingRoomNumber ? `• ${data.stayingRoomNumber}` : ''}</span>
+                <span>{data.registrationType === 'spectator' ? 'Without Stay (Day Pass)' : 'Self-Arranged'} {data.stayingRoomNumber ? `• ${data.stayingRoomNumber}` : ''}</span>
               )}
             </span>
           </div>
@@ -211,7 +221,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
               <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
-                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90s Nostalgia Sports' : '90s Nostalgia Sport'}
+                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? 'Retro & Nostalgia Games' : 'Retro & Nostalgia Game'}
               </span>
               <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
                 <span>🕹️</span>
@@ -224,15 +234,15 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
-                  Tournament Pass ({sportsList.length} {sportsList.length === 1 ? 'Sport' : 'Sports'})
+                  {data.registrationType === 'spectator' ? 'Official Spectator Pass' : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
                 </span>
                 <span className="text-[11px] text-amber-800 font-medium">
-                  All selected sports included in event pass
+                  {data.registrationType === 'spectator' ? 'Full Meals, Night Snacks & Retro Games Included' : 'All selected sports included in event pass'}
                 </span>
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || 2700).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : 630) : 2700)).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

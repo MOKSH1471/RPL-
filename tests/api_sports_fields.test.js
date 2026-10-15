@@ -6,11 +6,14 @@ after(async () => {
   await stopTestServer();
 });
 
-test('GET /api/sports responds with 200 (connected DB) or 500 (offline DB with error message)', async () => {
+test('GET /api/sports responds with 200 and includes kaccha-pakka and spectator', async () => {
   const { status, data } = await apiRequest('/api/sports');
   assert.ok([200, 500].includes(status), `Expected 200 or 500, got ${status}`);
   if (status === 200) {
     assert.ok(Array.isArray(data), 'Response should be an array of sports');
+    const ids = data.map((s) => s.id);
+    assert.ok(ids.includes('kaccha-pakka'), 'Should include kaccha-pakka in active sports');
+    assert.ok(ids.includes('spectator'), 'Should include spectator in active sports');
   } else {
     assert.ok('error' in data, 'Error response should have error key');
   }

@@ -9,7 +9,9 @@ INSERT INTO rpl_sports (id, name, is_active) VALUES
 ('table-tennis', 'Table Tennis League', TRUE),
 ('pickleball', 'Pickleball League', TRUE),
 ('volleyball', 'Volleyball / Throwball League', TRUE),
-('womens-sports', 'Womens Sports League', TRUE)
+('womens-sports', 'Womens Sports League', TRUE),
+('kaccha-pakka', 'Kaccha Pakka League', TRUE),
+('spectator', 'Spectator Pass', TRUE)
 ON DUPLICATE KEY UPDATE name=VALUES(name), is_active=VALUES(is_active);
 
 -- 2. Seed Fields into rpl_registration_fields

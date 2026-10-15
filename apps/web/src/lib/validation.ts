@@ -43,6 +43,11 @@ export const registrationSchema = z
     recipientGmail: z.string().email().optional().or(z.literal('')),
     ccEmail: z.string().email().optional().or(z.literal('')),
 
+    // Registration Mode (Player vs Spectator)
+    registrationType: z.enum(['player', 'spectator']).optional().default('player'),
+    spectatorOption: z.string().optional(),
+    spectatorTshirt: z.enum(['Yes', 'No']).optional().default('No'),
+
     // Basic / Common Questions (Required for everyone)
     fullName: z
       .string()
@@ -67,9 +72,7 @@ export const registrationSchema = z
     centre: z
       .string()
       .min(1, { message: 'Please select your Centre Name' }),
-    tshirtSize: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], {
-      required_error: 'Please select your Jersey / T-Shirt Size',
-    }),
+    tshirtSize: z.string().optional().default('L'),
     extraTshirt: z.enum(['Yes', 'No']).optional().default('No'),
     nostalgiaSport: z.union([z.string(), z.array(z.string())]).optional(),
     nostalgiaSports: z.array(z.string()).optional(),
@@ -88,9 +91,7 @@ export const registrationSchema = z
     stayingRoomNumber: z.string().optional(),
     checkInDate: z.string().optional(),
     checkOutDate: z.string().optional(),
-    existingRplFamily: z.enum(['Yes', 'No'], {
-      required_error: 'Please select if you are existing RPL Family',
-    }),
+    existingRplFamily: z.enum(['Yes', 'No']).optional().default('No'),
 
     // Multi-Sport Selection
     selectedSports: z
@@ -196,7 +197,7 @@ export const registrationSchema = z
       }
     }
 
-    if (data.accommodationRequired === 'No') {
+    if (data.accommodationRequired === 'No' && data.registrationType !== 'spectator') {
       if (!data.stayingRoomNumber || !data.stayingRoomNumber.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

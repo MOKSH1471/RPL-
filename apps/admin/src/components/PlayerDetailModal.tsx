@@ -22,6 +22,7 @@ import {
   Eye,
   EyeOff,
   Archive,
+  Ticket,
 } from 'lucide-react';
 import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
@@ -47,8 +48,13 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
       : Object.keys(sportAns).length > 0
       ? Object.keys(sportAns)
       : [player.sport_id || 'cricket'];
+  const isSpectator = player.registrationType === 'spectator' || gen.registrationType === 'spectator' || selectedSportsList.includes('spectator') || player.sport_id === 'spectator';
+  const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
+  const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+  const spectatorCalculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
+
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
-  const calculatedFee = player.total_amount || gen.totalAmount || (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' ? 3200 : 2700);
+  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 3200 : 2700));
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
@@ -183,6 +189,12 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
                   {player.full_name}
                 </h2>
+                {isSpectator && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1">
+                    <Ticket className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Spectator Pass</span>
+                  </span>
+                )}
                 {isArchived ? (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300">
                     Archived
@@ -371,6 +383,12 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     }}
                   />
                 </div>
+              ) : isSpectator ? (
+                <div className="p-6 rounded-xl bg-indigo-50/70 border border-dashed border-indigo-200 text-center text-xs text-indigo-700 space-y-1">
+                  <Ticket className="w-5 h-5 mx-auto text-indigo-500" />
+                  <p className="font-extrabold">Spectator Registration</p>
+                  <p className="text-[11px] text-indigo-500">ID Photo & Season Enrollment was not required</p>
+                </div>
               ) : (
                 <div className="p-8 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400">
                   No photo attached
@@ -519,17 +537,34 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <span className="font-bold text-slate-900">{gen.dateOfBirth || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 font-medium block">Jersey Size</span>
-                    <div className="flex items-center space-x-1.5 mt-0.5">
-                      <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
-                        {gen.tshirtSize || 'L'}
-                      </span>
-                      {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
-                        <span className="font-bold text-[10px] text-orange-800 bg-orange-100 border border-orange-300 px-1.5 py-0.5 rounded-full">
-                          +1 Extra
+                    <span className="text-slate-400 font-medium block">
+                      {isSpectator ? 'Commemorative T-Shirt' : 'Jersey Size'}
+                    </span>
+                    {isSpectator ? (
+                      gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? (
+                        <div className="flex items-center space-x-1.5 mt-0.5">
+                          <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
+                            {gen.tshirtSize || 'L'}
+                          </span>
+                          <span className="font-bold text-[10px] text-indigo-800 bg-indigo-100 border border-indigo-300 px-1.5 py-0.5 rounded-full">
+                            +₹500 T-Shirt
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-medium italic block mt-0.5">No T-Shirt Requested</span>
+                      )
+                    ) : (
+                      <div className="flex items-center space-x-1.5 mt-0.5">
+                        <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
+                          {gen.tshirtSize || 'L'}
                         </span>
-                      )}
-                    </div>
+                        {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
+                          <span className="font-bold text-[10px] text-orange-800 bg-orange-100 border border-orange-300 px-1.5 py-0.5 rounded-full">
+                            +1 Extra
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                     <div>
@@ -564,6 +599,46 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   )}
                 </div>
               </div>
+
+              {/* Spectator Pass Inclusions Card */}
+              {isSpectator && (
+                <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/90 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-indigo-900 flex items-center space-x-1.5">
+                      <Ticket className="w-4 h-4 text-indigo-600" />
+                      <span>Spectator Pass Inclusions & Options</span>
+                    </h3>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
+                      {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
+                        ? '🏨 With Stay (₹2,700)'
+                        : '☀️ Without Stay / Day Pass (₹630)'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                    <div className="p-3 rounded-xl bg-white border border-indigo-100">
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">Meals & Night Snacks</span>
+                      <span className="font-extrabold text-slate-800 mt-0.5 block">✅ Included for all 3 days</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-indigo-100">
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">1980s Retro Games</span>
+                      <span className="font-extrabold text-slate-800 mt-0.5 block">
+                        {Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) && (gen.nostalgiaSport || gen.nostalgia_sport).length > 0
+                          ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+                          : '✅ Retro Games Open'}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white border border-indigo-100">
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">Commemorative T-Shirt</span>
+                      <span className="font-extrabold text-slate-800 mt-0.5 block">
+                        {gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes'
+                          ? `✅ Opted In (+₹500, Size ${gen.tshirtSize || 'L'})`
+                          : '❌ Not Opted In'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Sports & Questionnaire Answers */}
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
