@@ -40,6 +40,7 @@ export function exportMasterRegistrations(registrations: any[]) {
   const headers = [
     'Registration ID',
     'Record Status',
+    'Participant Type',
     'Full Name',
     'Mobile Number',
     'Email Address',
@@ -47,6 +48,9 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Gender',
     'Date of Birth',
     'Selected Sports',
+    'Pass / Stay Option',
+    'Spectator T-Shirt (+₹500)',
+    '1980s Retro Games',
     'Jersey Size',
     'Custom Jersey Name',
     'Preferred Jersey Number',
@@ -70,17 +74,32 @@ export function exportMasterRegistrations(registrations: any[]) {
     const gen = r.general_details || {};
     const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports.join(', ') : '';
     const isArchived = Boolean(r.is_archived || gen.isArchived);
+    const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
+    const participantType = isSpectator ? 'SPECTATOR' : 'PLAYER';
+    const passOption = isSpectator
+      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)')
+      : 'Player League Entry';
+    const spectatorTshirt = isSpectator
+      ? (gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `YES (+₹500, Size ${gen.tshirtSize || 'L'})` : 'NO')
+      : 'N/A (Included with Player)';
+    const nostalgiaGames = Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
+      ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+      : (gen.nostalgiaSport || gen.nostalgia_sport || '-');
 
     return [
       escapeCSV(r.id),
       escapeCSV(isArchived ? 'ARCHIVED' : 'ACTIVE'),
+      escapeCSV(participantType),
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
       escapeCSV(r.email),
       escapeCSV(gen.centre || ''),
       escapeCSV(gen.gender || ''),
       escapeCSV(gen.dateOfBirth || ''),
-      escapeCSV(sports),
+      escapeCSV(sports || (isSpectator ? 'spectator' : '')),
+      escapeCSV(passOption),
+      escapeCSV(spectatorTshirt),
+      escapeCSV(nostalgiaGames),
       escapeCSV(gen.tshirtSize || ''),
       escapeCSV(gen.customJerseyName || ''),
       escapeCSV(gen.preferredJerseyNumber || ''),
@@ -119,7 +138,18 @@ export function exportJerseyVendorSheet(registrations: any[]) {
   ];
 
   // Exclude archived registrations so vendors don't manufacture for cancelled participants
-  const activeOnly = registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived);
+  // Also exclude spectators who did NOT purchase a T-Shirt
+  const activeOnly = registrations.filter((r) => {
+    const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
+    if (isArchived) return false;
+    const gen = r.general_details || {};
+    const sports = gen.selectedSports || [];
+    const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || r.sport_id === 'spectator';
+    if (isSpectator && gen.spectatorTshirt !== 'Yes' && gen.extraTshirt !== 'Yes') {
+      return false; // Skip spectator without T-shirt purchase
+    }
+    return true;
+  });
 
   const rows = activeOnly.map((r, idx) => {
     const gen = r.general_details || {};
@@ -155,15 +185,22 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
     if (isArchived) return false;
     const sports = r.general_details?.selectedSports || [];
+    const isSpectator = r.general_details?.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || r.sport_id === 'spectator';
+    if (sportKey === 'spectator') {
+      return isSpectator;
+    }
     return Array.isArray(sports) && sports.includes(sportKey);
   });
 
   const rows = filtered.map((r, idx) => {
     const gen = r.general_details || {};
+    const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const sportDetails = r.sport_answers?.[sportKey] || {};
-    const formattedDetails = Object.entries(sportDetails)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(' | ');
+    const formattedDetails = isSpectator
+      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | Retro Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
+      : Object.entries(sportDetails)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(' | ');
 
     return [
       idx + 1,

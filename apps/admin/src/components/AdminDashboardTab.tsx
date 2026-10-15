@@ -42,6 +42,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",
     'kaccha-pakka': 'Kaccha Pakka League',
+    spectator: 'Spectator Pass',
   };
 
   return (
@@ -105,7 +106,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
         <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl -mr-6 -mt-6" />
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Players</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Participants</span>
             <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
@@ -113,6 +114,14 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
           <div className="mt-3 flex items-baseline space-x-2">
             <span className="text-3xl font-black text-slate-900 tracking-tight">{activeRegistrations ?? totalRegistrations}</span>
             <span className="text-xs font-semibold text-slate-400">entries</span>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+            <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+              🏃 {stats.playersCount || 0} Players
+            </span>
+            <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
+              🎟️ {stats.spectatorsCount || 0} Spectators
+            </span>
           </div>
         </div>
 
