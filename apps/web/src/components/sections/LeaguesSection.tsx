@@ -17,20 +17,17 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="max-w-4xl mb-10 md:mb-16"
         >
-          <span className="text-xs uppercase font-extrabold tracking-widest text-amber-600 block mb-3">
-            CHAMPIONSHIP LEAGUES
-          </span>
           <h2 className="font-display font-extrabold text-slate-900 mb-4 sm:mb-6 tracking-tight" style={{ fontSize: 'clamp(1.5rem, 4vw + 0.25rem, 3.75rem)' }}>
-            Five Championship <span className="text-gradient-vibrant">Leagues</span>
+            Six Championship <span className="text-gradient-vibrant">Leagues</span>
           </h2>
           <p className="text-slate-700 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl">
             Select your arena. Tapping any league pre-configures your official RPL Season 9 registration form.
           </p>
         </InView>
 
-        {/* Row 1: Cricket (Flagship 7-col hero card) vs Football & Women's (Secondary 5-col pair) */}
+        {/* Row 1: 1. Main Cricket League (Flagship 7-col) & 2. Women's Cricket League (5-col) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-          {/* Flagship Card: Main Cricket League */}
+          {/* 1. Flagship Card: Main Cricket League */}
           <InView
             viewOptions={{ once: true, amount: 0.05 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
@@ -64,7 +61,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                     Featured Playing Roles
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {['Batsman', 'Bowler', 'Wicketkeeper'].map((role, idx) => (
+                    {['Batter', 'Bowler', 'Wicketkeeper'].map((role, idx) => (
                       <span
                         key={idx}
                         className="text-xs font-semibold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg bg-amber-100/90 text-amber-900 border border-amber-200"
@@ -90,106 +87,33 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
             </div>
           </InView>
 
-          {/* Secondary Pair: Football & Women's League */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
-            {/* Football League Card */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.04, ease: 'easeOut' }}
-              className="flex-1"
-            >
-              <div
-                onClick={() => onSelectLeague('football')}
-                className="group cursor-pointer p-6 sm:p-7 rounded-3xl bg-[#ECFDF5] border border-emerald-200 hover:border-emerald-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
-              >
-                <div>
-                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-emerald-700 block mb-2">
-                    Exciting Football
-                  </span>
-                  <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-emerald-700 transition-colors">
-                    Football
-                  </h3>
-                  <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                    Step onto the turf for fast-paced football, great teamwork, and pure excitement! Play with passion, cheer on your squad, and make amazing memories with friends.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectLeague('football');
-                  }}
-                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
-                >
-                  <span>Register for Football</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </InView>
-
-            {/* Women's League Card */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }}
-              className="flex-1"
-            >
-              <div
-                onClick={() => onSelectLeague('womens')}
-                className="group cursor-pointer p-6 sm:p-7 rounded-3xl bg-[#FDF2F8] border border-pink-200 hover:border-pink-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
-              >
-                <div>
-                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-pink-700 block mb-2">
-                    HER GAME. HER VOICE. HER POWER.
-                  </span>
-                  <h3 className="font-display font-extrabold text-xl sm:text-2xl md:text-3xl text-slate-900 mb-2 group-hover:text-pink-700 transition-colors">
-                    Women's League
-                  </h3>
-                  <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                    <span className="font-bold text-slate-900 block mb-1">
-                      WOMEN WHO PLAY. WOMEN WHO LEAD. WOMEN WHO INSPIRE.
-                    </span>
-                    Celebrating the spirit, strength, and diversity of women in sport.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectLeague('womens');
-                  }}
-                  className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
-                >
-                  <span>Register for Women's League</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </InView>
-          </div>
-        </div>
-
-        {/* Row 2: Table Tennis & Carrom Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-6 lg:mt-8 items-stretch">
-          {/* Table Tennis Card */}
+          {/* 2. Women's Cricket League Card */}
           <InView
             viewOptions={{ once: true, amount: 0.05 }}
-            transition={{ duration: 0.45, delay: 0.12, ease: 'easeOut' }}
-            className="flex flex-col"
+            transition={{ duration: 0.45, delay: 0.04, ease: 'easeOut' }}
+            className="lg:col-span-5 flex flex-col"
           >
             <div
-              onClick={() => onSelectLeague('table-tennis')}
-              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#F0F9FF] border-2 border-sky-200 hover:border-sky-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
+              onClick={() => onSelectLeague('womens')}
+              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#FDF2F8] border border-pink-200 hover:border-pink-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
             >
               <div>
-                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-sky-700 block mb-2">
-                  SPEED, REFLEX & SPIN
-                </span>
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-sky-700 transition-colors">
-                  Table Tennis
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-pink-700 block">
+                    HER GAME. HER VOICE. HER POWER.
+                  </span>
+                  <span className="text-[10px] font-bold text-pink-800 uppercase tracking-wider bg-pink-100 px-2 py-0.5 rounded-full border border-pink-200">
+                    Women Only
+                  </span>
+                </div>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-pink-700 transition-colors">
+                  Women's Cricket League
                 </h3>
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                  Step up to the table for thrilling rallies, lightning-fast reflexes, and intense spin battles! Showcase your precision in singles and doubles format.
+                  <span className="font-bold text-slate-900 block mb-1">
+                    WOMEN WHO PLAY. WOMEN WHO LEAD. WOMEN WHO INSPIRE.
+                  </span>
+                  Celebrating the spirit, strength, and diversity of women in turf cricket sport.
                 </p>
               </div>
 
@@ -197,17 +121,117 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectLeague('table-tennis');
+                  onSelectLeague('womens');
                 }}
-                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
+                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-pink-600 hover:bg-pink-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
               >
-                <span>Register for Table Tennis</span>
+                <span>Register for Women's Cricket League</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </InView>
+        </div>
+
+        {/* Row 2: 3. Kaccha Pakka League & 4. Football League */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-6 lg:mt-8 items-stretch">
+          {/* 3. Kaccha Pakka League Card */}
+          <InView
+            viewOptions={{ once: true, amount: 0.05 }}
+            transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }}
+            className="flex flex-col"
+          >
+            <div
+              onClick={() => onSelectLeague('kaccha-pakka')}
+              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#FFFBEB] border-2 border-orange-300 hover:border-orange-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
+            >
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-orange-700">
+                    ENERGY & EXPERIENCE
+                  </span>
+                  <span className="flex items-center space-x-1 text-[11px] font-bold text-orange-900 uppercase tracking-widest bg-orange-100 px-2.5 py-0.5 rounded-full border border-orange-300">
+                    <span>🌟</span>
+                    <span>Age ≤16 & ≥56</span>
+                  </span>
+                </div>
+
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-orange-700 transition-colors">
+                  Kaccha Pakka League
+                </h3>
+
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                  At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
+                </p>
+
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-orange-100 text-orange-900 border border-orange-200">
+                      ⚡ Young Stars (≤16)
+                    </span>
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-200">
+                      🏆 Young at Heart (≥56)
+                    </span>
+                    <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-yellow-100 text-yellow-900 border border-yellow-200">
+                      🤝 Intergenerational Spirit
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectLeague('kaccha-pakka');
+                }}
+                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
+              >
+                <span>Register for Kaccha Pakka League</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </InView>
 
-          {/* Carrom Card */}
+          {/* 4. Football League Card */}
+          <InView
+            viewOptions={{ once: true, amount: 0.05 }}
+            transition={{ duration: 0.45, delay: 0.12, ease: 'easeOut' }}
+            className="flex flex-col"
+          >
+            <div
+              onClick={() => onSelectLeague('football')}
+              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#ECFDF5] border border-emerald-200 hover:border-emerald-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
+            >
+              <div>
+                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-emerald-700 block mb-3">
+                  TURF FOOTBALL CHAMPIONSHIP
+                </span>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-emerald-700 transition-colors">
+                  Football League
+                </h3>
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                  Step onto the turf for fast-paced football, great teamwork, and pure excitement! Play with passion, cheer on your squad, and make amazing memories with friends.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectLeague('football');
+                }}
+                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
+              >
+                <span>Register for Football League</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </InView>
+        </div>
+
+        {/* Row 3: 5. Carrom League & 6. Table Tennis League */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-6 lg:mt-8 items-stretch">
+          {/* 5. Carrom League Card */}
           <InView
             viewOptions={{ once: true, amount: 0.05 }}
             transition={{ duration: 0.45, delay: 0.16, ease: 'easeOut' }}
@@ -222,7 +246,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   STRIKE & POCKET MASTERY
                 </span>
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-purple-700 transition-colors">
-                  Carrom
+                  Carrom League
                 </h3>
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
                   Aim, strike, and pocket the queen! Bring your finest angles, board control, and tactical skill to the classic carrom board championship.
@@ -237,7 +261,43 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 }}
                 className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
               >
-                <span>Register for Carrom</span>
+                <span>Register for Carrom League</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </InView>
+
+          {/* 6. Table Tennis League Card */}
+          <InView
+            viewOptions={{ once: true, amount: 0.05 }}
+            transition={{ duration: 0.45, delay: 0.2, ease: 'easeOut' }}
+            className="flex flex-col"
+          >
+            <div
+              onClick={() => onSelectLeague('table-tennis')}
+              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#F0F9FF] border-2 border-sky-200 hover:border-sky-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
+            >
+              <div>
+                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-sky-700 block mb-2">
+                  SPEED, REFLEX & SPIN
+                </span>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-sky-700 transition-colors">
+                  Table Tennis League
+                </h3>
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                  Step up to the table for thrilling rallies, lightning-fast reflexes, and intense spin battles! Showcase your precision in singles and doubles format.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectLeague('table-tennis');
+                }}
+                className="w-full py-3.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px]"
+              >
+                <span>Register for Table Tennis League</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

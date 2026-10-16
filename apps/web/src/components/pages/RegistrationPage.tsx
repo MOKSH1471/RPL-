@@ -70,6 +70,7 @@ import {
   Clock,
   Info,
   Trophy,
+  MessageSquare,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -86,6 +87,7 @@ interface SportOption {
   colorBg: string;
   colorBorder: string;
   colorBadge: string;
+  description?: string;
 }
 
 const CENTRE_LIST = [
@@ -150,7 +152,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
   {
     id: 'football',
-    name: 'Football',
+    name: 'Football League',
     category: 'Turf Football Championship',
     emoji: '⚽',
     colorBg: 'bg-emerald-50',
@@ -212,6 +214,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-amber-50',
     colorBorder: 'border-amber-400',
     colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
+    description: 'At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above',
   },
 ];
 
@@ -297,6 +300,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const mapInitialSport = (id: string, gender?: string, age?: number | null): SportType => {
     let target = id;
     if (target === 'womens') target = 'womens-sports';
+    if (target === 'kaccha-pakka') {
+      if (age !== null && age !== undefined && !(age <= 16 || age >= 56)) {
+        target = gender === 'Female' ? 'womens-sports' : 'cricket';
+      } else {
+        return 'kaccha-pakka';
+      }
+    }
     if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
       target = gender === 'Female' ? 'womens-sports' : 'cricket';
     }
@@ -317,6 +327,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [photoName, setPhotoName] = useState<string>('');
   const [photoDriveUrl, setPhotoDriveUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState<boolean>(false);
   const [dbFields, setDbFields] = useState<DynamicField[]>([]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
@@ -448,7 +459,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       existingRplFamily: 'No',
       selectedSports: [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
-      cricketRole: 'Batsman',
+      cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
       bowlingStyle: 'Right-arm Off-Spin',
       cricketExperience: 'Intermediate (Club / College)',
@@ -481,6 +492,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: '',
       preferredTeamName: '',
       additionalNotes: '',
+      comments: '',
       referrerCountryCode: '+91',
       referrerMobile: '',
       referrerName: '',
@@ -532,6 +544,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
   const currentSpectatorTshirt = watch('spectatorTshirt') || 'No';
+  const currentExistingFamily = watch('existingRplFamily');
 
   const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
   const totalSportsCount = Math.max(1, selectedSports.length);
@@ -543,11 +556,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorTshirtCost = (currentSpectatorTshirt === 'Yes' || currentExtraTshirt === 'Yes') ? 500 : 0;
   const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
 
+  // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
+  const playerBaseFee = currentExistingFamily === 'Yes' ? 2700 : 3000;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
-  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (playerBaseFee + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
-  const previousPaidAmount = isReturningPaidUser ? 2700 : 0;
+  const previousPaidAmount = isReturningPaidUser ? playerBaseFee : 0;
 
   const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
   const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
@@ -577,7 +592,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       return [fallback];
     });
   }, [currentGender, playerAge, allowedSports, setValue, isSpectator]);
-  const currentExistingFamily = watch('existingRplFamily');
   const currentFood = watch('foodPreference');
   const currentCentre = watch('centre');
 
@@ -770,7 +784,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.customJerseyName) setValue('customJerseyName', gen.customJerseyName, { shouldValidate: true });
             if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
             if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
-            if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+            if (gen.additionalNotes || gen.comments) setValue('additionalNotes', gen.additionalNotes || gen.comments, { shouldValidate: true });
             if (gen.nostalgiaSport || gen.nostalgia_sport) {
               setValue('nostalgiaSport', gen.nostalgiaSport || gen.nostalgia_sport, { shouldValidate: true, shouldDirty: true });
             }
@@ -1192,6 +1206,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         alert('File size exceeds 5MB limit. Please choose a smaller image.');
         return;
       }
+      setPhotoError(null);
       setPhotoName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -1217,6 +1232,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     setPhotoPreview(null);
     setPhotoName('');
     setPhotoDriveUrl('');
+    if (!isSpectator) {
+      setPhotoError('Profile photo is mandatory. Please upload your passport / ID photo.');
+    }
   };
 
   const onSubmit = async (data: RegistrationSchemaType) => {
@@ -1228,6 +1246,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setIsSubmitting(false);
         return;
       }
+    }
+
+    // Require profile photo for player registration
+    if (!isSpectator && !photoPreview && !photoDriveUrl) {
+      setPhotoError('Profile photo is mandatory. Please upload your passport / ID photo.');
+      alert('⚠️ Photo Required: Please upload your profile photo (passport / ID size) before submitting your registration.');
+      setIsSubmitting(false);
+      const photoEl = document.getElementById('player-photo-section');
+      if (photoEl) {
+        photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
     }
 
     setIsSubmitting(true);
@@ -1308,7 +1338,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       customJerseyName: data.customJerseyName,
       preferredJerseyNumber: data.preferredJerseyNumber,
       preferredTeamName: data.preferredTeamName,
-      additionalNotes: data.additionalNotes,
+      additionalNotes: data.additionalNotes?.trim() || undefined,
+      comments: data.additionalNotes?.trim() || undefined,
       totalAmount: cumulativeTotalFee,
       calculatedFee: totalPayableFee,
       payment_receipt: paymentReceiptUrl,
@@ -1344,6 +1375,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: data.referrerMobile || undefined,
       referrerName: data.referrerName || undefined,
       referrerCardNo: data.referrerCardNo || undefined,
+      comments: data.additionalNotes?.trim() || undefined,
+      additionalNotes: data.additionalNotes?.trim() || undefined,
       totalAmount: cumulativeTotalFee,
       incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
@@ -1557,6 +1590,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           extraTshirt: (isSpectator ? data.spectatorTshirt : data.extraTshirt) || 'No',
           registrationType: isSpectator ? 'spectator' : 'player',
           accommodationRequired: data.accommodationRequired,
+          existingRplFamily: data.existingRplFamily,
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
@@ -2827,7 +2861,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="w-full p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2 sm:gap-2.5">
                   <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div className="text-xs leading-relaxed flex-1 min-w-0 break-words">
-                    <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
+                    <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or 27th night):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
                   </div>
                 </div>
               </div>
@@ -2865,26 +2899,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <p className="leading-relaxed">
                           {currentExistingFamily === 'Yes' ? (
-                            <span><strong>Returning Participant:</strong> Your player profile and previous season records will be linked.</span>
+                            <span><strong>Returning Participant (₹2,700):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
                           ) : (
-                            <span><strong>New Participant:</strong> Welcome! Your entry will be enrolled as an open player draft for Season 9.</span>
+                            <span><strong>New Player Draft (₹3,000):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
                           )}
                         </p>
                       </div>
                     </div>
 
-                    <div>
+                    <div id="player-photo-section">
                       <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                         <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                           <Camera className="w-3.5 h-3.5 text-amber-600" />
                           <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
+                          <span className="text-pink-600 font-bold">*</span>
                         </label>
                         <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
                           Square • 600×600 to 1200×1200 px
                         </span>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden">
+                      <div className={`rounded-2xl border ${photoError ? 'border-pink-400 bg-pink-50/40 ring-1 ring-pink-400/30' : 'border-slate-200 bg-slate-50/70'} p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden transition-all`}>
                         {/* Compact Micro Guidelines */}
                         <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
                           <span className="flex items-center gap-1.5">
@@ -2906,7 +2941,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </div>
 
                         {/* Modern Dropzone & Avatar Preview */}
-                        <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-2.5 sm:p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px] w-full max-w-full overflow-hidden">
+                        <div className={`relative border-2 border-dashed ${photoError ? 'border-pink-400 bg-pink-50/20' : 'border-slate-300 hover:border-amber-500 bg-white hover:bg-amber-50/20'} rounded-xl p-2.5 sm:p-3 text-center transition-all flex items-center justify-center min-h-[85px] w-full max-w-full overflow-hidden`}>
                           <input
                             type="file"
                             accept="image/jpeg,image/png"
@@ -2967,6 +3002,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           )}
                         </div>
+
+                        {photoError && (
+                          <p className="text-xs text-pink-600 font-bold flex items-center gap-1.5 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{photoError}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3042,7 +3084,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
                           Kaccha Pakka League Available (Age: {playerAge} years):
                         </span>
-                        <p className="font-semibold text-amber-900 leading-snug">
+                        <p className="font-semibold text-amber-900 leading-snug mb-1">
+                          At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
+                        </p>
+                        <p className="text-[11px] font-medium text-amber-800">
                           Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
                         </p>
                       </div>
@@ -3160,9 +3205,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                       <span className="font-extrabold text-sm text-slate-900 block">
                                         {sport.name}
                                       </span>
-                                      <span className="text-[11px] text-slate-500 font-medium">
+                                      <span className="text-[11px] text-slate-500 font-medium block">
                                         {sport.category}
                                       </span>
+                                      {sport.description && (
+                                        <span className="text-[10px] text-slate-600 font-normal leading-tight block mt-0.5">
+                                          {sport.description}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
@@ -3249,15 +3299,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <BasicDropdown
                               label="Select Role"
                               items={[
-                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'Batter', label: 'Batter' },
                                 { id: 'Bowler', label: 'Bowler' },
                                 { id: 'Wicketkeeper', label: 'Wicketkeeper' },
                               ]}
                               value={
                                 currentCricketRole
                                   ? {
-                                      id: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
-                                      label: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
+                                      id: currentCricketRole === 'Batsman' ? 'Batter' : currentCricketRole,
+                                      label: currentCricketRole === 'Batsman' ? 'Batter' : currentCricketRole,
                                     }
                                   : null
                               }
@@ -3791,15 +3841,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               label="Select Role"
                               items={[
                                 { id: 'All rounder', label: 'All rounder' },
+                                { id: 'Batter', label: 'Batter' },
                                 { id: 'Bowler', label: 'Bowler' },
-                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'Wicketkeeper', label: 'Wicketkeeper' },
                                 { id: 'Fielder', label: 'Fielder' },
                               ]}
                               value={
                                 currentWomensRole
                                   ? {
-                                    id: currentWomensRole,
-                                    label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
+                                    id: currentWomensRole === 'Batsman' ? 'Batter' : currentWomensRole,
+                                    label: currentWomensRole === 'Batsman' ? 'Batter' : (currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole),
                                   }
                                   : null
                               }
@@ -4023,6 +4074,32 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
             {/* ========================================================================= */}
+            {/* COMMENTS & SPECIAL REQUESTS (STORED IN GENERAL DETAILS) */}
+            {/* ========================================================================= */}
+            <InView
+              viewOptions={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+              className="bg-white rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200 shadow-sm space-y-3 mb-6 sm:mb-8"
+            >
+              <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-slate-800">
+                <MessageSquare className="w-4 h-4 text-amber-600" />
+                <span>Comments &amp; Special Requests <span className="text-slate-400 font-semibold lowercase text-[11px]">(Optional)</span></span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                Have any special requests, questions, dietary notes, or remarks for the RPL organizing committee? Leave your comments below.
+              </p>
+              <div>
+                <textarea
+                  {...register('additionalNotes')}
+                  rows={3}
+                  placeholder="Leave any comments, queries, accommodation requests, or notes for the RPL team here..."
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all resize-none shadow-2xs font-medium"
+                />
+              </div>
+            </InView>
+
+
+            {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
             <InView
@@ -4075,7 +4152,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
                             : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹2,700${currentExtraTshirt === 'Yes' ? ' + ₹500 Extra T-Shirt = ₹3,200' : ' - All sports included'})`
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹${playerBaseFee.toLocaleString('en-IN')}${currentExistingFamily === 'No' ? ' [New Player: ₹3,000]' : ' [Returning Family: ₹2,700]'}${currentExtraTshirt === 'Yes' ? ` + ₹500 Extra T-Shirt = ₹${(playerBaseFee + 500).toLocaleString('en-IN')}` : ' - All sports included'})`
                         )}
                       </h4>
                     </div>
@@ -4253,6 +4330,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       type="button"
                       disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
                       onClick={() => {
+                        alert('Please make the payment within 24hrs.');
                         isPayLaterRef.current = true;
                         setIsPayLater(true);
                         // Trigger form validation + submit via handleSubmit wrapper
@@ -4275,22 +4353,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   )}
                 </div>
 
-                {/* Pay Later hint */}
+                {/* Pay Later hint & 24hr Notice */}
                 {totalPayableFee > 0 && (
-                  <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed mt-4 pt-3.5 border-t border-emerald-200/60">
-                    💡 Prefer to pay later?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                        onOpenCheckStatus?.(mob);
-                      }}
-                      className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
-                    >
-                      Check Pass / Pay Due
-                    </button>
-                    {' '}— register now and complete payment anytime using your mobile number.
-                  </p>
+                  <div className="mt-4 pt-3.5 border-t border-emerald-200/60 space-y-2 text-center">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold shadow-2xs">
+                      <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                      <span>Please make the payment within 24hrs if selecting Pay Later.</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      💡 Prefer to pay later?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                          onOpenCheckStatus?.(mob);
+                        }}
+                        className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
+                      >
+                        Check Pass / Pay Due
+                      </button>
+                      {' '}— register now and complete payment anytime using your mobile number.
+                    </p>
+                  </div>
                 )}
 
                 {/* Server Waking Indicator (Render Free Tier Cold-Start) */}

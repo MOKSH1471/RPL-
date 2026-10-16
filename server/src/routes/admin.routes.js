@@ -69,11 +69,15 @@ router.get('/admin/stats', async (req, res) => {
       }
 
       const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : (isSpectator ? ['spectator'] : []);
-      let calculatedFee = 2700;
+      const isReturningFamily = gen.existingRplFamily === 'Yes';
+      let calculatedFee = isReturningFamily ? 2700 : 3000;
       if (isSpectator) {
         const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
         calculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
+      } else {
+        const hasExtraTshirt = gen.extraTshirt === 'Yes';
+        if (hasExtraTshirt) calculatedFee += 500;
       }
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 

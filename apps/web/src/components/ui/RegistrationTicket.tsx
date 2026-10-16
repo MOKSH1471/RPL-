@@ -104,10 +104,16 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             )}
           </p>
           {isPayLater && (
-            <div className="mt-3 p-3 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-medium text-center leading-relaxed max-w-sm">
-              {isApprovedDue
-                ? '💳 To pay for your additional sport, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'
-                : '💳 To complete payment, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'}
+            <div className="mt-3 p-3.5 rounded-2xl bg-amber-100 border-2 border-amber-400 text-amber-950 text-xs font-bold text-center leading-relaxed max-w-md shadow-sm">
+              <span className="flex items-center justify-center gap-1.5 text-sm font-black text-amber-900 mb-1">
+                <Clock className="w-4 h-4 text-amber-700" />
+                Please make the payment within 24hrs.
+              </span>
+              <span className="text-amber-800 font-medium text-[11px] block">
+                {isApprovedDue
+                  ? '💳 To pay for your additional sport, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'
+                  : '💳 To complete payment, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'}
+              </span>
             </div>
           )}
         </div>
@@ -242,7 +248,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : 630) : 2700)).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : 630) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

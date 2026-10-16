@@ -49,7 +49,7 @@ export const RegisterSection: React.FC<RegisterSectionProps> = ({
       accommodationRequired: 'No',
       stayingRoomNumber: '',
       league: selectedLeague,
-      cricketRole: 'Batsman',
+      cricketRole: 'Batter',
       footballPosition: 'Forward',
       womensCategory: "Women's Cricket",
       preferredTeamName: '',
@@ -602,7 +602,7 @@ Sent via RPL Official Registration Portal
                           {...register('cricketRole')}
                           className="w-full px-4 py-3 min-h-[48px] rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-amber-500 text-base sm:text-sm"
                         >
-                          <option value="Batsman">Batsman</option>
+                          <option value="Batter">Batter</option>
                           <option value="Bowler">Bowler</option>
                           <option value="Wicketkeeper">Wicketkeeper</option>
                         </select>

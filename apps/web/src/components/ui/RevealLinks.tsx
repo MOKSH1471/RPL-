@@ -79,11 +79,11 @@ export const FlipText: React.FC<FlipTextProps> = ({
 
 export interface FlipLinkProps {
   children: string;
-  href: string;
+  href?: string;
   className?: string;
   target?: string;
   rel?: string;
-  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 export const FlipLink: React.FC<FlipLinkProps> = ({
@@ -94,6 +94,22 @@ export const FlipLink: React.FC<FlipLinkProps> = ({
   rel,
   onClick,
 }) => {
+  if (!href) {
+    return (
+      <motion.div
+        initial="initial"
+        whileHover="hovered"
+        whileTap="hovered"
+        className={`relative inline-block max-w-full overflow-hidden whitespace-nowrap font-black uppercase tracking-tight py-1 select-none cursor-default ${className}`}
+        style={{
+          lineHeight: 1.15,
+        }}
+      >
+        <FlipText>{children}</FlipText>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.a
       href={href}

@@ -1,4 +1,4 @@
-export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom';
+export type LeagueType = 'cricket' | 'football' | 'womens' | 'table-tennis' | 'carrom' | 'kaccha-pakka';
 
 export type SportType =
   | 'cricket'
@@ -118,6 +118,7 @@ export interface RegistrationFormData {
   preferredJerseyNumber?: string;
   preferredTeamName?: string;
   additionalNotes?: string;
+  comments?: string;
 
   // Ashram Member Reference
   referrerCountryCode?: string;

@@ -25,7 +25,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-4 xl:gap-8 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8 pt-2">
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Official Media
@@ -42,15 +42,12 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
 
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Live Opening Ceremony
+                Live Stream
               </span>
               <FlipLink
-                href="https://www.youtube.com/@VitraagVigyaan"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-900 hover:text-red-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
+                className="text-slate-900 hover:text-red-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight cursor-default"
               >
-                YouTube
+                YouTube Live
               </FlipLink>
             </div>
 
@@ -65,22 +62,6 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 className="text-slate-900 hover:text-emerald-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
               >
                 WhatsApp
-              </FlipLink>
-            </div>
-
-            <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Register
-              </span>
-              <FlipLink
-                href="#register"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onRegisterClick?.();
-                }}
-                className="text-slate-900 hover:text-amber-500 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
-              >
-                Register Now
               </FlipLink>
             </div>
           </div>

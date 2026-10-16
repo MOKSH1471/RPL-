@@ -285,6 +285,7 @@ export interface CreateOrderParams {
   extraTshirt?: string;
   registrationType?: string;
   accommodationRequired?: string;
+  existingRplFamily?: string;
   isExistingPlayer?: boolean;
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;

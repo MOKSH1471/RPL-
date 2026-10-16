@@ -1,6 +1,6 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
-import { Calendar, Clock, Lock, Sparkles, ArrowRight, ShieldCheck, Flame } from 'lucide-react';
+import { Calendar, Clock, Lock, Sparkles, ShieldCheck, Flame } from 'lucide-react';
 
 interface ScheduleSectionProps {
   onRegisterClick?: () => void;
@@ -72,7 +72,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
               </p>
 
               {/* Step Roadmap Indicators */}
-              <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8 text-left">
+              <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-left">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <div className="flex items-center space-x-2 text-emerald-600 font-bold text-xs mb-1">
                     <ShieldCheck className="w-4 h-4" />
@@ -100,20 +100,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
                   <p className="text-[11px] text-slate-500 mt-1">Complete dates, timings &amp; pitch grounds announced.</p>
                 </div>
               </div>
-
-              {/* CTA */}
-              {onRegisterClick && (
-                <div className="flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={onRegisterClick}
-                    className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-extrabold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
-                  >
-                    <span>Register Before Auction</span>
-                    <ArrowRight className="w-4 h-4 text-amber-400" />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </InView>

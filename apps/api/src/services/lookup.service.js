@@ -68,6 +68,7 @@ export async function lookupPlayer(input) {
         previouslyPaidSportsCount,
         selectedSports: savedSports,
         generalDetails: parsedGeneralDetails,
+        general_details: parsedGeneralDetails,
         sportAnswers: parsedSportAnswers,
         submittedAt: reg.submitted_at,
       },
