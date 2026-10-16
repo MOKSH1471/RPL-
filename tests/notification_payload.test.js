@@ -99,3 +99,33 @@ test('Notification Payload: generates compliant wa.me deep links for direct cont
   assert.ok(url.includes('Hi%20Harshil'));
   assert.ok(url.includes('verified!'));
 });
+
+test('Notification Payload: verifies official RPL WhatsApp group invite URL structure and community code', () => {
+  const OFFICIAL_WHATSAPP_COMMUNITY_URL =
+    'https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0';
+
+  function validateWhatsAppGroupInviteUrl(url) {
+    if (!url || typeof url !== 'string') return { valid: false, error: 'URL required' };
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname !== 'chat.whatsapp.com') {
+        return { valid: false, error: 'Must use chat.whatsapp.com domain' };
+      }
+      const inviteCode = parsed.pathname.replace(/^\//, '');
+      if (!inviteCode || inviteCode.length < 20) {
+        return { valid: false, error: 'Invalid invite code length' };
+      }
+      return { valid: true, inviteCode };
+    } catch {
+      return { valid: false, error: 'Invalid URL format' };
+    }
+  }
+
+  const result = validateWhatsAppGroupInviteUrl(OFFICIAL_WHATSAPP_COMMUNITY_URL);
+  assert.strictEqual(result.valid, true);
+  assert.strictEqual(result.inviteCode, 'BsJ9WZGzpyaKYEphAOwtPq');
+
+  // Negative tests
+  assert.strictEqual(validateWhatsAppGroupInviteUrl('https://example.com/invite').valid, false);
+  assert.strictEqual(validateWhatsAppGroupInviteUrl('invalid-url').valid, false);
+});

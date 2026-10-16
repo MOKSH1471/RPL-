@@ -47,6 +47,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         return 'Badminton';
       case 'table-tennis':
         return 'Table Tennis';
+      case 'carrom':
+        return 'Carrom League';
       case 'pickleball':
         return 'Pickleball';
       case 'volleyball':
@@ -248,7 +250,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : 630) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 630)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -275,7 +277,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           <a
-            href="https://chat.whatsapp.com/"
+            href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto flex-1 flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm transition-all shadow-md active:scale-95 min-h-[48px]"

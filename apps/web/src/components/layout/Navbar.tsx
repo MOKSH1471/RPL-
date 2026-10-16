@@ -303,7 +303,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                   onRegisterClick();
                 }}
-                className="py-1.5 px-3 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
+                className="hidden sm:flex py-1.5 px-3 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
               >
                 <FlipText>Register Now</FlipText>
               </motion.button>

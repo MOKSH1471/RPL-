@@ -197,12 +197,17 @@ router.post('/register', async (req, res) => {
       const regType = mergedGeneralDetails.registrationType || cleanGeneralDetails.registrationType || (allSelectedSports.includes('spectator') ? 'spectator' : 'player');
       const isSpectator = regType === 'spectator';
       const accomRequired = mergedGeneralDetails.accommodationRequired || cleanGeneralDetails.accommodationRequired || 'No';
-      const extraTshirtChoice = mergedGeneralDetails.extraTshirt || mergedGeneralDetails.spectatorTshirt || cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No';
+      const extraTshirtChoice = isSpectator
+        ? (cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No')
+        : (cleanGeneralDetails.extraTshirt || mergedGeneralDetails.extraTshirt || 'No');
       const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+      const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
+      const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
       const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
       const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
       const computedFee = isSpectator
-        ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+        ? spectatorBase + extraTshirtCost
         : playerBase + extraTshirtCost;
 
       const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
@@ -278,12 +283,17 @@ router.post('/register', async (req, res) => {
       const regType = cleanGeneralDetails.registrationType || (cleanGeneralDetails.selectedSports?.includes('spectator') ? 'spectator' : 'player');
       const isSpectator = regType === 'spectator';
       const accomRequired = cleanGeneralDetails.accommodationRequired || 'No';
-      const extraTshirtChoice = cleanGeneralDetails.extraTshirt || cleanGeneralDetails.spectatorTshirt || 'No';
+      const extraTshirtChoice = isSpectator
+        ? (cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No')
+        : (cleanGeneralDetails.extraTshirt || 'No');
       const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+      const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
+      const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
       const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
       const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
       const newFee = isSpectator
-        ? (accomRequired === 'Yes' ? 2700 : 630) + extraTshirtCost
+        ? spectatorBase + extraTshirtCost
         : playerBase + extraTshirtCost;
       cleanGeneralDetails.totalAmount = newFee;
       cleanGeneralDetails.calculatedFee = newFee;

@@ -149,7 +149,7 @@ export const RevealLinks: React.FC<{ className?: string }> = ({ className = "" }
         YouTube
       </FlipLink>
       <FlipLink
-        href="https://chat.whatsapp.com"
+        href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
         target="_blank"
         rel="noopener noreferrer"
         className="text-3xl sm:text-5xl md:text-6xl hover:text-emerald-600 transition-colors"

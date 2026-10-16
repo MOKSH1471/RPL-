@@ -143,7 +143,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
           <Section icon={<MapPin className="w-4 h-4" />} title="8. Contact Information &amp; Grievance Redressal">
             <p>For questions regarding registrations, cancellations, refunds, or tournament logistics, please contact our administrative desk:</p>
             <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <p><strong>Organizing Body:</strong> Raj Premier League (RPL) Committee</p>
+              <p><strong>Organizing Body:</strong> RPL Events</p>
               <p><strong>Host Institution:</strong> Shrimad Rajchandra Aatma Tatva Research Centre</p>
               <p><strong>Contact Helpline:</strong> <a href="tel:+919321001499" className="text-amber-600 font-semibold hover:underline">+91 9321001499</a></p>
               <p><strong>Official Email:</strong> <a href="mailto:info.rplevents@gmail.com" className="text-amber-600 font-semibold hover:underline">info.rplevents@gmail.com</a></p>

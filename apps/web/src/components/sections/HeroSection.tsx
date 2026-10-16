@@ -1,16 +1,20 @@
 import React from 'react';
 import { KineticText } from '@/components/ui/KineticText';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Sparkles, ArrowRight, Ticket } from 'lucide-react';
 import { LeagueType } from '@/types';
 
 interface HeroSectionProps {
   onSelectLeague: (league: LeagueType) => void;
   onRegisterClick?: () => void;
+  onSpectatorClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onSelectLeague,
   onRegisterClick,
+  onSpectatorClick,
+  onCheckPassClick,
 }) => {
   const tickerItems = [
     'Raj Premier League',
@@ -85,6 +89,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             Direct Registration
           </button>
+        </div>
+
+        {/* Spectator Pass & Already Registered Prompt */}
+        <div className="mt-5 sm:mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full px-2">
+          {onSpectatorClick && (
+            <button
+              type="button"
+              onClick={onSpectatorClick}
+              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-slate-800 hover:text-amber-950 border border-amber-300/80 hover:border-amber-400 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 animate-pulse" />
+              <span>Attending as a supporter? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Get Spectator Pass</strong></span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
+
+          {onCheckPassClick && (
+            <button
+              type="button"
+              onClick={onCheckPassClick}
+              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-amber-900 border border-slate-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+            >
+              <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 group-hover:rotate-12 transition-transform" />
+              <span>Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass / Pay Due</strong></span>
+              <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
         </div>
       </div>
 
