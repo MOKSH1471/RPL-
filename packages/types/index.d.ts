@@ -101,6 +101,9 @@ export interface GalleryItem {
     image: string;
     thumbnail?: string;
     caption: string;
+    teamName?: string;
+    captain?: string;
+    viceCaptain?: string;
 }
 export interface SubmissionResponse {
     registrationId: string;

@@ -84,10 +84,51 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
       {/* Card Content */}
       <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
         <div>
-          <h3 className="font-display font-bold text-xs sm:text-sm text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1.5 line-clamp-2 min-h-[2.4rem] sm:min-h-[2.6rem] tracking-tight">
+          <h3 className="font-display font-bold text-xs sm:text-sm text-slate-900 leading-snug group-hover:text-amber-600 transition-colors mb-1.5 tracking-tight">
             {item.title}
           </h3>
-          <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2 sm:line-clamp-3">
+
+          {/* Dedicated Champions Honor Box for Winners */}
+          {item.category === 'winners' && (
+            <div className="my-2 p-2.5 rounded-xl bg-gradient-to-br from-amber-500/10 via-amber-100/40 to-amber-50/20 border border-amber-300/80 shadow-2xs">
+              {item.teamName ? (
+                <div className="flex items-center space-x-1.5 font-display font-extrabold text-xs sm:text-sm text-amber-950 tracking-tight">
+                  <span className="text-amber-600 text-sm shrink-0">🏆</span>
+                  <span className="leading-snug">{item.teamName}</span>
+                </div>
+              ) : (
+                <div className="text-[11px] font-bold text-amber-800/80 italic flex items-center space-x-1">
+                  <span>🏆</span>
+                  <span>Winning Team: To be updated</span>
+                </div>
+              )}
+
+              {(item.captain || item.viceCaptain) ? (
+                <div className="mt-2 space-y-1.5 text-[11px]">
+                  {item.captain && (
+                    <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white/95 border border-amber-200 shadow-2xs text-slate-800">
+                      <span className="text-amber-700 font-extrabold shrink-0">👑 Captain:</span>
+                      <span className="font-bold text-slate-900 leading-tight">{item.captain}</span>
+                    </div>
+                  )}
+                  {item.viceCaptain && (
+                    <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white/95 border border-amber-200 shadow-2xs text-slate-800">
+                      <span className="text-slate-600 font-extrabold shrink-0">🛡️ Vice Captain:</span>
+                      <span className="font-bold text-slate-900 leading-tight">{item.viceCaptain}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                !item.teamName && (
+                  <div className="mt-1 text-[10px] text-slate-500 font-medium">
+                    Championship details to be updated
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
+          <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2">
             {item.caption}
           </p>
         </div>
@@ -113,9 +154,12 @@ export const GallerySection: React.FC = () => {
     // ── All Seasons Winners (Season 1 to Season 8) ──
     {
       id: 'w8',
-      title: 'RPL Season 8 Defending Champions',
+      title: 'RPL Season 8 Champions',
       season: 'Season 8',
       category: 'winners',
+      teamName: "Lata's Legends",
+      captain: 'Hetal Shah',
+      viceCaptain: 'Sagar Zaveri',
       image: '/rpl-photos/winners/season-8-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-8-winner.jpg',
       caption: 'Defending champions of Season 8 celebrating their monumental victory on the grand stadium stage before Season 9.',
@@ -125,6 +169,9 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 7 Champions',
       season: 'Season 7',
       category: 'winners',
+      teamName: "Advani's Avengers",
+      captain: 'William Siddapur',
+      viceCaptain: 'Hanumant Thombare',
       image: '/rpl-photos/winners/season-7-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-7-winner.jpg',
       caption: 'Season 7 champions rejoicing on the podium in their victorious championship team jerseys.',
@@ -134,6 +181,9 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 6 Champions',
       season: 'Season 6',
       category: 'winners',
+      teamName: 'Azads Achievers',
+      captain: 'Tejas Maniar',
+      viceCaptain: 'Manish thappar',
       image: '/rpl-photos/winners/season-6-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-6-winner.jpg',
       caption: 'The triumphant squad proudly lifting high the Season 6 trophy after an extraordinary championship tournament run.',
@@ -143,6 +193,9 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 5 Champions',
       season: 'Season 5',
       category: 'winners',
+      teamName: 'Raipur Rockers',
+      captain: 'Hiren sanghvi',
+      viceCaptain: 'Tejas Maniar',
       image: '/rpl-photos/winners/season-5-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-5-winner.jpg',
       caption: 'Season 5 champions celebrating an unforgettable final match triumph with the golden championship trophy.',
@@ -152,6 +205,9 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 4 Champions',
       season: 'Season 4',
       category: 'winners',
+      teamName: 'Bindas Baaghis',
+      captain: 'Hiren sanghvi',
+      viceCaptain: 'Tejas Maniar',
       image: '/rpl-photos/winners/season-4-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-4-winner.jpg',
       caption: 'Season 4 title holders celebrating their championship triumph on the victory stage.',
@@ -161,6 +217,8 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 3 Champions',
       season: 'Season 3',
       category: 'winners',
+      teamName: 'Idar ke Nidar',
+      captain: 'Rinkesh Dedhia',
       image: '/rpl-photos/winners/season-3-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-3-winner.jpg',
       caption: 'Season 3 champions lifting the coveted RPL cup amidst triumphant cheers from supporters.',
@@ -176,9 +234,11 @@ export const GallerySection: React.FC = () => {
     },
     {
       id: 'w1',
-      title: 'RPL Season 1 Inaugural Champions',
+      title: 'RPL Season 1 Champions',
       season: 'Season 1',
       category: 'winners',
+      captain: 'Hiren Sanghvi',
+      viceCaptain: 'Tejas Sanghvi',
       image: '/rpl-photos/winners/season-1-winner.jpg',
       thumbnail: '/rpl-photos/winners/thumbs/season-1-winner.jpg',
       caption: 'The inaugural champions celebrating their historic title victory at the very first Raj Premier League.',
@@ -546,26 +606,59 @@ export const GallerySection: React.FC = () => {
                   </div>
 
                   {/* Caption & Details Footer - Light Warm Theme */}
-                  <div className="shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-sm sm:text-base font-display font-extrabold text-slate-900 truncate">
-                        {currentPhoto.title}
-                      </h4>
-                      <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
-                        {currentPhoto.caption}
-                      </p>
-                    </div>
-                    <div className="shrink-0 hidden sm:flex items-center space-x-2">
-                      {currentPhoto.season && (
-                        <span className="text-[11px] font-black text-amber-950 bg-amber-300 px-3 py-1 rounded-full border border-amber-400 uppercase tracking-wider shadow-xs flex items-center space-x-1">
-                          <span>🏆</span>
-                          <span>{currentPhoto.season} Champions</span>
+                  <div className="shrink-0 px-4 sm:px-6 py-2.5 sm:py-3.5 bg-white border-t border-slate-100 flex flex-col gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h4 className="text-sm sm:text-base font-display font-extrabold text-slate-900 truncate">
+                            {currentPhoto.title}
+                          </h4>
+                          {currentPhoto.season && (
+                            <span className="text-[10px] font-black text-amber-950 bg-amber-300 px-2 py-0.5 rounded-full border border-amber-400 uppercase tracking-wider shrink-0 shadow-2xs">
+                              {currentPhoto.season}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
+                          {currentPhoto.caption}
+                        </p>
+                      </div>
+                      <div className="shrink-0 hidden sm:flex items-center space-x-2">
+                        {currentPhoto.season && (
+                          <span className="text-[11px] font-black text-amber-950 bg-amber-300 px-3 py-1 rounded-full border border-amber-400 uppercase tracking-wider shadow-xs flex items-center space-x-1">
+                            <span>🏆</span>
+                            <span>{currentPhoto.season} Champions</span>
+                          </span>
+                        )}
+                        <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/80 uppercase">
+                          {currentPhoto.category}
                         </span>
-                      )}
-                      <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/80 uppercase">
-                        {currentPhoto.category}
-                      </span>
+                      </div>
                     </div>
+
+                    {/* Dedicated Champions Roll of Honor in Modal */}
+                    {currentPhoto.category === 'winners' && (currentPhoto.teamName || currentPhoto.captain || currentPhoto.viceCaptain) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-100 text-xs">
+                        {currentPhoto.teamName && (
+                          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs">
+                            <span className="text-amber-600">🏆</span>
+                            <span>Champions: {currentPhoto.teamName}</span>
+                          </div>
+                        )}
+                        {currentPhoto.captain && (
+                          <div className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-slate-50 text-slate-800 font-bold border border-slate-200">
+                            <span className="text-amber-700">👑 Captain:</span>
+                            <span>{currentPhoto.captain}</span>
+                          </div>
+                        )}
+                        {currentPhoto.viceCaptain && (
+                          <div className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-slate-50 text-slate-800 font-bold border border-slate-200">
+                            <span className="text-slate-600">🛡️ Vice Captain:</span>
+                            <span>{currentPhoto.viceCaptain}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </div>

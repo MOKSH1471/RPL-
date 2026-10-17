@@ -24,12 +24,29 @@ function escapeCSV(val: any): string {
 export function getDriveDirectImageUrl(url?: string): string {
   if (!url) return '';
   const trimmed = url.trim();
-  if (!trimmed.includes('drive.google.com') && !trimmed.includes('googleusercontent.com')) return trimmed;
+  if (!trimmed) return '';
 
-  const match = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+  // Data URLs and blob URLs are local and ready to render
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
   }
+
+  // Already a direct CDN image stream
+  if (trimmed.includes('googleusercontent.com/d/')) {
+    return trimmed;
+  }
+
+  // Extract Google Drive file ID from all known link formats
+  if (trimmed.includes('drive.google.com') || trimmed.includes('docs.google.com')) {
+    const match =
+      trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+      trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+      trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+  }
+
   return trimmed;
 }
 

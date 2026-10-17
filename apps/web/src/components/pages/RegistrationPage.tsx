@@ -17,6 +17,7 @@ import {
   reportRazorpayPaymentFailure,
 } from '@/lib/api';
 import { compressImage } from '@/lib/imageCompressor';
+import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -999,7 +1000,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               gen.photoUrl;
             if (existingPhoto) {
               setPhotoDriveUrl(existingPhoto);
-              setPhotoPreview(existingPhoto);
+              setPhotoPreview(getDriveDirectImageUrl(existingPhoto));
               setPhotoError(null);
             }
 
@@ -1040,6 +1041,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
             if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
             setValue('existingRplFamily', 'No', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+
+            const mPhoto = d.photoUrl || (d as any).photo_url || (d as any).playerPhotoUrl;
+            if (mPhoto) {
+              setPhotoDriveUrl(mPhoto);
+              setPhotoPreview(getDriveDirectImageUrl(mPhoto));
+              setPhotoError(null);
+            }
           }
         } else {
           setIsUnregisteredPlayer(true);
@@ -1403,11 +1411,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
 
       setPhotoName(readyFile.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(readyFile);
+      try {
+        const objUrl = URL.createObjectURL(readyFile);
+        setPhotoPreview(objUrl);
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(readyFile);
+      }
 
       // Start background upload without locking the user interface
       try {
@@ -3338,13 +3351,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             onChange={handlePhotoChange}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           />
-                          {photoPreview ? (
+                          {photoPreview || photoDriveUrl ? (
                             <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2.5 sm:gap-3 w-full min-w-0 z-20">
                               <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto flex-1">
                                 <img
-                                  src={photoPreview}
+                                  src={getDriveDirectImageUrl(photoPreview || photoDriveUrl || '')}
                                   alt="Preview"
-                                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square shrink-0"
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    const raw = photoDriveUrl || photoPreview || '';
+                                    if (!target.dataset.triedFallback && raw) {
+                                      target.dataset.triedFallback = 'true';
+                                      const match =
+                                        raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                                        raw.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                                        raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                      if (match && match[1]) {
+                                        target.src = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+                                      }
+                                    }
+                                  }}
+                                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square shrink-0 bg-slate-100"
                                 />
                                 <div className="text-left min-w-0 flex-1 overflow-hidden">
                                   <span className="text-xs font-bold text-slate-900 block truncate">
