@@ -249,15 +249,25 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
               className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#F0F9FF] border-2 border-sky-200 hover:border-sky-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
             >
               <div>
-                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-sky-700 block mb-2">
-                  SPEED, REFLEX & SPIN
-                </span>
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-sky-700 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-sky-700">
+                    SPEED, REFLEX &amp; SPIN
+                  </span>
+                  <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    FREE ADD-ON
+                  </span>
+                </div>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2 group-hover:text-sky-700 transition-colors">
                   Table Tennis League
                 </h3>
-                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-4">
                   Step up to the table for thrilling rallies, lightning-fast reflexes, and intense spin battles! Showcase your precision in singles and doubles format.
                 </p>
+
+                <div className="mb-6 p-2 rounded-xl bg-sky-100/70 border border-sky-200 text-[11px] text-sky-900 font-semibold flex items-center gap-1.5">
+                  <span>💡</span>
+                  <span>Free with Cricket / Football league registration</span>
+                </div>
               </div>
 
               <button
@@ -285,15 +295,25 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
               className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-[#FAF5FF] border-2 border-purple-200 hover:border-purple-500 active:scale-[0.98] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
             >
               <div>
-                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-purple-700 block mb-2">
-                  STRIKE & POCKET MASTERY
-                </span>
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-purple-700 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-purple-700">
+                    STRIKE &amp; POCKET MASTERY
+                  </span>
+                  <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    FREE ADD-ON
+                  </span>
+                </div>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2 group-hover:text-purple-700 transition-colors">
                   Carrom League
                 </h3>
-                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
+                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-4">
                   Aim, strike, and pocket the queen! Bring your finest angles, board control, and tactical skill to the classic carrom board championship.
                 </p>
+
+                <div className="mb-6 p-2 rounded-xl bg-purple-100/70 border border-purple-200 text-[11px] text-purple-900 font-semibold flex items-center gap-1.5">
+                  <span>💡</span>
+                  <span>Free with Cricket / Football league registration</span>
+                </div>
               </div>
 
               <button

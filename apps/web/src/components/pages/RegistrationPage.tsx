@@ -99,7 +99,11 @@ interface SportOption {
   colorBorder: string;
   colorBadge: string;
   description?: string;
+  isAddon?: boolean;
 }
+
+export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football'];
+export const ADDON_SPORTS: SportType[] = ['table-tennis', 'carrom'];
 
 const CENTRE_LIST = [
   'Ahmedabad',
@@ -197,6 +201,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-indigo-50',
     colorBorder: 'border-indigo-400',
     colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+    isAddon: true,
   },
   {
     id: 'carrom',
@@ -206,6 +211,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-purple-50',
     colorBorder: 'border-purple-400',
     colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
+    isAddon: true,
   },
 ];
 
@@ -321,9 +327,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return target as SportType;
   };
 
-  const [selectedSports, setSelectedSports] = useState<SportType[]>(
-    isInitialSpectator ? ['spectator' as any] : [mapInitialSport(initialLeague, initialGender)]
-  );
+  const getInitialSports = (): SportType[] => {
+    if (isInitialSpectator) return ['spectator' as any];
+    if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
+      return ['cricket', initialLeague as SportType];
+    }
+    return [mapInitialSport(initialLeague, initialGender)];
+  };
+
+  const [selectedSports, setSelectedSports] = useState<SportType[]>(getInitialSports);
+  const [sportRuleNotice, setSportRuleNotice] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [nostalgiaDropdownOpen, setNostalgiaDropdownOpen] = useState(false);
   const [sportSearch, setSportSearch] = useState('');
@@ -391,6 +404,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('registrationType', 'spectator', { shouldValidate: true });
       setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
       setSelectedSports(['spectator' as any]);
+    } else if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
+      setValue('registrationType', 'player', { shouldValidate: true });
+      const sportsToSet: SportType[] = ['cricket', initialLeague as SportType];
+      setValue('selectedSports', sportsToSet, { shouldValidate: true });
+      setSelectedSports(sportsToSet);
     } else {
       setValue('registrationType', 'player', { shouldValidate: true });
       const sport = mapInitialSport(initialLeague, initialGender, null);
@@ -501,7 +519,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       checkInDate: '2026-12-25',
       checkOutDate: '2026-12-27',
       existingRplFamily: 'Yes',
-      selectedSports: isInitialSpectator ? (['spectator'] as any) : [mapInitialSport(initialLeague, initialGender)],
+      selectedSports: isInitialSpectator
+        ? (['spectator'] as any)
+        : (initialLeague === 'table-tennis' || initialLeague === 'carrom')
+        ? ['cricket', initialLeague as SportType]
+        : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
       cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
@@ -673,9 +695,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
+      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
+      const hasPrimary = valid.some((s) => PRIMARY_SPORTS.includes(s));
+      const hasAddon = valid.some((s) => ADDON_SPORTS.includes(s));
+      if (hasAddon && !hasPrimary) {
+        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
+        valid = [primaryFallback, ...valid];
+      }
       if (valid.length > 0) {
-        if (valid.length !== prev.length) {
+        if (valid.length !== prev.length || (hasAddon && !hasPrimary)) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
@@ -1287,14 +1315,37 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const toggleSportSelection = (sportId: SportType) => {
     if (!isSportAllowedForPlayer(sportId, currentGender, playerAge)) return;
+    setSportRuleNotice(null);
+
     let updated: SportType[];
     if (selectedSports.includes(sportId)) {
       if (selectedSports.length === 1) {
         return;
       }
+      // If unchecking a primary sport, ensure at least one primary sport remains if an add-on sport is present
+      if (PRIMARY_SPORTS.includes(sportId)) {
+        const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
+        const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
+        if (remainingPrimary.length === 0 && hasAddon) {
+          setSportRuleNotice(
+            "Table Tennis & Carrom are free add-on tournaments and require registration in at least one primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football)."
+          );
+          return;
+        }
+      }
       updated = selectedSports.filter((s) => s !== sportId);
     } else {
-      updated = [...selectedSports, sportId];
+      // If adding an add-on sport, ensure at least one primary sport is selected (default to cricket if none)
+      const hasPrimary = selectedSports.some((s) => PRIMARY_SPORTS.includes(s));
+      if (ADDON_SPORTS.includes(sportId) && !hasPrimary) {
+        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
+        updated = [...selectedSports, primaryFallback, sportId];
+        setSportRuleNotice(
+          `${primaryFallback === 'womens-sports' ? "Women's Cricket League" : "Main Cricket League"} has been automatically included. Table Tennis & Carrom are free add-on tournaments requiring a primary league.`
+        );
+      } else {
+        updated = [...selectedSports, sportId];
+      }
     }
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -1303,18 +1354,32 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const handleRemoveSport = (sportId: SportType, e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedSports.length <= 1) return;
+    setSportRuleNotice(null);
+
+    if (PRIMARY_SPORTS.includes(sportId)) {
+      const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
+      const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
+      if (remainingPrimary.length === 0 && hasAddon) {
+        setSportRuleNotice(
+          "Table Tennis & Carrom require registration in at least one primary league."
+        );
+        return;
+      }
+    }
     const updated = selectedSports.filter((s) => s !== sportId);
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
   };
 
   const handleSelectAllSports = () => {
+    setSportRuleNotice(null);
     const all = allowedSports.map((s) => s.id);
     setSelectedSports(all);
     setValue('selectedSports', all, { shouldValidate: true });
   };
 
   const handleClearSports = () => {
+    setSportRuleNotice(null);
     const first = [allowedSports[0]?.id || 'cricket'];
     setSelectedSports(first);
     setValue('selectedSports', first, { shouldValidate: true });
@@ -2123,6 +2188,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
+            onPayDue={() => {
+              if (onOpenCheckStatus) {
+                onOpenCheckStatus(submittedData.mobileNumber);
+              }
+            }}
           />
         ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 pb-8 sm:pb-12">
@@ -3414,6 +3484,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   )}
 
+                  {/* Bonus Add-ons Callout Banner */}
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/90 text-xs text-emerald-950 flex items-start space-x-2.5 shadow-2xs">
+                    <span className="text-base shrink-0 mt-0.5">🎁</span>
+                    <div className="leading-relaxed">
+                      <span className="font-extrabold text-emerald-900 block mb-0.5">
+                        Complimentary Add-on Tournaments:
+                      </span>
+                      Table Tennis &amp; Carrom are <strong>100% FREE</strong> when registering for any primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football).
+                    </div>
+                  </div>
+
+                  {/* Dynamic Rule Alert Notice */}
+                  {sportRuleNotice && (
+                    <div className="p-3 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 font-semibold flex items-center justify-between gap-2 shadow-2xs animate-in fade-in">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base shrink-0">⚠️</span>
+                        <span>{sportRuleNotice}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSportRuleNotice(null)}
+                        className="text-amber-800 hover:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-lg hover:bg-amber-200/60 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
                   {/* Multi-Select Dropdown Container */}
                   <div ref={dropdownRef} className="relative">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -3432,13 +3530,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {selectedSports.map((sportId) => {
                           const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
                           if (!sport) return null;
+                          const isAddon = ADDON_SPORTS.includes(sport.id);
                           return (
                             <span
                               key={sport.id}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 text-xs font-extrabold shadow-xs"
+                              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs ${isAddon
+                                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 border border-emerald-400/50'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40'
+                                }`}
                             >
                               <span>{sport.emoji}</span>
-                              <span>{sport.name}</span>
+                              <span>{sport.name}{isAddon ? ' (FREE)' : ''}</span>
                               {selectedSports.length > 1 && (
                                 <button
                                   type="button"
@@ -3505,11 +3607,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
 
+                          {/* Complimentary Add-ons Tip in Dropdown */}
+                          <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-950 flex items-start gap-2">
+                            <span className="text-sm shrink-0">💡</span>
+                            <span>
+                              <strong>Table Tennis &amp; Carrom</strong> are complimentary free add-ons included with any Cricket or Football league registration.
+                            </span>
+                          </div>
 
                           {/* Sports Checkbox List */}
                           <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                             {filteredSports.map((sport) => {
                               const isChecked = selectedSports.includes(sport.id);
+                              const isAddon = ADDON_SPORTS.includes(sport.id);
                               return (
                                 <div
                                   key={sport.id}
@@ -3522,9 +3632,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                   <div className="flex items-center space-x-3">
                                     <span className="text-2xl">{sport.emoji}</span>
                                     <div>
-                                      <span className="font-extrabold text-sm text-slate-900 block">
-                                        {sport.name}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-extrabold text-sm text-slate-900 block">
+                                          {sport.name}
+                                        </span>
+                                        {isAddon && (
+                                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                            FREE ADD-ON
+                                          </span>
+                                        )}
+                                      </div>
                                       <span className="text-[11px] text-slate-500 font-medium block">
                                         {sport.category}
                                       </span>
@@ -3619,6 +3736,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <BasicDropdown
                               label="Select Role"
                               items={[
+                                { id: 'All-Rounder', label: 'All-Rounder' },
                                 { id: 'Batter', label: 'Batter' },
                                 { id: 'Bowler', label: 'Bowler' },
                                 { id: 'Wicketkeeper', label: 'Wicketkeeper' },
@@ -3626,8 +3744,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               value={
                                 currentCricketRole
                                   ? {
-                                      id: currentCricketRole === 'Batsman' ? 'Batter' : currentCricketRole,
-                                      label: currentCricketRole === 'Batsman' ? 'Batter' : currentCricketRole,
+                                      id: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
+                                      label: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
                                     }
                                   : null
                               }
@@ -3650,48 +3768,40 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             />
                           </div>
 
-                          {/* Dynamically add Bowling Style when Bowler is selected */}
-                          {currentCricketRole === 'Bowler' && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                                Bowling Variation / Style <span className="text-pink-600">*</span>
-                              </label>
-                              <BasicDropdown
-                                label="Select Bowling Style"
-                                items={[
-                                  { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
-                                  { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
-                                  { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
-                                  { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
-                                ]}
-                                value={
-                                  currentBowlingStyle
-                                    ? [
-                                      { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
-                                      { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
-                                      { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
-                                      { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
-                                    ].find(
-                                      (opt) =>
-                                        opt.id.toLowerCase() === currentBowlingStyle.toLowerCase() ||
-                                        (currentBowlingStyle.toLowerCase().includes('off') && opt.id.includes('Off')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('leg') && opt.id.includes('Leg')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('orthodox') && opt.id.includes('Orthodox')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('chinaman') && opt.id.includes('Unorthodox'))
-                                    ) || { id: currentBowlingStyle, label: currentBowlingStyle }
-                                    : null
-                                }
-                                onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
-                              />
-                            </motion.div>
-                          )}
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Bowling Variation / Style <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Bowling Style"
+                              items={[
+                                { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                              ]}
+                              value={
+                                currentBowlingStyle
+                                  ? [
+                                    { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                    { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                    { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                    { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                                  ].find(
+                                    (opt) =>
+                                      opt.id.toLowerCase() === currentBowlingStyle.toLowerCase() ||
+                                      (currentBowlingStyle.toLowerCase().includes('off') && opt.id.includes('Off')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('leg') && opt.id.includes('Leg')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('orthodox') && opt.id.includes('Orthodox')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('chinaman') && opt.id.includes('Unorthodox'))
+                                  ) || { id: currentBowlingStyle, label: currentBowlingStyle }
+                                  : null
+                              }
+                              onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
 
-                          <div className={currentCricketRole === 'Bowler' ? '' : 'md:col-span-2'}>
+                          <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
                               Cricket Experience Level <span className="text-pink-600">*</span>
                             </label>
@@ -4577,7 +4687,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
                             : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹${playerBaseFee.toLocaleString('en-IN')}${currentExistingFamily === 'No' ? ' [New Player: ₹3,000]' : ' [Returning Family: ₹2,700]'}${currentExtraTshirt === 'Yes' ? ` + ₹500 Extra T-Shirt = ₹${(playerBaseFee + 500).toLocaleString('en-IN')}` : ' - All sports included'})`
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹${playerBaseFee.toLocaleString('en-IN')}${currentExistingFamily === 'No' ? ' [New Player: ₹3,000]' : ' [Returning Family: ₹2,700]'}${currentExtraTshirt === 'Yes' ? ` + ₹500 Extra T-Shirt = ₹${(playerBaseFee + 500).toLocaleString('en-IN')}` : ''}${selectedSports.some((s) => ADDON_SPORTS.includes(s)) ? ' • TT/Carrom FREE' : ' - All sports included'})`
                         )}
                       </h4>
                     </div>
@@ -4651,8 +4761,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             >
                               <span>{sportObj?.emoji || '🏅'}</span>
                               <span>{sportObj?.name || sportId}</span>
-                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
-                                Included in Pass
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${ADDON_SPORTS.includes(sportId)
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-amber-200 text-amber-950'
+                                }`}>
+                                {ADDON_SPORTS.includes(sportId) ? 'FREE Add-on' : 'Included in Pass'}
                               </span>
                             </div>
                           );

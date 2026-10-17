@@ -213,7 +213,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <img
                 src="/rpl-logo.png"
                 alt="RPL Logo"
-                className="h-8 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-xs"
+                className="h-9 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-xs"
               />
               <div className="flex flex-col min-w-0">
                 <span className="font-display font-extrabold text-xs sm:text-lg text-slate-900 tracking-tight whitespace-nowrap leading-tight">
