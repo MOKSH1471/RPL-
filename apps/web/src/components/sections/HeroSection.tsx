@@ -1,6 +1,6 @@
 import React from 'react';
 import { KineticText } from '@/components/ui/KineticText';
-import { Calendar, MapPin, ChevronRight, Zap, Ticket, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronRight, Sparkles, ArrowRight, Ticket } from 'lucide-react';
 import { LeagueType } from '@/types';
 
 interface HeroSectionProps {
@@ -19,17 +19,41 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const tickerItems = [
     'Raj Premier League',
     'Main Cricket League',
-    'Football League',
     "Women's Cricket League",
-    'Carrom League',
-    'Table Tennis League',
     'Kaccha Pakka League',
+    'Football League',
+    'Table Tennis League',
+    'Carrom League',
     'Register Now',
+  ];
+
+  const topLeagues = [
+    { id: 'cricket' as LeagueType, name: 'Main Cricket League', emoji: '🏏', color: 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200' },
+    { id: 'womens' as LeagueType, name: "Women's Cricket League", emoji: '🏏', color: 'bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200' },
+    { id: 'kaccha-pakka' as LeagueType, name: 'Kaccha Pakka League', emoji: '🌟', color: 'bg-orange-100 text-orange-900 border-orange-300 hover:bg-orange-200' },
+    { id: 'football' as LeagueType, name: 'Football League', emoji: '⚽', color: 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200' },
+    { id: 'table-tennis' as LeagueType, name: 'Table Tennis League', emoji: '🏓', color: 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200' },
+    { id: 'carrom' as LeagueType, name: 'Carrom League', emoji: '🎯', color: 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200' },
   ];
 
   return (
     <section className="relative pt-20 pb-10 sm:pt-28 sm:pb-16 md:pt-40 md:pb-28 overflow-hidden min-h-[85vh] md:min-h-screen flex flex-col justify-between w-full max-w-full">
       <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
+        {/* On top sequence: 6 RPL Leagues */}
+        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full px-1">
+          {topLeagues.map((lg) => (
+            <button
+              key={lg.id}
+              type="button"
+              onClick={() => onSelectLeague(lg.id)}
+              className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs transition-all active:scale-95 cursor-pointer ${lg.color}`}
+            >
+              <span>{lg.emoji}</span>
+              <span>{lg.name}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Main Display Headline scaling smoothly on all mobile screens */}
         <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-3 sm:mb-6 max-w-full">
           <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words uppercase">
@@ -37,42 +61,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </span>
         </h1>
 
-        {/* Subtitle Description */}
-        <div className="max-w-3xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2 space-y-1">
-          <p className="block">The ultimate community turf championship.</p>
-          <p className="block">
-            Six championship leagues —{' '}
-            <span className="text-amber-600 font-bold">Main Cricket League</span>,
-          </p>
-          <p className="block">
-            <span className="text-emerald-600 font-bold">Football League</span>,{' '}
-            <span className="text-pink-600 font-bold">Women's Cricket League</span>,
-          </p>
-          <p className="block">
-            <span className="text-purple-600 font-bold">Carrom League</span>,{' '}
-            <span className="text-sky-600 font-bold">Table Tennis League</span>, and{' '}
-            <span className="text-amber-700 font-bold">Kaccha Pakka League</span>.
-          </p>
-          <p className="block font-semibold text-slate-800 pt-0.5">
-            Step up and claim your glory.
-          </p>
-        </div>
+        {/* Subtitle Description with exact requested league sequence */}
+        <p className="max-w-3xl mx-auto text-slate-700 text-xs sm:text-base md:text-lg font-medium leading-relaxed mb-6 sm:mb-10 px-2">
+          The ultimate turf championship. Six epic leagues —{' '}
+          <span className="text-amber-600 font-bold">Main Cricket League</span>,{' '}
+          <span className="text-pink-600 font-bold">Women's Cricket League</span>,{' '}
+          <span className="text-orange-600 font-bold">Kaccha Pakka League</span>,{' '}
+          <span className="text-emerald-600 font-bold">Football League</span>,{' '}
+          <span className="text-sky-600 font-bold">Table Tennis League</span> and{' '}
+          <span className="text-purple-600 font-bold">Carrom League</span>. Step up and claim your glory.
+        </p>
 
-        {/* Info Chips: Dates & Venue — cleanly wrapping without overflow */}
-        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-8 sm:mb-12 max-w-full px-1">
-          <div className="flex items-center space-x-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-xs text-xs sm:text-sm font-bold text-slate-800 min-h-[38px] sm:min-h-[44px]">
-            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-600 shrink-0" />
-            <span>Season Kickoff Coming Soon</span>
-          </div>
-          <div className="flex items-center space-x-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-xs text-xs sm:text-sm font-bold text-slate-800 min-h-[38px] sm:min-h-[44px]">
-            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
-            <span>Main Arena Grounds</span>
-          </div>
-          <div className="flex items-center space-x-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200 shadow-xs text-xs sm:text-sm font-bold text-slate-800 min-h-[38px] sm:min-h-[44px]">
-            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0" />
-            <span>Open Registration</span>
-          </div>
-        </div>
 
         {/* Action CTAs with touch-optimized buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full max-w-xs sm:max-w-md mx-auto px-1">

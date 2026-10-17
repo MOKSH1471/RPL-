@@ -61,7 +61,7 @@ export function AdminAccommodationTab({
       const rawRoom = mainBooking?.roomno;
       const cleanRoom = (rawRoom || '').trim().toUpperCase();
 
-      const isAssigned = cleanRoom && cleanRoom !== 'UNASSIGNED' && cleanRoom !== 'RPL_UNASSIGNED';
+      const isAssigned = cleanRoom && cleanRoom !== 'UNASSIGNED' && cleanRoom !== 'RPL_UNASSIGNED' && cleanRoom !== 'NA';
 
       if (isAssigned) {
         seenAllottedUsers.add(userKey);
@@ -588,7 +588,7 @@ export function AdminAccommodationTab({
                     const inputValue =
                       roomInputs[bookingId] !== undefined
                         ? roomInputs[bookingId]
-                        : currentRoom === 'UNASSIGNED' || currentRoom === 'RPL_UNASSIGNED'
+                        : currentRoom === 'UNASSIGNED' || currentRoom === 'RPL_UNASSIGNED' || currentRoom === 'NA'
                         ? ''
                         : currentRoom;
 
@@ -659,7 +659,7 @@ export function AdminAccommodationTab({
                               onChange={(e) => handleRoomChange(bookingId, e.target.value)}
                               className="w-32 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-xs text-slate-900 uppercase focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
                             />
-                            {currentRoom && currentRoom !== 'UNASSIGNED' && currentRoom !== 'RPL_UNASSIGNED' && (
+                            {currentRoom && currentRoom !== 'UNASSIGNED' && currentRoom !== 'RPL_UNASSIGNED' && currentRoom !== 'NA' && (
                               <span className="text-[10px] font-bold text-emerald-600 flex items-center space-x-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>Assigned</span>

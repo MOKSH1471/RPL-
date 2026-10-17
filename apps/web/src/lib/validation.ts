@@ -146,6 +146,7 @@ export const registrationSchema = z
     preferredJerseyNumber: z.string().optional(),
     preferredTeamName: z.string().optional(),
     additionalNotes: z.string().optional(),
+    comments: z.string().optional(),
 
     // Ashram Member Reference
     referrerCountryCode: z.string().optional(),

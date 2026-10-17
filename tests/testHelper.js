@@ -1,5 +1,18 @@
 process.env.NODE_ENV = 'test';
 
+// Circuit breaker: Prevent test execution against production database
+const dbHost = (process.env.DB_HOST || '').toLowerCase();
+const isAwsProd = dbHost.includes('rds.amazonaws.com') ||
+                  dbHost.includes('prod') ||
+                  dbHost.includes('13.126.') ||
+                  dbHost.includes('13.232.');
+
+if (isAwsProd && process.env.ALLOW_PROD_TESTS !== '1') {
+  console.error(`\n🚨 [TEST CIRCUIT BREAKER] Tests aborted! Refusing to run tests against production database: "${process.env.DB_HOST}".`);
+  console.error('Please configure .env to point to Dev/Staging before running test suites.\n');
+  process.exit(1);
+}
+
 import http from 'http';
 import app from '../apps/api/index.js';
 import db, { RPL_DB } from '../apps/api/src/config/db.js';

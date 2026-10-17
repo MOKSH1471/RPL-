@@ -92,7 +92,6 @@ export async function processAccommodationBooking({
 
   const q = connection || db;
 
-  await ensurePlaceholderRooms(q);
   const validCardNo = await ensureCardRecord({ cardno, fullName, mobile, gender, email, centre, executor: q });
   const mappedGender = gender === 'Female' ? 'F' : 'M';
   const bookingsCreated = [];
@@ -135,7 +134,7 @@ export async function processAccommodationBooking({
               preBookingId,
               validCardNo,
               validCardNo,
-              'UNASSIGNED',
+              'NA',
               checkInDate,
               RPL_START_DATE,
               preNights,
@@ -175,7 +174,7 @@ export async function processAccommodationBooking({
     if (existingRpl.length > 0) {
       await q.query(
         `UPDATE ${AASHRAY_DB}.room_booking 
-         SET status = 'confirmed', roomno = 'RPL_UNASSIGNED', bookedBy = 'RPL_TEAM', updatedAt = ? 
+         SET status = 'confirmed', roomno = 'NA', bookedBy = 'RPL_TEAM', updatedAt = ? 
          WHERE bookingid = ?`,
         [now, existingRpl[0].bookingid]
       );
@@ -193,7 +192,7 @@ export async function processAccommodationBooking({
       await q.query(
         `INSERT INTO ${AASHRAY_DB}.room_booking 
          (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
-         VALUES (?, ?, 'RPL_TEAM', 'RPL_UNASSIGNED', ?, ?, ?, 'nac', 'confirmed', ?, 'RPL_APP', ?, ?)`,
+         VALUES (?, ?, 'RPL_TEAM', 'NA', ?, ?, ?, 'nac', 'confirmed', ?, 'RPL_APP', ?, ?)`,
         [rplBookingId, validCardNo, RPL_START_DATE, RPL_END_DATE, rplNights, mappedGender, now, now]
       );
       bookingsCreated.push({
@@ -243,7 +242,7 @@ export async function processAccommodationBooking({
               postBookingId,
               validCardNo,
               validCardNo,
-              'UNASSIGNED',
+              'NA',
               RPL_END_DATE,
               checkOutDate,
               postNights,

@@ -1,18 +1,20 @@
 import React from 'react';
 import { RegistrationFormData } from '@/types';
-import { CheckCircle2, Clock, MessageCircle, Trophy, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock, MessageCircle, Trophy, AlertCircle, Lock, Zap } from 'lucide-react';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface RegistrationSuccessProps {
   data: RegistrationFormData;
   registrationId: string;
   onReset: () => void;
+  onPayDue?: () => void;
 }
 
 export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
   data,
   registrationId,
   onReset,
+  onPayDue,
 }) => {
   const receiptContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -106,10 +108,16 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             )}
           </p>
           {isPayLater && (
-            <div className="mt-3 p-3 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-medium text-center leading-relaxed max-w-sm">
-              {isApprovedDue
-                ? '💳 To pay for your additional sport, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'
-                : '💳 To complete payment, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'}
+            <div className="mt-3 p-3.5 rounded-2xl bg-amber-100 border-2 border-amber-400 text-amber-950 text-xs font-bold text-center leading-relaxed max-w-md shadow-sm">
+              <span className="flex items-center justify-center gap-1.5 text-sm font-black text-amber-900 mb-1">
+                <Clock className="w-4 h-4 text-amber-700" />
+                Please make the payment within 24hrs.
+              </span>
+              <span className="text-amber-800 font-medium text-[11px] block">
+                {isApprovedDue
+                  ? '💳 To pay for your additional sport, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'
+                  : '💳 To complete payment, use "Check Pass / Pay Due" from the home screen and enter your mobile number.'}
+              </span>
             </div>
           )}
         </div>
@@ -244,7 +252,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 630)) : 2700)).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 630)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -253,42 +261,96 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       </div>
 
       {/* Bottom Information & Action Buttons */}
-      <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
-        {/* Official Registration Confirmation Note */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex flex-col space-y-2.5 text-xs text-emerald-900">
-          <div className="flex items-start space-x-3">
-            <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
-            <p className="leading-relaxed">
-              Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
-            </p>
-          </div>
-          <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            <span>Tournament Policy: No refund in case of no show or cancellation.</span>
-          </div>
-        </div>
+      {(() => {
+        const paymentStatus = String(data.paymentStatus || data.payment_status || '').toLowerCase();
+        const isPaymentPending =
+          paymentStatus === 'pending' ||
+          paymentStatus === 'approved_due' ||
+          paymentStatus === 'due' ||
+          (!['approved', 'completed', 'paid', 'success'].includes(paymentStatus) &&
+            (data.totalAmount ? data.totalAmount > 0 : true));
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-          <a
-            href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto flex-1 flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm transition-all shadow-md active:scale-95 min-h-[48px]"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Join Official WhatsApp Group</span>
-          </a>
+        return (
+          <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
+            {/* Official Registration Confirmation Note */}
+            <div
+              className={`p-4 rounded-2xl flex flex-col space-y-2.5 text-xs ${
+                isPaymentPending
+                  ? 'bg-amber-50/90 border border-amber-300 text-amber-950'
+                  : 'bg-emerald-50/80 border border-emerald-200 text-emerald-900'
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                {isPaymentPending ? (
+                  <Clock className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
+                )}
+                <p className="leading-relaxed">
+                  {isPaymentPending
+                    ? 'Your tournament entry has been saved with payment pending. Official WhatsApp group access will be unlocked automatically once your registration payment is completed.'
+                    : 'Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!'}
+                </p>
+              </div>
+              <div
+                className={`pt-2 border-t flex items-center space-x-2 text-[11px] font-bold ${
+                  isPaymentPending ? 'border-amber-200/80 text-amber-900' : 'border-emerald-200/70 text-amber-900'
+                }`}
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+              </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={onReset}
-            className="w-full sm:w-auto py-3.5 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-sm transition-all border border-slate-300 min-h-[48px] cursor-pointer"
-          >
-            Register Another Participant
-          </button>
-        </div>
-      </div>
+            {/* Action Buttons: Equal Size Grid */}
+            <div className={`grid grid-cols-1 ${isPaymentPending && onPayDue ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 pt-2 items-stretch`}>
+              {isPaymentPending ? (
+                <>
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-slate-100 text-slate-400 font-bold text-xs sm:text-sm border border-slate-200 shadow-none cursor-not-allowed select-none flex items-center justify-center text-center space-x-2"
+                    title="Complete registration payment to unlock official WhatsApp group access"
+                  >
+                    <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span>Join Official WhatsApp Group (Locked)</span>
+                  </button>
+
+                  {onPayDue && (
+                    <button
+                      type="button"
+                      onClick={onPayDue}
+                      className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-extrabold text-xs sm:text-sm shadow-md active:scale-95 transition-all flex items-center justify-center text-center space-x-2 cursor-pointer"
+                    >
+                      <Zap className="w-4 h-4 shrink-0" />
+                      <span>Pay Due Online Now</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <a
+                  href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center text-center space-x-2"
+                >
+                  <MessageCircle className="w-4 h-4 shrink-0" />
+                  <span>Join Official WhatsApp Group</span>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={onReset}
+                className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs sm:text-sm transition-all border border-slate-300 flex items-center justify-center text-center space-x-2 cursor-pointer"
+              >
+                <span>Register Another Participant</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -197,11 +197,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 w-full max-w-full ${
-          isScrolled || mobileMenuOpen
+        className={`fixed top-0 left-0 right-0 z-40 border-b transition-colors duration-300 w-full max-w-full ${isScrolled || mobileMenuOpen
             ? 'bg-white/95 backdrop-blur-md border-slate-200/80 shadow-xs'
             : 'bg-white/75 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none border-slate-200/50 sm:border-transparent'
-        }`}
+          }`}
       >
         <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-20 gap-1.5 sm:gap-2">
@@ -214,14 +213,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <img
                 src="/rpl-logo.png"
                 alt="RPL Logo"
-                className="h-8 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-xs"
+                className="h-9 sm:h-11 w-auto object-contain shrink-0 group-hover:scale-105 transition-transform drop-shadow-xs"
               />
               <div className="flex flex-col min-w-0">
                 <span className="font-display font-extrabold text-xs sm:text-lg text-slate-900 tracking-tight whitespace-nowrap leading-tight">
                   RPL <span className="text-amber-600">Season 9</span>
                 </span>
                 <span className="text-[8px] sm:text-[10.5px] font-semibold text-slate-600 mt-0.5 whitespace-nowrap tracking-normal">
-                  <span className="text-amber-600 font-extrabold">#</span>जीतने वाले से जिताने वाला महान है
+                  <span className="text-amber-600 font-extrabold"></span>"जीतने वाले से, जिताने वाला महान है"
                 </span>
               </div>
             </a>
@@ -235,9 +234,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     key={item.id}
                     href={item.href}
                     onClick={(e) => handleNavClick(item.href, e)}
-                    className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
-                      isActive ? 'text-amber-600' : 'text-slate-700 hover:text-slate-900'
-                    }`}
+                    className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${isActive ? 'text-amber-600' : 'text-slate-700 hover:text-slate-900'
+                      }`}
                   >
                     {item.label}
 
@@ -313,11 +311,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className={`p-1.5 rounded-xl border transition-colors shadow-xs min-h-[36px] min-w-[36px] flex items-center justify-center touch-manipulation shrink-0 cursor-pointer ${
-                    mobileMenuOpen
+                  className={`p-1.5 rounded-xl border transition-colors shadow-xs min-h-[36px] min-w-[36px] flex items-center justify-center touch-manipulation shrink-0 cursor-pointer ${mobileMenuOpen
                       ? 'bg-amber-50 border-amber-300 text-amber-900'
                       : 'bg-white border-slate-200 text-slate-700 hover:text-slate-900'
-                  }`}
+                    }`}
                   aria-label="Toggle Navigation Menu"
                   aria-expanded={mobileMenuOpen}
                 >
@@ -368,11 +365,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                           key={item.id}
                           href={item.href}
                           onClick={(e) => handleNavClick(item.href, e)}
-                          className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[42px] cursor-pointer ${
-                            isActive
+                          className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[42px] cursor-pointer ${isActive
                               ? 'bg-amber-100/90 text-amber-950 font-extrabold border border-amber-300 shadow-2xs'
                               : 'text-slate-800 hover:bg-slate-50 active:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center space-x-2">
                             {isActive ? (

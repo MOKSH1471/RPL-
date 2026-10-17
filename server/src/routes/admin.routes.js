@@ -70,13 +70,17 @@ router.get('/admin/stats', async (req, res) => {
       }
 
       const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : (isSpectator ? ['spectator'] : []);
-      let calculatedFee = 2700;
+      const isReturningFamily = gen.existingRplFamily === 'Yes';
+      let calculatedFee = isReturningFamily ? 2700 : 3000;
       if (isSpectator) {
         const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
         const specDates = gen.spectatorDates || gen.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
         calculatedFee = (hasStay ? 2700 : (specDaysCount * 630)) + (hasTshirt ? 500 : 0);
+      } else {
+        const hasExtraTshirt = gen.extraTshirt === 'Yes';
+        if (hasExtraTshirt) calculatedFee += 500;
       }
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 
@@ -402,7 +406,7 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
             `UPDATE ${AASHRAY_DB}.room_booking 
              SET status = 'cancelled', updatedAt = NOW() 
              WHERE cardno IN (?) 
-               AND (updatedBy IN ('RPL_TEAM', 'RPL_APP') OR roomno IN ('RPL_UNASSIGNED', 'UNASSIGNED') OR (checkin >= '2026-12-20' AND checkin <= '2026-12-30'))`,
+               AND checkin = '2026-12-25' AND checkout = '2026-12-27'`,
             [cardList]
           );
           cancelledBookingsCount = bookRes.affectedRows || 0;
@@ -613,15 +617,9 @@ router.post('/admin/accommodation/assign', async (req, res) => {
   try {
     const cleanRoomNo = String(roomno).trim().toUpperCase();
 
-    await db.query(`
-      INSERT INTO ${AASHRAY_DB}.roomdb (roomno, roomtype, gender, roomstatus, updatedBy)
-      VALUES (?, 'nac', 'NA', 'available', 'RPL_ADMIN')
-      ON DUPLICATE KEY UPDATE updatedBy = 'RPL_ADMIN'
-    `, [cleanRoomNo]);
-
     const [result] = await db.query(
-      `UPDATE ${AASHRAY_DB}.room_booking SET roomno = ?, status = ? WHERE bookingid = ?`,
-      [cleanRoomNo, 'pending', bookingid]
+      `UPDATE ${AASHRAY_DB}.room_booking SET roomno = ?, status = 'pending checkin', updatedAt = NOW() WHERE bookingid = ?`,
+      [cleanRoomNo, bookingid]
     );
 
     if (result.affectedRows === 0) {

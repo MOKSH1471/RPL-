@@ -51,7 +51,9 @@ router.post('/razorpay/create-order', async (req, res) => {
     } else if (isExistingPlayer && hasPreviouslyPaid) {
       computedFee = extraTshirtCost;
     } else {
-      computedFee = 2700 + extraTshirtCost;
+      const existingFamily = req.body.existingRplFamily || cleanGeneral.existingRplFamily || 'No';
+      const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
+      computedFee = playerBase + extraTshirtCost;
     }
 
     if (computedFee <= 0) {

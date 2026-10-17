@@ -136,14 +136,15 @@ export function CheckStatusModal({
         email: record.email || '',
         mobile: record.mobile,
         selectedSports: sports,
+        extraTshirt: isSpectator ? (gen.spectatorTshirt || gen.extraTshirt || gen.extra_tshirt || 'No') : (gen.extraTshirt || gen.extra_tshirt || 'No'),
+        registrationType: isSpectator ? 'spectator' : 'player',
+        accommodationRequired: gen.accommodationRequired || 'No',
+        existingRplFamily: gen.existingRplFamily || 'No',
+        spectatorDates: gen.spectatorDates || gen.spectatorDays || [],
         isExistingPlayer: true,
         hasPreviouslyPaid,
         previouslyPaidSportsCount: prevSportsCount,
         registrationId: record.id,
-        registrationType: isSpectator ? 'spectator' : 'player',
-        accommodationRequired: gen.accommodationRequired || 'No',
-        spectatorDates: gen.spectatorDates || gen.spectatorDays || [],
-        extraTshirt: isSpectator ? (gen.spectatorTshirt || gen.extraTshirt || 'No') : (gen.extraTshirt || 'No'),
         registrationPayload: {
           registration_id: record.id,
           full_name: record.fullName,
@@ -393,6 +394,11 @@ export function CheckStatusModal({
                 {/* Case 1: Pending or ApprovedDue -> 1-Click Pay Now CTA */}
                 {(isPending || isApprovedDue) && (
                   <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 border border-amber-200 space-y-3">
+                    <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-bold">
+                      <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>Please make the payment within 24hrs.</span>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-bold text-slate-500 uppercase">
@@ -408,7 +414,17 @@ export function CheckStatusModal({
                               if (isApprovedDue && hadPrevPayment) {
                                 return 0;
                               }
-                              return gen.incrementalFee !== undefined ? gen.incrementalFee : (gen.calculatedFee || gen.totalAmount || 2700);
+                              const isSpec = gen.registrationType === 'spectator' || sports.includes('spectator');
+                              const hasExtraTshirt = gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+                              const specDates = gen.spectatorDates || gen.spectatorDays || [];
+                              const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+                              const baseFee = isSpec 
+                                ? (gen.accommodationRequired === 'Yes' ? 2700 : (specDaysCount * 630))
+                                : (gen.existingRplFamily === 'Yes' ? 2700 : 3000);
+                              const accurateTotalFee = baseFee + (hasExtraTshirt ? 500 : 0);
+
+                              const rawSavedFee = Number(gen.incrementalFee) || Number(gen.calculatedFee) || Number(gen.totalAmount) || 0;
+                              return hasExtraTshirt ? Math.max(rawSavedFee, accurateTotalFee) : (rawSavedFee || accurateTotalFee);
                             }
                           )()}
                         </h3>

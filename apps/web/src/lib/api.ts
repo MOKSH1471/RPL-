@@ -39,14 +39,24 @@ export async function fetchRegistrationFields(): Promise<DynamicField[]> {
   }
 }
 
+import { compressImage } from './imageCompressor';
+
 export async function uploadFileToDrive(
   file: File,
   customName?: string,
   fileType: 'photo' | 'receipt' = 'photo',
   receiptIndex?: number
 ): Promise<string> {
+  // 1. In-browser smart compression (reduces 5MB-10MB photos to ~200KB instantly)
+  let fileToUpload = file;
+  try {
+    fileToUpload = await compressImage(file, { fileType });
+  } catch (compressErr) {
+    console.warn('Client-side compression skipped, uploading original:', compressErr);
+  }
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', fileToUpload);
   if (customName) {
     formData.append('customName', customName);
   }
@@ -55,18 +65,32 @@ export async function uploadFileToDrive(
     formData.append('receiptIndex', String(receiptIndex));
   }
 
-  const res = await fetch(`${API_BASE_URL}/upload`, {
-    method: 'POST',
-    body: formData,
-  });
+  // 2. Retry up to 2 times for transient network/mobile drops
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || 'Failed to upload file to Google Drive');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to upload file to Google Drive');
+      }
+
+      const data = await res.json();
+      return data.url;
+    } catch (err) {
+      lastError = err;
+      if (attempt < 2) {
+        // Brief 800ms backoff before retry
+        await new Promise((r) => setTimeout(r, 800));
+      }
+    }
   }
 
-  const data = await res.json();
-  return data.url;
+  throw lastError || new Error('Failed to upload file to Google Drive');
 }
 
 export interface RegistrationPayload {
@@ -134,6 +158,7 @@ export interface ExistingRegistrationData {
   checkInDate?: string;
   checkOutDate?: string;
   playerPhotoUrl?: string;
+  player_photo_url?: string;
   paymentStatus: string;
   paymentUtr?: string;
   paymentReceiptUrl?: string;
@@ -286,6 +311,7 @@ export interface CreateOrderParams {
   spectatorTshirt?: string;
   registrationType?: string;
   accommodationRequired?: string;
+  existingRplFamily?: string;
   spectatorDates?: string[];
   isExistingPlayer?: boolean;
   previouslyPaidSportsCount?: number;
