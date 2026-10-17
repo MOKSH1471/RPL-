@@ -208,9 +208,11 @@ router.post('/register', async (req, res) => {
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
         const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
+        const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
         const computedFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : 2700 + extraTshirtCost;
+          : playerBase + extraTshirtCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -300,9 +302,11 @@ router.post('/register', async (req, res) => {
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
         const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
+        const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
         const newFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : 2700 + extraTshirtCost;
+          : playerBase + extraTshirtCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;
@@ -356,9 +360,11 @@ router.post('/register', async (req, res) => {
       const txnCategory = isSpectator ? 'spectator' : 'sports';
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+      const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
+      const defaultBase = existingFamily === 'Yes' ? 2700 : 3000;
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
-        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? 3200 : 2700));
+        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? (defaultBase + 500) : defaultBase));
 
       await connection.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 

@@ -68,6 +68,8 @@ export async function lookupPlayer(input) {
         hasPreviouslyPaid,
         generalDetails: parsedGeneralDetails,
         sportAnswers: parsedSportAnswers,
+        playerPhotoUrl: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
+        player_photo_url: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
         cardNo: parsedGeneralDetails.cardNo || null,
       },
       data: {

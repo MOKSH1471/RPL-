@@ -29,7 +29,7 @@ test('Registration Validation: rejects payload missing mobile number with 400', 
   assert.strictEqual(res.data.error, 'Missing core registration fields.');
 });
 
-test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,700', async () => {
+test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to base fee of ₹3,000', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -37,6 +37,26 @@ test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,700', async
       email: 'player@example.com',
       mobile: '9811111111',
       selectedSports: ['cricket'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 300000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily: Yes) charges base fee of ₹2,700', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Returning Sport Player',
+      email: 'returning@example.com',
+      mobile: '9811111112',
+      selectedSports: ['cricket'],
+      existingRplFamily: 'Yes',
     }),
   });
 
@@ -47,7 +67,7 @@ test('Razorpay Fee Calculation: 1 Sport defaults to base fee of ₹2,700', async
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹2,700 (all sports included)', async () => {
+test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,000 for New Player (all sports included)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -55,17 +75,18 @@ test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹2,700 (all
       email: 'player@example.com',
       mobile: '9822222222',
       selectedSports: ['cricket', 'football', 'badminton'],
+      existingRplFamily: 'No',
     }),
   });
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 300000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: Participant selecting extra T-shirt (Yes) charges ₹3,200 (2700 + 500)', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹3,500 (3000 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -73,6 +94,27 @@ test('Razorpay Fee Calculation: Participant selecting extra T-shirt (Yes) charge
       email: 'player@example.com',
       mobile: '9833333333',
       selectedSports: ['cricket'],
+      existingRplFamily: 'No',
+      extraTshirt: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 350000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) charges ₹3,200 (2700 + 500)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Returning Extra Tshirt Player',
+      email: 'returning_tshirt@example.com',
+      mobile: '9833333334',
+      selectedSports: ['cricket'],
+      existingRplFamily: 'Yes',
       extraTshirt: 'Yes',
     }),
   });
@@ -84,7 +126,7 @@ test('Razorpay Fee Calculation: Participant selecting extra T-shirt (Yes) charge
   }
 });
 
-test('Razorpay Fee Calculation: Participant selecting extra T-shirt (No) charges flat ₹2,700', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,000', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -92,13 +134,14 @@ test('Razorpay Fee Calculation: Participant selecting extra T-shirt (No) charges
       email: 'player@example.com',
       mobile: '9844444444',
       selectedSports: ['cricket'],
+      existingRplFamily: 'No',
       extraTshirt: 'No',
     }),
   });
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 300000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -230,7 +273,7 @@ test('Pay Later: registration submitted without UTR/receipt should not be marked
   }
 });
 
-test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700', async () => {
+test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -238,6 +281,7 @@ test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates fla
       email: 'kp@example.com',
       mobile: '9866666666',
       selectedSports: ['kaccha-pakka'],
+      existingRplFamily: 'Yes',
       extraTshirt: 'No',
     }),
   });
@@ -249,7 +293,7 @@ test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates fla
   }
 });
 
-test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200', async () => {
+test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -257,6 +301,7 @@ test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt ca
       email: 'veteran@example.com',
       mobile: '9877777777',
       selectedSports: ['cricket', 'kaccha-pakka'],
+      existingRplFamily: 'Yes',
       extraTshirt: 'Yes',
     }),
   });
@@ -276,6 +321,7 @@ test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details 
       email: 'nostalgia@example.com',
       mobile: '9888888888',
       selectedSports: ['cricket'],
+      existingRplFamily: 'Yes',
       extraTshirt: 'No',
       registrationPayload: {
         fullName: 'Nostalgia Champion',
@@ -284,6 +330,7 @@ test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details 
         general_details: {
           centre: 'Mumbai',
           gender: 'Male',
+          existingRplFamily: 'Yes',
           nostalgiaSport: 'Carrom',
           nostalgia_sport: 'Carrom',
         },
@@ -317,6 +364,7 @@ test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nos
       email: 'nostalgiamulti@example.com',
       mobile: '9888888889',
       selectedSports: ['cricket'],
+      existingRplFamily: 'Yes',
       extraTshirt: 'No',
       registrationPayload: {
         fullName: 'Nostalgia Multi Champion',
@@ -325,6 +373,7 @@ test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nos
         general_details: {
           centre: 'Mumbai',
           gender: 'Male',
+          existingRplFamily: 'Yes',
           nostalgiaSport: selectedNostalgia,
           nostalgia_sport: selectedNostalgia,
         },

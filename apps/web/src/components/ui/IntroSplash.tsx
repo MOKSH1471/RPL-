@@ -45,21 +45,32 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
         </button>
       </div>
 
-      {/* Center Text Morph */}
-      <div className="w-full max-w-5xl h-64 sm:h-80 flex items-center justify-center my-auto px-1 sm:px-4 overflow-visible">
-        <TextMorph
-          words={"ARE YOU\nREADY?\nRAJ PREMIER LEAGUE\nSEASON 9"}
-          color="#0F172A"
-          transition={{ duration: 0.6, delay: 0.35, ease: 'backOut' }}
-          font={{
-            fontFamily: 'Syne, sans-serif',
-            fontWeight: '800',
-            fontSize: 'clamp(1.05rem, 4.6vw, 3.2rem)',
-            lineHeight: '1.2em',
-            letterSpacing: '0.01em',
-            textAlign: 'center',
-          }}
-        />
+      {/* Center Content: RPL Logo + Text Morph */}
+      <div className="w-full max-w-5xl flex flex-col items-center justify-center my-auto px-2 sm:px-4 space-y-3 sm:space-y-6 overflow-visible">
+        <div className="relative animate-in fade-in zoom-in-95 duration-500">
+          <div className="absolute -inset-10 sm:-inset-14 bg-amber-400/25 rounded-full blur-2xl pointer-events-none" />
+          <img
+            src="/rpl-logo.png"
+            alt="RPL Logo"
+            className="relative h-52 xs:h-56 sm:h-64 md:h-72 lg:h-80 max-h-[32vh] w-auto object-contain drop-shadow-xl select-none pointer-events-none"
+          />
+        </div>
+
+        <div className="w-full h-36 sm:h-44 flex items-center justify-center overflow-visible">
+          <TextMorph
+            words={"ARE YOU\nREADY?\nRAJ PREMIER LEAGUE\nSEASON 9"}
+            color="#0F172A"
+            transition={{ duration: 0.6, delay: 0.35, ease: 'backOut' }}
+            font={{
+              fontFamily: 'Syne, sans-serif',
+              fontWeight: '800',
+              fontSize: 'clamp(1.05rem, 4.6vw, 3.2rem)',
+              lineHeight: '1.2em',
+              letterSpacing: '0.01em',
+              textAlign: 'center',
+            }}
+          />
+        </div>
       </div>
 
       {/* Bottom Action Button & Progress Line */}

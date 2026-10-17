@@ -124,7 +124,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
           <Section icon={<MapPin className="w-4 h-4" />} title="6. Grievance Officer &amp; Research Centre Contact">
             <p>If you have any questions, concerns, or inquiries regarding your privacy or our data practices, please reach out to our grievance team:</p>
             <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <p><strong>Organization:</strong> Raj Premier League (RPL) Organizing Committee</p>
+              <p><strong>Organized by:</strong> RPL Events</p>
               <p><strong>Host Institution:</strong> Shrimad Rajchandra Aatma Tatva Research Centre</p>
               <p><strong>Contact Helpline:</strong> <a href="tel:+919321001499" className="text-amber-600 font-semibold hover:underline">+91 9321001499</a></p>
               <p><strong>Email Address:</strong> <a href="mailto:info.rplevents@gmail.com" className="text-amber-600 font-semibold hover:underline">info.rplevents@gmail.com</a></p>

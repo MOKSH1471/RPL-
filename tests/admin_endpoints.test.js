@@ -41,6 +41,16 @@ test('POST /api/admin/accommodation/assign validates bookingid and roomno', asyn
   assert.equal(data.success, false);
 });
 
+test('POST /api/admin/accommodation/assign returns 404 when booking does not exist without failing DB constraints', async () => {
+  const { status, data } = await apiRequest('/api/admin/accommodation/assign', {
+    method: 'POST',
+    body: JSON.stringify({ bookingid: 'non-existent-booking-uuid', roomno: '2A' }),
+  });
+  assert.equal(status, 404);
+  assert.equal(data.success, false);
+  assert.equal(data.error, 'Booking not found.');
+});
+
 test('GET /api/admin/transactions returns reconciliation summary and transaction list', async () => {
   const { status, data } = await apiRequest('/api/admin/transactions');
   assert.ok([200, 500].includes(status), `Expected 200 or 500, got ${status}`);

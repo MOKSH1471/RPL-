@@ -125,6 +125,7 @@ export interface RegistrationFormData {
   preferredJerseyNumber?: string;
   preferredTeamName?: string;
   additionalNotes?: string;
+  comments?: string;
 
   // Ashram Member Reference
   referrerCountryCode?: string;
@@ -162,6 +163,9 @@ export interface GalleryItem {
   image: string;
   thumbnail?: string;
   caption: string;
+  teamName?: string;
+  captain?: string;
+  viceCaptain?: string;
 }
 
 export interface SubmissionResponse {

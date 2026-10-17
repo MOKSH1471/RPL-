@@ -23,6 +23,7 @@ import {
   EyeOff,
   Archive,
   Ticket,
+  MessageSquare,
 } from 'lucide-react';
 import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
@@ -54,7 +55,9 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const spectatorCalculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
-  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 3200 : 2700));
+  const isReturningFamily = gen.existingRplFamily === 'Yes';
+  const playerBaseFee = isReturningFamily ? 2700 : 3000;
+  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
@@ -92,6 +95,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     check_out_date: formatDateForInput(player.check_out_date || gen.checkOutDate || '2026-12-26'),
     payment_status: player.payment_status || 'pending',
     payment_utr: player.payment_utr || '',
+    comments: gen.comments || gen.additionalNotes || gen.additional_notes || '',
   });
 
   const isArchived = Boolean(player.is_archived || gen.isArchived);
@@ -144,6 +148,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         stayingRoomNumber: formData.accommodationRequired === 'No' ? (formData.stayingRoomNumber?.trim() || null) : null,
         checkInDate: formData.check_in_date || null,
         checkOutDate: formData.check_out_date || null,
+        comments: formData.comments?.trim() || null,
+        additionalNotes: formData.comments?.trim() || null,
       };
 
       await updateRegistration(player.id, {
@@ -600,6 +606,19 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 </div>
               </div>
 
+              {/* Participant Comments / Special Notes */}
+              {(gen.comments || gen.additionalNotes || gen.additional_notes) ? (
+                <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/90 shadow-sm space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center space-x-1.5">
+                    <MessageSquare className="w-4 h-4 text-amber-600" />
+                    <span>Participant Comments &amp; Notes</span>
+                  </h3>
+                  <p className="text-xs text-slate-800 leading-relaxed font-medium bg-white p-3.5 rounded-xl border border-amber-200/80 whitespace-pre-wrap">
+                    {gen.comments || gen.additionalNotes || gen.additional_notes}
+                  </p>
+                </div>
+              ) : null}
+
               {/* Spectator Pass Inclusions Card */}
               {isSpectator && (
                 <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/90 shadow-sm space-y-3">
@@ -845,6 +864,17 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     />
                   </div>
                 )}
+
+                <div className="col-span-full">
+                  <label className="block font-bold text-slate-700 mb-1">Participant Comments / Notes</label>
+                  <textarea
+                    rows={2}
+                    value={formData.comments}
+                    onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800 resize-none text-xs"
+                    placeholder="Participant comments or notes..."
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-amber-200/80">

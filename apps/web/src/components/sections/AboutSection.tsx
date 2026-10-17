@@ -8,7 +8,6 @@ export const AboutSection: React.FC = () => {
   const stats: StatItem[] = [
     { id: '1', label: 'Seasons of Excellence', value: 8, suffix: '', accent: 'amber' },
     { id: '2', label: 'Registered Athletes', value: 300, prefix: '', suffix: '+', accent: 'magenta' },
-    { id: '3', label: 'Sports Leagues', value: 5, suffix: '', accent: 'emerald' },
   ];
 
   return (
@@ -31,15 +30,15 @@ export const AboutSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Stat Counters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6 mb-10 md:mb-16">
+        {/* Stat Counters Grid - 2 cards centered */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 max-w-2xl mx-auto mb-10 md:mb-16">
           {stats.map((stat) => (
             <StatCounter key={stat.id} stat={stat} />
           ))}
         </div>
 
         {/* Asymmetrical Highlight Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
           {/* Main Featured Pillar Card */}
           <div className="md:col-span-2 p-5 sm:p-8 md:p-10 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-500/10 via-white to-amber-500/5 shadow-md flex flex-col justify-between">
             <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
@@ -56,26 +55,20 @@ export const AboutSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Secondary Stack Cards */}
-          <div className="space-y-4 sm:space-y-6">
-            <div className="p-5 sm:p-6 rounded-2xl border border-emerald-200 bg-emerald-500/10 shadow-xs">
-              <div className="flex items-center space-x-3 mb-2 sm:mb-3">
-                <Flame className="w-5 h-5 text-emerald-600 shrink-0" />
+          {/* Secondary Stack Cards (without descriptions) */}
+          <div className="flex flex-col justify-between gap-4 sm:gap-6">
+            <div className="p-5 sm:p-6 rounded-2xl border border-emerald-200 bg-emerald-500/10 shadow-xs flex-1 flex items-center">
+              <div className="flex items-center space-x-3">
+                <Flame className="w-6 h-6 text-emerald-600 shrink-0" />
                 <h3 className="font-display text-base sm:text-lg font-bold text-slate-900">Competitive Spirit</h3>
               </div>
-              <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
-                Exciting matches played with great energy, teamwork, and friendly competition.
-              </p>
             </div>
 
-            <div className="p-5 sm:p-6 rounded-2xl border border-pink-200 bg-pink-500/10 shadow-xs">
-              <div className="flex items-center space-x-3 mb-2 sm:mb-3">
-                <Users className="w-5 h-5 text-pink-600 shrink-0" />
+            <div className="p-5 sm:p-6 rounded-2xl border border-pink-200 bg-pink-500/10 shadow-xs flex-1 flex items-center">
+              <div className="flex items-center space-x-3">
+                <Users className="w-6 h-6 text-pink-600 shrink-0" />
                 <h3 className="font-display text-base sm:text-lg font-bold text-slate-900">Inclusive Participation</h3>
               </div>
-              <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
-                A place for everyone to play! Separate leagues for Cricket, Football, and Women’s Sports open to all skill levels.
-              </p>
             </div>
           </div>
         </div>

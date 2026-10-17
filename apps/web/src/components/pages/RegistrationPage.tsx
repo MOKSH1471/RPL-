@@ -16,6 +16,8 @@ import {
   verifyRazorpayPayment,
   reportRazorpayPaymentFailure,
 } from '@/lib/api';
+import { compressImage } from '@/lib/imageCompressor';
+import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -70,6 +72,8 @@ import {
   Clock,
   Info,
   Trophy,
+  MessageSquare,
+  Lock,
 } from 'lucide-react';
 
 interface RegistrationPageProps {
@@ -95,7 +99,12 @@ interface SportOption {
   colorBg: string;
   colorBorder: string;
   colorBadge: string;
+  description?: string;
+  isAddon?: boolean;
 }
+
+export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football'];
+export const ADDON_SPORTS: SportType[] = ['table-tennis', 'carrom'];
 
 const CENTRE_LIST = [
   'Ahmedabad',
@@ -158,62 +167,6 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
   },
   {
-    id: 'football',
-    name: 'Football',
-    category: 'Turf Football Championship',
-    emoji: '⚽',
-    colorBg: 'bg-emerald-50',
-    colorBorder: 'border-emerald-400',
-    colorBadge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-  },
-  {
-    id: 'table-tennis',
-    name: 'Table Tennis Championship',
-    category: 'Fast-Paced Speed & Spin Arena',
-    emoji: '🏓',
-    colorBg: 'bg-indigo-50',
-    colorBorder: 'border-indigo-400',
-    colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-  },
-  {
-    id: 'carrom',
-    name: 'Carrom League',
-    category: 'Strike & Pocket Mastery',
-    emoji: '🎯',
-    colorBg: 'bg-purple-50',
-    colorBorder: 'border-purple-400',
-    colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
-  },
-  /*
-  {
-    id: 'badminton',
-    name: 'Badminton Championship',
-    category: 'Singles, Doubles & Mixed Doubles',
-    emoji: '🏸',
-    colorBg: 'bg-cyan-50',
-    colorBorder: 'border-cyan-400',
-    colorBadge: 'bg-cyan-100 text-cyan-900 border-cyan-300',
-  },
-  {
-    id: 'pickleball',
-    name: 'Pickleball Championship',
-    category: 'Open Skill Divisions & Doubles',
-    emoji: '🎾',
-    colorBg: 'bg-orange-50',
-    colorBorder: 'border-orange-400',
-    colorBadge: 'bg-orange-100 text-orange-900 border-orange-300',
-  },
-  {
-    id: 'volleyball',
-    name: 'Volleyball & Throwball',
-    category: 'Spikers Arena & Court Action',
-    emoji: '🏐',
-    colorBg: 'bg-purple-50',
-    colorBorder: 'border-purple-400',
-    colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
-  },
-  */
-  {
     id: 'womens-sports',
     name: "Women's Cricket League",
     category: "Women's Multi-Sport League",
@@ -230,6 +183,36 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-amber-50',
     colorBorder: 'border-amber-400',
     colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
+    description: 'At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above',
+  },
+  {
+    id: 'football',
+    name: 'Football League',
+    category: 'Turf Football Championship',
+    emoji: '⚽',
+    colorBg: 'bg-emerald-50',
+    colorBorder: 'border-emerald-400',
+    colorBadge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+  },
+  {
+    id: 'table-tennis',
+    name: 'Table Tennis Championship',
+    category: 'Fast-Paced Speed & Spin Arena',
+    emoji: '🏓',
+    colorBg: 'bg-indigo-50',
+    colorBorder: 'border-indigo-400',
+    colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+    isAddon: true,
+  },
+  {
+    id: 'carrom',
+    name: 'Carrom League',
+    category: 'Strike & Pocket Mastery',
+    emoji: '🎯',
+    colorBg: 'bg-purple-50',
+    colorBorder: 'border-purple-400',
+    colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
+    isAddon: true,
   },
 ];
 
@@ -329,7 +312,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     let target = id;
     if (target === 'spectator') return 'spectator' as SportType;
     if (target === 'womens') target = 'womens-sports';
-    if (target === 'kaccha-pakka') return 'kaccha-pakka';
+    if (target === 'kaccha-pakka') {
+      if (age !== null && age !== undefined && !(age <= 16 || age >= 56)) {
+        target = gender === 'Female' ? 'womens-sports' : 'cricket';
+      } else {
+        return 'kaccha-pakka';
+      }
+    }
     if (!AVAILABLE_SPORTS.some((s) => s.id === target)) {
       target = gender === 'Female' ? 'womens-sports' : 'cricket';
     }
@@ -339,9 +328,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return target as SportType;
   };
 
-  const [selectedSports, setSelectedSports] = useState<SportType[]>(
-    isInitialSpectator ? ['spectator' as any] : [mapInitialSport(initialLeague, initialGender)]
-  );
+  const getInitialSports = (): SportType[] => {
+    if (isInitialSpectator) return ['spectator' as any];
+    if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
+      return ['cricket', initialLeague as SportType];
+    }
+    return [mapInitialSport(initialLeague, initialGender)];
+  };
+
+  const [selectedSports, setSelectedSports] = useState<SportType[]>(getInitialSports);
+  const [sportRuleNotice, setSportRuleNotice] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [nostalgiaDropdownOpen, setNostalgiaDropdownOpen] = useState(false);
   const [sportSearch, setSportSearch] = useState('');
@@ -352,12 +348,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [photoName, setPhotoName] = useState<string>('');
   const [photoDriveUrl, setPhotoDriveUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState<boolean>(false);
   const [dbFields, setDbFields] = useState<DynamicField[]>([]);
   const [dynamicAnswers, setDynamicAnswers] = useState<Record<string, any>>({});
   const [isLookingUpMumukshu, setIsLookingUpMumukshu] = useState(false);
   const [mumukshuCardInfo, setMumukshuCardInfo] = useState<{ cardNo?: string; name?: string } | null>(null);
   const [isExistingPlayerRegistration, setIsExistingPlayerRegistration] = useState(false);
+  const [existingRegistrationType, setExistingRegistrationType] = useState<'player' | 'spectator' | null>(null);
   const [existingRegistrationId, setExistingRegistrationId] = useState<string | null>(null);
   const [existingPaymentStatus, setExistingPaymentStatus] = useState<string | null>(null);
   const [previouslyPaidSportsCount, setPreviouslyPaidSportsCount] = useState<number>(0);
@@ -367,6 +365,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
+  const [showPayLaterConfirmModal, setShowPayLaterConfirmModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
@@ -374,6 +373,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [serverWakingHint, setServerWakingHint] = useState(false);
   const [isPayLater, setIsPayLater] = useState(false);
   const isPayLaterRef = useRef(false);
+  const photoUploadPromiseRef = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
     let timer: any;
@@ -405,6 +405,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('registrationType', 'spectator', { shouldValidate: true });
       setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
       setSelectedSports(['spectator' as any]);
+    } else if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
+      setValue('registrationType', 'player', { shouldValidate: true });
+      const sportsToSet: SportType[] = ['cricket', initialLeague as SportType];
+      setValue('selectedSports', sportsToSet, { shouldValidate: true });
+      setSelectedSports(sportsToSet);
     } else {
       setValue('registrationType', 'player', { shouldValidate: true });
       const sport = mapInitialSport(initialLeague, initialGender, null);
@@ -415,16 +420,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return () => clearTimeout(t);
   }, [initialLeague]);
 
-  // Prevent background scrolling when size guide modal is open
+  // Prevent background scrolling when size guide modal or pay later modal is open
   useEffect(() => {
-    if (showSizeGuideModal) {
+    if (showSizeGuideModal || showPayLaterConfirmModal) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prevOverflow;
       };
     }
-  }, [showSizeGuideModal]);
+  }, [showSizeGuideModal, showPayLaterConfirmModal]);
 
 
   // Unregistered player reference verification states
@@ -514,10 +519,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       stayingRoomNumber: '',
       checkInDate: '2026-12-25',
       checkOutDate: '2026-12-27',
-      existingRplFamily: 'No',
-      selectedSports: isInitialSpectator ? (['spectator'] as any) : [mapInitialSport(initialLeague, initialGender)],
+      existingRplFamily: 'Yes',
+      selectedSports: isInitialSpectator
+        ? (['spectator'] as any)
+        : (initialLeague === 'table-tennis' || initialLeague === 'carrom')
+        ? ['cricket', initialLeague as SportType]
+        : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
-      cricketRole: 'Batsman',
+      cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
       bowlingStyle: 'Off Spin (Off break)',
       cricketExperience: 'Intermediate (Club / College)',
@@ -554,6 +563,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredJerseyNumber: '',
       preferredTeamName: '',
       additionalNotes: '',
+      comments: '',
       referrerCountryCode: '+91',
       referrerMobile: '',
       referrerName: '',
@@ -635,6 +645,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
   const currentSpectatorTshirt = watch('spectatorTshirt') || 'No';
+  const currentExistingFamily = watch('existingRplFamily');
 
   // Synchronize spectator single-day selections with check-in and check-out dates
   useEffect(() => {
@@ -661,11 +672,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
   const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
 
+  // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
+  const playerBaseFee = currentExistingFamily === 'Yes' ? 2700 : 3000;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
-  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (2700 + extraTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (playerBaseFee + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
-  const previousPaidAmount = isReturningPaidUser ? 2700 : 0;
+  const previousPaidAmount = isReturningPaidUser ? playerBaseFee : 0;
 
   const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
   const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
@@ -683,9 +696,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
+      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
+      const hasPrimary = valid.some((s) => PRIMARY_SPORTS.includes(s));
+      const hasAddon = valid.some((s) => ADDON_SPORTS.includes(s));
+      if (hasAddon && !hasPrimary) {
+        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
+        valid = [primaryFallback, ...valid];
+      }
       if (valid.length > 0) {
-        if (valid.length !== prev.length) {
+        if (valid.length !== prev.length || (hasAddon && !hasPrimary)) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
@@ -695,7 +714,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       return [fallback];
     });
   }, [currentGender, playerAge, allowedSports, setValue, isSpectator]);
-  const currentExistingFamily = watch('existingRplFamily');
   const currentFood = watch('foodPreference');
   const currentCentre = watch('centre');
 
@@ -869,11 +887,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
             if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
             if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
-            if (gen.extraTshirt) setValue('extraTshirt', gen.extraTshirt as any, { shouldValidate: true, shouldDirty: true });
+            const resolvedExtraTshirt = gen.extraTshirt || gen.extra_tshirt || 'No';
+            setValue('extraTshirt', (resolvedExtraTshirt === 'Yes' ? 'Yes' : 'No') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.spectatorTshirt) {
               setValue('spectatorTshirt', gen.spectatorTshirt as any, { shouldValidate: true, shouldDirty: true });
             } else if (gen.registrationType === 'spectator' || (reg as any).sport_id === 'spectator') {
-              setValue('spectatorTshirt', (gen.extraTshirt || 'No') as any, { shouldValidate: true, shouldDirty: true });
+              setValue('spectatorTshirt', (resolvedExtraTshirt || 'No') as any, { shouldValidate: true, shouldDirty: true });
             }
             if (gen.dateOfBirth) setValue('dateOfBirth', gen.dateOfBirth, { shouldValidate: true, shouldDirty: true });
             if (gen.gender) setValue('gender', (gen.gender === 'Female' ? 'Female' : 'Male') as any, { shouldValidate: true, shouldDirty: true });
@@ -882,7 +901,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.stayingRoomNumber) setValue('stayingRoomNumber', gen.stayingRoomNumber, { shouldValidate: true, shouldDirty: true });
             if (reg.checkInDate || gen.checkInDate) setValue('checkInDate', reg.checkInDate || gen.checkInDate, { shouldValidate: true, shouldDirty: true });
             if (reg.checkOutDate || gen.checkOutDate) setValue('checkOutDate', reg.checkOutDate || gen.checkOutDate, { shouldValidate: true, shouldDirty: true });
-            if (gen.existingRplFamily) setValue('existingRplFamily', gen.existingRplFamily as any, { shouldValidate: true, shouldDirty: true });
+            const familyChoice = gen.existingRplFamily || gen.existing_rpl_family || 'Yes';
+            setValue('existingRplFamily', familyChoice as any, { shouldValidate: true, shouldDirty: true });
             if (gen.countryCode) setValue('countryCode', gen.countryCode, { shouldValidate: true });
             if (gen.referrerCountryCode) setValue('referrerCountryCode', gen.referrerCountryCode, { shouldValidate: true });
             if (gen.referrerMobile) setValue('referrerMobile', String(gen.referrerMobile).replace(/\D/g, '').slice(0, 10), { shouldValidate: true });
@@ -893,13 +913,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (gen.customJerseyName) setValue('customJerseyName', gen.customJerseyName, { shouldValidate: true });
             if (gen.preferredJerseyNumber) setValue('preferredJerseyNumber', gen.preferredJerseyNumber, { shouldValidate: true });
             if (gen.preferredTeamName) setValue('preferredTeamName', gen.preferredTeamName, { shouldValidate: true });
-            if (gen.additionalNotes) setValue('additionalNotes', gen.additionalNotes, { shouldValidate: true });
+            if (gen.additionalNotes || gen.comments) setValue('additionalNotes', gen.additionalNotes || gen.comments, { shouldValidate: true });
             if (gen.nostalgiaSport || gen.nostalgia_sport) {
               setValue('nostalgiaSport', gen.nostalgiaSport || gen.nostalgia_sport, { shouldValidate: true, shouldDirty: true });
             }
 
-            // Restore selected sports
+            // Restore selected sports & lock registration category
             const savedSports = gen.selectedSports || Object.keys(sports);
+            const isRegSpectator = gen.registrationType === 'spectator' || (Array.isArray(savedSports) && savedSports.includes('spectator')) || (reg as any).sport_id === 'spectator';
+            const determinedType = isRegSpectator ? 'spectator' : 'player';
+            setExistingRegistrationType(determinedType);
+            setValue('registrationType', determinedType, { shouldValidate: true, shouldDirty: true });
+
             if (Array.isArray(savedSports) && savedSports.length > 0) {
               const validSports = savedSports.filter((s: string) => AVAILABLE_SPORTS.some((as) => as.id === s)) as SportType[];
               if (validSports.length > 0) {
@@ -966,9 +991,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             }
 
             // Profile Photo Preview
-            if (reg.playerPhotoUrl) {
-              setPhotoDriveUrl(reg.playerPhotoUrl);
-              setPhotoPreview(reg.playerPhotoUrl);
+            const existingPhoto =
+              reg.playerPhotoUrl ||
+              reg.player_photo_url ||
+              res.data?.photoUrl ||
+              gen.playerPhotoUrl ||
+              gen.player_photo_url ||
+              gen.photoUrl;
+            if (existingPhoto) {
+              setPhotoDriveUrl(existingPhoto);
+              setPhotoPreview(getDriveDirectImageUrl(existingPhoto));
+              setPhotoError(null);
             }
 
             // Restore dynamic answers & payment fields (cleared if already paid so user can enter fresh UTR / receipt for additional sports)
@@ -1008,6 +1041,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             if (cleanCentre) setValue('centre', cleanCentre, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
             if (cleanDob) setValue('dateOfBirth', cleanDob, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
             setValue('existingRplFamily', 'No', { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+
+            const mPhoto = d.photoUrl || (d as any).photo_url || (d as any).playerPhotoUrl;
+            if (mPhoto) {
+              setPhotoDriveUrl(mPhoto);
+              setPhotoPreview(getDriveDirectImageUrl(mPhoto));
+              setPhotoError(null);
+            }
           }
         } else {
           setIsUnregisteredPlayer(true);
@@ -1283,14 +1323,37 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const toggleSportSelection = (sportId: SportType) => {
     if (!isSportAllowedForPlayer(sportId, currentGender, playerAge)) return;
+    setSportRuleNotice(null);
+
     let updated: SportType[];
     if (selectedSports.includes(sportId)) {
       if (selectedSports.length === 1) {
         return;
       }
+      // If unchecking a primary sport, ensure at least one primary sport remains if an add-on sport is present
+      if (PRIMARY_SPORTS.includes(sportId)) {
+        const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
+        const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
+        if (remainingPrimary.length === 0 && hasAddon) {
+          setSportRuleNotice(
+            "Table Tennis & Carrom are free add-on tournaments and require registration in at least one primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football)."
+          );
+          return;
+        }
+      }
       updated = selectedSports.filter((s) => s !== sportId);
     } else {
-      updated = [...selectedSports, sportId];
+      // If adding an add-on sport, ensure at least one primary sport is selected (default to cricket if none)
+      const hasPrimary = selectedSports.some((s) => PRIMARY_SPORTS.includes(s));
+      if (ADDON_SPORTS.includes(sportId) && !hasPrimary) {
+        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
+        updated = [...selectedSports, primaryFallback, sportId];
+        setSportRuleNotice(
+          `${primaryFallback === 'womens-sports' ? "Women's Cricket League" : "Main Cricket League"} has been automatically included. Table Tennis & Carrom are free add-on tournaments requiring a primary league.`
+        );
+      } else {
+        updated = [...selectedSports, sportId];
+      }
     }
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -1299,18 +1362,32 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const handleRemoveSport = (sportId: SportType, e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedSports.length <= 1) return;
+    setSportRuleNotice(null);
+
+    if (PRIMARY_SPORTS.includes(sportId)) {
+      const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
+      const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
+      if (remainingPrimary.length === 0 && hasAddon) {
+        setSportRuleNotice(
+          "Table Tennis & Carrom require registration in at least one primary league."
+        );
+        return;
+      }
+    }
     const updated = selectedSports.filter((s) => s !== sportId);
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
   };
 
   const handleSelectAllSports = () => {
+    setSportRuleNotice(null);
     const all = allowedSports.map((s) => s.id);
     setSelectedSports(all);
     setValue('selectedSports', all, { shouldValidate: true });
   };
 
   const handleClearSports = () => {
+    setSportRuleNotice(null);
     const first = [allowedSports[0]?.id || 'cricket'];
     setSelectedSports(first);
     setValue('selectedSports', first, { shouldValidate: true });
@@ -1319,26 +1396,50 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit. Please choose a smaller image.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('File size exceeds 15MB limit. Please choose a smaller image.');
         return;
       }
-      setPhotoName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setPhotoError(null);
 
-      // Upload to Google Drive via backend API with Player's Name
+      // Compress heavy mobile camera photos in-browser (e.g. 5MB -> ~200KB)
+      let readyFile = file;
+      try {
+        readyFile = await compressImage(file, { fileType: 'photo' });
+      } catch (err) {
+        console.warn('Image compression fallback to original:', err);
+      }
+
+      setPhotoName(readyFile.name);
+      try {
+        const objUrl = URL.createObjectURL(readyFile);
+        setPhotoPreview(objUrl);
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(readyFile);
+      }
+
+      // Start background upload without locking the user interface
       try {
         setIsUploadingPhoto(true);
         const cleanName = (watch('fullName') || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const driveUrl = await uploadFileToDrive(file, `${cleanName}_Photo`, 'photo');
-        setPhotoDriveUrl(driveUrl);
+        const uploadPromise = uploadFileToDrive(readyFile, `${cleanName}_Photo`, 'photo')
+          .then((driveUrl) => {
+            setPhotoDriveUrl(driveUrl);
+            return driveUrl;
+          })
+          .catch((err) => {
+            console.warn('Direct upload notice (will use preview fallback):', err);
+            return '';
+          })
+          .finally(() => {
+            setIsUploadingPhoto(false);
+          });
+        photoUploadPromiseRef.current = uploadPromise;
       } catch (err) {
-        console.warn('Direct upload notice (will use preview fallback):', err);
-      } finally {
         setIsUploadingPhoto(false);
       }
     }
@@ -1348,6 +1449,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     setPhotoPreview(null);
     setPhotoName('');
     setPhotoDriveUrl('');
+    if (!isSpectator) {
+      setPhotoError('Profile photo is mandatory. Please upload your passport / ID photo.');
+    }
   };
 
   const onSubmit = async (data: RegistrationSchemaType) => {
@@ -1361,6 +1465,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
     }
 
+    // Require profile photo for player registration
+    if (!isSpectator && !photoPreview && !photoDriveUrl) {
+      setPhotoError('Profile photo is mandatory. Please upload your passport / ID photo.');
+      alert('⚠️ Photo Required: Please upload your profile photo (passport / ID size) before submitting your registration.');
+      setIsSubmitting(false);
+      const photoEl = document.getElementById('player-photo-section');
+      if (photoEl) {
+        photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     if (isSpectator && data.accommodationRequired === 'No' && spectatorDates.length === 0) {
       alert('Please select at least one tournament day to attend.');
       setIsSubmitting(false);
@@ -1368,6 +1484,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
 
     setIsSubmitting(true);
+
+    // If photo is still uploading in background, gracefully await it up to 5s
+    if (photoUploadPromiseRef.current && isUploadingPhoto) {
+      try {
+        await Promise.race([
+          photoUploadPromiseRef.current,
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
+      } catch {}
+    }
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -1448,7 +1574,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       customJerseyName: data.customJerseyName,
       preferredJerseyNumber: data.preferredJerseyNumber,
       preferredTeamName: data.preferredTeamName,
-      additionalNotes: data.additionalNotes,
+      additionalNotes: data.additionalNotes?.trim() || undefined,
+      comments: data.additionalNotes?.trim() || undefined,
       totalAmount: cumulativeTotalFee,
       calculatedFee: totalPayableFee,
       payment_receipt: paymentReceiptUrl,
@@ -1486,6 +1613,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerMobile: data.referrerMobile || undefined,
       referrerName: data.referrerName || undefined,
       referrerCardNo: data.referrerCardNo || undefined,
+      comments: data.additionalNotes?.trim() || undefined,
+      additionalNotes: data.additionalNotes?.trim() || undefined,
       totalAmount: cumulativeTotalFee,
       incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
@@ -1707,6 +1836,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
           registrationType: isSpectator ? 'spectator' : 'player',
           accommodationRequired: data.accommodationRequired,
+          existingRplFamily: data.existingRplFamily,
           spectatorDates: isSpectator && data.accommodationRequired === 'No' ? spectatorDates : undefined,
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
@@ -1949,45 +2079,69 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
-          {/* Registration Mode Switcher: Player Pass vs Spectator Pass */}
-          <div className="flex justify-center mb-6 w-full px-1">
-            <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-lg w-full gap-1 sm:gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setValue('registrationType', 'player', { shouldValidate: true });
-                  if (selectedSports.includes('spectator') || selectedSports.length === 0) {
-                    setValue('selectedSports', ['cricket'], { shouldValidate: true });
-                    setSelectedSports(['cricket']);
-                  }
-                }}
-                className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${!isSpectator
-                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
+          {/* Registration Mode Switcher: Player Pass vs Spectator Pass — Hidden on confirmation screen */}
+          {!submittedData && (
+            <div className="flex flex-col items-center justify-center mb-6 w-full px-1">
+              <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-lg w-full gap-1 sm:gap-1.5">
+                <button
+                  type="button"
+                  disabled={isExistingPlayerRegistration && existingRegistrationType === 'spectator'}
+                  onClick={() => {
+                    if (isExistingPlayerRegistration && existingRegistrationType === 'spectator') return;
+                    setValue('registrationType', 'player', { shouldValidate: true });
+                    if (selectedSports.includes('spectator') || selectedSports.length === 0) {
+                      setValue('selectedSports', ['cricket'], { shouldValidate: true });
+                      setSelectedSports(['cricket']);
+                    }
+                  }}
+                  title={isExistingPlayerRegistration && existingRegistrationType === 'spectator' ? 'You have registered as a Spectator and cannot switch to Player registration while modifying your entry.' : undefined}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                    isExistingPlayerRegistration && existingRegistrationType === 'spectator'
+                      ? 'opacity-40 cursor-not-allowed text-slate-400'
+                      : !isSpectator
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 cursor-pointer'
+                        : 'text-slate-600 hover:text-slate-900 cursor-pointer'
                   }`}
-              >
-                <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
-                <span className="whitespace-nowrap">Player Registration</span>
-              </button>
+                >
+                  <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <span className="whitespace-nowrap">Player Registration</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setValue('registrationType', 'spectator', { shouldValidate: true });
-                  setValue('selectedSports', ['spectator'], { shouldValidate: true });
-                  setSelectedSports(['spectator']);
-                  setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
-                }}
-                className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${isSpectator
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
-                  : 'text-slate-600 hover:text-slate-900'
+                <button
+                  type="button"
+                  disabled={isExistingPlayerRegistration && existingRegistrationType === 'player'}
+                  onClick={() => {
+                    if (isExistingPlayerRegistration && existingRegistrationType === 'player') return;
+                    setValue('registrationType', 'spectator', { shouldValidate: true });
+                    setValue('selectedSports', ['spectator'], { shouldValidate: true });
+                    setSelectedSports(['spectator']);
+                    setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
+                  }}
+                  title={isExistingPlayerRegistration && existingRegistrationType === 'player' ? 'You have registered as a Player and cannot switch to Spectator registration while modifying your entry.' : undefined}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                    isExistingPlayerRegistration && existingRegistrationType === 'player'
+                      ? 'opacity-40 cursor-not-allowed text-slate-400'
+                      : isSpectator
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
+                        : 'text-slate-600 hover:text-slate-900 cursor-pointer'
                   }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span className="whitespace-nowrap">Spectator Registration</span>
-              </button>
+                >
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="whitespace-nowrap">Spectator Registration</span>
+                </button>
+              </div>
+
+              {/* Informative notice when registration mode switching is locked on edit */}
+              {isExistingPlayerRegistration && existingRegistrationType && (
+                <div className="mt-2.5 px-3 py-1.5 rounded-xl bg-slate-100/90 border border-slate-200 text-slate-600 text-xs font-semibold flex items-center justify-center gap-2 max-w-lg w-full">
+                  <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span>
+                    You have registered as a <strong>{existingRegistrationType === 'player' ? 'Player' : 'Spectator'}</strong>. Category switching is locked while editing your entry.
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Smart In-Form Pending Payment Banner */}
           {isExistingPlayerRegistration && existingPaymentStatus === 'pending' && (
@@ -2047,6 +2201,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
+            onPayDue={() => {
+              if (onOpenCheckStatus) {
+                onOpenCheckStatus(submittedData.mobileNumber);
+              }
+            }}
           />
         ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 pb-8 sm:pb-12">
@@ -2612,7 +2771,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Note: Extra T-shirt will cost ₹500 extra.
                         </p>
                         <p className="text-amber-800 text-[11px] mt-0.5">
-                          Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                          {currentExistingFamily === 'Yes' ? (
+                            <>
+                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                            </>
+                          ) : (
+                            <>
+                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,000 + ₹500 = ₹3,500</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,000</strong> (1 tournament T-shirt included).
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -3095,7 +3262,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div className="w-full p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-300/80 text-amber-950 font-medium flex items-start gap-2 sm:gap-2.5">
                       <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                       <div className="text-xs leading-relaxed flex-1 min-w-0 break-words">
-                        <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or after 27 Dec):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
+                        <strong className="font-extrabold text-amber-900">Pre / Post Stay (before 25 Dec or 27th night):</strong> Booking will be created on a <strong>waitlist</strong> reviewed by <strong>The Research Centre office</strong>. Confirmation and payment details will be sent via <strong>WhatsApp</strong>.
                       </div>
                     </div>
                   </div>
@@ -3135,26 +3302,27 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <p className="leading-relaxed">
                           {currentExistingFamily === 'Yes' ? (
-                            <span><strong>Returning Participant:</strong> Your player profile and previous season records will be linked.</span>
+                            <span><strong>Returning Participant (₹2,700):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
                           ) : (
-                            <span><strong>New Participant:</strong> Welcome! Your entry will be enrolled as an open player draft for Season 9.</span>
+                            <span><strong>New Player Draft (₹3,000):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
                           )}
                         </p>
                       </div>
                     </div>
 
-                    <div>
+                    <div id="player-photo-section">
                       <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                         <label className="flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                           <Camera className="w-3.5 h-3.5 text-amber-600" />
                           <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
+                          <span className="text-pink-600 font-bold">*</span>
                         </label>
                         <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
                           Square • 600×600 to 1200×1200 px
                         </span>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden">
+                      <div className={`rounded-2xl border ${photoError ? 'border-pink-400 bg-pink-50/40 ring-1 ring-pink-400/30' : 'border-slate-200 bg-slate-50/70'} p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden transition-all`}>
                         {/* Compact Micro Guidelines */}
                         <div className="grid grid-cols-2 gap-1.5 text-[10.5px] font-medium text-slate-600">
                           <span className="flex items-center gap-1.5">
@@ -3176,20 +3344,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </div>
 
                         {/* Modern Dropzone & Avatar Preview */}
-                        <div className="relative border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl p-2.5 sm:p-3 text-center transition-all bg-white hover:bg-amber-50/20 flex items-center justify-center min-h-[85px] w-full max-w-full overflow-hidden">
+                        <div className={`relative border-2 border-dashed ${photoError ? 'border-pink-400 bg-pink-50/20' : 'border-slate-300 hover:border-amber-500 bg-white hover:bg-amber-50/20'} rounded-xl p-2.5 sm:p-3 text-center transition-all flex items-center justify-center min-h-[85px] w-full max-w-full overflow-hidden`}>
                           <input
                             type="file"
                             accept="image/jpeg,image/png"
                             onChange={handlePhotoChange}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           />
-                          {photoPreview ? (
+                          {photoPreview || photoDriveUrl ? (
                             <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2.5 sm:gap-3 w-full min-w-0 z-20">
                               <div className="flex items-center gap-2.5 min-w-0 w-full sm:w-auto flex-1">
                                 <img
-                                  src={photoPreview}
+                                  src={getDriveDirectImageUrl(photoPreview || photoDriveUrl || '')}
                                   alt="Preview"
-                                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square shrink-0"
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    const raw = photoDriveUrl || photoPreview || '';
+                                    if (!target.dataset.triedFallback && raw) {
+                                      target.dataset.triedFallback = 'true';
+                                      const match =
+                                        raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                                        raw.match(/[?&]id=([a-zA-Z0-9_-]+)/) ||
+                                        raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                      if (match && match[1]) {
+                                        target.src = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+                                      }
+                                    }
+                                  }}
+                                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-slate-800 shadow-sm aspect-square shrink-0 bg-slate-100"
                                 />
                                 <div className="text-left min-w-0 flex-1 overflow-hidden">
                                   <span className="text-xs font-bold text-slate-900 block truncate">
@@ -3231,12 +3413,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <div className="text-left">
                                 <p className="text-xs text-slate-900 font-bold">Click to upload photo</p>
                                 <span className="text-[10px] text-slate-500 block">
-                                  JPG, PNG up to 5MB (Square ID format)
+                                  JPG, PNG up to 15MB (Auto-compressed)
                                 </span>
                               </div>
                             </div>
                           )}
                         </div>
+
+                        {photoError && (
+                          <p className="text-xs text-pink-600 font-bold flex items-center gap-1.5 mt-1">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{photoError}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3312,10 +3501,41 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
                           Kaccha Pakka League Available (Age: {playerAge} years):
                         </span>
-                        <p className="font-semibold text-amber-900 leading-snug">
+                        <p className="font-semibold text-amber-900 leading-snug mb-1">
+                          At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
+                        </p>
+                        <p className="text-[11px] font-medium text-amber-800">
                           Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Bonus Add-ons Callout Banner */}
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/90 text-xs text-emerald-950 flex items-start space-x-2.5 shadow-2xs">
+                    <span className="text-base shrink-0 mt-0.5">🎁</span>
+                    <div className="leading-relaxed">
+                      <span className="font-extrabold text-emerald-900 block mb-0.5">
+                        Complimentary Add-on Tournaments:
+                      </span>
+                      Table Tennis &amp; Carrom are <strong>100% FREE</strong> when registering for any primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football).
+                    </div>
+                  </div>
+
+                  {/* Dynamic Rule Alert Notice */}
+                  {sportRuleNotice && (
+                    <div className="p-3 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 font-semibold flex items-center justify-between gap-2 shadow-2xs animate-in fade-in">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base shrink-0">⚠️</span>
+                        <span>{sportRuleNotice}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSportRuleNotice(null)}
+                        className="text-amber-800 hover:text-amber-950 text-xs font-bold px-2 py-0.5 rounded-lg hover:bg-amber-200/60 transition-colors"
+                      >
+                        ✕
+                      </button>
                     </div>
                   )}
 
@@ -3337,13 +3557,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {selectedSports.map((sportId) => {
                           const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
                           if (!sport) return null;
+                          const isAddon = ADDON_SPORTS.includes(sport.id);
                           return (
                             <span
                               key={sport.id}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white border border-amber-400/40 text-xs font-extrabold shadow-xs"
+                              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs ${isAddon
+                                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 border border-emerald-400/50'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40'
+                                }`}
                             >
                               <span>{sport.emoji}</span>
-                              <span>{sport.name}</span>
+                              <span>{sport.name}{isAddon ? ' (FREE)' : ''}</span>
                               {selectedSports.length > 1 && (
                                 <button
                                   type="button"
@@ -3410,11 +3634,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
 
+                          {/* Complimentary Add-ons Tip in Dropdown */}
+                          <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-950 flex items-start gap-2">
+                            <span className="text-sm shrink-0">💡</span>
+                            <span>
+                              <strong>Table Tennis &amp; Carrom</strong> are complimentary free add-ons included with any Cricket or Football league registration.
+                            </span>
+                          </div>
 
                           {/* Sports Checkbox List */}
                           <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                             {filteredSports.map((sport) => {
                               const isChecked = selectedSports.includes(sport.id);
+                              const isAddon = ADDON_SPORTS.includes(sport.id);
                               return (
                                 <div
                                   key={sport.id}
@@ -3427,12 +3659,24 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                   <div className="flex items-center space-x-3">
                                     <span className="text-2xl">{sport.emoji}</span>
                                     <div>
-                                      <span className="font-extrabold text-sm text-slate-900 block">
-                                        {sport.name}
-                                      </span>
-                                      <span className="text-[11px] text-slate-500 font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-extrabold text-sm text-slate-900 block">
+                                          {sport.name}
+                                        </span>
+                                        {isAddon && (
+                                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                            FREE ADD-ON
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[11px] text-slate-500 font-medium block">
                                         {sport.category}
                                       </span>
+                                      {sport.description && (
+                                        <span className="text-[10px] text-slate-600 font-normal leading-tight block mt-0.5">
+                                          {sport.description}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
@@ -3519,16 +3763,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <BasicDropdown
                               label="Select Role"
                               items={[
-                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'All-Rounder', label: 'All-Rounder' },
+                                { id: 'Batter', label: 'Batter' },
                                 { id: 'Bowler', label: 'Bowler' },
                                 { id: 'Wicketkeeper', label: 'Wicketkeeper' },
                               ]}
                               value={
                                 currentCricketRole
                                   ? {
-                                    id: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
-                                    label: currentCricketRole === 'Batter' ? 'Batsman' : currentCricketRole,
-                                  }
+                                      id: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
+                                      label: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
+                                    }
                                   : null
                               }
                               onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
@@ -3550,48 +3795,40 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             />
                           </div>
 
-                          {/* Dynamically add Bowling Style when Bowler is selected */}
-                          {currentCricketRole === 'Bowler' && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                                Bowling Variation / Style <span className="text-pink-600">*</span>
-                              </label>
-                              <BasicDropdown
-                                label="Select Bowling Style"
-                                items={[
-                                  { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
-                                  { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
-                                  { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
-                                  { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
-                                ]}
-                                value={
-                                  currentBowlingStyle
-                                    ? [
-                                      { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
-                                      { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
-                                      { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
-                                      { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
-                                    ].find(
-                                      (opt) =>
-                                        opt.id.toLowerCase() === currentBowlingStyle.toLowerCase() ||
-                                        (currentBowlingStyle.toLowerCase().includes('off') && opt.id.includes('Off')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('leg') && opt.id.includes('Leg')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('orthodox') && opt.id.includes('Orthodox')) ||
-                                        (currentBowlingStyle.toLowerCase().includes('chinaman') && opt.id.includes('Unorthodox'))
-                                    ) || { id: currentBowlingStyle, label: currentBowlingStyle }
-                                    : null
-                                }
-                                onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
-                              />
-                            </motion.div>
-                          )}
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+                              Bowling Variation / Style <span className="text-pink-600">*</span>
+                            </label>
+                            <BasicDropdown
+                              label="Select Bowling Style"
+                              items={[
+                                { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                              ]}
+                              value={
+                                currentBowlingStyle
+                                  ? [
+                                    { id: 'Off Spin (Off break)', label: 'Off Spin (Right-Arm Off break)' },
+                                    { id: 'Leg Spin (Leg break)', label: 'Leg Spin (Right-Arm Leg break)' },
+                                    { id: 'Left-Arm Orthodox Spin', label: 'Left-Arm Orthodox Spin (Slow left-arm)' },
+                                    { id: 'Left-Arm Unorthodox Spin', label: 'Left-Arm Unorthodox Spin (Chinaman)' },
+                                  ].find(
+                                    (opt) =>
+                                      opt.id.toLowerCase() === currentBowlingStyle.toLowerCase() ||
+                                      (currentBowlingStyle.toLowerCase().includes('off') && opt.id.includes('Off')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('leg') && opt.id.includes('Leg')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('orthodox') && opt.id.includes('Orthodox')) ||
+                                      (currentBowlingStyle.toLowerCase().includes('chinaman') && opt.id.includes('Unorthodox'))
+                                  ) || { id: currentBowlingStyle, label: currentBowlingStyle }
+                                  : null
+                              }
+                              onChange={(item) => setValue('bowlingStyle', String(item.id), { shouldValidate: true })}
+                            />
+                          </div>
 
-                          <div className={currentCricketRole === 'Bowler' ? '' : 'md:col-span-2'}>
+                          <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
                               Cricket Experience Level <span className="text-pink-600">*</span>
                             </label>
@@ -4183,15 +4420,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               label="Select Role"
                               items={[
                                 { id: 'All rounder', label: 'All rounder' },
+                                { id: 'Batter', label: 'Batter' },
                                 { id: 'Bowler', label: 'Bowler' },
-                                { id: 'Batsman', label: 'Batsman' },
+                                { id: 'Wicketkeeper', label: 'Wicketkeeper' },
                                 { id: 'Fielder', label: 'Fielder' },
                               ]}
                               value={
                                 currentWomensRole
                                   ? {
-                                    id: currentWomensRole,
-                                    label: currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole,
+                                    id: currentWomensRole === 'Batsman' ? 'Batter' : currentWomensRole,
+                                    label: currentWomensRole === 'Batsman' ? 'Batter' : (currentWomensRole === 'All-rounder' ? 'All rounder' : currentWomensRole),
                                   }
                                   : null
                               }
@@ -4398,6 +4636,32 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
 
             {/* ========================================================================= */}
+            {/* COMMENTS & SPECIAL REQUESTS (STORED IN GENERAL DETAILS) */}
+            {/* ========================================================================= */}
+            <InView
+              viewOptions={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+              className="bg-white rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-200 shadow-sm space-y-3 mb-6 sm:mb-8"
+            >
+              <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-slate-800">
+                <MessageSquare className="w-4 h-4 text-amber-600" />
+                <span>Comments &amp; Special Requests <span className="text-slate-400 font-semibold lowercase text-[11px]">(Optional)</span></span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                Have any special requests, questions, dietary notes, or remarks for the RPL organizing committee? Leave your comments below.
+              </p>
+              <div>
+                <textarea
+                  {...register('additionalNotes')}
+                  rows={3}
+                  placeholder="Leave any comments, queries, accommodation requests, or notes for the RPL team here..."
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-amber-500 focus:bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all resize-none shadow-2xs font-medium"
+                />
+              </div>
+            </InView>
+
+
+            {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
             <InView
@@ -4450,7 +4714,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
                             : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹2,700${currentExtraTshirt === 'Yes' ? ' + ₹500 Extra T-Shirt = ₹3,200' : ' - All sports included'})`
+                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹${playerBaseFee.toLocaleString('en-IN')}${currentExistingFamily === 'No' ? ' [New Player: ₹3,000]' : ' [Returning Family: ₹2,700]'}${currentExtraTshirt === 'Yes' ? ` + ₹500 Extra T-Shirt = ₹${(playerBaseFee + 500).toLocaleString('en-IN')}` : ''}${selectedSports.some((s) => ADDON_SPORTS.includes(s)) ? ' • TT/Carrom FREE' : ' - All sports included'})`
                         )}
                       </h4>
                     </div>
@@ -4524,8 +4788,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             >
                               <span>{sportObj?.emoji || '🏅'}</span>
                               <span>{sportObj?.name || sportId}</span>
-                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
-                                Included in Pass
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${ADDON_SPORTS.includes(sportId)
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-amber-200 text-amber-950'
+                                }`}>
+                                {ADDON_SPORTS.includes(sportId) ? 'FREE Add-on' : 'Included in Pass'}
                               </span>
                             </div>
                           );
@@ -4594,7 +4861,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     type="submit"
-                    disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
+                    disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
                     onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
                     className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                   >
@@ -4605,8 +4872,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                     ) : isUploadingReceipt ? (
                       <span>Uploading Payment Receipt to Drive...</span>
-                    ) : isUploadingPhoto ? (
-                      <span>Uploading Player Photo to Drive...</span>
                     ) : isSubmitting && !isPayLater ? (
                       <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                     ) : totalPayableFee > 0 ? (
@@ -4626,12 +4891,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {totalPayableFee > 0 && (
                     <button
                       type="button"
-                      disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
+                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
                       onClick={() => {
-                        isPayLaterRef.current = true;
-                        setIsPayLater(true);
-                        // Trigger form validation + submit via handleSubmit wrapper
-                        handleSubmit(onSubmit, onInvalid)();
+                        // Validate form first, and open sleek confirmation modal if valid
+                        handleSubmit(() => {
+                          setShowPayLaterConfirmModal(true);
+                        }, onInvalid)();
                       }}
                       className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
                     >
@@ -4652,20 +4917,22 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                 {/* Pay Later hint */}
                 {totalPayableFee > 0 && (
-                  <p className="text-[11px] text-slate-500 font-medium text-center leading-relaxed mt-4 pt-3.5 border-t border-emerald-200/60">
-                    💡 Prefer to pay later?{' '}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                        onOpenCheckStatus?.(mob);
-                      }}
-                      className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
-                    >
-                      Check Pass / Pay Due
-                    </button>
-                    {' '}— register now and complete payment anytime using your mobile number.
-                  </p>
+                  <div className="mt-4 pt-3.5 border-t border-emerald-200/60 space-y-2 text-center">
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      💡 Prefer to pay later?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
+                          onOpenCheckStatus?.(mob);
+                        }}
+                        className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
+                      >
+                        Check Pass / Pay Due
+                      </button>
+                      {' '}— register now and complete payment anytime using your mobile number.
+                    </p>
+                  </div>
                 )}
 
                 {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
@@ -4755,6 +5022,121 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </motion.div>
               </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+      {/* Pay Later 24-Hour Confirmation Modal */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {showPayLaterConfirmModal && (
+              <div
+                className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto"
+                onClick={() => setShowPayLaterConfirmModal(false)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-amber-200/90 shadow-2xl overflow-hidden my-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Decorative Top Gradient Accent */}
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
+
+                  {/* Close button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPayLaterConfirmModal(false)}
+                    className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="text-center pt-2">
+                    {/* Icon */}
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+                      <Clock className="w-7 h-7 text-amber-600 animate-pulse" />
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                      Confirm Pay Later
+                    </h3>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-bold mt-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Payment required within 24 hours</span>
+                    </div>
+
+                    {/* Fee Card */}
+                    <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 font-semibold">Total Payable Due:</span>
+                        <span className="text-xl font-black text-slate-900">₹{totalPayableFee}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-200/60">
+                        <span>Registration Status:</span>
+                        <span className="font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                          Pending Payment
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* How to Pay Notice */}
+                    <div className="mt-3.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-left text-xs text-slate-600 space-y-1">
+                      <p className="font-bold text-amber-950 flex items-center gap-1.5">
+                        <span>💡</span> How to complete payment later:
+                      </p>
+                      <p className="text-[11.5px] leading-relaxed text-slate-600">
+                        Open <strong className="text-slate-900">"Check Pass / Pay Due"</strong> from the tournament homepage, enter your registered number (<strong>{watch('mobileNumber') ? `${watch('countryCode') || '+91'} ${watch('mobileNumber')}` : 'your mobile number'}</strong>), and pay via UPI, Card, or NetBanking.
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-5 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPayLaterConfirmModal(false);
+                          isPayLaterRef.current = true;
+                          setIsPayLater(true);
+                          handleSubmit(onSubmit, onInvalid)();
+                        }}
+                        className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-extrabold text-sm shadow-md shadow-amber-500/25 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      >
+                        <Clock className="w-4 h-4" />
+                        <span>Confirm & Save Registration</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPayLaterConfirmModal(false);
+                          isPayLaterRef.current = false;
+                          setIsPayLater(false);
+                          setPaymentMethod('razorpay');
+                          handleSubmit(onSubmit, onInvalid)();
+                        }}
+                        className="w-full py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                        <span>Pay Online Now via Razorpay</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPayLaterConfirmModal(false)}
+                        className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                      >
+                        ← Keep Editing / Close
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>,
           document.body

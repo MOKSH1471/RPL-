@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DynamicField } from '@/types';
 import { OptionSelector } from '@/components/ui/OptionSelector';
 import { uploadFileToDrive } from '@/lib/api';
+import { compressImage } from '@/lib/imageCompressor';
 import {
   AlertCircle,
   Upload,
@@ -43,12 +44,23 @@ export function DynamicFieldRenderer({
   const options = field.options || [];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5MB limit. Please select a smaller file.');
+    if (rawFile.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please select a smaller file.');
       return;
+    }
+
+    const isReceipt = field.field_key.includes('receipt') || field.field_key.includes('payment') || field.field_key.includes('utr');
+    const fileType = isReceipt ? 'receipt' : 'photo';
+
+    // Compress heavy mobile camera photos / receipts
+    let file = rawFile;
+    try {
+      file = await compressImage(rawFile, { fileType });
+    } catch (compressErr) {
+      console.warn('Image compression fallback to original:', compressErr);
     }
 
     setFileName(file.name);
@@ -67,8 +79,6 @@ export function DynamicFieldRenderer({
       onUploadingChange?.(true);
       const cleanContext = (contextName || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
       const cleanField = (field.label || field.field_key).trim().replace(/[^a-zA-Z0-9]/g, '_');
-      const isReceipt = field.field_key.includes('receipt') || field.field_key.includes('payment') || field.field_key.includes('utr');
-      const fileType = isReceipt ? 'receipt' : 'photo';
       
       let customPrefix = isReceipt
         ? `${cleanContext}_Payment_Receipt${receiptIndex && receiptIndex > 1 ? `_(${receiptIndex})` : ''}`

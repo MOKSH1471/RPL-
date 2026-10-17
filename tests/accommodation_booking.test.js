@@ -53,3 +53,46 @@ test('Accommodation: phone number normalization extracts 10 digits for guest rec
   assert.strictEqual(normalize('9876543210'), '9876543210');
   assert.strictEqual(normalize('09876543210'), '9876543210');
 });
+
+test('Accommodation: creates tournament booking with default unassigned room "NA" without modifying roomdb', async () => {
+  const recordedQueries = [];
+  const mockConnection = {
+    query: async (sql, params) => {
+      recordedQueries.push({ sql, params });
+      if (sql.includes('SELECT cardno FROM')) {
+        return [[{ cardno: '9966513900' }]];
+      }
+      if (sql.includes('SELECT bookingid FROM')) {
+        return [[]]; // no existing booking
+      }
+      return [{ affectedRows: 1, insertId: 1 }];
+    },
+  };
+
+  const result = await processAccommodationBooking({
+    cardno: '9966513900',
+    fullName: 'Test Player',
+    mobile: '9876543210',
+    gender: 'Male',
+    accommodationRequired: 'Yes',
+    checkInDate: '2026-12-25',
+    checkOutDate: '2026-12-27',
+    connection: mockConnection,
+  });
+
+  assert.strictEqual(result.booked, true);
+  assert.strictEqual(result.bookings.length, 1);
+  assert.strictEqual(result.bookings[0].type, 'rpl_tournament');
+  assert.strictEqual(result.bookings[0].status, 'confirmed');
+
+  // Verify room_booking INSERT query used roomno = 'NA'
+  const insertBookingQuery = recordedQueries.find(
+    (q) => q.sql.includes('INSERT INTO') && q.sql.includes('room_booking')
+  );
+  assert.ok(insertBookingQuery, 'room_booking INSERT query must be executed');
+  assert.ok(insertBookingQuery.sql.includes("'NA'"), "Unassigned roomno must be specified as 'NA' in SQL");
+
+  // Verify roomdb was not touched
+  const roomdbQuery = recordedQueries.find((q) => q.sql.includes('roomdb'));
+  assert.strictEqual(roomdbQuery, undefined, 'roomdb table must NOT be modified');
+});

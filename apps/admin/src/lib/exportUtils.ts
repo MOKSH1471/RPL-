@@ -66,6 +66,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Payment UTR',
     'Player Photo URL',
     'Payment Receipt URL',
+    'Comments / Notes',
     'Submitted At',
     'Archived At',
   ];
@@ -115,6 +116,7 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(r.payment_utr || ''),
       escapeCSV(r.player_photo_url || ''),
       escapeCSV(r.payment_receipt_url || ''),
+      escapeCSV(gen.comments || gen.additionalNotes || gen.additional_notes || ''),
       escapeCSV(r.submitted_at || ''),
       escapeCSV(r.archived_at || gen.archivedAt || '-'),
     ].join(',');
