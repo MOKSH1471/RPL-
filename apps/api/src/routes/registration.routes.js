@@ -208,6 +208,15 @@ router.post('/register', async (req, res) => {
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
         const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
+        if (isSpectator && !isSpectatorAll3Days) {
+          delete mergedGeneralDetails.nostalgiaSport;
+          delete mergedGeneralDetails.nostalgia_sport;
+          delete mergedGeneralDetails.nostalgiaSports;
+          if (mergedSportAnswers && mergedSportAnswers['90s-nostalgia']) {
+            delete mergedSportAnswers['90s-nostalgia'];
+          }
+        }
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
         const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
         const computedFee = isSpectator
@@ -302,6 +311,18 @@ router.post('/register', async (req, res) => {
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
         const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
+        if (isSpectator && !isSpectatorAll3Days) {
+          delete cleanGeneralDetails.nostalgiaSport;
+          delete cleanGeneralDetails.nostalgia_sport;
+          delete cleanGeneralDetails.nostalgiaSports;
+          if (sanitizedAnswers && sanitizedAnswers['90s-nostalgia']) {
+            delete sanitizedAnswers['90s-nostalgia'];
+          }
+          if (cleanSportAnswers && cleanSportAnswers['90s-nostalgia']) {
+            delete cleanSportAnswers['90s-nostalgia'];
+          }
+        }
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
         const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
         const newFee = isSpectator

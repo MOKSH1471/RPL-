@@ -247,7 +247,11 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                   {data.registrationType === 'spectator' ? 'Official Spectator Pass' : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
                 </span>
                 <span className="text-[11px] text-amber-800 font-medium">
-                  {data.registrationType === 'spectator' ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included' : 'All selected sports included in event pass'}
+                  {data.registrationType === 'spectator'
+                    ? (data.accommodationRequired === 'Yes' || data.spectatorDates?.length === 3
+                      ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included'
+                      : 'Full Meals & Night Snacks Included')
+                    : 'All selected sports included in event pass'}
                 </span>
               </div>
               <div className="text-right">

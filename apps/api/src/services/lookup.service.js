@@ -89,12 +89,20 @@ export async function lookupPlayer(input) {
   }
 
   // 2. Fallback to card_db
-  const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
-     FROM ${AASHRAY_DB}.card_db 
-     WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
-     ORDER BY cardno DESC LIMIT 1`;
+  let rows = [];
+  try {
+    const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
+       FROM ${AASHRAY_DB}.card_db 
+       WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
+       ORDER BY cardno DESC LIMIT 1`;
 
-  const [rows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    const [cardRows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    rows = cardRows;
+  } catch (dbErr) {
+    if (dbErr.code !== 'ER_BAD_DB_ERROR' && dbErr.code !== 'ER_NO_SUCH_TABLE') {
+      throw dbErr;
+    }
+  }
 
   if (rows.length === 0) {
     return {
@@ -143,12 +151,20 @@ export async function lookupReferrer(input) {
     };
   }
 
-  const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
-     FROM ${AASHRAY_DB}.card_db 
-     WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
-     ORDER BY cardno DESC LIMIT 1`;
+  let rows = [];
+  try {
+    const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
+       FROM ${AASHRAY_DB}.card_db 
+       WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
+       ORDER BY cardno DESC LIMIT 1`;
 
-  const [rows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    const [cardRows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    rows = cardRows;
+  } catch (dbErr) {
+    if (dbErr.code !== 'ER_BAD_DB_ERROR' && dbErr.code !== 'ER_NO_SUCH_TABLE') {
+      throw dbErr;
+    }
+  }
 
   if (rows.length === 0) {
     return {

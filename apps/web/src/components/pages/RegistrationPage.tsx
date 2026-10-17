@@ -277,16 +277,22 @@ export function calculateAge(dobString?: string): number | null {
   return age;
 }
 
-const isSportAllowedForPlayer = (sportId: SportType, gender?: string, age?: number | null) => {
+const isSportAllowedForPlayer = (
+  sportId: SportType,
+  gender?: string,
+  age?: number | null,
+  isVerifiedMale?: boolean
+) => {
   // Table Tennis and Carrom are open to all categories of people: male, female, kachapaka (any age)
   if (sportId === 'table-tennis' || sportId === 'carrom') {
     return true;
   }
-  if (gender === 'Male' && (sportId === 'womens-sports' || (sportId as string) === 'womens')) {
-    return false;
-  }
-  if (gender === 'Female' && (sportId === 'cricket' || sportId === 'football')) {
-    return false;
+  // Women's Cricket League is open to everyone unless the member is verified as Male in Ashram DB
+  if (sportId === 'womens-sports' || (sportId as string) === 'womens') {
+    if (isVerifiedMale) {
+      return false;
+    }
+    return true;
   }
   // Kaccha Pakka League: only for age 16 and below (<= 16) and 56 and above (>= 56)
   if (sportId === 'kaccha-pakka') {
@@ -331,7 +337,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const getInitialSports = (): SportType[] => {
     if (isInitialSpectator) return ['spectator' as any];
     if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
-      return ['cricket', initialLeague as SportType];
+      const primary: SportType = initialGender === 'Female' ? 'womens-sports' : 'cricket';
+      return [primary, initialLeague as SportType];
     }
     return [mapInitialSport(initialLeague, initialGender)];
   };
@@ -365,6 +372,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
+  const [showSamplePhotoModal, setShowSamplePhotoModal] = useState(false);
   const [showPayLaterConfirmModal, setShowPayLaterConfirmModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
@@ -407,7 +415,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setSelectedSports(['spectator' as any]);
     } else if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
       setValue('registrationType', 'player', { shouldValidate: true });
-      const sportsToSet: SportType[] = ['cricket', initialLeague as SportType];
+      const currentGen = watch('gender');
+      const primary: SportType = (currentGen === 'Female' || initialGender === 'Female') ? 'womens-sports' : 'cricket';
+      const sportsToSet: SportType[] = [primary, initialLeague as SportType];
       setValue('selectedSports', sportsToSet, { shouldValidate: true });
       setSelectedSports(sportsToSet);
     } else {
@@ -420,16 +430,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return () => clearTimeout(t);
   }, [initialLeague]);
 
-  // Prevent background scrolling when size guide modal or pay later modal is open
+  // Prevent background scrolling when size guide modal, sample photo modal, or pay later modal is open
   useEffect(() => {
-    if (showSizeGuideModal || showPayLaterConfirmModal) {
+    if (showSizeGuideModal || showPayLaterConfirmModal || showSamplePhotoModal) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prevOverflow;
       };
     }
-  }, [showSizeGuideModal, showPayLaterConfirmModal]);
+  }, [showSizeGuideModal, showPayLaterConfirmModal, showSamplePhotoModal]);
 
 
   // Unregistered player reference verification states
@@ -647,6 +657,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentSpectatorTshirt = watch('spectatorTshirt') || 'No';
   const currentExistingFamily = watch('existingRplFamily');
 
+  // Spectator is eligible for 90s Nostalgia games only if attending all 3 days (with stay or without stay)
+  const isSpectatorAll3Days = isSpectator && (currentAcc === 'Yes' || spectatorDates.length === 3);
+  const isNostalgiaEligible = !isSpectator || isSpectatorAll3Days;
+
+  // Auto-clear selected nostalgia games if spectator chooses fewer than 3 days without stay
+  useEffect(() => {
+    if (isSpectator && currentAcc === 'No' && spectatorDates.length < 3 && currentNostalgiaSport) {
+      setValue('nostalgiaSport', '', { shouldValidate: true, shouldDirty: true });
+    }
+  }, [isSpectator, currentAcc, spectatorDates.length, currentNostalgiaSport, setValue]);
+
   // Synchronize spectator single-day selections with check-in and check-out dates
   useEffect(() => {
     if (isSpectator && currentAcc === 'No') {
@@ -687,16 +708,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const playerAge = useMemo(() => calculateAge(currentDateOfBirth), [currentDateOfBirth]);
   const isKacchaPakkaEligible = playerAge !== null && (playerAge <= 16 || playerAge >= 56);
 
+  const isVerifiedMale = Boolean((isExistingPlayerRegistration || mumukshuCardInfo) && currentGender === 'Male');
+
   // Filter available sports dynamically based on player's gender and age
   const allowedSports = useMemo(() => {
-    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge));
-  }, [currentGender, playerAge]);
+    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge, isVerifiedMale));
+  }, [currentGender, playerAge, isVerifiedMale]);
 
   // When gender or age/DOB changes, automatically remove any disallowed sports from selectedSports
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge));
+      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
       const hasPrimary = valid.some((s) => PRIMARY_SPORTS.includes(s));
       const hasAddon = valid.some((s) => ADDON_SPORTS.includes(s));
       if (hasAddon && !hasPrimary) {
@@ -713,7 +736,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('selectedSports', [fallback], { shouldValidate: true });
       return [fallback];
     });
-  }, [currentGender, playerAge, allowedSports, setValue, isSpectator]);
+  }, [currentGender, playerAge, allowedSports, setValue, isSpectator, isVerifiedMale]);
   const currentFood = watch('foodPreference');
   const currentCentre = watch('centre');
 
@@ -1322,7 +1345,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   }, []);
 
   const toggleSportSelection = (sportId: SportType) => {
-    if (!isSportAllowedForPlayer(sportId, currentGender, playerAge)) return;
+    if (!isSportAllowedForPlayer(sportId, currentGender, playerAge, isVerifiedMale)) {
+      if (sportId === 'womens-sports' && isVerifiedMale) {
+        setSportRuleNotice("Women's Cricket League is exclusively for female participants (MeeraBen).");
+      }
+      return;
+    }
     setSportRuleNotice(null);
 
     let updated: SportType[];
@@ -1343,10 +1371,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
       updated = selectedSports.filter((s) => s !== sportId);
     } else {
+      // If user is selecting Women's Cricket League, automatically sync gender to Female
+      if (sportId === 'womens-sports') {
+        setValue('gender', 'Female', { shouldValidate: true, shouldDirty: true });
+      }
+
       // If adding an add-on sport, ensure at least one primary sport is selected (default to cricket if none)
       const hasPrimary = selectedSports.some((s) => PRIMARY_SPORTS.includes(s));
       if (ADDON_SPORTS.includes(sportId) && !hasPrimary) {
-        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
+        const primaryFallback: SportType = (currentGender === 'Female' || sportId === 'womens-sports') ? 'womens-sports' : 'cricket';
         updated = [...selectedSports, primaryFallback, sportId];
         setSportRuleNotice(
           `${primaryFallback === 'womens-sports' ? "Women's Cricket League" : "Main Cricket League"} has been automatically included. Table Tennis & Carrom are free add-on tournaments requiring a primary league.`
@@ -1527,7 +1560,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       centre: data.centre,
       tshirtSize: data.tshirtSize,
       extraTshirt: data.extraTshirt || 'No',
-      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
+      nostalgiaSport: isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       dateOfBirth: data.dateOfBirth,
       gender: data.gender,
       foodPreference: data.foodPreference,
@@ -1595,8 +1628,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       dateOfBirth: data.dateOfBirth,
       tshirtSize: data.tshirtSize,
       extraTshirt: isSpectator ? (data.spectatorTshirt || 'No') : (data.extraTshirt || 'No'),
-      nostalgiaSport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
-      nostalgia_sport: data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
+      nostalgiaSport: isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
+      nostalgia_sport: isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
       foodPreference: data.foodPreference,
       accommodationRequired: data.accommodationRequired,
       stayingRoomNumber: data.accommodationRequired === 'No' ? data.stayingRoomNumber?.trim() : undefined,
@@ -1689,7 +1722,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         enrolled: true,
       };
     }
-    if (data.nostalgiaSport && data.nostalgiaSport !== 'None') {
+    if (isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None') {
       sportAnswers['90s-nostalgia'] = {
         sport: data.nostalgiaSport,
       };
@@ -1723,6 +1756,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       payment_utr: paymentUtr,
     };
     delete (sanitizedAnswers as any).photoDataUrl;
+    if (!isNostalgiaEligible) {
+      delete (sanitizedAnswers as any).nostalgiaSport;
+      delete (sanitizedAnswers as any).nostalgia_sport;
+      delete (sanitizedAnswers as any).nostalgiaSports;
+    }
 
     // =========================================================================
     // 0. PAY LATER PATH — Save registration as pending, skip payment
@@ -2889,7 +2927,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         { value: 'Female', label: 'Female (MeeraBen)' },
                       ]}
                       value={currentGender}
-                      onChange={(genderOption) => setValue('gender', genderOption as any, { shouldValidate: true })}
+                      onChange={(genderOption) => {
+                        setValue('gender', genderOption as any, { shouldValidate: true, shouldDirty: true });
+                        if (genderOption === 'Male' && selectedSports.includes('womens-sports')) {
+                          const remaining = selectedSports.filter((s) => s !== 'womens-sports');
+                          const hasPrimary = remaining.some((s) => PRIMARY_SPORTS.includes(s));
+                          const nextSports: SportType[] = hasPrimary ? remaining : ['cricket', ...remaining];
+                          setSelectedSports(nextSports);
+                          setValue('selectedSports', nextSports, { shouldValidate: true });
+                        }
+                      }}
                       layoutId="gender-indicator"
                       activeColor="bg-gradient-to-r from-amber-500 to-orange-600"
                       activeTextColor="text-white"
@@ -2997,13 +3044,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <Sparkles className="w-4 h-4 text-emerald-600" />
                             Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹630/day)
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                            Games & Snacks Included
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                            spectatorDates.length === 3
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              : 'bg-teal-100 text-teal-900 border-teal-300'
+                          }`}>
+                            {spectatorDates.length === 3 ? 'Games & Snacks Included' : 'Night Snacks Included'}
                           </span>
                         </div>
                         <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
                           <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
-                          <p>✓ <strong>90’s Nostalgia Games:</strong> Full participation in 90’s Nostalgia traditional games.</p>
+                          {spectatorDates.length === 3 ? (
+                            <p>✓ <strong>90’s Nostalgia Games:</strong> Full participation in 90’s Nostalgia traditional games included (All 3 Days pass).</p>
+                          ) : (
+                            <p className="text-slate-500 text-[11.5px]">
+                              • <strong>90’s Nostalgia Games:</strong> Available when attending all 3 days (with stay or 3-day pass).
+                            </p>
+                          )}
                           <p className="text-slate-500 text-[11px]">• Self-arranged stay (or visiting for event sessions).</p>
                         </div>
 
@@ -3317,9 +3374,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <span>{getFieldLabel('photo', 'Profile Photo (Passport / ID)')}</span>
                           <span className="text-pink-600 font-bold">*</span>
                         </label>
-                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                          Square • 600×600 to 1200×1200 px
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setShowSamplePhotoModal(true)}
+                            className="inline-flex items-center space-x-1 text-[10.5px] font-bold text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full transition-colors cursor-pointer shadow-2xs"
+                          >
+                            <ZoomIn className="w-3 h-3 text-amber-600" />
+                            <span>View Sample</span>
+                          </button>
+                          <span className="text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                            Square • 600×600 to 1200×1200 px
+                          </span>
+                        </div>
                       </div>
 
                       <div className={`rounded-2xl border ${photoError ? 'border-pink-400 bg-pink-50/40 ring-1 ring-pink-400/30' : 'border-slate-200 bg-slate-50/70'} p-3 sm:p-3.5 space-y-3 w-full max-w-full overflow-hidden transition-all`}>
@@ -4480,16 +4547,45 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
                       🎈 90’s Traditional Games
                     </span>
+                    {isSpectator && (
+                      isSpectatorAll3Days ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          ✓ Unlocked (Attending All 3 Days)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-slate-100 text-slate-700 border border-slate-300">
+                          <Lock className="w-3 h-3 text-slate-500" />
+                          <span>All 3 Days Only</span>
+                        </span>
+                      )
+                    )}
                   </div>
                   <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
                     {isSpectator
-                      ? "Included with your Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
+                      ? (isSpectatorAll3Days
+                        ? "Included with your 3-day Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
+                        : "Participation in 90’s Nostalgia games is exclusive to participants attending for all 3 days (either With Stay or 3-Day Pass).")
                       : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90’s Nostalgia games division (open for all participants)."}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {!isNostalgiaEligible ? (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border-2 border-dashed border-amber-300 text-slate-700 space-y-2.5">
+                  <div className="flex items-center space-x-2 text-amber-950 font-bold text-sm">
+                    <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Nostalgia Games Locked for 1–2 Day Passes</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Participation in 90’s Nostalgia traditional games is only available for attendees joining for all 3 days (either <strong>With Stay</strong> or <strong>All 3 Days Pass</strong>).
+                  </p>
+                  <p className="text-[11.5px] text-amber-900 font-semibold flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>To unlock and choose your nostalgic games, select <strong>"All 3 Days (25, 26 & 27 Dec 2026)"</strong> in Section 1.4 above.</span>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
                 <div ref={nostalgiaDropdownRef} className="relative">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -4632,7 +4728,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </AnimatePresence>
                 </div>
               </div>
-            </InView>
+            )}
+          </InView>
 
 
             {/* ========================================================================= */}
@@ -5018,6 +5115,110 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       Close
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+      {/* Sample Profile Photo Lightbox Modal (Portaled directly to body) */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {showSamplePhotoModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+                onClick={() => setShowSamplePhotoModal(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-lg w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh] max-h-[92dvh]"
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-200 bg-slate-50 shrink-0">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                        <Camera className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-display font-extrabold text-sm sm:text-base text-slate-900 leading-tight">
+                          Sample Profile Photo Guide
+                        </h3>
+                        <p className="text-[10px] sm:text-xs text-slate-500 font-medium">
+                          Passport / ID style photo requirements
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSamplePhotoModal(false)}
+                      className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/80 active:bg-slate-300 transition-colors cursor-pointer"
+                      aria-label="Close Sample Photo Guide"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Modal Body / Sample Image & Guidelines */}
+                  <div className="p-4 sm:p-5 overflow-auto flex flex-col items-center min-h-0 flex-1 touch-manipulation space-y-4">
+                    <div className="relative w-48 sm:w-56 aspect-square rounded-2xl overflow-hidden border-2 border-amber-300 shadow-md bg-slate-100 shrink-0">
+                      <img
+                        src="/sample-profile-photo.png"
+                        alt="Sample Profile Photo"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 backdrop-blur-xs">
+                        <Check className="w-2.5 h-2.5" />
+                        <span>Accepted Standard</span>
+                      </div>
+                    </div>
+
+                    {/* Requirements checklist */}
+                    <div className="w-full bg-slate-50 rounded-xl p-3 sm:p-3.5 border border-slate-200 space-y-2 text-xs">
+                      <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Photo Guidelines</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600 text-[11.5px]">
+                        <div className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>Clear face looking straight ahead</span>
+                        </div>
+                        <div className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>Plain light or neutral background</span>
+                        </div>
+                        <div className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>Square aspect ratio (1:1)</span>
+                        </div>
+                        <div className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span>No sunglasses, hats, or side poses</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
+                    <span className="flex items-center space-x-1.5 text-[11px] sm:text-xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span>Used for ID badges & match broadcasts</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSamplePhotoModal(false)}
+                      className="px-4 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      Got It
                     </button>
                   </div>
                 </motion.div>
