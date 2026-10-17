@@ -645,6 +645,28 @@ test('Player Pass Ledger: records category="sports" in rpl_transactions for play
 });
 
 test('Spectator Pass: 1-Day spectator without stay omits nostalgiaSport', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'spectator',
+      full_name: 'Spectator One Day Guest',
+      email: 'spectator1day@example.com',
+      mobile: '+91 9777766666',
+      payment_status: 'pending',
+      general_details: {
+        centre: 'Ahmedabad',
+        gender: 'Female',
+        registrationType: 'spectator',
+        spectatorOption: 'without-stay',
+        accommodationRequired: 'No',
+        spectatorDates: ['2026-12-25'],
+        selectedSports: ['spectator'],
+        nostalgiaSport: 'Carrom',
+      },
+      answers: {},
+    }),
+  });
+  assert.ok([200, 201].includes(res.status));
   const { status, data } = await apiRequest('/api/player-lookup?mobile=9777766666');
   assert.strictEqual(status, 200);
   assert.strictEqual(data.registration.generalDetails.nostalgiaSport, undefined, '1-day spectator must have nostalgiaSport omitted');

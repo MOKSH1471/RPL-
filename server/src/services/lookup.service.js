@@ -1,12 +1,13 @@
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
+import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
+import logger from '../config/logger.js';
 
 export async function lookupPlayer(input) {
-  const digitsOnly = input.replace(/\D/g, '');
-  const cleanMobile = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
+  const cleanMobile = cleanDomesticPhone(input);
 
-  console.log(`[PLAYER / MUMUKSHU LOOKUP] Input: "${input}" | Digits: "${digitsOnly}" | Clean 10-digit: "${cleanMobile}"`);
+  logger.info(`[PLAYER / MUMUKSHU LOOKUP] Input: "${input}" | Normalized: "${cleanMobile}"`);
 
-  if (cleanMobile.length < 5 && digitsOnly.length < 5) {
+  if (cleanMobile.length < 5) {
     return { found: false, message: 'Search term too short' };
   }
 
@@ -58,26 +59,28 @@ export async function lookupPlayer(input) {
         mobile: reg.mobile,
         checkInDate: reg.check_in_date,
         checkOutDate: reg.check_out_date,
-        playerPhotoUrl: reg.player_photo_url,
         paymentStatus: reg.payment_status,
         paymentUtr: reg.payment_utr,
         paymentReceiptUrl: reg.payment_receipt_url,
-        receiptList,
-        utrList,
-        previouslyPaidSportsCount,
+        paymentReceipts: receiptList,
+        paymentUtrs: utrList,
         hasPreviouslyPaid,
+        previouslyPaidSportsCount,
+        selectedSports: savedSports,
         generalDetails: parsedGeneralDetails,
+        general_details: parsedGeneralDetails,
         sportAnswers: parsedSportAnswers,
         playerPhotoUrl: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
         player_photo_url: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
-        cardNo: parsedGeneralDetails.cardNo || null,
+        submittedAt: reg.submitted_at,
       },
       data: {
         cardNo: parsedGeneralDetails.cardNo || null,
-        fullName: reg.full_name,
+        fullName: reg.full_name || '',
         gender: parsedGeneralDetails.gender || 'Male',
         dateOfBirth: parsedGeneralDetails.dateOfBirth || '',
-        email: reg.email,
+        mobileNumber: reg.mobile || cleanMobile,
+        email: reg.email || '',
         centre: parsedGeneralDetails.centre || '',
         photoUrl: reg.player_photo_url || '',
         isMumukshu: !!parsedGeneralDetails.cardNo,
@@ -86,12 +89,20 @@ export async function lookupPlayer(input) {
   }
 
   // 2. Fallback to card_db
-  const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
-     FROM ${AASHRAY_DB}.card_db 
-     WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
-     ORDER BY cardno DESC LIMIT 1`;
+  let rows = [];
+  try {
+    const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
+       FROM ${AASHRAY_DB}.card_db 
+       WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
+       ORDER BY cardno DESC LIMIT 1`;
 
-  const [rows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    const [cardRows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    rows = cardRows;
+  } catch (dbErr) {
+    if (dbErr.code !== 'ER_BAD_DB_ERROR' && dbErr.code !== 'ER_NO_SUCH_TABLE') {
+      throw dbErr;
+    }
+  }
 
   if (rows.length === 0) {
     return {
@@ -101,7 +112,7 @@ export async function lookupPlayer(input) {
   }
 
   const member = rows[0];
-  console.log(`[PLAYER / MUMUKSHU LOOKUP] Matched card_db for "${member.issuedto}" (card #${member.cardno}) via mobile "${cleanMobile}"`);
+  logger.info(`[PLAYER / MUMUKSHU LOOKUP] Matched card_db for "${member.issuedto}" (card #${member.cardno}) via mobile "${cleanMobile}"`);
 
   let normalizedGender = 'Male';
   if (member.gender) {
@@ -129,10 +140,9 @@ export async function lookupPlayer(input) {
 }
 
 export async function lookupReferrer(input) {
-  const digitsOnly = input.replace(/\D/g, '');
-  const cleanMobile = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
+  const cleanMobile = cleanDomesticPhone(input);
 
-  console.log(`[REFERRER LOOKUP] Checking strictly by phone: "${input}" -> 10-digit: "${cleanMobile}"`);
+  logger.info(`[REFERRER LOOKUP] Checking strictly by phone: "${input}" -> 10-digit: "${cleanMobile}"`);
 
   if (cleanMobile.length !== 10) {
     return {
@@ -141,12 +151,20 @@ export async function lookupReferrer(input) {
     };
   }
 
-  const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
-     FROM ${AASHRAY_DB}.card_db 
-     WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
-     ORDER BY cardno DESC LIMIT 1`;
+  let rows = [];
+  try {
+    const cardDbQuery = `SELECT cardno, issuedto, gender, DATE_FORMAT(dob, '%Y-%m-%d') as dob, mobno, email, center, pfp 
+       FROM ${AASHRAY_DB}.card_db 
+       WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') 
+       ORDER BY cardno DESC LIMIT 1`;
 
-  const [rows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    const [cardRows] = await db.query(cardDbQuery, [cleanMobile, `%${cleanMobile}`]);
+    rows = cardRows;
+  } catch (dbErr) {
+    if (dbErr.code !== 'ER_BAD_DB_ERROR' && dbErr.code !== 'ER_NO_SUCH_TABLE') {
+      throw dbErr;
+    }
+  }
 
   if (rows.length === 0) {
     return {
@@ -156,7 +174,7 @@ export async function lookupReferrer(input) {
   }
 
   const member = rows[0];
-  console.log(`[REFERRER LOOKUP] Verified referrer: "${member.issuedto}" (card #${member.cardno}) strictly by phone "${cleanMobile}"`);
+  logger.info(`[REFERRER LOOKUP] Verified referrer: "${member.issuedto}" (card #${member.cardno}) strictly by phone "${cleanMobile}"`);
 
   return {
     found: true,
