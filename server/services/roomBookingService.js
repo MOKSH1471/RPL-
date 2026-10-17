@@ -39,21 +39,22 @@ async function ensureCardRecord({ cardno, fullName, mobile, gender, email, centr
   const mobNum = Number(cleanMobDigits.slice(-10)) || 9999999999;
   const mappedGender = gender === 'Female' ? 'F' : 'M';
 
-  // 1. If cardno provided, check if exists in central Aashray card_db
-  if (cardno) {
-    const [existing] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE cardno = ?`, [cardno]);
-    if (existing.length > 0) return cardno;
-  }
-
-  // 2. Try looking up by mobile in central Aashray card_db
-  if (cleanMobDigits.length >= 10) {
-    const [byMob] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ?`, [mobNum]);
-    if (byMob.length > 0) return byMob[0].cardno;
-  }
-
-  // 3. Create a Guest Card in central Aashray card_db if not found
   const guestCardNo = cardno || `GUEST_${cleanMobDigits.slice(-6) || Math.floor(100000 + Math.random() * 900000)}`;
+
   try {
+    // 1. If cardno provided, check if exists in central Aashray card_db
+    if (cardno) {
+      const [existing] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE cardno = ?`, [cardno]);
+      if (existing.length > 0) return cardno;
+    }
+
+    // 2. Try looking up by mobile in central Aashray card_db
+    if (cleanMobDigits.length >= 10) {
+      const [byMob] = await db.query(`SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ?`, [mobNum]);
+      if (byMob.length > 0) return byMob[0].cardno;
+    }
+
+    // 3. Create a Guest Card in central Aashray card_db if not found
     await db.query(
       `INSERT INTO ${AASHRAY_DB}.card_db 
        (cardno, issuedto, gender, mobno, email, center, active, status, res_status, updatedBy, password, createdAt, updatedAt)
@@ -63,7 +64,7 @@ async function ensureCardRecord({ cardno, fullName, mobile, gender, email, centr
     );
     return guestCardNo;
   } catch (err) {
-    console.warn('Notice creating guest card_db record:', err.message);
+    console.warn('Notice ensuring guest card_db record:', err.message);
     return guestCardNo;
   }
 }

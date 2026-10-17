@@ -35,13 +35,13 @@ router.post('/razorpay/create-order', async (req, res) => {
       ? (req.body.spectatorTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || extraTshirt || 'No')
       : (extraTshirt || regPayload.extraTshirt || cleanGeneral.extraTshirt || 'No');
     const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+    const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
+    const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
 
     let computedFee;
 
     if (isSpectator) {
       // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630 per day. T-Shirt optional = +₹500.
-      const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
-      const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
       const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;

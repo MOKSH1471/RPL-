@@ -316,8 +316,8 @@ router.post('/register', async (req, res) => {
           delete cleanGeneralDetails.nostalgiaSport;
           delete cleanGeneralDetails.nostalgia_sport;
           delete cleanGeneralDetails.nostalgiaSports;
-          if (cleanAnswers && cleanAnswers['90s-nostalgia']) {
-            delete cleanAnswers['90s-nostalgia'];
+          if (sanitizedAnswers && sanitizedAnswers['90s-nostalgia']) {
+            delete sanitizedAnswers['90s-nostalgia'];
           }
           if (cleanSportAnswers && cleanSportAnswers['90s-nostalgia']) {
             delete cleanSportAnswers['90s-nostalgia'];
