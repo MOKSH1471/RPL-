@@ -20,7 +20,8 @@
     "server": "node server/index.js",
     "test": "node --test tests/*.test.js && node scripts/archive_test_entries.js",
     "db:migrate": "node database/migrate.js",
-    "db:archive-tests": "node scripts/archive_test_entries.js"
+    "db:archive-tests": "node scripts/archive_test_entries.js",
+    "sync:aashray": "node scripts/sync_rpl_to_prod_aashray.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

@@ -26,3 +26,20 @@ Thumbs.db
 *.code-workspace
 *.zip
 
+# Database sync exports & dumps
+sync_rpl_to_prod_aashray.sql
+*.dump.sql
+*.sqlite
+*.bak
+*.sql.gz
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.sw?
+
+# Caches & Test Coverage
+.vite/
+.cache/
+coverage/
+.nyc_output/

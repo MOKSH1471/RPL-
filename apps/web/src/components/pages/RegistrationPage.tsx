@@ -16,6 +16,7 @@ import {
   verifyRazorpayPayment,
   reportRazorpayPaymentFailure,
 } from '@/lib/api';
+import { compressImage } from '@/lib/imageCompressor';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -1332,23 +1333,32 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit. Please choose a smaller image.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('File size exceeds 15MB limit. Please choose a smaller image.');
         return;
       }
       setPhotoError(null);
-      setPhotoName(file.name);
+
+      // Compress heavy mobile camera photos in-browser (e.g. 5MB -> ~200KB)
+      let readyFile = file;
+      try {
+        readyFile = await compressImage(file, { fileType: 'photo' });
+      } catch (err) {
+        console.warn('Image compression fallback to original:', err);
+      }
+
+      setPhotoName(readyFile.name);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(readyFile);
 
       // Upload to Google Drive via backend API with Player's Name
       try {
         setIsUploadingPhoto(true);
         const cleanName = (watch('fullName') || 'Player').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const driveUrl = await uploadFileToDrive(file, `${cleanName}_Photo`, 'photo');
+        const driveUrl = await uploadFileToDrive(readyFile, `${cleanName}_Photo`, 'photo');
         setPhotoDriveUrl(driveUrl);
       } catch (err) {
         console.warn('Direct upload notice (will use preview fallback):', err);
