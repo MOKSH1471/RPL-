@@ -378,6 +378,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
+  const [showPayLaterConfirmModal, setShowPayLaterConfirmModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
@@ -426,16 +427,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return () => clearTimeout(t);
   }, [initialLeague]);
 
-  // Prevent background scrolling when size guide modal is open
+  // Prevent background scrolling when size guide modal or pay later modal is open
   useEffect(() => {
-    if (showSizeGuideModal) {
+    if (showSizeGuideModal || showPayLaterConfirmModal) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prevOverflow;
       };
     }
-  }, [showSizeGuideModal]);
+  }, [showSizeGuideModal, showPayLaterConfirmModal]);
 
 
   // Unregistered player reference verification states
@@ -4714,11 +4715,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       type="button"
                       disabled={isSubmitting || isUploadingPhoto || isUploadingReceipt || isRazorpayLoading}
                       onClick={() => {
-                        alert('Please make the payment within 24hrs.');
-                        isPayLaterRef.current = true;
-                        setIsPayLater(true);
-                        // Trigger form validation + submit via handleSubmit wrapper
-                        handleSubmit(onSubmit, onInvalid)();
+                        // Validate form first, and open sleek confirmation modal if valid
+                        handleSubmit(() => {
+                          setShowPayLaterConfirmModal(true);
+                        }, onInvalid)();
                       }}
                       className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
                     >
@@ -4848,6 +4848,106 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </motion.div>
               </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+      {/* Pay Later 24-Hour Confirmation Modal */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {showPayLaterConfirmModal && (
+              <div
+                className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto"
+                onClick={() => setShowPayLaterConfirmModal(false)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-amber-200/90 shadow-2xl overflow-hidden my-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Decorative Top Gradient Accent */}
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
+
+                  {/* Close button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPayLaterConfirmModal(false)}
+                    className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="text-center pt-2">
+                    {/* Icon */}
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+                      <Clock className="w-7 h-7 text-amber-600 animate-pulse" />
+                    </div>
+
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                      Confirm Pay Later
+                    </h3>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-bold mt-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Payment required within 24 hours</span>
+                    </div>
+
+                    {/* Fee Card */}
+                    <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 font-semibold">Total Payable Due:</span>
+                        <span className="text-xl font-black text-slate-900">₹{totalPayableFee}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-200/60">
+                        <span>Registration Status:</span>
+                        <span className="font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                          Pending Payment
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* How to Pay Notice */}
+                    <div className="mt-3.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-left text-xs text-slate-600 space-y-1">
+                      <p className="font-bold text-amber-950 flex items-center gap-1.5">
+                        <span>💡</span> How to complete payment later:
+                      </p>
+                      <p className="text-[11.5px] leading-relaxed text-slate-600">
+                        Open <strong className="text-slate-900">"Check Pass / Pay Due"</strong> from the tournament homepage, enter your registered number (<strong>{watch('mobileNumber') ? `${watch('countryCode') || '+91'} ${watch('mobileNumber')}` : 'your mobile number'}</strong>), and pay via UPI, Card, or NetBanking.
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-5 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPayLaterConfirmModal(false);
+                          isPayLaterRef.current = true;
+                          setIsPayLater(true);
+                          handleSubmit(onSubmit, onInvalid)();
+                        }}
+                        className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-extrabold text-sm shadow-md shadow-amber-500/25 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      >
+                        <Clock className="w-4 h-4" />
+                        <span>Confirm & Save Registration</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPayLaterConfirmModal(false)}
+                        className="w-full py-2.5 px-4 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                      >
+                        Cancel & Pay Online Now via Razorpay
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>,
           document.body
