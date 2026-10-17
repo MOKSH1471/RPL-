@@ -629,6 +629,9 @@ router.post('/admin/accommodation/assign', async (req, res) => {
     res.json({ success: true, message: `Room "${cleanRoomNo}" assigned successfully!` });
   } catch (error) {
     console.error('Error assigning room:', error);
+    if (error.code === 'ER_BAD_DB_ERROR' || error.code === 'ER_NO_SUCH_TABLE') {
+      return res.status(404).json({ success: false, error: 'Booking not found.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to assign room number.' });
   }
 });

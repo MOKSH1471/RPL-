@@ -129,6 +129,12 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       : [data.league || 'cricket'];
 
   const isSpectator = (data as any).registrationType === 'spectator' || sportsList.includes('spectator');
+  const isSpectatorAll3Days =
+    isSpectator &&
+    (data.accommodationRequired === 'Yes' ||
+      (data as any).spectatorOption === 'with-stay' ||
+      ((data as any).spectatorDates && (data as any).spectatorDates.length === 3) ||
+      ((data as any).spectatorDays && (data as any).spectatorDays.length === 3));
 
   const formatSportName = (s: string) => {
     switch (s) {
@@ -152,7 +158,9 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'kaccha-pakka':
         return 'Kaccha Pakka League';
       case 'spectator':
-        return 'Spectator Pass (90’s Nostalgia Games & Meals)';
+        return isSpectatorAll3Days
+          ? 'Spectator Pass (90’s Nostalgia Games & Meals)'
+          : 'Spectator Pass (Night Snacks & Sessions)';
       default:
         return s;
     }
@@ -528,7 +536,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Registered Sports */}
                 <div className="mb-2">
                   <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    {isSpectator ? 'ARENAS & 90’S NOSTALGIA GAMES' : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
+                    {isSpectator ? (isSpectatorAll3Days ? 'ARENAS & 90’S NOSTALGIA GAMES' : 'ARENAS & SESSIONS') : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
                   </div>
                   <div className="space-y-1">
                     {sportsList.map((sport, idx) => (
@@ -551,7 +559,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                     <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>{isSpectator ? 'Meals & 90’s Nostalgia Games' : 'Player Kit & Pass'}</span>
+                    <span>{isSpectator ? (isSpectatorAll3Days ? 'Meals & 90’s Nostalgia Games' : 'Meals & Night Snacks') : 'Player Kit & Pass'}</span>
                     <span className="font-mono">INCLUDED</span>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">

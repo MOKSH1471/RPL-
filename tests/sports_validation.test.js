@@ -158,6 +158,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     // Sub-section 1.5 fields (Photo & Existing RPL Family) are omitted for spectators
     const requiresPhoto = false;
     const requiresFamilyEnrollment = false;
+    const isNostalgiaEligible = payload.accommodationRequired === 'Yes' || (Array.isArray(payload.spectatorDates) && payload.spectatorDates.length === 3);
 
     return {
       valid: true,
@@ -165,12 +166,13 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
       daysCount,
       requiresPhoto,
       requiresFamilyEnrollment,
+      isNostalgiaEligible,
       inclusions: [
         'Full Day Meals (Breakfast, Lunch, Dinner)',
         'Night Snacks & Refreshments',
-        '1980s Retro & Nostalgia Games',
+        isNostalgiaEligible ? '1980s Retro & Nostalgia Games' : null,
         payload.accommodationRequired === 'Yes' ? 'Ashram Stay (Compulsory 3 Days)' : 'Self-Arranged Stay',
-      ],
+      ].filter(Boolean),
     };
   }
 
@@ -186,6 +188,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
   assert.strictEqual(dayPass1.daysCount, 1);
   assert.strictEqual(dayPass1.requiresPhoto, false);
   assert.strictEqual(dayPass1.requiresFamilyEnrollment, false);
+  assert.strictEqual(dayPass1.isNostalgiaEligible, false, '1-day spectator is NOT eligible for nostalgia games');
 
   // 2. Day Pass: 2 Days without stay, without T-shirt (₹1,260)
   const dayPass2 = validateSpectatorRules({
@@ -196,6 +199,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
   });
   assert.strictEqual(dayPass2.totalFee, 1260);
   assert.strictEqual(dayPass2.daysCount, 2);
+  assert.strictEqual(dayPass2.isNostalgiaEligible, false, '2-day spectator is NOT eligible for nostalgia games');
 
   // 3. Day Pass: 3 Days (All Dates) without stay, without T-shirt (₹1,890)
   const dayPass3 = validateSpectatorRules({
@@ -206,6 +210,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
   });
   assert.strictEqual(dayPass3.totalFee, 1890);
   assert.strictEqual(dayPass3.daysCount, 3);
+  assert.strictEqual(dayPass3.isNostalgiaEligible, true, '3-day spectator IS eligible for nostalgia games');
 
   // 4. Day Pass: 2 Days without stay, with T-shirt (₹1,260 + ₹500 = ₹1,760)
   const dayPassTshirt = validateSpectatorRules({
@@ -215,6 +220,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     spectatorTshirt: 'Yes',
   });
   assert.strictEqual(dayPassTshirt.totalFee, 1760);
+  assert.strictEqual(dayPassTshirt.isNostalgiaEligible, false);
 
   // 5. Pass with stay, without T-shirt (₹2,700)
   const stayPass = validateSpectatorRules({
@@ -223,6 +229,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     spectatorTshirt: 'No',
   });
   assert.strictEqual(stayPass.totalFee, 2700);
+  assert.strictEqual(stayPass.isNostalgiaEligible, true, 'With stay spectator IS eligible for nostalgia games');
 
   // 6. Pass with stay, with T-shirt (₹3,200)
   const stayPassTshirt = validateSpectatorRules({
@@ -231,6 +238,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     spectatorTshirt: 'Yes',
   });
   assert.strictEqual(stayPassTshirt.totalFee, 3200);
+  assert.strictEqual(stayPassTshirt.isNostalgiaEligible, true);
 });
 
 test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka League', () => {

@@ -644,6 +644,40 @@ test('Player Pass Ledger: records category="sports" in rpl_transactions for play
   assert.strictEqual(rows[0].category, 'sports', 'Player transaction category must be "sports"');
 });
 
+test('Spectator Pass: 1-Day spectator without stay omits nostalgiaSport', async () => {
+  const { status, data } = await apiRequest('/api/player-lookup?mobile=9777766666');
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.registration.generalDetails.nostalgiaSport, undefined, '1-day spectator must have nostalgiaSport omitted');
+});
+
+test('Spectator Pass: 3-Day spectator without stay preserves nostalgiaSport', async () => {
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'spectator',
+      full_name: 'Spectator Three Day Guest',
+      email: 'spectator3day@example.com',
+      mobile: '+91 9777755555',
+      payment_status: 'pending',
+      general_details: {
+        centre: 'Ahmedabad',
+        gender: 'Female',
+        registrationType: 'spectator',
+        spectatorOption: 'without-stay',
+        accommodationRequired: 'No',
+        spectatorDates: ['2026-12-25', '2026-12-26', '2026-12-27'],
+        selectedSports: ['spectator'],
+        nostalgiaSport: 'Carrom',
+      },
+      answers: {},
+    }),
+  });
+  assert.ok([200, 201].includes(res.status));
+  const lookup = await apiRequest('/api/player-lookup?mobile=9777755555');
+  assert.strictEqual(lookup.status, 200);
+  assert.strictEqual(lookup.data.registration.generalDetails.nostalgiaSport, 'Carrom');
+});
+
 
 
 

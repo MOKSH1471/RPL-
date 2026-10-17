@@ -261,6 +261,16 @@ router.post('/razorpay/create-order', async (req, res) => {
         ...(regPayload.sport_answers || {}),
       };
 
+      const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
+      if (isSpectator && !isSpectatorAll3Days) {
+        delete mergedGeneral.nostalgiaSport;
+        delete mergedGeneral.nostalgia_sport;
+        delete mergedGeneral.nostalgiaSports;
+        if (mergedSports && mergedSports['90s-nostalgia']) {
+          delete mergedSports['90s-nostalgia'];
+        }
+      }
+
       const cleanCheckIn = regPayload.check_in_date || cleanGeneral.checkInDate || '2026-12-25';
       const cleanCheckOut = regPayload.check_out_date || cleanGeneral.checkOutDate || '2026-12-27';
       const cleanPhoto = regPayload.player_photo_url || cleanGeneral.player_photo_url || existingReg?.player_photo_url || null;
