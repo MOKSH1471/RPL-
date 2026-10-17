@@ -22,8 +22,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     "Women's Cricket League",
     'Kaccha Pakka League',
     'Football League',
-    'Carrom League',
     'Table Tennis League',
+    'Carrom League',
     'Register Now',
   ];
 
@@ -32,8 +32,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     { id: 'womens' as LeagueType, name: "Women's Cricket League", emoji: '🏏', color: 'bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200' },
     { id: 'kaccha-pakka' as LeagueType, name: 'Kaccha Pakka League', emoji: '🌟', color: 'bg-orange-100 text-orange-900 border-orange-300 hover:bg-orange-200' },
     { id: 'football' as LeagueType, name: 'Football League', emoji: '⚽', color: 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200' },
-    { id: 'carrom' as LeagueType, name: 'Carrom League', emoji: '🎯', color: 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200' },
     { id: 'table-tennis' as LeagueType, name: 'Table Tennis League', emoji: '🏓', color: 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200' },
+    { id: 'carrom' as LeagueType, name: 'Carrom League', emoji: '🎯', color: 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200' },
   ];
 
   return (
@@ -68,8 +68,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <span className="text-pink-600 font-bold">Women's Cricket League</span>,{' '}
           <span className="text-orange-600 font-bold">Kaccha Pakka League</span>,{' '}
           <span className="text-emerald-600 font-bold">Football League</span>,{' '}
-          <span className="text-purple-600 font-bold">Carrom League</span> and{' '}
-          <span className="text-sky-600 font-bold">Table Tennis League</span>. Step up and claim your glory.
+          <span className="text-sky-600 font-bold">Table Tennis League</span> and{' '}
+          <span className="text-purple-600 font-bold">Carrom League</span>. Step up and claim your glory.
         </p>
 
 

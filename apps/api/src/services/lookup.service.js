@@ -70,6 +70,8 @@ export async function lookupPlayer(input) {
         generalDetails: parsedGeneralDetails,
         general_details: parsedGeneralDetails,
         sportAnswers: parsedSportAnswers,
+        playerPhotoUrl: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
+        player_photo_url: reg.player_photo_url || parsedGeneralDetails.player_photo_url || parsedGeneralDetails.playerPhotoUrl || '',
         submittedAt: reg.submitted_at,
       },
       data: {

@@ -136,7 +136,7 @@ export function CheckStatusModal({
         email: record.email || '',
         mobile: record.mobile,
         selectedSports: sports,
-        extraTshirt: isSpectator ? (gen.spectatorTshirt || gen.extraTshirt || 'No') : (gen.extraTshirt || 'No'),
+        extraTshirt: isSpectator ? (gen.spectatorTshirt || gen.extraTshirt || gen.extra_tshirt || 'No') : (gen.extraTshirt || gen.extra_tshirt || 'No'),
         registrationType: isSpectator ? 'spectator' : 'player',
         accommodationRequired: gen.accommodationRequired || 'No',
         existingRplFamily: gen.existingRplFamily || 'No',
@@ -414,8 +414,17 @@ export function CheckStatusModal({
                               if (isApprovedDue && hadPrevPayment) {
                                 return 0;
                               }
-                              const fallbackFee = gen.existingRplFamily === 'Yes' ? 2700 : 3000;
-                              return gen.incrementalFee !== undefined ? gen.incrementalFee : (gen.calculatedFee || gen.totalAmount || fallbackFee);
+                              const isSpec = gen.registrationType === 'spectator' || sports.includes('spectator');
+                              const hasExtraTshirt = gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+                              const specDates = gen.spectatorDates || gen.spectatorDays || [];
+                              const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
+                              const baseFee = isSpec 
+                                ? (gen.accommodationRequired === 'Yes' ? 2700 : (specDaysCount * 630))
+                                : (gen.existingRplFamily === 'Yes' ? 2700 : 3000);
+                              const accurateTotalFee = baseFee + (hasExtraTshirt ? 500 : 0);
+
+                              const rawSavedFee = Number(gen.incrementalFee) || Number(gen.calculatedFee) || Number(gen.totalAmount) || 0;
+                              return hasExtraTshirt ? Math.max(rawSavedFee, accurateTotalFee) : (rawSavedFee || accurateTotalFee);
                             }
                           )()}
                         </h3>

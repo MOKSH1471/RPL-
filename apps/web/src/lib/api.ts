@@ -158,6 +158,7 @@ export interface ExistingRegistrationData {
   checkInDate?: string;
   checkOutDate?: string;
   playerPhotoUrl?: string;
+  player_photo_url?: string;
   paymentStatus: string;
   paymentUtr?: string;
   paymentReceiptUrl?: string;
