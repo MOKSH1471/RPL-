@@ -3025,16 +3025,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <strong>Compulsory 3-Day Stay:</strong> Stay fee is ₹2,700 and all 3 days are compulsory as per event guidelines even if attending for 2 days.
                             </span>
                           </div>
-                          <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
+                          <p className="font-semibold text-emerald-950">✓ <strong>All Meals Included:</strong> Full daily sattvic meals (Breakfast, Lunch &amp; Dinner) &amp; late night snacks included.</p>
                           <p>✓ <strong>90’s Nostalgia Games:</strong> Free participation in 90’s Nostalgia games.</p>
-                        </div>
-
-                        {/* Note: Full day meal bookings to be done on Aashray app */}
-                        <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
-                          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Note:</strong> Please book your meals (Breakfast, Lunch & Dinner) separately on the Aashray App.
-                          </span>
                         </div>
                       </div>
                     ) : (
@@ -4835,7 +4827,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <span>Official Spectator Pass Inclusions:</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] pt-1">
-                      <div className="flex items-center gap-1.5 font-semibold text-amber-900">📌 <strong>Meals:</strong> Book on Aashray app</div>
+                      {currentAcc === 'Yes' ? (
+                        <div className="flex items-center gap-1.5 font-semibold text-emerald-900">✓ <strong>All Meals Included:</strong> Full daily dining</div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 font-semibold text-amber-900">📌 <strong>Meals:</strong> Book on Aashray app (Day Pass)</div>
+                      )}
                       <div className="flex items-center gap-1.5">✓ <strong>Night Snacks:</strong> Evening &amp; late night refreshments</div>
                       <div className="flex items-center gap-1.5">✓ <strong>90’s Nostalgia Games:</strong> 90’s Nostalgia childhood games</div>
                       <div className="flex items-center gap-1.5">{currentAcc === 'Yes' ? '✓ 3 Days Stay: Dec 25–27 (Compulsory 3 Days)' : '✓ Self-Arranged Stay / Day Pass'}</div>

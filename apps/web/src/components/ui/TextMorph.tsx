@@ -40,6 +40,7 @@ interface TextMorphProps {
     delay?: number;
     ease?: string;
   };
+  loop?: boolean;
   tag?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -53,6 +54,7 @@ const COMPONENT_DEFAULTS = {
     delay: 0.6,
     ease: "easeInOut",
   },
+  loop: true,
   color: "#FFFFFF",
   font: {
     fontFamily: "Syne, sans-serif",
@@ -67,7 +69,7 @@ const COMPONENT_DEFAULTS = {
 
 export default function TextMorph(props: TextMorphProps) {
   const mergedProps = { ...COMPONENT_DEFAULTS, ...props };
-  const { words, color, font, transition, tag, className, style } = mergedProps;
+  const { words, color, font, transition, loop, tag, className, style } = mergedProps;
 
   const morph = Math.max(0.1, transition?.duration ?? 0.8);
   const hold = Math.max(0, transition?.delay ?? 0.6);
@@ -98,6 +100,10 @@ export default function TextMorph(props: TextMorphProps) {
   const mHold = pct(morph + hold);
   const mOut = pct(2 * morph + hold);
 
+  const transTotal = 2 * morph + hold;
+  const transInPct = ((morph / transTotal) * 100).toFixed(4);
+  const transHoldPct = (((morph + hold) / transTotal) * 100).toFixed(4);
+
   const keyframes = `
 @keyframes ${animName} {
   0% {
@@ -119,6 +125,40 @@ export default function TextMorph(props: TextMorphProps) {
     opacity: 0;
     filter: blur(20px);
     transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+@keyframes ${animName}-trans {
+  0% {
+    opacity: 0;
+    filter: blur(20px);
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  ${transInPct}% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  ${transHoldPct}% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(20px);
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+@keyframes ${animName}-stay {
+  0% {
+    opacity: 0;
+    filter: blur(20px);
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 `;
@@ -212,25 +252,37 @@ export default function TextMorph(props: TextMorphProps) {
             {longest || " "}
           </span>
 
-          {wordList.map((word, i) => (
-            <span
-              key={`${word}-${i}`}
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                opacity: 0,
-                color,
-                whiteSpace: "nowrap",
-                maxWidth: "92vw",
-                animation: `${animName} ${cycle}s ${(slot * i).toFixed(3)}s infinite ${easeCSS}`,
-                willChange: "opacity, filter, transform",
-              }}
-            >
-              {word}
-            </span>
-          ))}
+          {wordList.map((word, i) => {
+            const isLast = i === wordList.length - 1;
+            let animProp = '';
+            if (loop) {
+              animProp = `${animName} ${cycle}s ${(slot * i).toFixed(3)}s infinite ${easeCSS}`;
+            } else if (isLast) {
+              animProp = `${animName}-stay ${morph}s ${(slot * i).toFixed(3)}s forwards ${easeCSS}`;
+            } else {
+              animProp = `${animName}-trans ${transTotal.toFixed(3)}s ${(slot * i).toFixed(3)}s forwards ${easeCSS}`;
+            }
+
+            return (
+              <span
+                key={`${word}-${i}`}
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  opacity: 0,
+                  color,
+                  whiteSpace: "nowrap",
+                  maxWidth: "92vw",
+                  animation: animProp,
+                  willChange: "opacity, filter, transform",
+                }}
+              >
+                {word}
+              </span>
+            );
+          })}
         </div>
       </div>
     </Tag>

@@ -36,9 +36,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
     <div
       onClick={() => onSelect(idx)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '320px' }}
-      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${
-        item.category === 'winners' ? 'border-amber-300 ring-1 ring-amber-400/30' : 'border-slate-200/90'
-      }`}
+      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${item.category === 'winners' ? 'border-amber-300 ring-1 ring-amber-400/30' : 'border-slate-200/90'
+        }`}
     >
       {/* Image Container with Consistent 4:3 Aspect Ratio */}
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
@@ -56,9 +55,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${
-              loaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${loaded ? 'opacity-100' : 'opacity-0'
+              }`}
           />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
@@ -237,6 +235,7 @@ export const GallerySection: React.FC = () => {
       title: 'RPL Season 1 Champions',
       season: 'Season 1',
       category: 'winners',
+      teamName: 'Raj Royals',
       captain: 'Hiren Sanghvi',
       viceCaptain: 'Tejas Sanghvi',
       image: '/rpl-photos/winners/season-1-winner.jpg',
@@ -462,16 +461,14 @@ export const GallerySection: React.FC = () => {
                 setActiveFilter(tab.id as any);
                 setSelectedPhotoIndex(null);
               }}
-              className={`flex-shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all border min-h-[44px] touch-manipulation cursor-pointer flex items-center space-x-2 ${
-                activeFilter === tab.id
+              className={`flex-shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all border min-h-[44px] touch-manipulation cursor-pointer flex items-center space-x-2 ${activeFilter === tab.id
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-md shadow-amber-500/20 scale-102'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-              }`}
+                }`}
             >
               <span>{tab.label}</span>
-              <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${
-                activeFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
+              <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${activeFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                }`}>
                 {tab.count}
               </span>
             </button>
