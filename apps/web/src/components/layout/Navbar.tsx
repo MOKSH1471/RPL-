@@ -5,7 +5,7 @@ import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
   onRegisterClick: () => void;
-  currentPage?: 'home' | 'register' | 'scorer';
+  currentPage?: 'home' | 'register' | 'scorer' | 'privacy' | 'terms' | 'faq';
   onNavigateHome?: () => void;
   onScorerClick?: () => void;
   onCheckPassClick?: () => void;
@@ -122,6 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'schedule', label: 'Schedule', href: '#schedule' },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
     { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
+    { id: 'faq', label: 'FAQ', href: '#/faq' },
   ];
 
   const scrollToElement = (targetId: string) => {
@@ -140,6 +141,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleNavClick = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
+    if (href === '#/faq' || href === '#faq') {
+      window.location.hash = '/faq';
+      document.body.style.overflow = '';
+      setMobileMenuOpen(false);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+
     const targetId = href.replace('#', '');
     setActiveSection(targetId);
 
@@ -228,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop Motion Navigation Menu */}
             <nav className="hidden md:flex items-center space-x-1 relative">
               {navItems.map((item) => {
-                const isActive = activeSection === item.id;
+                const isActive = currentPage === 'faq' ? item.id === 'faq' : activeSection === item.id;
                 return (
                   <a
                     key={item.id}
@@ -359,7 +368,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {/* Navigation Links with Proper Smooth Scroll */}
                   <nav className="flex flex-col space-y-1">
                     {navItems.map((item) => {
-                      const isActive = activeSection === item.id;
+                      const isActive = currentPage === 'faq' ? item.id === 'faq' : activeSection === item.id;
                       return (
                         <a
                           key={item.id}

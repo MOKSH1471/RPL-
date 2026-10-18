@@ -11,6 +11,7 @@ import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
+import { FAQPage } from '@/components/pages/FAQPage';
 import { Footer } from '@/components/layout/Footer';
 import { MobileStickyBar } from '@/components/layout/MobileStickyBar';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
@@ -18,7 +19,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -71,6 +72,9 @@ export function App() {
         setShowIntro(false);
       } else if (hash === '#/terms' || hash === '#terms') {
         setCurrentPage('terms');
+        setShowIntro(false);
+      } else if (path === '/faq' || hash === '#/faq' || hash === '#faq') {
+        setCurrentPage('faq');
         setShowIntro(false);
       } else {
         setCurrentPage('home');
@@ -145,6 +149,10 @@ export function App() {
 
   if (currentPage === 'terms') {
     return <TermsPage onBackToHome={handleBackToHome} />;
+  }
+
+  if (currentPage === 'faq') {
+    return <FAQPage onBackToHome={handleBackToHome} onRegisterClick={handleRegisterClick} />;
   }
 
   return (

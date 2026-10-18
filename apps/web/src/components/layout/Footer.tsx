@@ -123,6 +123,11 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 </a>
               </li>
               <li>
+                <a href="#/faq" className="hover:text-amber-600 transition-colors">
+                  Frequently Asked Questions (FAQ)
+                </a>
+              </li>
+              <li>
                 <a href="#register" className="hover:text-amber-600 transition-colors">
                   Player Registration
                 </a>
@@ -166,6 +171,12 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
         <div className="pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3 sm:gap-4">
           <p>© 2026 Raj Premier League (RPL). All rights reserved.</p>
           <div className="flex items-center gap-4">
+            <a
+              href="#/faq"
+              className="hover:text-amber-600 transition-colors underline underline-offset-2"
+            >
+              FAQ
+            </a>
             <a
               href="#/privacy-policy"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"
