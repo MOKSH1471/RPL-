@@ -38,15 +38,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section className="relative pt-20 pb-10 sm:pt-28 sm:pb-16 md:pt-40 md:pb-28 overflow-hidden min-h-[85vh] md:min-h-screen flex flex-col justify-between w-full max-w-full">
-      <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
-        {/* On top sequence: 6 RPL Leagues */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full px-1">
+      <div className="w-full max-w-5xl lg:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
+        {/* On top sequence: 6 RPL Leagues (wraps naturally on mobile like old version, single line on desktop) */}
+        <div className="flex flex-wrap lg:flex-nowrap justify-center items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full px-1">
           {topLeagues.map((lg) => (
             <button
               key={lg.id}
               type="button"
               onClick={() => onSelectLeague(lg.id)}
-              className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs transition-all active:scale-95 cursor-pointer ${lg.color}`}
+              className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs transition-all active:scale-95 cursor-pointer whitespace-nowrap ${lg.color}`}
             >
               <span>{lg.emoji}</span>
               <span>{lg.name}</span>
@@ -54,9 +54,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           ))}
         </div>
 
-        {/* Main Display Headline scaling smoothly on all mobile screens */}
+        {/* Main Display Headline (wraps naturally on mobile with bold size like old version, single line on desktop) */}
         <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-3 sm:mb-6 max-w-full">
-          <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-7xl break-words uppercase">
+          <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-[3.25rem] xl:text-[4.25rem] 2xl:text-7xl break-words lg:whitespace-nowrap uppercase tracking-wider">
             Raj Premier League
           </span>
         </h1>
