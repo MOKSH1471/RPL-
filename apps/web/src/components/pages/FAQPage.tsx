@@ -131,14 +131,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'Can female players participate in both the Female League and the RPL Main Cricket League?',
     searchableAnswer:
-      'Yes! All registered female players can participate in the Women’s Cricket League. Additionally, based on performance trials and registration records, the RPL Organizing Committee will select 18 outstanding female athletes who will earn a spot to draft and compete directly in the RPL Main Cricket League alongside male players.',
+      'Yes! All registered female players can participate in the Women’s Cricket League. Additionally, based on last few year\'s performance, the RPL Organizing Committee will select 18 outstanding female athletes who will earn a prestigious spot to draft and compete directly in the RPL Main Cricket League alongside male players.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>Yes!</strong> All registered female players can participate in the <strong>Women’s Cricket League</strong>.
         </p>
         <p>
-          Additionally, based on performance trials and registration records, the RPL Organizing Committee will select <strong>18 outstanding female athletes</strong> who will earn a prestigious spot to draft and compete directly in the <strong>RPL Main Cricket League</strong> alongside male players.
+          Additionally, based on last few year's performance, the RPL Organizing Committee will select <strong>18 outstanding female athletes</strong> who will earn a prestigious spot to draft and compete directly in the <strong>RPL Main Cricket League</strong> alongside male players.
         </p>
       </div>
     ),
@@ -149,11 +149,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a female player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, absolutely. Female athletes are welcome to register across the Women’s Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games. Entry to the RPL Main Cricket League is reserved for the 18 selected female players chosen by the committee. Organizing committee will make every effort to accommodate multi-sport registrations.',
+      'Yes, absolutely. Female athletes are welcome to register across the Women’s Cricket League, Kaccha Pakka Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games. Entry to the RPL Main Cricket League is reserved for the 18 selected female players chosen by the committee. Organizing committee will make every effort to accommodate multi-sport registrations.',
     answer: (
       <div className="space-y-2">
         <p>
-          <strong>Yes, absolutely.</strong> Female athletes are welcome to register across the Women’s Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games.
+          <strong>Yes, absolutely.</strong> Female athletes are welcome to register across the Women’s Cricket League, Kaccha Pakka Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games.
         </p>
         <p>
           Entry to the RPL Main Cricket League is reserved for the 18 selected female players chosen by the committee.
@@ -173,7 +173,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a male player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship (free add-on), Carrom League (free add-on), and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka League is age-restricted to participants aged 16 & below or 56 & above.',
+      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship (free add-on), Carrom League (free add-on), and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
     answer: (
       <div className="space-y-2">
         <p>
@@ -187,7 +187,7 @@ const FAQ_DATA: FAQItem[] = [
           <li>90s Nostalgia Games (Dec 25–26, finals Dec 27)</li>
         </ul>
         <p className="text-xs text-slate-600">
-          <em>Age Note:</em> To play in the <strong>Kaccha Pakka League</strong>, participants must meet the age eligibility requirement (aged 16 &amp; below OR 56 &amp; above).
+          <em>Age Note:</em> To play in the <strong>Kaccha Pakka Cricket League</strong>, participants must meet the age eligibility requirement (aged 16 &amp; below OR 56 &amp; above).
         </p>
       </div>
     ),
@@ -196,13 +196,13 @@ const FAQ_DATA: FAQItem[] = [
   {
     id: 'kaccha-pakka-age',
     category: 'leagues',
-    question: 'Who is eligible to participate in the Kaccha Pakka League?',
+    question: 'Who is eligible to participate in the Kaccha Pakka Cricket League?',
     searchableAnswer:
-      'The Kaccha Pakka League is exclusively open to young stars aged 16 and below (<= 16 years) and our young-at-heart veterans aged 56 and above (>= 56 years). The registration portal automatically checks Date of Birth to enable Kaccha Pakka selection for eligible age groups.',
+      'The Kaccha Pakka Cricket League is exclusively open to young stars aged 16 and below (<= 16 years) and our young-at-heart veterans aged 56 and above (>= 56 years). The registration portal automatically checks Date of Birth to enable Kaccha Pakka selection for eligible age groups.',
     answer: (
       <div className="space-y-2">
         <p>
-          The Kaccha Pakka League is a beloved tournament tradition that unites the raw enthusiasm of our youngest stars with the wisdom and sportsmanship of our elders.
+          The Kaccha Pakka Cricket League is a beloved tournament tradition that unites the raw enthusiasm of our youngest stars with the wisdom and sportsmanship of our elders.
         </p>
         <div className="p-3.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 font-medium text-xs">
           <strong>Official Age Criteria:</strong>
