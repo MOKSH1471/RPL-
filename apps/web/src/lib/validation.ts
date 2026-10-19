@@ -213,6 +213,14 @@ export const registrationSchema = z
         });
       }
     }
+
+    if (data.gender === 'Female' && data.selectedSports && data.selectedSports.includes('football')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selectedSports'],
+        message: 'Football League is exclusively for male participants (HariBhai)',
+      });
+    }
   });
 
 export type RegistrationSchemaType = z.infer<typeof registrationSchema>;

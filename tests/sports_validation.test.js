@@ -241,7 +241,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
   assert.strictEqual(stayPassTshirt.isNostalgiaEligible, true);
 });
 
-test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka League', () => {
+test('Age Eligibility: verifies age 16 and below, and 56 and above for Kaccha Pakka Cricket League', () => {
   function isKacchaPakkaEligible(age) {
     if (age === null || age === undefined) return false;
     return age <= 16 || age >= 56;

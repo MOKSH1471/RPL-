@@ -59,7 +59,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       case 'womens':
         return "Women's League";
       case 'kaccha-pakka':
-        return 'Kaccha Pakka League';
+        return 'Kaccha Pakka Cricket League';
       case 'spectator':
         return 'Spectator Pass';
       default:
@@ -67,9 +67,9 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     }
   };
 
-  const isPayLater = 
-    (data.paymentStatus === 'pending' || data.paymentStatus === 'approved_due') && 
-    !data.paymentUtr && 
+  const isPayLater =
+    (data.paymentStatus === 'pending' || data.paymentStatus === 'approved_due') &&
+    !data.paymentUtr &&
     !data.payment_utr;
   const isApprovedDue = data.paymentStatus === 'approved_due';
 
@@ -278,11 +278,10 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
             {/* Official Registration Confirmation Note */}
             <div
-              className={`p-4 rounded-2xl flex flex-col space-y-2.5 text-xs ${
-                isPaymentPending
+              className={`p-4 rounded-2xl flex flex-col space-y-2.5 text-xs ${isPaymentPending
                   ? 'bg-amber-50/90 border border-amber-300 text-amber-950'
                   : 'bg-emerald-50/80 border border-emerald-200 text-emerald-900'
-              }`}
+                }`}
             >
               <div className="flex items-start space-x-3">
                 {isPaymentPending ? (
@@ -297,9 +296,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                 </p>
               </div>
               <div
-                className={`pt-2 border-t flex items-center space-x-2 text-[11px] font-bold ${
-                  isPaymentPending ? 'border-amber-200/80 text-amber-900' : 'border-emerald-200/70 text-amber-900'
-                }`}
+                className={`pt-2 border-t flex items-center space-x-2 text-[11px] font-bold ${isPaymentPending ? 'border-amber-200/80 text-amber-900' : 'border-emerald-200/70 text-amber-900'
+                  }`}
               >
                 <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                 <span>Tournament Policy: No refund in case of no show or cancellation.</span>

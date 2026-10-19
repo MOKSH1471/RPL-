@@ -273,7 +273,7 @@ test('Pay Later: registration submitted without UTR/receipt should not be marked
   }
 });
 
-test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700 for returning player', async () => {
+test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -293,7 +293,7 @@ test('Kaccha Pakka League: Order creation with kaccha-pakka sport calculates fla
   }
 });
 
-test('Kaccha Pakka League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200 for returning player', async () => {
+test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({

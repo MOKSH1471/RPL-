@@ -4,14 +4,13 @@ import { ChevronRight, Sparkles, ArrowRight, Ticket } from 'lucide-react';
 import { LeagueType } from '@/types';
 
 interface HeroSectionProps {
-  onSelectLeague: (league: LeagueType) => void;
+  onSelectLeague?: (league: LeagueType) => void;
   onRegisterClick?: () => void;
   onSpectatorClick?: () => void;
   onCheckPassClick?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
-  onSelectLeague,
   onRegisterClick,
   onSpectatorClick,
   onCheckPassClick,
@@ -20,40 +19,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     'Raj Premier League',
     'Main Cricket League',
     "Women's Cricket League",
-    'Kaccha Pakka League',
+    'Kaccha Pakka Cricket League',
     'Football League',
     'Table Tennis League',
     'Carrom League',
     'Register Now',
   ];
 
-  const topLeagues = [
-    { id: 'cricket' as LeagueType, name: 'Main Cricket League', emoji: '🏏', color: 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200' },
-    { id: 'womens' as LeagueType, name: "Women's Cricket League", emoji: '🏏', color: 'bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200' },
-    { id: 'kaccha-pakka' as LeagueType, name: 'Kaccha Pakka League', emoji: '🌟', color: 'bg-orange-100 text-orange-900 border-orange-300 hover:bg-orange-200' },
-    { id: 'football' as LeagueType, name: 'Football League', emoji: '⚽', color: 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200' },
-    { id: 'table-tennis' as LeagueType, name: 'Table Tennis League', emoji: '🏓', color: 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200' },
-    { id: 'carrom' as LeagueType, name: 'Carrom League', emoji: '🎯', color: 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200' },
-  ];
-
   return (
     <section className="relative pt-20 pb-10 sm:pt-28 sm:pb-16 md:pt-40 md:pb-28 overflow-hidden min-h-[85vh] md:min-h-screen flex flex-col justify-between w-full max-w-full">
       <div className="w-full max-w-5xl lg:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
-        {/* On top sequence: 6 RPL Leagues (wraps naturally on mobile like old version, single line on desktop) */}
-        <div className="flex flex-wrap lg:flex-nowrap justify-center items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full px-1">
-          {topLeagues.map((lg) => (
-            <button
-              key={lg.id}
-              type="button"
-              onClick={() => onSelectLeague(lg.id)}
-              className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs transition-all active:scale-95 cursor-pointer whitespace-nowrap ${lg.color}`}
-            >
-              <span>{lg.emoji}</span>
-              <span>{lg.name}</span>
-            </button>
-          ))}
-        </div>
-
         {/* Main Display Headline (wraps naturally on mobile with bold size like old version, single line on desktop) */}
         <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-3 sm:mb-6 max-w-full">
           <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-[3.25rem] xl:text-[4.25rem] 2xl:text-7xl break-words lg:whitespace-nowrap uppercase tracking-wider">
@@ -66,7 +41,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           The ultimate turf championship. Six epic leagues —{' '}
           <span className="text-amber-600 font-bold">Main Cricket League</span>,{' '}
           <span className="text-pink-600 font-bold">Women's Cricket League</span>,{' '}
-          <span className="text-orange-600 font-bold">Kaccha Pakka League</span>,{' '}
+          <span className="text-orange-600 font-bold">Kaccha Pakka Cricket League</span>,{' '}
           <span className="text-emerald-600 font-bold">Football League</span>,{' '}
           <span className="text-sky-600 font-bold">Table Tennis League</span> and{' '}
           <span className="text-purple-600 font-bold">Carrom League</span>. Step up and claim your glory.
@@ -92,15 +67,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* Spectator Pass & Already Registered Prompt */}
-        <div className="mt-5 sm:mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full px-2">
+        <div className="mt-5 sm:mt-7 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2 sm:gap-3 w-full px-1 max-w-full">
           {onSpectatorClick && (
             <button
               type="button"
               onClick={onSpectatorClick}
-              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-slate-800 hover:text-amber-950 border border-amber-300/80 hover:border-amber-400 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="group inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-slate-800 hover:text-amber-950 border border-amber-300/80 hover:border-amber-400 shadow-2xs hover:shadow-xs transition-all duration-200 text-[11px] xs:text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs whitespace-nowrap max-w-full"
             >
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 animate-pulse" />
-              <span>Attending as a supporter? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Get Spectator Pass</strong></span>
+              <span className="whitespace-nowrap">Attending as a supporter? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Get Spectator Pass</strong></span>
               <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
             </button>
           )}
@@ -109,10 +84,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               type="button"
               onClick={onCheckPassClick}
-              className="group inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-amber-900 border border-slate-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="group inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-amber-900 border border-slate-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 text-[11px] xs:text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs whitespace-nowrap max-w-full"
             >
               <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 group-hover:rotate-12 transition-transform" />
-              <span>Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass / Pay Due</strong></span>
+              <span className="whitespace-nowrap">Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass / Pay Due</strong></span>
               <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
             </button>
           )}

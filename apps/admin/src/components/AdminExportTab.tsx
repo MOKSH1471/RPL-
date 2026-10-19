@@ -44,7 +44,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
   };
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Overview Intro */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 shadow-sm flex items-center justify-between">
         <div className="space-y-1">
@@ -63,7 +63,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
 
       {/* Export Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        
+
         {/* 1. Master Database Export */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div className="space-y-2">
@@ -233,15 +233,15 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           </button>
         </div>
 
-        {/* 9. Spectator Pass & Retro Games Roster */}
+        {/* 9. Spectator Pass & 90’s Nostalgia Games Roster */}
         <div className="p-6 rounded-3xl bg-white border border-indigo-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 bg-gradient-to-br from-white to-indigo-50/20">
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-800 flex items-center justify-center">
               <Ticket className="w-5 h-5" />
             </div>
-            <h4 className="font-extrabold text-base text-slate-900">Spectator Pass & Retro Games Roster</h4>
+            <h4 className="font-extrabold text-base text-slate-900">Spectator Pass & 90’s Nostalgia Games Roster</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Active spectators list with stay package option (Day Pass ₹630 / Stay ₹2,700), T-Shirt add-on status, and 1980s retro games enrolled.
+              Active spectators list with stay package option (Day Pass ₹630 / Stay ₹2,700), T-Shirt add-on status, and 90’s Nostalgia Games enrolled.
             </p>
           </div>
           <button
