@@ -47,8 +47,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     (Array.isArray(gen.selectedSports) && gen.selectedSports.length > 0)
       ? gen.selectedSports
       : Object.keys(sportAns).length > 0
-      ? Object.keys(sportAns)
-      : [player.sport_id || 'cricket'];
+        ? Object.keys(sportAns)
+        : [player.sport_id || 'cricket'];
   const isSpectator = player.registrationType === 'spectator' || gen.registrationType === 'spectator' || selectedSportsList.includes('spectator') || player.sport_id === 'spectator';
   const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
   const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
@@ -183,7 +183,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-auto animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Modal Top Header */}
         <div className="px-6 py-4 border-b border-slate-200/80 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
@@ -207,13 +207,12 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   </span>
                 ) : (
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                      player.payment_status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : player.payment_status === 'rejected'
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${player.payment_status === 'approved'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : player.payment_status === 'rejected'
                         ? 'bg-rose-100 text-rose-800 border border-rose-300'
                         : 'bg-amber-100 text-amber-800 border border-amber-300'
-                    }`}
+                      }`}
                   >
                     {player.payment_status || 'pending'}
                   </span>
@@ -229,11 +228,10 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               type="button"
               onClick={handleToggleArchiveModal}
               disabled={actionLoading}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-                isArchived
-                  ? 'bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300'
-                  : 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${isArchived
+                ? 'bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300'
+                : 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700'
+                }`}
               title={isArchived ? 'Restore player to active status' : 'Archive player and release allocations'}
             >
               {isArchived ? <EyeOff className="w-3.5 h-3.5 text-purple-700" /> : <Eye className="w-3.5 h-3.5" />}
@@ -343,7 +341,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
 
           {/* Proof Documents Section: Photo & Payment Receipt */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             {/* Player Photo Card */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
@@ -439,11 +437,10 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       return (
                         <span
                           key={idx}
-                          className={`font-mono font-bold px-2 py-0.5 rounded border text-[11px] inline-flex items-center space-x-1 ${
-                            isRzp
-                              ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold'
-                              : 'bg-white text-slate-900 border-slate-200'
-                          }`}
+                          className={`font-mono font-bold px-2 py-0.5 rounded border text-[11px] inline-flex items-center space-x-1 ${isRzp
+                            ? 'bg-blue-50 text-blue-900 border-blue-200 font-bold'
+                            : 'bg-white text-slate-900 border-slate-200'
+                            }`}
                         >
                           {isRzp && <span className="text-amber-500">⚡</span>}
                           {utrList.length > 1 && <span className="text-amber-700 font-extrabold mr-1">#{idx + 1}:</span>}
@@ -515,7 +512,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
           {/* Form Details: View Mode vs Edit Mode */}
           {!isEditing ? (
             <div className="space-y-6">
-              
+
               {/* Basic & Demographic Info */}
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -640,11 +637,11 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       <span className="font-extrabold text-slate-800 mt-0.5 block">✅ Included for all 3 days</span>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">
-                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">1980s Retro Games</span>
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">90’s Nostalgia Games</span>
                       <span className="font-extrabold text-slate-800 mt-0.5 block">
                         {Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) && (gen.nostalgiaSport || gen.nostalgia_sport).length > 0
                           ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
-                          : '✅ Retro Games Open'}
+                          : '✅ 90’s Nostalgia Games Open'}
                       </span>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">

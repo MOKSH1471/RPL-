@@ -17,20 +17,20 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
         <button
           type="button"
           onClick={onCheckPassClick}
-          className="flex-1 py-3 px-2.5 rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-amber-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation shadow-2xs cursor-pointer"
+          className="flex-1 py-3 px-2 rounded-xl border border-amber-300 bg-amber-50/90 hover:bg-amber-100 text-amber-950 font-extrabold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition-all active:scale-95 touch-manipulation shadow-2xs cursor-pointer whitespace-nowrap"
         >
           <Search className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-          <span className="truncate">Check Pass / Pay</span>
+          <span>Check Pass / Pay Due</span>
         </button>
 
         {/* Primary Register Now Button */}
         <button
           type="button"
           onClick={onRegisterClick}
-          className="flex-1 py-3 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-orange-500/25 active:scale-95 touch-manipulation cursor-pointer"
+          className="flex-1 py-3 px-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-white font-extrabold text-[11px] sm:text-xs flex items-center justify-center gap-1 transition-all shadow-md shadow-orange-500/25 active:scale-95 touch-manipulation cursor-pointer whitespace-nowrap"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-100 shrink-0" />
-          <span className="truncate">Register Now</span>
+          <span>Register Now</span>
         </button>
       </div>
     </div>

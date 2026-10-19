@@ -42,13 +42,13 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     pickleball: 'Pickleball',
     volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",
-    'kaccha-pakka': 'Kaccha Pakka League',
+    'kaccha-pakka': 'Kaccha Pakka Cricket League',
     spectator: 'Spectator Pass',
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      
+
       {/* Financial Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Verified Collections */}
@@ -99,10 +99,10 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
           <p className="mt-1 text-[11px] text-indigo-400/80 font-medium">100% verified conversion potential</p>
         </div>
       </div>
-      
+
       {/* KPI Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
+
         {/* Total Registrations */}
         <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl -mr-6 -mt-6" />

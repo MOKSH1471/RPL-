@@ -177,13 +177,13 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
   {
     id: 'kaccha-pakka',
-    name: 'Kaccha Pakka League',
+    name: 'Kaccha Pakka Cricket League',
     category: 'Junior & Veteran League (Age ≤16 & ≥56)',
     emoji: '🏏',
     colorBg: 'bg-amber-50',
     colorBorder: 'border-amber-400',
     colorBadge: 'bg-amber-100 text-amber-900 border-amber-300',
-    description: 'At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above',
+    description: 'At Kaccha Pakka Cricket League we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above',
   },
   {
     id: 'football',
@@ -283,6 +283,12 @@ const isSportAllowedForPlayer = (
   age?: number | null,
   isVerifiedMale?: boolean
 ) => {
+  // Football League is exclusively for male participants (HariBhai)
+  if (sportId === 'football') {
+    if (gender === 'Female') {
+      return false;
+    }
+  }
   // Table Tennis and Carrom are open to all categories of people: male, female, kachapaka (any age)
   if (sportId === 'table-tennis' || sportId === 'carrom') {
     return true;
@@ -294,7 +300,7 @@ const isSportAllowedForPlayer = (
     }
     return true;
   }
-  // Kaccha Pakka League: only for age 16 and below (<= 16) and 56 and above (>= 56)
+  // Kaccha Pakka Cricket League: only for age 16 and below (<= 16) and 56 and above (>= 56)
   if (sportId === 'kaccha-pakka') {
     if (age === null || age === undefined) {
       return true;
@@ -533,8 +539,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       selectedSports: isInitialSpectator
         ? (['spectator'] as any)
         : (initialLeague === 'table-tennis' || initialLeague === 'carrom')
-        ? ['cricket', initialLeague as SportType]
-        : [mapInitialSport(initialLeague, initialGender)],
+          ? ['cricket', initialLeague as SportType]
+          : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
       cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
@@ -650,7 +656,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // Registration Mode & Fee calculation:
   // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
-  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630/day (Meals & Retro games). Optional T-Shirt = +₹500.
+  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
@@ -1349,6 +1355,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       if (sportId === 'womens-sports' && isVerifiedMale) {
         setSportRuleNotice("Women's Cricket League is exclusively for female participants (MeeraBen).");
       }
+      if (sportId === 'football' && currentGender === 'Female') {
+        setSportRuleNotice("Football League is exclusively for male participants (HariBhai). Female participants can register for Women's Cricket League, Table Tennis, or Carrom.");
+      }
       return;
     }
     setSportRuleNotice(null);
@@ -1525,7 +1534,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           photoUploadPromiseRef.current,
           new Promise((resolve) => setTimeout(resolve, 5000)),
         ]);
-      } catch {}
+      } catch { }
     }
 
     let activeRegistrationId = existingRegistrationId || `RPL9-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -1718,7 +1727,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
     if (selectedSports.includes('kaccha-pakka')) {
       sportAnswers['kaccha-pakka'] = {
-        league: 'Kaccha Pakka League',
+        league: 'Kaccha Pakka Cricket League',
         enrolled: true,
       };
     }
@@ -2133,13 +2142,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     }
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'spectator' ? 'You have registered as a Spectator and cannot switch to Player registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
-                    isExistingPlayerRegistration && existingRegistrationType === 'spectator'
-                      ? 'opacity-40 cursor-not-allowed text-slate-400'
-                      : !isSpectator
-                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 cursor-pointer'
-                        : 'text-slate-600 hover:text-slate-900 cursor-pointer'
-                  }`}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'spectator'
+                    ? 'opacity-40 cursor-not-allowed text-slate-400'
+                    : !isSpectator
+                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 cursor-pointer'
+                      : 'text-slate-600 hover:text-slate-900 cursor-pointer'
+                    }`}
                 >
                   <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
                   <span className="whitespace-nowrap">Player Registration</span>
@@ -2156,13 +2164,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'player' ? 'You have registered as a Player and cannot switch to Spectator registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
-                    isExistingPlayerRegistration && existingRegistrationType === 'player'
-                      ? 'opacity-40 cursor-not-allowed text-slate-400'
-                      : isSpectator
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
-                        : 'text-slate-600 hover:text-slate-900 cursor-pointer'
-                  }`}
+                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'player'
+                    ? 'opacity-40 cursor-not-allowed text-slate-400'
+                    : isSpectator
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
+                      : 'text-slate-600 hover:text-slate-900 cursor-pointer'
+                    }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                   <span className="whitespace-nowrap">Spectator Registration</span>
@@ -2900,7 +2907,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       {isKacchaPakkaEligible && (
                         <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px]">
                           <span>🌟</span>
-                          <span>Eligible for Kaccha Pakka League</span>
+                          <span>Eligible for Kaccha Pakka Cricket League</span>
                         </span>
                       )}
                     </div>
@@ -3012,21 +3019,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             Official Spectator Pass with Stay • ₹2,700
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900 border border-amber-300">
-                            3 Days Stay Included
+                            2N & 3D INCLUDED
                           </span>
                         </div>
                         <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
                           <p className="font-semibold text-slate-900">
                             ✓ <strong>Research Centre Accommodation:</strong> Stay arrangements for Dec 25–27, 2026.
                           </p>
-                          <div className="p-2.5 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 font-bold text-[11px] flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                            <span>
-                              <strong>Compulsory 3-Day Stay:</strong> Stay fee is ₹2,700 and all 3 days are compulsory as per event guidelines even if attending for 2 days.
-                            </span>
-                          </div>
-                          <p className="font-semibold text-emerald-950">✓ <strong>All Meals Included:</strong> Full daily sattvic meals (Breakfast, Lunch &amp; Dinner) &amp; late night snacks included.</p>
-                          <p>✓ <strong>90’s Nostalgia Games:</strong> Free participation in 90’s Nostalgia games.</p>
+                          <p className="font-semibold text-slate-900">✓ All Meals and Late night snacks Included</p>
+                          <p className="font-semibold text-slate-900">✓ Free participation in 90’s Nostalgia games</p>
                         </div>
                       </div>
                     ) : (
@@ -3036,11 +3037,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <Sparkles className="w-4 h-4 text-emerald-600" />
                             Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹630/day)
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                            spectatorDates.length === 3
-                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                              : 'bg-teal-100 text-teal-900 border-teal-300'
-                          }`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                            : 'bg-teal-100 text-teal-900 border-teal-300'
+                            }`}>
                             {spectatorDates.length === 3 ? 'Games & Snacks Included' : 'Night Snacks Included'}
                           </span>
                         </div>
@@ -3175,7 +3175,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             className={`text-[11px] truncate ${isAllDatesSelected ? 'text-emerald-100' : 'text-slate-500'
                               }`}
                           >
-                            Attend all matches, night snacks &amp; 90's retro games throughout the season
+                            Attend all matches, night snacks &amp; 90’s Nostalgia Games throughout the season
                           </div>
                         </div>
                       </div>
@@ -3550,7 +3550,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   )}
 
-                  {/* Kaccha Pakka League Special Division Callout */}
+                  {/* Kaccha Pakka Cricket League Special Division Callout */}
                   {isKacchaPakkaEligible && (
                     <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
@@ -3558,28 +3558,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                       <div>
                         <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
-                          Kaccha Pakka League Available (Age: {playerAge} years):
+                          Kaccha Pakka Cricket League Available (Age: {playerAge} years):
                         </span>
                         <p className="font-semibold text-amber-900 leading-snug mb-1">
-                          At Kaccha Pakka league we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
+                          At Kaccha Pakka Cricket League we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
                         </p>
                         <p className="text-[11px] font-medium text-amber-800">
-                          Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka League</strong> along with other sports!
+                          Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka Cricket League</strong> along with other sports!
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Bonus Add-ons Callout Banner */}
-                  <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/90 text-xs text-emerald-950 flex items-start space-x-2.5 shadow-2xs">
-                    <span className="text-base shrink-0 mt-0.5">🎁</span>
-                    <div className="leading-relaxed">
-                      <span className="font-extrabold text-emerald-900 block mb-0.5">
-                        Complimentary Add-on Tournaments:
-                      </span>
-                      Table Tennis &amp; Carrom are <strong>100% FREE</strong> when registering for any primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football).
-                    </div>
-                  </div>
 
                   {/* Dynamic Rule Alert Notice */}
                   {sportRuleNotice && (
@@ -3626,7 +3616,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                 }`}
                             >
                               <span>{sport.emoji}</span>
-                              <span>{sport.name}{isAddon ? ' (FREE)' : ''}</span>
+                              <span>{sport.name}</span>
                               {selectedSports.length > 1 && (
                                 <button
                                   type="button"
@@ -3693,13 +3683,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
 
-                          {/* Complimentary Add-ons Tip in Dropdown */}
-                          <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-950 flex items-start gap-2">
-                            <span className="text-sm shrink-0">💡</span>
-                            <span>
-                              <strong>Table Tennis &amp; Carrom</strong> are complimentary free add-ons included with any Cricket or Football league registration.
-                            </span>
-                          </div>
 
                           {/* Sports Checkbox List */}
                           <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
@@ -3717,23 +3700,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                 >
                                   <div className="flex items-center space-x-3">
                                     <span className="text-2xl">{sport.emoji}</span>
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-extrabold text-sm text-slate-900 block">
-                                          {sport.name}
-                                        </span>
-                                        {isAddon && (
-                                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                            FREE ADD-ON
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className="text-[11px] text-slate-500 font-medium block">
-                                        {sport.category}
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-sm text-slate-900 block">
+                                        {sport.name}
                                       </span>
-                                      {sport.description && (
-                                        <span className="text-[10px] text-slate-600 font-normal leading-tight block mt-0.5">
-                                          {sport.description}
+                                      {isAddon && (
+                                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                          FREE ADD-ON
                                         </span>
                                       )}
                                     </div>
@@ -3830,9 +3803,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               value={
                                 currentCricketRole
                                   ? {
-                                      id: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
-                                      label: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
-                                    }
+                                    id: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
+                                    label: currentCricketRole === 'Batsman' ? 'Batter' : (currentCricketRole.toLowerCase().includes('all') ? 'All-Rounder' : currentCricketRole),
+                                  }
                                   : null
                               }
                               onChange={(item) => setValue('cricketRole', String(item.id), { shouldValidate: true })}
@@ -4534,11 +4507,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                      {isSpectator ? '2. 90’s Nostalgia Games' : '90’s Nostalgia Games'}
+                      {isSpectator ? '90’s Nostalgia Games' : '90’s Nostalgia Games'}
                     </h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-amber-100 text-amber-900 border border-amber-300">
-                      🎈 90’s Traditional Games
-                    </span>
                     {isSpectator && (
                       isSpectatorAll3Days ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs bg-emerald-100 text-emerald-900 border border-emerald-300">
@@ -4578,150 +4548,150 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               ) : (
                 <div className="space-y-4">
-                <div ref={nostalgiaDropdownRef} className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Select 90’s Nostalgia Games <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
-                    </label>
-                    {selectedNostalgiaSports.length > 0 && (
-                      <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300">
-                        {selectedNostalgiaSports.length} Selected
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Dropdown Trigger Box */}
-                  <div
-                    onClick={() => setNostalgiaDropdownOpen(!nostalgiaDropdownOpen)}
-                    className={`w-full min-h-[54px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${nostalgiaDropdownOpen
-                      ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
-                      : 'border-slate-300 hover:border-slate-400'
-                      }`}
-                  >
-                    <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-                      {selectedNostalgiaSports.length === 0 ? (
-                        <span className="text-xs text-slate-400 font-medium pl-1">
-                          Choose 90’s Nostalgia Games (select one or multiple)...
+                  <div ref={nostalgiaDropdownRef} className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Select 90’s Nostalgia Games <span className="text-slate-400 font-normal lowercase">(optional • multi-choice)</span>
+                      </label>
+                      {selectedNostalgiaSports.length > 0 && (
+                        <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300">
+                          {selectedNostalgiaSports.length} Selected
                         </span>
-                      ) : (
-                        selectedNostalgiaSports.map((sportName) => {
-                          const sport = NOSTALGIA_SPORTS.find(
-                            (s) => s.name.toLowerCase() === sportName.toLowerCase() || s.id.toLowerCase() === sportName.toLowerCase()
-                          );
-                          return (
-                            <span
-                              key={sportName}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold shadow-xs"
-                            >
-                              <span>{sport?.emoji || '🎯'}</span>
-                              <span>{sport?.name || sportName}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleNostalgiaSport(sport?.name || sportName);
-                                }}
-                                className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </span>
-                          );
-                        })
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-2 text-slate-500 shrink-0">
-                      <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg">
-                        {selectedNostalgiaSports.length} selected
-                      </span>
-                      <ChevronDown
-                        className={`w-5 h-5 text-slate-600 transition-transform ${nostalgiaDropdownOpen ? 'rotate-180 text-amber-600' : ''
-                          }`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Dropdown Popover with Checkboxes */}
-                  <AnimatePresence>
-                    {nostalgiaDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                        exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border-2 border-slate-300 shadow-xl z-50 p-3 space-y-2 origin-top"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 px-1">
-                          <span className="text-xs font-extrabold text-slate-800">
-                            90s Nostalgia Games ({NOSTALGIA_SPORTS.length})
+                    {/* Dropdown Trigger Box */}
+                    <div
+                      onClick={() => setNostalgiaDropdownOpen(!nostalgiaDropdownOpen)}
+                      className={`w-full min-h-[54px] p-3 rounded-2xl bg-slate-50 border cursor-pointer transition-all flex items-center justify-between gap-3 ${nostalgiaDropdownOpen
+                        ? 'border-amber-600 ring-2 ring-amber-200 bg-white'
+                        : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                        {selectedNostalgiaSports.length === 0 ? (
+                          <span className="text-xs text-slate-400 font-medium pl-1">
+                            Choose 90’s Nostalgia Games (select one or multiple)...
                           </span>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              type="button"
-                              onClick={handleSelectAllNostalgia}
-                              className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                              Select All
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleClearNostalgia}
-                              className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                            >
-                              Clear
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* List of games */}
-                        <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
-                          {NOSTALGIA_SPORTS.map((sport) => {
-                            const isChecked = selectedNostalgiaSports.some(
-                              (s) => s.toLowerCase() === sport.name.toLowerCase() || s.toLowerCase() === sport.id.toLowerCase()
+                        ) : (
+                          selectedNostalgiaSports.map((sportName) => {
+                            const sport = NOSTALGIA_SPORTS.find(
+                              (s) => s.name.toLowerCase() === sportName.toLowerCase() || s.id.toLowerCase() === sportName.toLowerCase()
                             );
                             return (
-                              <div
-                                key={sport.name}
-                                onClick={() => toggleNostalgiaSport(sport.name)}
-                                className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
-                                  ? 'bg-amber-50 border-amber-300 shadow-xs'
-                                  : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
-                                  }`}
+                              <span
+                                key={sportName}
+                                className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold shadow-xs"
                               >
-                                <div className="flex items-center space-x-2.5">
-                                  <span className="text-xl">{sport.emoji}</span>
-                                  <div>
-                                    <span className="font-extrabold text-xs text-slate-900 block">
-                                      {sport.name}
-                                    </span>
-                                    {sport.isLeagueMatch && (
-                                      <span className="text-[10px] text-amber-700 font-semibold">
-                                        Championship League Match
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                                <span>{sport?.emoji || '🎯'}</span>
+                                <span>{sport?.name || sportName}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleNostalgiaSport(sport?.name || sportName);
+                                  }}
+                                  className="ml-1 hover:text-white/80 p-0.5 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
 
+                      <div className="flex items-center space-x-2 text-slate-500 shrink-0">
+                        <span className="text-xs font-bold bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg">
+                          {selectedNostalgiaSports.length} selected
+                        </span>
+                        <ChevronDown
+                          className={`w-5 h-5 text-slate-600 transition-transform ${nostalgiaDropdownOpen ? 'rotate-180 text-amber-600' : ''
+                            }`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Dropdown Popover with Checkboxes */}
+                    <AnimatePresence>
+                      {nostalgiaDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                          exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border-2 border-slate-300 shadow-xl z-50 p-3 space-y-2 origin-top"
+                        >
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-100 px-1">
+                            <span className="text-xs font-extrabold text-slate-800">
+                              90s Nostalgia Games ({NOSTALGIA_SPORTS.length})
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                type="button"
+                                onClick={handleSelectAllNostalgia}
+                                className="px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                Select All
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleClearNostalgia}
+                                className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* List of games */}
+                          <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                            {NOSTALGIA_SPORTS.map((sport) => {
+                              const isChecked = selectedNostalgiaSports.some(
+                                (s) => s.toLowerCase() === sport.name.toLowerCase() || s.toLowerCase() === sport.id.toLowerCase()
+                              );
+                              return (
                                 <div
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${isChecked
-                                    ? 'bg-slate-900 border-slate-900 text-amber-300'
-                                    : 'border-slate-300 bg-white'
+                                  key={sport.name}
+                                  onClick={() => toggleNostalgiaSport(sport.name)}
+                                  className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isChecked
+                                    ? 'bg-amber-50 border-amber-300 shadow-xs'
+                                    : 'bg-slate-50/70 border-slate-200 hover:bg-slate-50'
                                     }`}
                                 >
-                                  {isChecked && <Check className="w-3.5 h-3.5" />}
+                                  <div className="flex items-center space-x-2.5">
+                                    <span className="text-xl">{sport.emoji}</span>
+                                    <div>
+                                      <span className="font-extrabold text-xs text-slate-900 block">
+                                        {sport.name}
+                                      </span>
+                                      {sport.isLeagueMatch && (
+                                        <span className="text-[10px] text-amber-700 font-semibold">
+                                          Championship League Match
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${isChecked
+                                      ? 'bg-slate-900 border-slate-900 text-amber-300'
+                                      : 'border-slate-300 bg-white'
+                                      }`}
+                                  >
+                                    {isChecked && <Check className="w-3.5 h-3.5" />}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-              </div>
-            )}
-          </InView>
+              )}
+            </InView>
 
 
             {/* ========================================================================= */}
@@ -4796,14 +4766,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                         {isSpectator ? (
                           currentAcc === 'Yes'
-                            ? `Spectator Pass with Stay: ₹2,700 (3 Days Compulsory Stay)${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
+                            ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
                             : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹630 = ₹${(spectatorDates.length * 630).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                         ) : isReturningPaidUser ? (
                           currentExtraTshirt === 'Yes'
                             ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
                             : `All Sports Included in Tournament Pass (Verified)`
                         ) : (
-                          `${selectedSports.length} ${selectedSports.length === 1 ? 'Sport Selected' : 'Sports Selected'} (All-Inclusive Pass: ₹${playerBaseFee.toLocaleString('en-IN')}${currentExistingFamily === 'No' ? ' [New Player: ₹3,000]' : ' [Returning Family: ₹2,700]'}${currentExtraTshirt === 'Yes' ? ` + ₹500 Extra T-Shirt = ₹${(playerBaseFee + 500).toLocaleString('en-IN')}` : ''}${selectedSports.some((s) => ADDON_SPORTS.includes(s)) ? ' • TT/Carrom FREE' : ' - All sports included'})`
+                          `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
                         )}
                       </h4>
                     </div>
@@ -4819,28 +4789,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </div>
 
-                {/* Spectator Inclusions Breakdown Callout */}
-                {isSpectator ? (
-                  <div className="p-3.5 rounded-xl border text-xs leading-relaxed space-y-1.5 bg-amber-50/80 border-amber-300 text-amber-950">
-                    <div className="font-extrabold text-amber-900 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-amber-600" />
-                      <span>Official Spectator Pass Inclusions:</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] pt-1">
-                      {currentAcc === 'Yes' ? (
-                        <div className="flex items-center gap-1.5 font-semibold text-emerald-900">✓ <strong>All Meals Included:</strong> Full daily dining</div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 font-semibold text-amber-900">📌 <strong>Meals:</strong> Book on Aashray app (Day Pass)</div>
-                      )}
-                      <div className="flex items-center gap-1.5">✓ <strong>Night Snacks:</strong> Evening &amp; late night refreshments</div>
-                      <div className="flex items-center gap-1.5">✓ <strong>90’s Nostalgia Games:</strong> 90’s Nostalgia childhood games</div>
-                      <div className="flex items-center gap-1.5">{currentAcc === 'Yes' ? '✓ 3 Days Stay: Dec 25–27 (Compulsory 3 Days)' : '✓ Self-Arranged Stay / Day Pass'}</div>
-                      {currentSpectatorTshirt === 'Yes' && (
-                        <div className="flex items-center gap-1.5 font-bold text-amber-900 sm:col-span-2">✓ Official Tournament T-Shirt ({currentTshirtSize || 'L'}) Included (+₹500)</div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
+                {/* Non-Spectator Player Inclusions Breakdown Callout */}
+                {!isSpectator && (
                   <>
                     {/* Returning User Notification Callout */}
                     {isReturningPaidUser && (

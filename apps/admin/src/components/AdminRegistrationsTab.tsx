@@ -134,7 +134,7 @@ export function AdminRegistrationsTab({
   const handleToggleArchive = async (player: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const isCurrentlyArchived = Boolean(player.is_archived || player.general_details?.isArchived);
-    
+
     const confirmMsg = isCurrentlyArchived
       ? `Restore "${player.full_name}" to active status?\n\n• Player will return to active tournament roster\n• Accommodation reservation will be re-processed.`
       : `Archive registration for "${player.full_name}"?\n\n• Player record and payment details will be safely preserved\n• Room bookings and jersey allocations will be released.`;
@@ -151,11 +151,11 @@ export function AdminRegistrationsTab({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Search & Multi-Filter Controls */}
       <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-          
+
           {/* Search Input */}
           <div className="relative w-full md:w-96">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -181,7 +181,7 @@ export function AdminRegistrationsTab({
 
           {/* Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            
+
             {/* Participant Type Filter */}
             <select
               value={regTypeFilter}
@@ -230,7 +230,7 @@ export function AdminRegistrationsTab({
               <option value="pickleball">Pickleball</option>
               <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
-              <option value="kaccha-pakka">Kaccha Pakka League</option>
+              <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
               <option value="spectator">🎟️ Spectator Pass</option>
             </select>
 
@@ -340,13 +340,12 @@ export function AdminRegistrationsTab({
                     <tr
                       key={player.id}
                       onClick={() => onSelectPlayer(player)}
-                      className={`${
-                        isArchived
-                          ? 'bg-purple-50/30 opacity-75 hover:opacity-100 hover:bg-purple-50/50'
-                          : 'hover:bg-amber-50/40'
-                      } transition-colors cursor-pointer group`}
+                      className={`${isArchived
+                        ? 'bg-purple-50/30 opacity-75 hover:opacity-100 hover:bg-purple-50/50'
+                        : 'hover:bg-amber-50/40'
+                        } transition-colors cursor-pointer group`}
                     >
-                      
+
                       {/* 1. Player Info & Photo */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center space-x-3">
@@ -432,7 +431,7 @@ export function AdminRegistrationsTab({
                             {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                               <span
                                 className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
-                                title={`1980s Retro Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
+                                title={`90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
                               >
                                 <span>🕹️</span>
                                 <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
@@ -509,13 +508,12 @@ export function AdminRegistrationsTab({
                               </span>
                             ) : (
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  player.payment_status === 'approved'
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : player.payment_status === 'rejected'
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${player.payment_status === 'approved'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : player.payment_status === 'rejected'
                                     ? 'bg-rose-100 text-rose-800 border border-rose-300'
                                     : 'bg-amber-100 text-amber-800 border border-amber-300'
-                                }`}
+                                  }`}
                               >
                                 {player.payment_status || 'pending'}
                               </span>
@@ -530,11 +528,10 @@ export function AdminRegistrationsTab({
                               return (
                                 <span
                                   key={uIdx}
-                                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border inline-flex items-center space-x-1 ${
-                                    isRzp
-                                      ? 'bg-blue-50 text-blue-800 border-blue-200 font-bold'
-                                      : 'bg-slate-100 text-slate-700 border-slate-200'
-                                  }`}
+                                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border inline-flex items-center space-x-1 ${isRzp
+                                    ? 'bg-blue-50 text-blue-800 border-blue-200 font-bold'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                    }`}
                                   title={utr}
                                 >
                                   {isRzp && <span className="text-amber-500">⚡</span>}
@@ -564,7 +561,7 @@ export function AdminRegistrationsTab({
                       {/* 7. Quick Actions */}
                       <td className="py-3.5 px-4 text-center">
                         <div className="flex items-center justify-center space-x-1">
-                          
+
                           {/* WhatsApp Button */}
                           <a
                             href={waUrl}
@@ -617,11 +614,10 @@ export function AdminRegistrationsTab({
                           <button
                             type="button"
                             onClick={(e) => handleToggleArchive(player, e)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              isArchived
-                                ? 'text-purple-700 bg-purple-100 hover:bg-purple-200'
-                                : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
-                            }`}
+                            className={`p-1.5 rounded-lg transition-colors ${isArchived
+                              ? 'text-purple-700 bg-purple-100 hover:bg-purple-200'
+                              : 'text-slate-500 hover:text-purple-600 hover:bg-purple-50'
+                              }`}
                             title={
                               isArchived
                                 ? 'Unarchive / Restore Player (Bring back to Active & Re-allocate)'

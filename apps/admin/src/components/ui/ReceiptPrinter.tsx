@@ -96,7 +96,7 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'womens':
         return "Women's Multi-Sport";
       case 'kaccha-pakka':
-        return 'Kaccha Pakka League';
+        return 'Kaccha Pakka Cricket League';
       default:
         return s;
     }
@@ -403,10 +403,10 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       {data.payment_utr && (data.payment_receipt || data.paymentReceiptUrl)
                         ? `UTR: ${data.payment_utr} (SS ATTACHED)`
                         : data.payment_utr
-                        ? `UTR: ${data.payment_utr}`
-                        : (data.payment_receipt || data.paymentReceiptUrl)
-                        ? 'PAYMENT SCREENSHOT ATTACHED'
-                        : 'PAYMENT DUE (NO PROOF)'}
+                          ? `UTR: ${data.payment_utr}`
+                          : (data.payment_receipt || data.paymentReceiptUrl)
+                            ? 'PAYMENT SCREENSHOT ATTACHED'
+                            : 'PAYMENT DUE (NO PROOF)'}
                     </span>
                   </div>
                 </div>
@@ -476,8 +476,8 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
           {isPrinting
             ? 'Rolling out your official RPL Season 9 pass...'
             : isPrinted
-            ? 'Official pass dispensed. Click the receipt with your pointer to tear it off!'
-            : 'Pass ready in dispenser.'}
+              ? 'Official pass dispensed. Click the receipt with your pointer to tear it off!'
+              : 'Pass ready in dispenser.'}
         </p>
       </div>
     </div>
