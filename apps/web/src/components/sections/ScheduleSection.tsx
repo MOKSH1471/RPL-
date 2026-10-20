@@ -28,9 +28,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
             Tournament Match <span className="text-gradient-vibrant">Schedule</span>
           </h2>
 
-          <p className="text-slate-600 text-sm sm:text-base md:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
-            Full matchday fixtures, pitch allocations, and broadcast timetables will be unlocked immediately following the official Player Auction &amp; Team Draft.
-          </p>
+
         </InView>
 
         {/* Central Notice & Auction Status Card */}
@@ -60,15 +58,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
               {/* Status Badge */}
               <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-50 border border-amber-300/80 text-amber-900 font-extrabold text-xs uppercase tracking-wider mb-3">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                <span>Coming Soon • Post-Auction Release</span>
+                <span>Coming Soon</span>
               </div>
 
               <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3">
-                Schedule Will Be Updated After The Auction
+                Schedule Will Be Updated After The Squad Selection Showdown
               </h3>
 
               <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed mb-8">
-                Teams and squad compositions are being drafted. Once the team captains finish the player bidding and squad allotments, all group-stage and knockout fixtures will go live here in real-time.
+                Teams and squad compositions will be drafted post registration. Once the team captains finish the player bidding and squad allotments, all group-stage and knockout fixtures will go live here in real-time.
               </p>
 
               {/* Step Roadmap Indicators */}
@@ -87,7 +85,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
                     <Flame className="w-4 h-4 text-amber-500" />
                     <span>Phase 2 • Upcoming</span>
                   </div>
-                  <h4 className="font-extrabold text-sm text-slate-900">Player Auction</h4>
+                  <h4 className="font-extrabold text-sm text-slate-900">Squad Selection Showdown</h4>
                   <p className="text-[11px] text-slate-600 mt-1">Captains draft teams &amp; assign official jerseys.</p>
                 </div>
 

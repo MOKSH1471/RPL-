@@ -407,11 +407,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'rules',
     question: 'Where can I find the official tournament rules, pitch guidelines, and team lineups?',
     searchableAnswer:
-      'Official tournament rulebooks, turf pitch rules (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player auctions/drafts conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
+      'Official tournament rulebooks, turf pitch rules (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player Squad Selection Showdown conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
     answer: (
       <div className="space-y-2">
         <p>
-          Official tournament rulebooks, turf pitch guidelines (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player auctions/drafts conclude.
+          Official tournament rulebooks, turf pitch guidelines (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player Squad Selection Showdown conclude.
         </p>
         <p className="text-xs text-slate-700">
           All finalized schedules, rules, and live match scores will be accessible right here on this portal for all participants and supporters.

@@ -162,7 +162,7 @@ export interface GalleryItem {
   category: 'cricket' | 'football' | 'womens' | 'ceremony' | string;
   image: string;
   thumbnail?: string;
-  caption: string;
+  caption?: string;
   teamName?: string;
   captain?: string;
   viceCaptain?: string;

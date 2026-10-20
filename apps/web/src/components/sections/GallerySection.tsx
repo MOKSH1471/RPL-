@@ -18,6 +18,9 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
       case 'winners':
       case 'winner':
         return { label: 'Champions', icon: '🏆', bg: 'bg-amber-500 text-slate-950 font-black' };
+      case 'sponsors':
+      case 'sponsor':
+        return { label: 'Sponsor', icon: '🤝', bg: 'bg-amber-500 text-slate-950 font-black' };
       case 'cricket':
         return { label: 'Cricket', icon: '🏏', bg: 'bg-amber-600 text-white' };
       case 'football':
@@ -31,35 +34,63 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
     }
   };
   const catInfo = getCategoryBadge(item.category);
+  const isSponsor = item.category === 'sponsors';
+  const isPortrait = item.id.includes('patron') || item.image.includes('sponsor-');
 
   return (
     <div
       onClick={() => onSelect(idx)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '320px' }}
-      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${item.category === 'winners' ? 'border-amber-300 ring-1 ring-amber-400/30' : 'border-slate-200/90'
-        }`}
+      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${
+        item.category === 'winners' 
+          ? 'border-amber-300 ring-1 ring-amber-400/30' 
+          : isSponsor
+            ? 'border-amber-300/80 ring-1 ring-amber-400/25 shadow-amber-500/5'
+            : 'border-slate-200/90'
+      }`}
     >
       {/* Image Container with Consistent 4:3 Aspect Ratio */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
+      <div className={`relative aspect-[4/3] overflow-hidden ${
+        isSponsor
+          ? (isPortrait
+              ? 'bg-slate-200'
+              : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+                ? 'p-0 bg-transparent'
+                : 'bg-white flex items-center justify-center p-3 sm:p-4')
+          : 'bg-slate-200'
+      }`}>
         {!loaded && (
           <div className="absolute inset-0 bg-slate-200 animate-pulse" />
         )}
-        <picture className="w-full h-full">
-          <source
-            srcSet={(item.thumbnail || item.image).replace(/\.jpg$/, '.webp')}
-            type="image/webp"
-          />
+        <picture className="w-full h-full flex items-center justify-center">
+          {!isSponsor && item.thumbnail && (
+            <source
+              srcSet={item.thumbnail.replace(/\.jpg$/, '.webp')}
+              type="image/webp"
+            />
+          )}
           <img
             src={item.thumbnail || item.image}
             alt={item.title}
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu ${loaded ? 'opacity-100' : 'opacity-0'
-              }`}
+            className={`w-full h-full ${
+              isSponsor
+                ? (isPortrait 
+                    ? (item.id === 'sp-patron-2' ? 'object-cover object-center' : 'object-cover object-top')
+                    : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+                      ? 'object-cover w-full h-full'
+                      : 'object-contain max-h-full max-w-full')
+                : 'object-cover'
+            } group-hover:scale-105 transition-transform duration-300 transform-gpu ${
+              loaded ? 'opacity-100' : 'opacity-0'
+            }`}
           />
         </picture>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
+        {!isSponsor && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
+        )}
 
         {/* Top Category & Season Badges */}
         <div className="absolute top-2.5 right-2.5 flex items-center space-x-1.5 pointer-events-none">
@@ -126,9 +157,11 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
             </div>
           )}
 
-          <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2">
-            {item.caption}
-          </p>
+          {item.caption && (
+            <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2">
+              {item.caption}
+            </p>
+          )}
         </div>
 
         <div className="pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-600 group-hover:text-amber-700">
@@ -144,7 +177,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
 };
 
 export const GallerySection: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'winners' | 'cricket' | 'football' | 'womens' | 'ceremony' | 'all'>('winners');
+  const [activeFilter, setActiveFilter] = useState<'winners' | 'cricket' | 'football' | 'womens' | 'ceremony' | 'sponsors' | 'all'>('winners');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -371,6 +404,61 @@ export const GallerySection: React.FC = () => {
       thumbnail: '/rpl-photos/thumbs/rpl-23.jpg',
       caption: 'Supporters waving team banners and flags from the sidelines during championship matches.',
     },
+    // ── Esteemed Sponsors ──
+    {
+      id: 'sp-doshi',
+      title: 'Doshi Decor',
+      category: 'sponsors',
+      image: '/sponsors/doshi-decor-v2.jpg',
+    },
+    {
+      id: 'sp-enrich',
+      title: 'Enrich',
+      category: 'sponsors',
+      image: '/sponsors/enrich.jpg',
+    },
+    {
+      id: 'sp-patron-1',
+      title: 'Bakul Bhai Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-1.jpg',
+    },
+    {
+      id: 'sp-patron-2',
+      title: 'Elesh Bhai Davey',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-2-v2.jpg',
+    },
+    {
+      id: 'sp-patron-3',
+      title: 'Darshana Ben Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-3.jpg',
+    },
+    {
+      id: 'sp-seamak',
+      title: 'SeaMak Group',
+      category: 'sponsors',
+      image: '/sponsors/seamak.png',
+    },
+    {
+      id: 'sp-sia',
+      title: 'Mastiff Grand The Sia Palace',
+      category: 'sponsors',
+      image: '/sponsors/sia-palace.jpg',
+    },
+    {
+      id: 'sp-traket',
+      title: 'TRAKET Multiventures Pvt. Ltd.',
+      category: 'sponsors',
+      image: '/sponsors/traket.jpg',
+    },
+    {
+      id: 'sp-yuvraaj',
+      title: 'Yuvraaj Hospitality',
+      category: 'sponsors',
+      image: '/sponsors/yuvraaj-hospitality-v2.jpg',
+    },
   ];
 
   const filteredItems =
@@ -453,6 +541,7 @@ export const GallerySection: React.FC = () => {
             { id: 'football', label: '⚽ Football', count: galleryItems.filter((i) => i.category === 'football').length },
             { id: 'womens', label: "🏆 Women's League", count: galleryItems.filter((i) => i.category === 'womens').length },
             { id: 'ceremony', label: '✨ Ceremonies & Trophies', count: galleryItems.filter((i) => i.category === 'ceremony').length },
+            { id: 'sponsors', label: '🤝 Esteemed Sponsors', count: galleryItems.filter((i) => i.category === 'sponsors').length },
             { id: 'all', label: 'All Highlights', count: galleryItems.length },
           ].map((tab) => (
             <button
@@ -554,10 +643,12 @@ export const GallerySection: React.FC = () => {
                   {/* Photo Display Frame - Pre-stabilized Height & Zero Jitter */}
                   <div className="relative flex-1 min-h-[260px] sm:min-h-[380px] md:min-h-[460px] max-h-[62vh] bg-slate-50/90 flex items-center justify-center p-2.5 sm:p-4 overflow-hidden">
                     <picture className="flex items-center justify-center">
-                      <source
-                        srcSet={currentPhoto.image.replace(/\.jpg$/, '.webp')}
-                        type="image/webp"
-                      />
+                      {currentPhoto.category !== 'sponsors' && currentPhoto.image.endsWith('.jpg') && (
+                        <source
+                          srcSet={currentPhoto.image.replace(/\.jpg$/, '.webp')}
+                          type="image/webp"
+                        />
+                      )}
                       <img
                         key={currentPhoto.image}
                         src={currentPhoto.image}
@@ -567,7 +658,13 @@ export const GallerySection: React.FC = () => {
                           maxHeight: 'min(60vh, 580px)',
                           maxWidth: '100%',
                         }}
-                        className="w-auto h-auto object-contain select-none rounded-xl shadow-md border border-slate-200/80"
+                        className={`w-auto h-auto object-contain select-none rounded-xl shadow-md border ${
+                          currentPhoto.category === 'sponsors'
+                            ? (currentPhoto.id === 'sp-doshi' || currentPhoto.id === 'sp-yuvraaj' || currentPhoto.id.includes('patron'))
+                              ? 'border-transparent p-0'
+                              : 'bg-white p-3 sm:p-4 border-slate-200/80'
+                            : 'border-slate-200/80'
+                        }`}
                       />
                     </picture>
 
@@ -610,25 +707,27 @@ export const GallerySection: React.FC = () => {
                           <h4 className="text-sm sm:text-base font-display font-extrabold text-slate-900 truncate">
                             {currentPhoto.title}
                           </h4>
-                          {currentPhoto.season && (
+                          {currentPhoto.category !== 'sponsors' && currentPhoto.season && (
                             <span className="text-[10px] font-black text-amber-950 bg-amber-300 px-2 py-0.5 rounded-full border border-amber-400 uppercase tracking-wider shrink-0 shadow-2xs">
                               {currentPhoto.season}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
-                          {currentPhoto.caption}
-                        </p>
+                        {currentPhoto.caption && (
+                          <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
+                            {currentPhoto.caption}
+                          </p>
+                        )}
                       </div>
                       <div className="shrink-0 hidden sm:flex items-center space-x-2">
-                        {currentPhoto.season && (
+                        {currentPhoto.category !== 'sponsors' && currentPhoto.season && (
                           <span className="text-[11px] font-black text-amber-950 bg-amber-300 px-3 py-1 rounded-full border border-amber-400 uppercase tracking-wider shadow-xs flex items-center space-x-1">
                             <span>🏆</span>
                             <span>{currentPhoto.season} Champions</span>
                           </span>
                         )}
                         <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/80 uppercase">
-                          {currentPhoto.category}
+                          {currentPhoto.category === 'sponsors' ? '🤝 SPONSOR' : currentPhoto.category}
                         </span>
                       </div>
                     </div>
