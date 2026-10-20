@@ -87,7 +87,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               className="group inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-amber-900 border border-slate-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs transition-all duration-200 text-[11px] xs:text-xs sm:text-sm font-semibold active:scale-95 cursor-pointer backdrop-blur-xs whitespace-nowrap max-w-full"
             >
               <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 shrink-0 group-hover:rotate-12 transition-transform" />
-              <span className="whitespace-nowrap">Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass / Pay Due</strong></span>
+              <span className="whitespace-nowrap">Already registered? <strong className="font-extrabold text-amber-700 underline underline-offset-2">Check Pass</strong></span>
               <ArrowRight className="w-3.5 h-3.5 text-amber-600 shrink-0 group-hover:translate-x-1 transition-transform" />
             </button>
           )}

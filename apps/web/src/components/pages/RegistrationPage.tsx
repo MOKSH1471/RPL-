@@ -379,14 +379,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
   const [showSamplePhotoModal, setShowSamplePhotoModal] = useState(false);
-  const [showPayLaterConfirmModal, setShowPayLaterConfirmModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const [serverWakingHint, setServerWakingHint] = useState(false);
-  const [isPayLater, setIsPayLater] = useState(false);
-  const isPayLaterRef = useRef(false);
   const photoUploadPromiseRef = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
@@ -436,16 +433,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return () => clearTimeout(t);
   }, [initialLeague]);
 
-  // Prevent background scrolling when size guide modal, sample photo modal, or pay later modal is open
+  // Prevent background scrolling when size guide modal or sample photo modal is open
   useEffect(() => {
-    if (showSizeGuideModal || showPayLaterConfirmModal || showSamplePhotoModal) {
+    if (showSizeGuideModal || showSamplePhotoModal) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prevOverflow;
       };
     }
-  }, [showSizeGuideModal, showPayLaterConfirmModal, showSamplePhotoModal]);
+  }, [showSizeGuideModal, showSamplePhotoModal]);
 
 
   // Unregistered player reference verification states
@@ -1772,78 +1769,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
 
     // =========================================================================
-    // 0. PAY LATER PATH — Save registration as pending, skip payment
-    // =========================================================================
-    if (isPayLaterRef.current && totalPayableFee > 0) {
-      // Save the registration with payment_status = 'pending' (or 'approved_due' for returning paid users)
-      const payLaterStatus = isReturningPaidUser ? 'approved_due' : 'pending';
-      fullData.paymentStatus = payLaterStatus;
-      fullData.payment_status = payLaterStatus;
-
-      try {
-        const submitPromise = submitRegistration({
-          registration_id: existingRegistrationId || undefined,
-          sport_id: selectedSports[0] || 'cricket',
-          full_name: data.fullName.trim(),
-          email: data.email.trim(),
-          mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
-          check_in_date: data.checkInDate || '2026-12-25',
-          check_out_date: data.checkOutDate || '2026-12-27',
-          player_photo_url: playerPhotoUrl,
-          payment_utr: undefined,
-          payment_receipt_url: undefined,
-          payment_status: 'pending',
-          general_details: generalDetails,
-          sport_answers: sportAnswers,
-          answers: sanitizedAnswers,
-        });
-
-        const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
-          setTimeout(() => resolve({ isTimeout: true }), 3000)
-        );
-
-        const result = await Promise.race([submitPromise, timeoutPromise]);
-        if ('isTimeout' in result) {
-          console.warn('[RPL Pay Later] API taking >3s (cold-start), continuing in background.');
-          submitPromise
-            .then((res: any) => {
-              if (res && res.registration_id) activeRegistrationId = res.registration_id;
-            })
-            .catch((err) => console.warn('[RPL Pay Later Background Notice]', err));
-        } else {
-          if ((result as any)?.registration_id) {
-            activeRegistrationId = (result as any).registration_id;
-          }
-        }
-      } catch (apiErr: any) {
-        console.warn('[RPL Pay Later] Save notice:', apiErr);
-      }
-
-      // Store in localStorage
-      try {
-        const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
-        const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
-        localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
-      } catch { }
-
-      setIsSubmitting(false);
-      setIsPayLater(false);
-      isPayLaterRef.current = false;
-      setRegistrationId(activeRegistrationId);
-      setSubmittedData(fullData);
-
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.5 },
-          colors: ['#F59E0B', '#10B981', '#3B82F6'],
-        });
-      } catch { }
-      return;
-    }
-
-    // =========================================================================
     // 1. ONLINE PAYMENT PATH (RAZORPAY GATEWAY - INSTANT AUTO-APPROVAL)
     // =========================================================================
     if (totalPayableFee > 0) {
@@ -2194,7 +2119,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="space-y-1 text-center sm:text-left">
                 <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
                   <Clock className="w-3 h-3 text-amber-600" />
-                  <span>Registration Saved • Payment Due</span>
+                  <span>Registration Saved • Incomplete Payment</span>
                 </div>
                 <h4 className="font-black text-slate-900 text-base">
                   Welcome back, {getValues('fullName') || 'Player'}!
@@ -2206,13 +2131,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const currentMob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                  onOpenCheckStatus?.(currentMob);
+                  document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center space-x-2 shadow-sm transition-all active:scale-95 shrink-0 cursor-pointer"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Pay Now & Get Pass</span>
+                <span>Complete Payment Below</span>
               </button>
             </div>
           )}
@@ -2246,11 +2170,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
-            onPayDue={() => {
-              if (onOpenCheckStatus) {
-                onOpenCheckStatus(submittedData.mobileNumber);
-              }
-            }}
           />
         ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 pb-8 sm:pb-12">
@@ -2294,7 +2213,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </span>
                       </h4>
                       <p className="text-xs text-slate-600 font-medium mt-0.5">
-                        Your previous entries have been auto-filled. You can update any fields, register for additional sports, or upload payment proof below.
+                        Your previous entries have been auto-filled. You can update any fields or complete payment below.
                       </p>
                     </div>
                   </div>
@@ -4723,11 +4642,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
-            >
+            <div id="payment-section" className="scroll-mt-24">
+              <InView
+                viewOptions={{ once: true, amount: 0.05 }}
+                transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+                className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
+              >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
                 <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
@@ -4900,12 +4820,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </p>
                 </div>
 
-                {/* Primary Pay Now button & Pay Later */}
+                {/* Primary Pay Now button */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     type="submit"
                     disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                    onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
                     className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
                   >
                     {isRazorpayLoading ? (
@@ -4915,7 +4834,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                     ) : isUploadingReceipt ? (
                       <span>Uploading Payment Receipt to Drive...</span>
-                    ) : isSubmitting && !isPayLater ? (
+                    ) : isSubmitting ? (
                       <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                     ) : totalPayableFee > 0 ? (
                       <>
@@ -4929,54 +4848,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </>
                     )}
                   </button>
-
-                  {/* Pay Later button — only shown when there is an outstanding fee */}
-                  {totalPayableFee > 0 && (
-                    <button
-                      type="button"
-                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                      onClick={() => {
-                        // Validate form first, and open sleek confirmation modal if valid
-                        handleSubmit(() => {
-                          setShowPayLaterConfirmModal(true);
-                        }, onInvalid)();
-                      }}
-                      className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
-                    >
-                      {isSubmitting && isPayLater ? (
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Saving Registration...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Clock className="w-4 h-4 text-slate-500" />
-                          <span>Pay Later</span>
-                        </>
-                      )}
-                    </button>
-                  )}
                 </div>
-
-                {/* Pay Later hint */}
-                {totalPayableFee > 0 && (
-                  <div className="mt-4 pt-3.5 border-t border-emerald-200/60 space-y-2 text-center">
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                      💡 Prefer to pay later?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                          onOpenCheckStatus?.(mob);
-                        }}
-                        className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
-                      >
-                        Check Pass / Pay Due
-                      </button>
-                      {' '}— register now and complete payment anytime using your mobile number.
-                    </p>
-                  </div>
-                )}
 
                 {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
                 {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
@@ -4987,6 +4859,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 )}
               </div>
             </InView>
+          </div>
 
             {/* Physical spacer to guarantee clear separation between Section 3 and the footer on mobile */}
             <div className="h-16 sm:h-24 w-full block clear-both pointer-events-none" aria-hidden="true" />
@@ -5174,121 +5047,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           document.body
         )}
 
-      {/* Pay Later 24-Hour Confirmation Modal */}
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {showPayLaterConfirmModal && (
-              <div
-                className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto"
-                onClick={() => setShowPayLaterConfirmModal(false)}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.94, y: 15 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.94, y: 15 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-amber-200/90 shadow-2xl overflow-hidden my-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Decorative Top Gradient Accent */}
-                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
-
-                  {/* Close button */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPayLaterConfirmModal(false)}
-                    className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                    aria-label="Close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-
-                  <div className="text-center pt-2">
-                    {/* Icon */}
-                    <div className="w-14 h-14 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
-                      <Clock className="w-7 h-7 text-amber-600 animate-pulse" />
-                    </div>
-
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                      Confirm Pay Later
-                    </h3>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-bold mt-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Payment required within 24 hours</span>
-                    </div>
-
-                    {/* Fee Card */}
-                    <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 font-semibold">Total Payable Due:</span>
-                        <span className="text-xl font-black text-slate-900">₹{totalPayableFee}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-200/60">
-                        <span>Registration Status:</span>
-                        <span className="font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
-                          Pending Payment
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* How to Pay Notice */}
-                    <div className="mt-3.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-left text-xs text-slate-600 space-y-1">
-                      <p className="font-bold text-amber-950 flex items-center gap-1.5">
-                        <span>💡</span> How to complete payment later:
-                      </p>
-                      <p className="text-[11.5px] leading-relaxed text-slate-600">
-                        Open <strong className="text-slate-900">"Check Pass / Pay Due"</strong> from the tournament homepage, enter your registered number (<strong>{watch('mobileNumber') ? `${watch('countryCode') || '+91'} ${watch('mobileNumber')}` : 'your mobile number'}</strong>), and pay via UPI, Card, or NetBanking.
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-5 space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPayLaterConfirmModal(false);
-                          isPayLaterRef.current = true;
-                          setIsPayLater(true);
-                          handleSubmit(onSubmit, onInvalid)();
-                        }}
-                        className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-extrabold text-sm shadow-md shadow-amber-500/25 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>Confirm & Save Registration</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPayLaterConfirmModal(false);
-                          isPayLaterRef.current = false;
-                          setIsPayLater(false);
-                          setPaymentMethod('razorpay');
-                          handleSubmit(onSubmit, onInvalid)();
-                        }}
-                        className="w-full py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                        <span>Pay Online Now via Razorpay</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPayLaterConfirmModal(false)}
-                        className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                      >
-                        ← Keep Editing / Close
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
-
-    </div>
+          </div>
   );
 };

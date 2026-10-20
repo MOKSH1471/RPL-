@@ -258,7 +258,7 @@ Player: ${data.fullName || 'Participant'}
 Sports: ${sportsList.map(formatSportName).join(', ')}
 Centre: ${data.centre || 'Mumbai'}
 Stay: ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}
-Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
+Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
     `.trim();
 
     navigator.clipboard.writeText(summary).then(() => {
@@ -304,7 +304,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
       `👕 *Jersey:* Size ${data.tshirtSize || 'L'}${data.extraTshirt === 'Yes' ? ' (+1 Extra T-Shirt)' : ''}${data.customJerseyName ? ` • ${data.customJerseyName}` : ''}${data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}`,
       `📍 *Centre:* ${data.centre || 'Mumbai'}`,
       `🏨 *Stay:* ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}`,
-      `✅ *Status:* ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL / VERIFIED' : '⏳ PAYMENT DUE'}`,
+      `✅ *Status:* ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL / VERIFIED' : '⏳ PAYMENT PENDING'}`,
       ``,
       `👉 *View & Download Official Pass:*`,
       passUrl,
@@ -315,7 +315,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
   };
 
   const handleSharePass = async () => {
-    const summaryText = `🏏 RAJ PREMIER LEAGUE (RPL SEASON 9)\nOfficial Player Pass\nPlayer: ${data.fullName || 'Participant'}\nPass ID: ${registrationId}\nSports: ${sportsList.map(formatSportName).join(', ')}\nStatus: ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}`;
+    const summaryText = `🏏 RAJ PREMIER LEAGUE (RPL SEASON 9)\nOfficial Player Pass\nPlayer: ${data.fullName || 'Participant'}\nPass ID: ${registrationId}\nSports: ${sportsList.map(formatSportName).join(', ')}\nStatus: ${hasPaymentProof ? '✓ PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}`;
     const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mobile=${data.mobileNumber || ''}` : '';
 
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -456,10 +456,10 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   <div className="my-2 text-center bg-amber-50 border-2 border-amber-500/80 p-2 rounded-lg shadow-xs">
                     <div className="text-xs font-black tracking-widest text-amber-800 uppercase flex items-center justify-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                      <span>PAYMENT DUE</span>
+                      <span>PAYMENT PENDING</span>
                     </div>
                     <div className="text-[8px] text-amber-700 font-semibold tracking-wider uppercase mt-0.5">
-                      ATTACH PROOF AT DESK
+                      COMPLETE PAYMENT ONLINE
                     </div>
                   </div>
                 )}
@@ -526,7 +526,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                           ? 'VERIFIED & CLEARED'
                           : (data.payment_receipt || data.paymentReceiptUrl)
                             ? 'PAYMENT SCREENSHOT ATTACHED'
-                            : 'PAYMENT DUE (NO PROOF)'}
+                            : 'PAYMENT PENDING'}
                     </span>
                   </div>
                 </div>
@@ -565,7 +565,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">
                     <span>TOTAL STATUS</span>
                     <span className={`font-mono ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      {hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
+                      {hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                     </span>
                   </div>
                 </div>

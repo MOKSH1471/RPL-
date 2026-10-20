@@ -208,13 +208,13 @@ test('Razorpay Fee Calculation: Returning player with no new sports needs no pay
   assert.strictEqual(res.data.message, 'No payment required');
 });
 
-test('Pay Later: POST /api/register with payment_status=pending saves registration without payment', async () => {
+test('Direct Registration: POST /api/register with payment_status=pending saves registration without payment', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
       sport_id: 'cricket',
-      full_name: 'Pay Later Player',
-      email: 'paylater@example.com',
+      full_name: 'Direct Registration Player',
+      email: 'directregistration@example.com',
       mobile: '+91 9988776655',
       payment_status: 'pending',
       general_details: {
@@ -238,7 +238,7 @@ test('Pay Later: POST /api/register with payment_status=pending saves registrati
   }
 });
 
-test('Pay Later: registration submitted without UTR/receipt should not be marked approved', async () => {
+test('Direct Registration: registration submitted without UTR/receipt should not be marked approved', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
@@ -395,13 +395,13 @@ test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nos
   }
 });
 
-test('Pay Later with Multi-Select Nostalgia: registers with payment_status=pending and preserves sports array', async () => {
+test('Direct Registration with Multi-Select Nostalgia: registers with payment_status=pending and preserves sports array', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
       sport_id: 'cricket',
-      full_name: 'Pay Later Multi Nostalgia Player',
-      email: 'paylatermulti@example.com',
+      full_name: 'Direct Registration Multi Nostalgia Player',
+      email: 'directregistrationmulti@example.com',
       mobile: '+91 9988776655',
       payment_status: 'pending',
       payment_utr: undefined,
@@ -583,13 +583,13 @@ test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 pais
   }
 });
 
-test('Spectator Pass: Pay Later registers with payment_status=pending and ₹540 fee', async () => {
+test('Spectator Pass: Direct Registration registers with payment_status=pending and ₹540 fee', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
       sport_id: 'spectator',
-      full_name: 'Spectator Pay Later Guest',
-      email: 'spectatorpaylater@example.com',
+      full_name: 'Spectator Direct Guest',
+      email: 'spectatordirect@example.com',
       mobile: '+91 9777766666',
       payment_status: 'pending',
       general_details: {
@@ -623,7 +623,7 @@ test('Spectator Pass: Lookup by mobile retrieves spectator registration details'
   assert.strictEqual(status, 200);
   assert.strictEqual(data.found, true);
   assert.strictEqual(data.isExistingRegistration, true);
-  assert.strictEqual(data.registration.fullName, 'Spectator Pay Later Guest');
+  assert.strictEqual(data.registration.fullName, 'Spectator Direct Guest');
   assert.strictEqual(data.registration.generalDetails.registrationType, 'spectator');
   assert.deepStrictEqual(data.registration.selectedSports, ['spectator']);
 });

@@ -69,7 +69,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'Does registering in a league guarantee my participation, and how do I check my status?',
     searchableAnswer:
-      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and pay pending dues online anytime using the "Check Pass / Pay Due" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.',
+      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and download your Digital Pass online anytime using the "Check Pass" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.',
     answer: (
       <div className="space-y-3">
         <p>
@@ -78,7 +78,7 @@ const FAQ_DATA: FAQItem[] = [
         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
           <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong>Check Pass &amp; Pay Dues Online:</strong> You can check your registration status, download your pass, and pay any pending dues anytime directly on this website by clicking the <strong className="text-amber-800 underline">Check Pass / Pay Due</strong> button in the navigation bar or hero section.
+            <strong>Check Pass Online:</strong> You can check your registration status and download your pass anytime directly on this website by clicking the <strong className="text-amber-800 underline">Check Pass</strong> button in the navigation bar or hero section.
           </div>
         </div>
         <p className="text-xs text-slate-600">
@@ -86,7 +86,7 @@ const FAQ_DATA: FAQItem[] = [
         </p>
       </div>
     ),
-    tags: ['Confirmation', 'Roster', 'Approval', 'Check Pass', 'Pay Due', 'Pass Status'],
+    tags: ['Confirmation', 'Roster', 'Approval', 'Check Pass', 'Pass Status'],
     important: true,
   },
   {

@@ -90,14 +90,14 @@ test('RPL Pricing Rule: Returning Participant with Extra T-shirt is charged ₹3
   }
 });
 
-test('RPL Pay Later Registration: registers with ₹3,000 for New Player and payment_status=pending', async () => {
+test('RPL Direct Registration: registers with ₹3,000 for New Player and payment_status=pending', async () => {
   const testMobile = '+91 9899009988';
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
       sport_id: 'cricket',
-      full_name: 'Pay Later New Player',
-      email: 'paylaternew@example.com',
+      full_name: 'Direct Registration Player',
+      email: 'directregistration@example.com',
       mobile: testMobile,
       check_in_date: '2026-12-25',
       check_out_date: '2026-12-27',

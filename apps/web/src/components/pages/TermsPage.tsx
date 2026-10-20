@@ -82,7 +82,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
               <li><strong>All-Inclusive Tournament Pass:</strong> Flat ₹2,700 covers enrollment in all selected sports, 2 nights of official tournament stay (Dec 25–27, 2026), meals, and the official player jersey kit. All sports are included with no additional extra fees.</li>
               <li><strong>All Sports Included:</strong> There are no extra charges for participating in multiple sports. Returning players updating their sports selection incur ₹0 additional charge.</li>
               <li><strong>Payment Gateway:</strong> Online transactions are encrypted and processed through <strong>Razorpay</strong> (supporting UPI, Net Banking, Debit Cards, and Credit Cards). We adhere to PCI-DSS security standards and do not store sensitive card credentials or CVVs on our servers.</li>
-              <li><strong>Pay Later / Offline Verification:</strong> Registrations submitted under offline/pay later terms remain in <code>PENDING</code> status until verified by the administration. Tournament passes are validated upon confirmation of payment proof.</li>
+              <li><strong>Immediate Online Payment:</strong> Registrations must be completed with payment upfront via the integrated Razorpay gateway. Your official tournament pass and entry confirmation are generated immediately upon successful transaction completion.</li>
             </ul>
           </Section>
 
