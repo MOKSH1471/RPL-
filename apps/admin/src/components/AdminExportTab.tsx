@@ -241,7 +241,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
             </div>
             <h4 className="font-extrabold text-base text-slate-900">Spectator Pass & 90’s Nostalgia Games Roster</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Active spectators list with stay package option (Day Pass ₹630 / Stay ₹2,700), T-Shirt add-on status, and 90’s Nostalgia Games enrolled.
+              Active spectators list with stay package option (Day Pass ₹540 / Stay ₹2,700), T-Shirt add-on status, and 90’s Nostalgia Games enrolled.
             </p>
           </div>
           <button

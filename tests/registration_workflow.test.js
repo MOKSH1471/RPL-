@@ -437,7 +437,7 @@ test('Pay Later with Multi-Select Nostalgia: registers with payment_status=pendi
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay (₹630 / 63000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay (₹540 / 54000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -468,12 +468,12 @@ test('Spectator Pass: Order creation for Day Pass without stay (₹630 / 63000 p
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 63000, 'Spectator without stay must be ₹630 (63000 paise)');
+    assert.strictEqual(res.data.amount, 54000, 'Spectator without stay must be ₹540 (54000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,130 / 113000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,040 / 104000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -505,7 +505,7 @@ test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,1
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 113000, 'Spectator without stay + T-shirt must be ₹1130 (113000 paise)');
+    assert.strictEqual(res.data.amount, 104000, 'Spectator without stay + T-shirt must be ₹1040 (104000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -583,7 +583,7 @@ test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 pais
   }
 });
 
-test('Spectator Pass: Pay Later registers with payment_status=pending and ₹630 fee', async () => {
+test('Spectator Pass: Pay Later registers with payment_status=pending and ₹540 fee', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({

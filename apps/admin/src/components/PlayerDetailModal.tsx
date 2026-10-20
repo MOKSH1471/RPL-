@@ -52,7 +52,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const isSpectator = player.registrationType === 'spectator' || gen.registrationType === 'spectator' || selectedSportsList.includes('spectator') || player.sport_id === 'spectator';
   const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
   const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
-  const spectatorCalculatedFee = (hasStay ? 2700 : 630) + (hasTshirt ? 500 : 0);
+  const spectatorCalculatedFee = (hasStay ? 2700 : 540) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
@@ -627,7 +627,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
                       {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
                         ? '🏨 With Stay (₹2,700)'
-                        : '☀️ Without Stay / Day Pass (₹630)'}
+                        : '☀️ Without Stay / Day Pass (₹540)'}
                     </span>
                   </div>
 

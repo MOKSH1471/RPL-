@@ -41,8 +41,8 @@ router.post('/razorpay/create-order', async (req, res) => {
     let computedFee;
 
     if (isSpectator) {
-      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630 per day. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹540 per day. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 540);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {

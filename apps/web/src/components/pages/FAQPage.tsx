@@ -330,7 +330,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'spectator',
     question: 'What spectator pass options are available, and what are the charges?',
     searchableAnswer:
-      'Single-Day Day Pass (Without Stay): ₹630 / day. Pick 1, 2, or all 3 days (1 day = ₹630, 2 days = ₹1,260, 3 days = ₹1,890). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹2,700 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
+      'Single-Day Day Pass (Without Stay): ₹540 / day. Pick 1, 2, or all 3 days (1 day = ₹540, 2 days = ₹1,080, 3 days = ₹1,620). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹2,700 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
     answer: (
       <div className="space-y-3">
         <p>We offer two spectator tiers designed for family members, devotees, and cheerleaders:</p>
@@ -339,9 +339,9 @@ const FAQ_DATA: FAQItem[] = [
             <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
               Single-Day Day Pass (Without Stay)
             </span>
-            <span className="text-xl font-black text-slate-900">₹630 <span className="text-xs font-normal text-slate-500">/ day</span></span>
+            <span className="text-xl font-black text-slate-900">₹540 <span className="text-xs font-normal text-slate-500">/ day</span></span>
             <p className="text-xs text-slate-600 mt-1">
-              Pick 1, 2, or all 3 days (1 day: ₹630, 2 days: ₹1,260, 3 days: ₹1,890). Includes arena entry, match viewing, cheering zones, and late-night snacks.
+              Pick 1, 2, or all 3 days (1 day: ₹540, 2 days: ₹1,080, 3 days: ₹1,620). Includes arena entry, match viewing, cheering zones, and late-night snacks.
             </p>
             <p className="text-[11px] text-amber-900 font-semibold mt-2 bg-amber-100/90 p-2 rounded-lg border border-amber-300">
               📌 <strong>Daytime Meals:</strong> Day pass attendees must book their Breakfast, Lunch &amp; Dinner separately on the <strong>Aashray App</strong>.
@@ -362,21 +362,21 @@ const FAQ_DATA: FAQItem[] = [
         </p>
       </div>
     ),
-    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '630', '1260', '1890', '2700', 'Meals', 'Aashray App'],
+    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '540', '1080', '1620', '2700', 'Meals', 'Aashray App'],
   },
   {
     id: 'spectator-single-day-overnight',
     category: 'spectator',
     question: 'Can I get a 1-day spectator pass that includes an overnight stay and full meals?',
     searchableAnswer:
-      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹630/day) must arrange their own stay and book their meals on the Aashray App.',
+      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹540/day) must arrange their own stay and book their meals on the Aashray App.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, that is not possible.</strong> Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis.
         </p>
         <p className="text-xs text-slate-700">
-          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹630/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
+          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹540/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
         </p>
       </div>
     ),

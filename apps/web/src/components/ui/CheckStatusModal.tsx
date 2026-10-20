@@ -419,7 +419,7 @@ export function CheckStatusModal({
                               const specDates = gen.spectatorDates || gen.spectatorDays || [];
                               const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
                               const baseFee = isSpec 
-                                ? (gen.accommodationRequired === 'Yes' ? 2700 : (specDaysCount * 630))
+                                ? (gen.accommodationRequired === 'Yes' ? 2700 : (specDaysCount * 540))
                                 : (gen.existingRplFamily === 'Yes' ? 2700 : 3000);
                               const accurateTotalFee = baseFee + (hasExtraTshirt ? 500 : 0);
 
