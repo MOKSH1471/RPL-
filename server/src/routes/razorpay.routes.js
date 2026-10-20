@@ -639,8 +639,13 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           ]
         );
 
-        // Process Accommodation Booking within transaction
-        if (cleanGeneralDetails.accommodationRequired === 'Yes') {
+        // Process Accommodation and Meal Booking within transaction
+        const hasStay = isSpectator
+          ? (cleanGeneralDetails.accommodationRequired === 'Yes' || cleanGeneralDetails.spectatorOption === 'with-stay')
+          : (cleanGeneralDetails.accommodationRequired === 'Yes');
+        const shouldBookMeals = !isSpectator || hasStay;
+
+        if (hasStay || shouldBookMeals) {
           await processAccommodationBooking({
             cardno: cleanGeneralDetails.cardNo || null,
             fullName: full_name.trim(),
@@ -650,7 +655,11 @@ router.post('/razorpay/verify-payment', async (req, res) => {
             gender: cleanGeneralDetails.gender || 'Male',
             checkInDate: cleanCheckInDate,
             checkOutDate: cleanCheckOutDate,
-            accommodationRequired: 'Yes',
+            accommodationRequired: hasStay ? 'Yes' : 'No',
+            spectatorOption: cleanGeneralDetails.spectatorOption,
+            registrationType: isSpectator ? 'spectator' : 'player',
+            foodPreference: cleanGeneralDetails.foodPreference || 'Regular',
+            bookMeals: shouldBookMeals,
             connection,
           });
         }
@@ -827,6 +836,35 @@ router.post('/razorpay/webhook', async (req, res) => {
               [paymentId, targetRegId]
             );
             logger.info(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" confirmed via webhook.`);
+
+            if (targetReg?.general_details) {
+              try {
+                const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
+                const specOpt = gd.spectatorOption;
+                const hasStay = isSpectator ? (gd.accommodationRequired === 'Yes' || specOpt === 'with-stay') : (gd.accommodationRequired === 'Yes');
+                const shouldBookMeals = !isSpectator || hasStay;
+                if (hasStay || shouldBookMeals) {
+                  await processAccommodationBooking({
+                    cardno: gd.cardNo || null,
+                    fullName: targetReg.full_name || 'Participant',
+                    email: targetReg.email || '',
+                    mobile: targetReg.mobile || '',
+                    centre: gd.centre || 'Mumbai',
+                    gender: gd.gender || 'Male',
+                    checkInDate: targetReg.check_in_date || gd.checkInDate || '2026-12-25',
+                    checkOutDate: targetReg.check_out_date || gd.checkOutDate || '2026-12-27',
+                    accommodationRequired: hasStay ? 'Yes' : 'No',
+                    spectatorOption: specOpt,
+                    registrationType: isSpectator ? 'spectator' : 'player',
+                    foodPreference: gd.foodPreference || 'Regular',
+                    bookMeals: shouldBookMeals,
+                    connection,
+                  });
+                }
+              } catch (hookAccErr) {
+                logger.warn(`[RAZORPAY WEBHOOK] Notice processing accommodation/food in fail-safe: ${hookAccErr.message}`);
+              }
+            }
           }
 
           await connection.commit();

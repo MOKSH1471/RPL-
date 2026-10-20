@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
 import { sanitizeDate } from '../utils/helpers.js';
-import { processAccommodationBooking } from '../../services/roomBookingService.js';
+import { processAccommodationBooking } from '../services/roomBookingService.js';
 
 const router = Router();
 
@@ -415,6 +415,18 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         }
 
         try {
+          const [foodRes] = await db.query(
+            `UPDATE ${AASHRAY_DB}.food_db 
+             SET breakfast = 0, lunch = 0, dinner = 0, updatedBy = 'RPL_CANCEL', updatedAt = NOW() 
+             WHERE cardno IN (?) AND date IN ('2026-12-25', '2026-12-26', '2026-12-27')`,
+            [cardList]
+          );
+          cancelledFoodCount = foodRes.affectedRows || 0;
+        } catch (foodErr) {
+          console.warn('[RPL Archive] Notice updating food_db:', foodErr.message);
+        }
+
+        try {
           const [txRes] = await db.query(
             `UPDATE ${AASHRAY_DB}.transactions 
              SET status = 'cancelled', updatedAt = NOW() 
@@ -427,15 +439,16 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         }
       }
 
-      console.log(`[RPL ARCHIVE] Registration "${reg.full_name}" (${id}) moved to archive. Cancelled ${cancelledBookingsCount} room bookings and ${cancelledTransactionsCount} transactions.`);
+      console.log(`[RPL ARCHIVE] Registration "${reg.full_name}" (${id}) moved to archive. Cancelled ${cancelledBookingsCount} room bookings, ${cancelledFoodCount} meals, and ${cancelledTransactionsCount} transactions.`);
 
       return res.json({
         success: true,
-        message: `Player "${reg.full_name}" has been moved to archive. Room and kit allocations have been set to cancelled.`,
+        message: `Player "${reg.full_name}" has been moved to archive. Room, meal, and kit allocations have been set to cancelled.`,
         is_archived: true,
         archived_at: new Date().toISOString(),
         released: {
           room_bookings: cancelledBookingsCount,
+          meals: cancelledFoodCount,
           transactions: cancelledTransactionsCount,
         }
       });
@@ -462,8 +475,12 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         console.warn('[RPL Unarchive] Notice restoring RPL.rpl_transactions:', rplTxErr.message);
       }
 
+      const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator'));
+      const hasStay = isSpectator ? (gen.accommodationRequired === 'Yes' || gen.spectatorOption === 'with-stay') : (gen.accommodationRequired === 'Yes');
+      const shouldBookMeals = !isSpectator || hasStay;
+
       let accommodationRestored = null;
-      if (gen.accommodationRequired === 'Yes') {
+      if (hasStay || shouldBookMeals) {
         try {
           accommodationRestored = await processAccommodationBooking({
             cardno: gen.cardNo || null,
@@ -474,10 +491,14 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
             gender: gen.gender || 'Male',
             checkInDate: reg.check_in_date || gen.checkInDate || '2026-12-25',
             checkOutDate: reg.check_out_date || gen.checkOutDate || '2026-12-27',
-            accommodationRequired: 'Yes',
+            accommodationRequired: hasStay ? 'Yes' : 'No',
+            spectatorOption: gen.spectatorOption,
+            registrationType: isSpectator ? 'spectator' : 'player',
+            foodPreference: gen.foodPreference || 'Regular',
+            bookMeals: shouldBookMeals,
           });
         } catch (accErr) {
-          console.error('[RPL UNARCHIVE] Error restoring accommodation:', accErr);
+          console.error('[RPL UNARCHIVE] Error restoring accommodation/meals:', accErr);
         }
       }
 

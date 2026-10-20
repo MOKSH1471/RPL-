@@ -413,7 +413,12 @@ router.post('/register', async (req, res) => {
         ]
       );
 
-      // Process Room Booking within the transaction
+      // Process Room & Meal Booking within the transaction
+      const hasStay = isSpectator
+        ? (finalGeneralDetails.accommodationRequired === 'Yes' || finalGeneralDetails.spectatorOption === 'with-stay')
+        : (finalGeneralDetails.accommodationRequired === 'Yes');
+      const shouldBookMeals = !isSpectator || hasStay;
+
       accommodationResult = await processAccommodationBooking({
         cardno: finalGeneralDetails.cardNo || null,
         fullName: cleanFullName,
@@ -423,7 +428,11 @@ router.post('/register', async (req, res) => {
         gender: finalGeneralDetails.gender || 'Male',
         checkInDate: cleanCheckInDate,
         checkOutDate: cleanCheckOutDate,
-        accommodationRequired: finalGeneralDetails.accommodationRequired || 'No',
+        accommodationRequired: hasStay ? 'Yes' : 'No',
+        spectatorOption: finalGeneralDetails.spectatorOption,
+        registrationType: isSpectator ? 'spectator' : 'player',
+        foodPreference: finalGeneralDetails.foodPreference || 'Regular',
+        bookMeals: shouldBookMeals,
         connection,
       });
 
