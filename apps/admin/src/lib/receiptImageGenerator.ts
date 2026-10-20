@@ -24,7 +24,7 @@ interface ReceiptImageParams {
 export function downloadReceiptAsImage(params: ReceiptImageParams) {
   const width = 640;
   const scale = 2; // Retina 2x resolution
-  
+
   // Calculate dynamic height based on sports (without barcode/regId)
   const baseHeight = 720 + (params.sportsList.length * 28);
   const height = baseHeight;
@@ -110,7 +110,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
 
     ctx.fillStyle = '#047857';
     ctx.font = 'bold 10px "JetBrains Mono", monospace';
-    ctx.fillText('VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE', width / 2, y + 40);
+    ctx.fillText('VERIFIED PASS • 25-27 DEC 2026', width / 2, y + 40);
   } else {
     ctx.fillStyle = '#fffbeb';
     ctx.strokeStyle = '#f59e0b';
@@ -127,7 +127,7 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
 
     ctx.fillStyle = '#b45309';
     ctx.font = 'bold 10px "JetBrains Mono", monospace';
-    ctx.fillText('ATTACH PROOF AT DESK • RESEARCH CENTRE', width / 2, y + 40);
+    ctx.fillText('ATTACH PROOF AT DESK', width / 2, y + 40);
   }
   ctx.textAlign = 'left';
 
@@ -180,8 +180,8 @@ export function downloadReceiptAsImage(params: ReceiptImageParams) {
     params.paymentUtr
       ? `UTR: ${params.paymentUtr}`
       : params.hasPaymentProof
-      ? 'SCREENSHOT ATTACHED'
-      : 'PAYMENT DUE',
+        ? 'SCREENSHOT ATTACHED'
+        : 'PAYMENT DUE',
     params.hasPaymentProof ? '#065f46' : '#92400e'
   );
 

@@ -2384,7 +2384,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {isLookingUpMumukshu && (
                     <p className="mt-1.5 text-xs text-amber-600 font-semibold flex items-center space-x-1.5 animate-pulse">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Checking registration & Ashram records...</span>
+                      <span>Checking registration & records...</span>
                     </p>
                   )}
 
@@ -2392,7 +2392,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {isUnregisteredPlayer && !isExistingPlayerRegistration && !mumukshuCardInfo && !mobileInputError && !mobileInputHint && (
                     <div className="mt-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center space-x-2 text-amber-900 text-xs font-bold shadow-sm">
                       <Users className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Mobile number not found in The Research Centre's records. Please provide a Mumukshu reference below to proceed.</span>
+                      <span>Mobile number not found in the records. Please provide a Mumukshu reference below to proceed.</span>
                     </div>
                   )}
                   {isExistingPlayerRegistration ? (
@@ -2451,7 +2451,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <span className="text-pink-600">*</span>
                           </h4>
                           <p className="text-xs text-slate-600 font-medium mt-0.5">
-                            Your mobile number was not found in our Ashram records. RPL participation requires a referral from an existing registered Mumukshu.
+                            Your mobile number was not found in our records. RPL participation requires a referral from an existing registered Mumukshu.
                           </p>
                         </div>
                       </div>
@@ -3067,7 +3067,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {/* Optional room number for self-arranged spectator */}
                         <div className="pt-2 border-t border-emerald-200/80">
                           <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Staying self-arranged in Ashram? Enter Room / Flat No. (Optional):
+                            Staying self-arranged? Enter Room / Flat No. (Optional):
                           </label>
                           <input
                             type="text"

@@ -340,7 +340,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       <span>PAYMENT SUCCESSFUL</span>
                     </div>
                     <div className="text-[8px] text-emerald-700 font-semibold tracking-wider uppercase mt-0.5">
-                      VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE
+                      VERIFIED PASS • 25-27 DEC 2026
                     </div>
                   </div>
                 ) : (
@@ -350,7 +350,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       <span>PAYMENT DUE</span>
                     </div>
                     <div className="text-[8px] text-amber-700 font-semibold tracking-wider uppercase mt-0.5">
-                      ATTACH PROOF AT DESK • RESEARCH CENTRE
+                      ATTACH PROOF AT DESK
                     </div>
                   </div>
                 )}

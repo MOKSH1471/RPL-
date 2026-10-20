@@ -345,7 +345,7 @@ export const GallerySection: React.FC = () => {
       category: 'womens',
       image: '/rpl-photos/rpl-18.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-18.jpg',
-      caption: 'Thrilling interactive challenge matches engaging youth and families across the Ashram courtyard.',
+      caption: 'Thrilling interactive challenge matches engaging youth and families.',
     },
     {
       id: '14',
@@ -462,8 +462,8 @@ export const GallerySection: React.FC = () => {
                 setSelectedPhotoIndex(null);
               }}
               className={`flex-shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all border min-h-[44px] touch-manipulation cursor-pointer flex items-center space-x-2 ${activeFilter === tab.id
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-md shadow-amber-500/20 scale-102'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-md shadow-amber-500/20 scale-102'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                 }`}
             >
               <span>{tab.label}</span>

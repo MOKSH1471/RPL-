@@ -94,7 +94,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'What is the registration fee for players, and what does it include?',
     searchableAnswer:
-      'Returning RPL Family ₹2,700 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Ashram, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
+      'Returning RPL Family ₹2,700 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
     answer: (
       <div className="space-y-3">
         <p>The standard player registration is an all-inclusive 3-day sports &amp; stay package:</p>
@@ -115,7 +115,7 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
-          <li><strong>Stay:</strong> 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Ashram.</li>
+          <li><strong>Stay:</strong> 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre.</li>
           <li><strong>Meals:</strong> All daily sattvic vegetarian meals and late-night tournament snacks.</li>
           <li><strong>Sports:</strong> Unlimited entry across all selected eligible leagues and 90s Nostalgia Games.</li>
           <li><strong>Kit:</strong> One official RPL Season 9 tournament jersey included free! <em>(Extra t-shirts can be purchased for ₹500).</em></li>
@@ -131,14 +131,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'Can female players participate in both the Female League and the RPL Main Cricket League?',
     searchableAnswer:
-      'Yes! All registered female players can participate in the Women’s Cricket League. Additionally, based on last few year\'s performance, the RPL Organizing Committee will select 18 outstanding female athletes who will earn a prestigious spot to draft and compete directly in the RPL Main Cricket League alongside male players.',
+      'Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.',
     answer: (
       <div className="space-y-2">
         <p>
-          <strong>Yes!</strong> All registered female players can participate in the <strong>Women’s Cricket League</strong>.
-        </p>
-        <p>
-          Additionally, based on last few year's performance, the RPL Organizing Committee will select <strong>18 outstanding female athletes</strong> who will earn a prestigious spot to draft and compete directly in the <strong>RPL Main Cricket League</strong> alongside male players.
+          Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.
         </p>
       </div>
     ),
@@ -372,14 +369,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'spectator',
     question: 'Can I get a 1-day spectator pass that includes an overnight stay and full meals?',
     searchableAnswer:
-      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full ashram dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹630/day) must arrange their own stay and book their meals on the Aashray App.',
+      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹630/day) must arrange their own stay and book their meals on the Aashray App.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, that is not possible.</strong> Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis.
         </p>
         <p className="text-xs text-slate-700">
-          If you require overnight stay and full ashram dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹630/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
+          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹630/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
         </p>
       </div>
     ),

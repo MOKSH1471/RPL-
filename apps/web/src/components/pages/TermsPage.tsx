@@ -71,7 +71,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Age &amp; Guardian Consent:</strong> Players under 10 years of age must have prior parental or guardian consent and accompaniment during the event.</li>
               <li><strong>Authentic Details:</strong> Registration must be submitted through this official portal using valid and truthful personal information (Full Name, Contact Number, Email, Date of Birth, Gender, and Home Centre).</li>
-              <li><strong>Aashray Identity &amp; Guest Card Creation:</strong> To coordinate tournament accreditation, Research Centre gate security, and room allocation, registering as a new participant automatically provisions a digital Guest Card in the central Aashray database. Participants can log in to the Aashray ecosystem using their mobile number and designated credentials.</li>
+              <li><strong>Aashray Identity &amp; Guest Card Creation:</strong> To coordinate tournament accreditation, gate security, and room allocation, registering as a new participant automatically provisions a digital Guest Card in the central Aashray database. Participants can log in to the Aashray ecosystem using their mobile number and designated credentials.</li>
               <li><strong>Single Entry per Season:</strong> Each participant may register once per tournament season. Team assignments, draft rosters, and scheduling are managed exclusively by the RPL Committee.</li>
             </ul>
           </Section>
