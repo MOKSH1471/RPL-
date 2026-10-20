@@ -100,11 +100,9 @@ interface SportOption {
   colorBorder: string;
   colorBadge: string;
   description?: string;
-  isAddon?: boolean;
 }
 
-export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football'];
-export const ADDON_SPORTS: SportType[] = ['table-tennis', 'carrom'];
+export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football', 'table-tennis', 'carrom'];
 
 const CENTRE_LIST = [
   'Ahmedabad',
@@ -202,7 +200,6 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-indigo-50',
     colorBorder: 'border-indigo-400',
     colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-    isAddon: true,
   },
   {
     id: 'carrom',
@@ -212,7 +209,6 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-purple-50',
     colorBorder: 'border-purple-400',
     colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
-    isAddon: true,
   },
 ];
 
@@ -342,10 +338,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const getInitialSports = (): SportType[] => {
     if (isInitialSpectator) return ['spectator' as any];
-    if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
-      const primary: SportType = initialGender === 'Female' ? 'womens-sports' : 'cricket';
-      return [primary, initialLeague as SportType];
-    }
     return [mapInitialSport(initialLeague, initialGender)];
   };
 
@@ -416,13 +408,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('registrationType', 'spectator', { shouldValidate: true });
       setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
       setSelectedSports(['spectator' as any]);
-    } else if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
-      setValue('registrationType', 'player', { shouldValidate: true });
-      const currentGen = watch('gender');
-      const primary: SportType = (currentGen === 'Female' || initialGender === 'Female') ? 'womens-sports' : 'cricket';
-      const sportsToSet: SportType[] = [primary, initialLeague as SportType];
-      setValue('selectedSports', sportsToSet, { shouldValidate: true });
-      setSelectedSports(sportsToSet);
     } else {
       setValue('registrationType', 'player', { shouldValidate: true });
       const sport = mapInitialSport(initialLeague, initialGender, null);
@@ -535,9 +520,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       existingRplFamily: 'Yes',
       selectedSports: isInitialSpectator
         ? (['spectator'] as any)
-        : (initialLeague === 'table-tennis' || initialLeague === 'carrom')
-          ? ['cricket', initialLeague as SportType]
-          : [mapInitialSport(initialLeague, initialGender)],
+        : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
       cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
@@ -722,15 +705,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
-      const hasPrimary = valid.some((s) => PRIMARY_SPORTS.includes(s));
-      const hasAddon = valid.some((s) => ADDON_SPORTS.includes(s));
-      if (hasAddon && !hasPrimary) {
-        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
-        valid = [primaryFallback, ...valid];
-      }
+      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
       if (valid.length > 0) {
-        if (valid.length !== prev.length || (hasAddon && !hasPrimary)) {
+        if (valid.length !== prev.length) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
@@ -1364,17 +1341,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       if (selectedSports.length === 1) {
         return;
       }
-      // If unchecking a primary sport, ensure at least one primary sport remains if an add-on sport is present
-      if (PRIMARY_SPORTS.includes(sportId)) {
-        const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
-        const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
-        if (remainingPrimary.length === 0 && hasAddon) {
-          setSportRuleNotice(
-            "Table Tennis & Carrom are free add-on tournaments and require registration in at least one primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football)."
-          );
-          return;
-        }
-      }
       updated = selectedSports.filter((s) => s !== sportId);
     } else {
       // If user is selecting Women's Cricket League, automatically sync gender to Female
@@ -1382,17 +1348,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('gender', 'Female', { shouldValidate: true, shouldDirty: true });
       }
 
-      // If adding an add-on sport, ensure at least one primary sport is selected (default to cricket if none)
-      const hasPrimary = selectedSports.some((s) => PRIMARY_SPORTS.includes(s));
-      if (ADDON_SPORTS.includes(sportId) && !hasPrimary) {
-        const primaryFallback: SportType = (currentGender === 'Female' || sportId === 'womens-sports') ? 'womens-sports' : 'cricket';
-        updated = [...selectedSports, primaryFallback, sportId];
-        setSportRuleNotice(
-          `${primaryFallback === 'womens-sports' ? "Women's Cricket League" : "Main Cricket League"} has been automatically included. Table Tennis & Carrom are free add-on tournaments requiring a primary league.`
-        );
-      } else {
-        updated = [...selectedSports, sportId];
-      }
+      updated = [...selectedSports, sportId];
     }
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -1403,16 +1359,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     if (selectedSports.length <= 1) return;
     setSportRuleNotice(null);
 
-    if (PRIMARY_SPORTS.includes(sportId)) {
-      const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
-      const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
-      if (remainingPrimary.length === 0 && hasAddon) {
-        setSportRuleNotice(
-          "Table Tennis & Carrom require registration in at least one primary league."
-        );
-        return;
-      }
-    }
     const updated = selectedSports.filter((s) => s !== sportId);
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -3525,14 +3471,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {selectedSports.map((sportId) => {
                           const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
                           if (!sport) return null;
-                          const isAddon = ADDON_SPORTS.includes(sport.id);
                           return (
                             <span
                               key={sport.id}
-                              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs ${isAddon
-                                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 border border-emerald-400/50'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40'
-                                }`}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40"
                             >
                               <span>{sport.emoji}</span>
                               <span>{sport.name}</span>
@@ -3607,7 +3549,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                             {filteredSports.map((sport) => {
                               const isChecked = selectedSports.includes(sport.id);
-                              const isAddon = ADDON_SPORTS.includes(sport.id);
                               return (
                                 <div
                                   key={sport.id}
@@ -3623,11 +3564,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                       <span className="font-extrabold text-sm text-slate-900 block">
                                         {sport.name}
                                       </span>
-                                      {isAddon && (
-                                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                          FREE ADD-ON
-                                        </span>
-                                      )}
                                     </div>
                                   </div>
 
@@ -4751,11 +4687,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             >
                               <span>{sportObj?.emoji || '🏅'}</span>
                               <span>{sportObj?.name || sportId}</span>
-                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${ADDON_SPORTS.includes(sportId)
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : 'bg-amber-200 text-amber-950'
-                                }`}>
-                                {ADDON_SPORTS.includes(sportId) ? 'FREE Add-on' : 'Included in Pass'}
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                Included in Pass
                               </span>
                             </div>
                           );

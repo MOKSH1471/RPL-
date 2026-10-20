@@ -170,7 +170,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a male player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship (free add-on), Carrom League (free add-on), and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
+      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
     answer: (
       <div className="space-y-2">
         <p>
@@ -179,8 +179,8 @@ const FAQ_DATA: FAQItem[] = [
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
           <li>RPL Main Cricket League</li>
           <li>Football Championship League (Matches held entirely on 27 Dec)</li>
-          <li>Table Tennis Championship (Free add-on)</li>
-          <li>Carrom League (Free add-on)</li>
+          <li>Table Tennis Championship</li>
+          <li>Carrom League</li>
           <li>90s Nostalgia Games (Dec 25–26, finals Dec 27)</li>
         </ul>
         <p className="text-xs text-slate-600">
@@ -216,22 +216,22 @@ const FAQ_DATA: FAQItem[] = [
     tags: ['Kaccha Pakka', 'Age Limit', 'Juniors & Veterans', '16', '56'],
   },
   {
-    id: 'table-tennis-carrom-addon',
+    id: 'table-tennis-carrom-leagues',
     category: 'leagues',
-    question: 'Are Table Tennis and Carrom separate leagues or add-on tournaments?',
+    question: 'Can I register exclusively for Table Tennis or Carrom?',
     searchableAnswer:
-      'Table Tennis and Carrom are free, complimentary add-on tournaments open to all participants (male, female, juniors, and veterans). Simply select them as add-on sports alongside any primary league (Main Cricket, Women’s Cricket, Kaccha Pakka, or Football). There is no extra registration fee for these championships.',
+      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹2,700 (returning RPL Family) or ₹3,000 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
     answer: (
       <div className="space-y-2">
         <p>
-          Table Tennis and Carrom are <strong>free, complimentary add-on tournaments</strong> open to all participants (male, female, juniors, and veterans).
+          <strong>Yes!</strong> Table Tennis and Carrom are official RPL tournament leagues open to all participants (male, female, juniors, and veterans).
         </p>
         <p className="text-xs text-slate-600">
-          To enter Table Tennis or Carrom, simply select them as add-on sports alongside any primary league (Main Cricket, Women’s Cricket, Kaccha Pakka, or Football). There is <strong>no extra registration fee</strong> for these championships.
+          You can register solely for Table Tennis or Carrom for <strong>₹2,700</strong> (returning RPL Family) or <strong>₹3,000</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
         </p>
       </div>
     ),
-    tags: ['Table Tennis', 'Carrom', 'Add-on Sports', 'Free'],
+    tags: ['Table Tennis', 'Carrom', 'Official Leagues', 'Single-Sport', '2700'],
   },
 
   // 3. Single-Sport & Football Participation
