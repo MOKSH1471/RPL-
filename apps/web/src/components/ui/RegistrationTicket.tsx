@@ -219,7 +219,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 540)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 400)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

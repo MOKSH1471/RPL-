@@ -77,7 +77,7 @@ router.get('/admin/stats', async (req, res) => {
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
         const specDates = gen.spectatorDates || gen.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        calculatedFee = (hasStay ? 2700 : (specDaysCount * 540)) + (hasTshirt ? 500 : 0);
+        calculatedFee = (hasStay ? 2700 : (specDaysCount * 400)) + (hasTshirt ? 500 : 0);
       } else {
         const hasExtraTshirt = gen.extraTshirt === 'Yes';
         if (hasExtraTshirt) calculatedFee += 500;

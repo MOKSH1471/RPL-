@@ -78,7 +78,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const participantType = isSpectator ? 'SPECTATOR' : 'PLAYER';
     const passOption = isSpectator
-      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹540)')
+      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹400)')
       : 'Player League Entry';
     const spectatorTshirt = isSpectator
       ? (gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `YES (+₹500, Size ${gen.tshirtSize || 'L'})` : 'NO')
@@ -199,7 +199,7 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const sportDetails = r.sport_answers?.[sportKey] || {};
     const formattedDetails = isSpectator
-      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹540)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90's Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
+      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹400)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90's Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
       : Object.entries(sportDetails)
         .map(([k, v]) => `${k}: ${v}`)
         .join(' | ');

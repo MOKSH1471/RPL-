@@ -426,7 +426,7 @@ export function AdminRegistrationsTab({
                               <span>Spectator Pass</span>
                             </span>
                             <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
-                              {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? '🏨 Stay (₹2,700)' : '☀️ Day Pass (₹540)'}
+                              {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? '🏨 Stay (₹2,700)' : '☀️ Day Pass (₹400)'}
                             </span>
                             {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                               <span

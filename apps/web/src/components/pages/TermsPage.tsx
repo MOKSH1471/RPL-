@@ -90,7 +90,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
               <li>
                 <strong>Spectator Pass Options:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
-                  <li><strong>Without Stay (Day Pass):</strong> <strong>₹540 per day</strong>. Spectators may choose 1 day (₹540), 2 days (₹1,080), or all 3 days (₹1,620). Covers arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals and overnight accommodation are not included and must be arranged separately.</li>
+                  <li><strong>Without Stay (Day Pass):</strong> <strong>₹400 per day</strong>. Spectators may choose 1 day (₹400), 2 days (₹800), or all 3 days (₹1,200). Covers arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals and overnight accommodation are not included and must be arranged separately.</li>
                   <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹2,700</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
                 </ul>
               </li>

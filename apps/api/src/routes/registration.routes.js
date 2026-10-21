@@ -207,7 +207,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 540);
+        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 400);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete mergedGeneralDetails.nostalgiaSport;
@@ -310,7 +310,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 540);
+        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 400);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete cleanGeneralDetails.nostalgiaSport;

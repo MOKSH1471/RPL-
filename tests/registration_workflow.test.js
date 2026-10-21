@@ -437,7 +437,7 @@ test('Direct Registration with Multi-Select Nostalgia: registers with payment_st
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay (₹540 / 54000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay (₹400 / 40000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -468,12 +468,12 @@ test('Spectator Pass: Order creation for Day Pass without stay (₹540 / 54000 p
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 54000, 'Spectator without stay must be ₹540 (54000 paise)');
+    assert.strictEqual(res.data.amount, 40000, 'Spectator without stay must be ₹400 (40000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,040 / 104000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹900 / 90000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -505,7 +505,7 @@ test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,0
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 104000, 'Spectator without stay + T-shirt must be ₹1040 (104000 paise)');
+    assert.strictEqual(res.data.amount, 90000, 'Spectator without stay + T-shirt must be ₹900 (90000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -583,7 +583,7 @@ test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 pais
   }
 });
 
-test('Spectator Pass: Direct Registration registers with payment_status=pending and ₹540 fee', async () => {
+test('Spectator Pass: Direct Registration registers with payment_status=pending and ₹400 fee', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
