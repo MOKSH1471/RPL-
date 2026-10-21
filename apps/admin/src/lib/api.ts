@@ -131,6 +131,7 @@ export interface ExistingRegistrationData {
   utrList?: string[];
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
+  previouslyPaidExtraTshirt?: boolean;
   generalDetails: Record<string, any>;
   sportAnswers: Record<string, any>;
   cardNo?: string;

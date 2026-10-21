@@ -25,6 +25,7 @@ export interface RegistrationFormData {
     mobileNumber: string;
     email: string;
     centre: string;
+    cardNo?: string;
     tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | '2XL' | '3XL' | '4XL' | '5XL' | 'XXL' | 'XXXL' | string;
     extraTshirt?: 'Yes' | 'No' | string;
     dateOfBirth: string;

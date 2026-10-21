@@ -22,6 +22,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       isExistingPlayer = false,
       previouslyPaidSportsCount = 0,
       hasPreviouslyPaid = false,
+      previouslyPaidExtraTshirt = false,
       registrationId,
       registrationPayload,
     } = req.body;
@@ -34,7 +35,12 @@ router.post('/razorpay/create-order', async (req, res) => {
     const extraTshirtChoice = isSpectator
       ? (req.body.spectatorTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || extraTshirt || 'No')
       : (extraTshirt || regPayload.extraTshirt || cleanGeneral.extraTshirt || 'No');
-    const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+    const extraTshirtPaidInPast = Boolean(
+      previouslyPaidExtraTshirt ||
+      regPayload.previouslyPaidExtraTshirt ||
+      cleanGeneral.previouslyPaidExtraTshirt
+    );
+    const extraTshirtCost = (extraTshirtChoice === 'Yes' && (!isExistingPlayer || !hasPreviouslyPaid || !extraTshirtPaidInPast)) ? 500 : 0;
     const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
     const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
 
@@ -146,6 +152,13 @@ router.post('/razorpay/create-order', async (req, res) => {
           }
         }
       } catch (e) {}
+    }
+
+    // Safety guard: A player cannot have the same card number as their referrer!
+    if (cardNoVal && resolvedReferrerCardNo && cardNoVal === resolvedReferrerCardNo) {
+      logger.warn(`[GUEST CARD NOTICE] Participant cardNo matched referrer cardNo (${cardNoVal}). Resetting cardNoVal to create dedicated guest card.`);
+      cardNoVal = null;
+      cleanGeneral.cardNo = null;
     }
 
     if (!cardNoVal && mobile10) {
@@ -638,8 +651,32 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           [razorpay_order_id, regId]
         );
 
+        // Ensure referrer card is resolved first
+        let resolvedReferrerCardNo = cleanGeneralDetails.referrerCardNo || mergedGeneralDetails?.referrerCardNo || null;
+        if (!resolvedReferrerCardNo && (cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile)) {
+          try {
+            const refMob10 = cleanDomesticPhone(cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile);
+            if (refMob10) {
+              const [refRows] = await connection.query(
+                `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
+                [refMob10, `%${refMob10}`]
+              );
+              if (refRows.length > 0) {
+                resolvedReferrerCardNo = refRows[0].cardno;
+              }
+            }
+          } catch (e) {}
+        }
+
         let cardNoVal = cleanGeneralDetails.cardNo || mergedGeneralDetails?.cardNo || null;
-        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && existingTx.length > 0 && existingTx[0].cardno && !existingTx[0].cardno.startsWith('GUEST_')) {
+
+        // Safety guard: A participant cannot have their referrer's card number!
+        if (cardNoVal && resolvedReferrerCardNo && cardNoVal === resolvedReferrerCardNo) {
+          logger.warn(`[GUEST CARD NOTICE] In payment verification, cardNoVal matched referrer cardNo (${cardNoVal}). Resetting to generate distinct guest card.`);
+          cardNoVal = null;
+        }
+
+        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && existingTx.length > 0 && existingTx[0].cardno && !existingTx[0].cardno.startsWith('GUEST_') && existingTx[0].cardno !== resolvedReferrerCardNo) {
           cardNoVal = existingTx[0].cardno;
         }
         if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && mobile10) {
@@ -648,8 +685,20 @@ router.post('/razorpay/verify-payment', async (req, res) => {
               `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno = ? ORDER BY id DESC LIMIT 1`,
               [mobile10, Number(mobile10)]
             );
-            if (userCard.length > 0 && userCard[0].cardno) {
+            if (userCard.length > 0 && userCard[0].cardno && userCard[0].cardno !== resolvedReferrerCardNo) {
               cardNoVal = String(userCard[0].cardno);
+            } else {
+              cardNoVal = await ensureGuestCard({
+                fullName: full_name.trim(),
+                mobile: mobile10,
+                email: email.trim(),
+                gender: cleanGeneralDetails.gender || 'Male',
+                dob: cleanGeneralDetails.dateOfBirth || null,
+                centre: cleanGeneralDetails.centre || 'Mumbai',
+                photoUrl: isSpectator ? null : (cleanPhotoUrl || null),
+                referrerCardNo: resolvedReferrerCardNo,
+                connection,
+              });
             }
           } catch (e) {}
         }
@@ -689,24 +738,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           ]
         );
 
-        // Ensure guest_relationship is linked if referrer is known and card is a real cardNo
-        let resolvedReferrerCardNo = cleanGeneralDetails.referrerCardNo || mergedGeneralDetails?.referrerCardNo || null;
-        if (!resolvedReferrerCardNo && (cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile)) {
-          try {
-            const refMob10 = cleanDomesticPhone(cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile);
-            if (refMob10) {
-              const [refRows] = await connection.query(
-                `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
-                [refMob10, `%${refMob10}`]
-              );
-              if (refRows.length > 0) {
-                resolvedReferrerCardNo = refRows[0].cardno;
-              }
-            }
-          } catch (e) {}
-        }
-
-        if (resolvedReferrerCardNo && cardNoVal && !cardNoVal.startsWith('GUEST_')) {
+        if (resolvedReferrerCardNo && cardNoVal && resolvedReferrerCardNo !== cardNoVal && !cardNoVal.startsWith('GUEST_')) {
           try {
             const [relExists] = await connection.query(
               `SELECT id FROM ${AASHRAY_DB}.guest_relationship WHERE cardno = ? AND guest = ? LIMIT 1`,

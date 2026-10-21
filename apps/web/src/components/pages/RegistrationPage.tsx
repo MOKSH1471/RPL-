@@ -368,6 +368,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [previousReceiptUrls, setPreviousReceiptUrls] = useState<string[]>([]);
   const [previousUtrs, setPreviousUtrs] = useState<string[]>([]);
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
+  const [previouslyPaidExtraTshirt, setPreviouslyPaidExtraTshirt] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
@@ -688,15 +689,20 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     : 1;
   const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 400);
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
-  const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
 
   // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
   const playerBaseFee = currentExistingFamily === 'Yes' ? 2700 : 3000;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
-  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (playerBaseFee + extraTshirtCost);
+
+  // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
+  const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+  const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+
+  const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
-  const previousPaidAmount = isReturningPaidUser ? playerBaseFee : 0;
+  const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
 
   const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
   const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
@@ -781,6 +787,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
       setPhotoDriveUrl('');
       setPhotoPreview(null);
@@ -801,6 +808,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
       return;
     }
@@ -819,6 +827,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
       return;
     }
@@ -967,6 +976,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             setPreviousReceiptUrls(rawReceiptList);
             setPreviousUtrs(rawUtrList);
             setHasPreviouslyPaid(isPaid);
+            const prevPaidTshirt = Boolean(
+              reg.previouslyPaidExtraTshirt ||
+              (isPaid && (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes' || gen.spectator_tshirt === 'Yes'))
+            );
+            setPreviouslyPaidExtraTshirt(prevPaidTshirt);
 
             // Restore sport answers
             if (sports.cricket) {
@@ -1238,6 +1252,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         }
 
         if (res.found && foundName) {
+          setMumukshuCardInfo(null);
           setReferrerFoundInfo({
             name: foundName,
             cardNo: cardNo || undefined,
@@ -1528,6 +1543,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       (data as any).paymentReceiptUrl ||
       undefined;
 
+    const effectiveTotalAmount = previousPaidAmount > 0
+      ? previousPaidAmount
+      : (isSpectator ? spectatorTotalFee : (playerBaseFee + extraTshirtCost));
+
+    const effectivePaymentUtr = paymentUtr || previousUtrs.join(', ') || undefined;
+    const effectivePaymentReceipt = paymentReceiptUrl || previousReceiptUrls.join(', ') || undefined;
+    const effectivePaymentStatus = existingPaymentStatus || (hasPreviouslyPaid ? 'approved' : 'pending');
+    const effectiveCardNo = isExistingPlayerRegistration
+      ? (mumukshuCardInfo?.cardNo || undefined)
+      : ((isUnregisteredPlayer || data.referrerMobile || data.referrerCardNo) ? undefined : (mumukshuCardInfo?.cardNo || undefined));
+
     const fullData: RegistrationFormData = {
       registrationType: isSpectator ? 'spectator' : 'player',
       spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
@@ -1539,6 +1565,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       mobileNumber: data.mobileNumber,
       email: data.email,
       centre: data.centre,
+      cardNo: effectiveCardNo,
       tshirtSize: data.tshirtSize,
       extraTshirt: data.extraTshirt || 'No',
       nostalgiaSport: isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
@@ -1590,11 +1617,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredTeamName: data.preferredTeamName,
       additionalNotes: data.additionalNotes?.trim() || undefined,
       comments: data.additionalNotes?.trim() || undefined,
-      totalAmount: cumulativeTotalFee,
-      calculatedFee: totalPayableFee,
-      payment_receipt: paymentReceiptUrl,
-      paymentReceiptUrl: paymentReceiptUrl,
-      payment_utr: paymentUtr,
+      paymentStatus: effectivePaymentStatus,
+      payment_status: effectivePaymentStatus,
+      totalAmount: effectiveTotalAmount,
+      calculatedFee: effectiveTotalAmount,
+      payment_receipt: effectivePaymentReceipt,
+      paymentReceiptUrl: effectivePaymentReceipt,
+      payment_utr: effectivePaymentUtr,
+      paymentUtr: effectivePaymentUtr,
     };
 
     // 1. Clean General Details
@@ -1617,7 +1647,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       checkInDate: data.checkInDate || '2026-12-25',
       checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
-      cardNo: mumukshuCardInfo?.cardNo || undefined,
+      cardNo: effectiveCardNo,
       selectedSports: isSpectator ? ['spectator'] : selectedSports,
       customJerseyName: data.customJerseyName || undefined,
       preferredJerseyNumber: data.preferredJerseyNumber || undefined,
@@ -1629,13 +1659,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerCardNo: data.referrerCardNo || undefined,
       comments: data.additionalNotes?.trim() || undefined,
       additionalNotes: data.additionalNotes?.trim() || undefined,
-      totalAmount: cumulativeTotalFee,
+      totalAmount: effectiveTotalAmount,
       incrementalFee: totalPayableFee,
-      calculatedFee: totalPayableFee,
-      payment_receipt: paymentReceiptUrl,
-      payment_receipt_url: paymentReceiptUrl,
-      paymentReceiptUrl: paymentReceiptUrl,
-      payment_utr: paymentUtr,
+      calculatedFee: effectiveTotalAmount,
+      paymentStatus: effectivePaymentStatus,
+      payment_status: effectivePaymentStatus,
+      payment_receipt: effectivePaymentReceipt,
+      payment_receipt_url: effectivePaymentReceipt,
+      paymentReceiptUrl: effectivePaymentReceipt,
+      payment_utr: effectivePaymentUtr,
+      paymentUtr: effectivePaymentUtr,
     };
 
     // 2. Clean Sport-Specific Questionnaire (Grouped by Sport)
@@ -1790,6 +1823,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
+          previouslyPaidExtraTshirt,
           registrationId: existingRegistrationId || undefined,
           registrationPayload,
         });
@@ -3472,12 +3506,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
                           Kaccha Pakka Cricket League Available (Age: {playerAge} years):
                         </span>
-                        <p className="font-semibold text-amber-900 leading-snug mb-1">
-                          At Kaccha Pakka Cricket League we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
-                        </p>
-                        <p className="text-[11px] font-medium text-amber-800">
-                          Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka Cricket League</strong> along with other sports!
-                        </p>
                       </div>
                     </div>
                   )}
@@ -4673,7 +4701,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹400 = ₹${(spectatorDates.length * 400).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                           ) : isReturningPaidUser ? (
                             currentExtraTshirt === 'Yes'
-                              ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
+                              ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
                               : `All Sports Included in Tournament Pass (Verified)`
                           ) : (
                             `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
@@ -4701,7 +4729,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                           <div>
                             <span>
-                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹2,700' : '₹3,000'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
                         </div>
@@ -4714,7 +4742,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <Shirt className="w-4 h-4 text-amber-700" />
                             <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
                           </span>
-                          <span className="text-amber-900 font-extrabold">+₹500</span>
+                          {isReturningPaidUser && previouslyPaidExtraTshirt ? (
+                            <span className="text-emerald-800 font-extrabold bg-emerald-100 px-2.5 py-0.5 rounded-md text-[11px] border border-emerald-200">
+                              Paid in Pass (₹0 Due)
+                            </span>
+                          ) : (
+                            <span className="text-amber-900 font-extrabold">+₹500</span>
+                          )}
                         </div>
                       )}
 

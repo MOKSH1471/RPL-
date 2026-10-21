@@ -283,18 +283,27 @@ export function CheckStatusModal({
                     <ReceiptPrinter
                       registrationId={matchedRecord.id}
                       data={{
+                        ...(matchedRecord.generalDetails || matchedRecord.general_details || {}),
                         fullName: matchedRecord.fullName,
                         mobileNumber: matchedRecord.mobile,
                         email: matchedRecord.email,
                         centre: matchedRecord.generalDetails?.centre || 'Mumbai',
                         tshirtSize: matchedRecord.generalDetails?.tshirtSize,
                         extraTshirt: matchedRecord.generalDetails?.extraTshirt,
+                        spectatorTshirt: matchedRecord.generalDetails?.spectatorTshirt,
+                        spectatorOption: matchedRecord.generalDetails?.spectatorOption,
+                        spectatorDates: matchedRecord.generalDetails?.spectatorDates,
+                        spectatorDays: matchedRecord.generalDetails?.spectatorDays,
+                        registrationType: matchedRecord.generalDetails?.registrationType || (matchedRecord.selectedSports?.includes('spectator') ? 'spectator' : 'player'),
                         customJerseyName: matchedRecord.generalDetails?.customJerseyName,
                         preferredJerseyNumber: matchedRecord.generalDetails?.preferredJerseyNumber,
                         accommodationRequired: matchedRecord.generalDetails?.accommodationRequired,
                         stayingRoomNumber: matchedRecord.generalDetails?.stayingRoomNumber,
                         foodPreference: matchedRecord.generalDetails?.foodPreference,
-                        selectedSports: matchedRecord.generalDetails?.selectedSports || ['cricket'],
+                        selectedSports: matchedRecord.generalDetails?.selectedSports || matchedRecord.selectedSports || ['cricket'],
+                        checkInDate: matchedRecord.checkInDate || matchedRecord.check_in_date || matchedRecord.generalDetails?.checkInDate,
+                        checkOutDate: matchedRecord.checkOutDate || matchedRecord.check_out_date || matchedRecord.generalDetails?.checkOutDate,
+                        cardNo: matchedRecord.cardNo || matchedRecord.generalDetails?.cardNo,
                         paymentUtr: matchedRecord.payment_utr || matchedRecord.paymentUtr,
                         paymentStatus: 'approved',
                       }}

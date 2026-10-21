@@ -65,7 +65,7 @@ export async function ensureGuestCard({ fullName, mobile, email, gender, dob, ce
       logger.info(`[GUEST CARD] Existing Aashray card found for mobile ${mobile10}: ${existingCardNo}`);
 
       // Ensure relationship exists if referrerCardNo is provided
-      if (referrerCardNo) {
+      if (referrerCardNo && referrerCardNo !== existingCardNo) {
         try {
           const [existingRel] = await q.query(
             `SELECT id FROM ${AASHRAY_DB}.guest_relationship WHERE cardno = ? AND guest = ? LIMIT 1`,
@@ -127,7 +127,7 @@ export async function ensureGuestCard({ fullName, mobile, email, gender, dob, ce
 
     // 6. Create guest_relationship: referrer (host) → new RPL player (guest), type='friend'
     const hostCardNo = referrerCardNo || null;
-    if (hostCardNo) {
+    if (hostCardNo && hostCardNo !== nextCardNo) {
       try {
         await q.query(
           `INSERT INTO ${AASHRAY_DB}.guest_relationship 
@@ -140,7 +140,7 @@ export async function ensureGuestCard({ fullName, mobile, email, gender, dob, ce
         logger.warn(`[GUEST RELATIONSHIP WARNING] Could not create relationship: ${relErr.message}`);
       }
     } else {
-      logger.info(`[GUEST RELATIONSHIP] No referrerCardNo provided for ${nextCardNo} — skipping relationship entry`);
+      logger.info(`[GUEST RELATIONSHIP] No valid distinct referrerCardNo provided for ${nextCardNo} — skipping relationship entry`);
     }
 
     return nextCardNo;

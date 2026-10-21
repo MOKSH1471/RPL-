@@ -689,19 +689,25 @@ export function AdminRegistrationsTab({
           onClose={() => setReceiptModalPlayer(null)}
           registrationId={receiptModalPlayer.registration_id || `RPL9-${receiptModalPlayer.id}`}
           data={{
+            ...(receiptModalPlayer.general_details || {}),
             fullName: receiptModalPlayer.full_name,
             mobileNumber: receiptModalPlayer.mobile,
             email: receiptModalPlayer.email,
             centre: receiptModalPlayer.general_details?.centre,
             tshirtSize: receiptModalPlayer.general_details?.tshirtSize,
+            spectatorTshirt: receiptModalPlayer.general_details?.spectatorTshirt,
+            spectatorOption: receiptModalPlayer.general_details?.spectatorOption,
+            spectatorDates: receiptModalPlayer.general_details?.spectatorDates,
+            spectatorDays: receiptModalPlayer.general_details?.spectatorDays,
+            registrationType: receiptModalPlayer.general_details?.registrationType || (receiptModalPlayer.sport_id === 'spectator' ? 'spectator' : 'player'),
             selectedSports: receiptModalPlayer.general_details?.selectedSports || [receiptModalPlayer.sport_id],
             customJerseyName: receiptModalPlayer.general_details?.customJerseyName,
             preferredJerseyNumber: receiptModalPlayer.general_details?.preferredJerseyNumber,
             foodPreference: receiptModalPlayer.general_details?.foodPreference,
             accommodationRequired: receiptModalPlayer.general_details?.accommodationRequired,
             stayingRoomNumber: receiptModalPlayer.general_details?.stayingRoomNumber,
-            checkInDate: receiptModalPlayer.check_in_date,
-            checkOutDate: receiptModalPlayer.check_out_date,
+            checkInDate: receiptModalPlayer.check_in_date || receiptModalPlayer.general_details?.checkInDate,
+            checkOutDate: receiptModalPlayer.check_out_date || receiptModalPlayer.general_details?.checkOutDate,
             payment_utr: receiptModalPlayer.payment_utr,
             cardNo: receiptModalPlayer.general_details?.cardNo,
           }}
