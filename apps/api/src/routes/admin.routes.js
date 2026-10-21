@@ -40,8 +40,10 @@ router.get('/admin/stats', async (req, res) => {
       M: 0,
       L: 0,
       XL: 0,
-      XXL: 0,
-      XXXL: 0,
+      '2XL': 0,
+      '3XL': 0,
+      '4XL': 0,
+      '5XL': 0,
       Other: 0,
     };
 
@@ -102,9 +104,11 @@ router.get('/admin/stats', async (req, res) => {
       // Only count T-shirt for players, or spectators who opted in (+₹500)
       const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
       if (!isSpectator || spectatorHasTshirt) {
-        const rawSize = (gen.tshirtSize || '').trim();
+        let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
+        if (rawSize === 'XXL') rawSize = '2XL';
+        if (rawSize === 'XXXL') rawSize = '3XL';
         if (rawSize) {
-          const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize.startsWith(k)) || 'Other';
+          const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize === k || rawSize.startsWith(k)) || 'Other';
           tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
         }
       }
@@ -386,6 +390,7 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
       );
 
       let cancelledBookingsCount = 0;
+      let cancelledFoodCount = 0;
       let cancelledTransactionsCount = 0;
 
       try {

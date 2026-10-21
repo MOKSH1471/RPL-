@@ -52,7 +52,20 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const isSpectator = player.registrationType === 'spectator' || gen.registrationType === 'spectator' || selectedSportsList.includes('spectator') || player.sport_id === 'spectator';
   const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
   const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
-  const spectatorCalculatedFee = (hasStay ? 2700 : 400) + (hasTshirt ? 500 : 0);
+
+  const spectatorDatesList: string[] = Array.isArray(gen.spectatorDates) && gen.spectatorDates.length > 0
+    ? gen.spectatorDates
+    : Array.isArray(gen.spectatorDays) && gen.spectatorDays.length > 0
+      ? gen.spectatorDays
+      : (hasStay
+          ? ['2026-12-25', '2026-12-26', '2026-12-27']
+          : (gen.checkInDate && gen.checkOutDate
+              ? (gen.checkInDate === gen.checkOutDate ? [gen.checkInDate] : [gen.checkInDate, gen.checkOutDate])
+              : ['2026-12-25']));
+  const spectatorDayCount = Math.max(1, spectatorDatesList.length);
+  const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);
+  const spectatorDayFee = spectatorDayCount * 400;
+  const spectatorCalculatedFee = (hasStay ? 2700 : spectatorDayFee) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
@@ -625,29 +638,46 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       <span>Spectator Pass Inclusions & Options</span>
                     </h3>
                     <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
-                      {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
+                      {hasStay
                         ? '🏨 With Stay (₹2,700)'
-                        : '☀️ Without Stay / Day Pass (₹400)'}
+                        : `☀️ Without Stay / Day Pass (${spectatorDayCount} ${spectatorDayCount === 1 ? 'Day' : 'Days'} • ₹${spectatorDayFee})`}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">
-                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">Meals & Night Snacks</span>
-                      <span className="font-extrabold text-slate-800 mt-0.5 block">✅ Included for all 3 days</span>
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">Meals & Refreshments</span>
+                      <span className="font-extrabold text-slate-800 mt-0.5 block">
+                        {hasStay
+                          ? '✅ Full Meals & Night Snacks (All 3 Days)'
+                          : `🌙 Night Snacks Included (${spectatorDayCount} ${spectatorDayCount === 1 ? 'Day' : 'Days'} • ${spectatorDatesList.map(d => {
+                              const s = String(d).trim();
+                              try {
+                                const parts = s.split('-');
+                                if (parts.length === 3) {
+                                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                  const m = months[parseInt(parts[1], 10) - 1];
+                                  return `${m} ${parseInt(parts[2], 10)}`;
+                                }
+                              } catch (e) {}
+                              return s;
+                            }).join(', ')}) • ❌ No Daytime Meals`}
+                      </span>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">
                       <span className="text-indigo-400 font-bold uppercase text-[10px] block">90’s Nostalgia Games</span>
-                      <span className="font-extrabold text-slate-800 mt-0.5 block">
-                        {Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) && (gen.nostalgiaSport || gen.nostalgia_sport).length > 0
-                          ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
-                          : '✅ 90’s Nostalgia Games Open'}
+                      <span className={`font-extrabold mt-0.5 block ${isSpectatorAll3Days ? 'text-slate-800' : 'text-rose-600'}`}>
+                        {isSpectatorAll3Days
+                          ? (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) && (gen.nostalgiaSport || gen.nostalgia_sport).length > 0
+                              ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+                              : (gen.nostalgiaSport || gen.nostalgia_sport || '✅ 90’s Nostalgia Games Open'))
+                          : '❌ Not Eligible (Requires 3-Day Pass)'}
                       </span>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">
                       <span className="text-indigo-400 font-bold uppercase text-[10px] block">Commemorative T-Shirt</span>
                       <span className="font-extrabold text-slate-800 mt-0.5 block">
-                        {gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes'
+                        {hasTshirt
                           ? `✅ Opted In (+₹500, Size ${gen.tshirtSize || 'L'})`
                           : '❌ Not Opted In'}
                       </span>
@@ -785,7 +815,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     onChange={(e) => setFormData({ ...formData, tshirtSize: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
                   >
-                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map((s) => (
+                    {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>

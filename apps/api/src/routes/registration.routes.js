@@ -52,16 +52,17 @@ router.post('/register', async (req, res) => {
     if (req.body.referrerName) cleanGeneralDetails.referrerName = req.body.referrerName;
     if (req.body.referrerCardNo) cleanGeneralDetails.referrerCardNo = req.body.referrerCardNo;
 
-    const cleanSportAnswers = sport_answers || {};
+    const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) || req.body.sport_id === 'spectator';
 
-    const cleanPhotoUrl = 
+    const cleanPhotoUrl = isSpectator ? null : (
       player_photo_url || 
       sanitizedAnswers.photoDriveUrl || 
       sanitizedAnswers.player_photo_url || 
       cleanGeneralDetails.player_photo_url || 
       cleanGeneralDetails.photoDriveUrl || 
       cleanGeneralDetails.photoUrl || 
-      null;
+      null
+    );
 
     const cleanPaymentUtr = 
       payment_utr || 
@@ -265,7 +266,7 @@ router.post('/register', async (req, res) => {
         mergedGeneralDetails.payment_utr = finalPaymentUtr;
         finalGeneralDetails = mergedGeneralDetails;
 
-        const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
+        const finalPhotoUrl = isSpectator ? null : (cleanPhotoUrl || prevRow.player_photo_url || null);
         const hasNewPayment = newUtrs.length > 0 || newReceipts.length > 0;
         const hasNewSports = newlyAddedSportsCount > 0;
         const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';

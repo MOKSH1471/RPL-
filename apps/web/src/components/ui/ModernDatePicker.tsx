@@ -183,7 +183,7 @@ export const ModernDatePicker: React.FC<ModernDatePickerProps> = ({
   }
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative w-full ${isOpen ? 'z-40' : 'z-0'}`}>
       {/* Clean, Modern Trigger Button */}
       <button
         type="button"

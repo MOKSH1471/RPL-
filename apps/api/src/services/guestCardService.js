@@ -63,6 +63,28 @@ export async function ensureGuestCard({ fullName, mobile, email, gender, dob, ce
     if (existing.length > 0 && existing[0].cardno) {
       const existingCardNo = String(existing[0].cardno);
       logger.info(`[GUEST CARD] Existing Aashray card found for mobile ${mobile10}: ${existingCardNo}`);
+
+      // Ensure relationship exists if referrerCardNo is provided
+      if (referrerCardNo) {
+        try {
+          const [existingRel] = await q.query(
+            `SELECT id FROM ${AASHRAY_DB}.guest_relationship WHERE cardno = ? AND guest = ? LIMIT 1`,
+            [referrerCardNo, existingCardNo]
+          );
+          if (existingRel.length === 0) {
+            await q.query(
+              `INSERT INTO ${AASHRAY_DB}.guest_relationship 
+               (cardno, guest, type, updatedBy, createdAt, updatedAt)
+               VALUES (?, ?, 'friend', 'RPL_SYSTEM', NOW(), NOW())`,
+              [referrerCardNo, existingCardNo]
+            );
+            logger.info(`[GUEST RELATIONSHIP] Linked existing card: ${referrerCardNo} → ${existingCardNo} (friend)`);
+          }
+        } catch (relErr) {
+          logger.warn(`[GUEST RELATIONSHIP WARNING] Could not link existing card: ${relErr.message}`);
+        }
+      }
+
       return existingCardNo;
     }
 

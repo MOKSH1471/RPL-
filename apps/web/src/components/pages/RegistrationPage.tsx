@@ -242,7 +242,7 @@ export const SPECTATOR_EVENT_DATES = [
   { id: '2026-12-27', label: '27 Dec 2026', day: 'Day 3 (Sunday)' },
 ] as const;
 
-const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
+const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'] as const;
 
 export function calculateAge(dobString?: string): number | null {
   if (!dobString || typeof dobString !== 'string') return null;
@@ -667,6 +667,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
   }, [isSpectator, currentAcc, spectatorDates, setValue]);
 
+  // Spectators do not require a photo; clear any photo in state when in spectator mode
+  useEffect(() => {
+    if (isSpectator) {
+      setPhotoDriveUrl('');
+      setPhotoPreview(null);
+      setPhotoName('');
+      setPhotoError(null);
+    }
+  }, [isSpectator]);
+
   const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
   const totalSportsCount = Math.max(1, selectedSports.length);
   const newlyAddedSportsCount = isReturningPaidUser
@@ -772,6 +782,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
       setMumukshuCardInfo(null);
+      setPhotoDriveUrl('');
+      setPhotoPreview(null);
+      setPhotoName('');
+      setPhotoError(null);
       return;
     }
 
@@ -889,8 +903,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             // Core fields
             if (reg.fullName) setValue('fullName', reg.fullName, { shouldValidate: true, shouldDirty: true });
             if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
-            if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
-            if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.tshirtSize) {
+              const rawSize = String(gen.tshirtSize).toUpperCase();
+              const normalizedSize = rawSize === 'XXL' ? '2XL' : (rawSize === 'XXXL' ? '3XL' : gen.tshirtSize);
+              setValue('tshirtSize', normalizedSize as any, { shouldValidate: true, shouldDirty: true });
+            }
             const resolvedExtraTshirt = gen.extraTshirt || gen.extra_tshirt || 'No';
             setValue('extraTshirt', (resolvedExtraTshirt === 'Yes' ? 'Yes' : 'No') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.spectatorTshirt) {
@@ -1063,6 +1080,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setPreviousUtrs([]);
           setHasPreviouslyPaid(false);
           setMumukshuCardInfo(null);
+          setPhotoDriveUrl('');
+          setPhotoPreview(null);
+          setPhotoName('');
+          setPhotoError(null);
           // Clear fields that were auto-filled from the previous lookup
           setValue('fullName', '', { shouldValidate: false });
           setValue('email', '', { shouldValidate: false });
@@ -1085,6 +1106,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setPreviousUtrs([]);
         setHasPreviouslyPaid(false);
         setMumukshuCardInfo(null);
+        setPhotoDriveUrl('');
+        setPhotoPreview(null);
+        setPhotoName('');
+        setPhotoError(null);
         setValue('fullName', '', { shouldValidate: false });
         setValue('email', '', { shouldValidate: false });
         setValue('centre', '', { shouldValidate: false });
@@ -1697,7 +1722,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
     });
 
-    const playerPhotoUrl = photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined);
+    const playerPhotoUrl = isSpectator
+      ? undefined
+      : (photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined));
 
     // Consolidated answers WITHOUT raw base64 data URLs
     const sanitizedAnswers = {
@@ -1707,7 +1734,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       totalAmount: cumulativeTotalFee,
       incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
-      photoDriveUrl: photoDriveUrl || undefined,
+      photoDriveUrl: isSpectator ? undefined : (photoDriveUrl || undefined),
       payment_receipt: paymentReceiptUrl,
       payment_utr: paymentUtr,
     };
@@ -1743,7 +1770,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
           check_in_date: data.checkInDate || '2026-12-25',
           check_out_date: data.checkOutDate || '2026-12-27',
-          player_photo_url: playerPhotoUrl,
+          player_photo_url: isSpectator ? undefined : (playerPhotoUrl || undefined),
           general_details: generalDetails,
           sport_answers: sportAnswers,
           answers: sanitizedAnswers,
@@ -1874,7 +1901,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
         check_in_date: data.checkInDate || '2026-12-25',
         check_out_date: data.checkOutDate || '2026-12-27',
-        player_photo_url: playerPhotoUrl,
+        player_photo_url: isSpectator ? undefined : (playerPhotoUrl || undefined),
         payment_utr: paymentUtr,
         payment_receipt_url: paymentReceiptUrl,
         general_details: generalDetails,
@@ -2129,7 +2156,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-              className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden"
+              className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8 w-full max-w-full relative z-20"
             >
               <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
@@ -2602,7 +2629,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             value={currentTshirtSize || 'L'}
                             onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
                             layoutId="spectator-size-indicator"
-                            gridCols="grid-cols-4 sm:grid-cols-7"
+                            gridCols="grid-cols-3 sm:grid-cols-9"
                             activeColor="bg-slate-900"
                             activeTextColor="text-amber-300"
                           />
@@ -2640,7 +2667,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     value={currentTshirtSize}
                     onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
                     layoutId="tshirt-size-indicator"
-                    gridCols="grid-cols-4 sm:grid-cols-7"
+                    gridCols="grid-cols-3 sm:grid-cols-9"
                     activeColor="bg-slate-900"
                     activeTextColor="text-amber-300"
                   />
@@ -2701,42 +2728,52 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               )}
 
-              {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
-              <div className="mt-3">
-                <div
-                  onClick={() => setShowSizeGuideModal(true)}
-                  className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
-                >
-                  <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
-                    <img
-                      src="/jersey-size-guide.jpg"
-                      alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
-                      className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
-                      loading="lazy"
-                    />
+              {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive - Only shown for players, or spectators who opt for a T-shirt) */}
+              <AnimatePresence>
+                {(!isSpectator || currentSpectatorTshirt === 'Yes') && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="mt-3 overflow-hidden"
+                  >
+                    <div
+                      onClick={() => setShowSizeGuideModal(true)}
+                      className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                    >
+                      <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
+                        <img
+                          src="/jersey-size-guide.jpg"
+                          alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
+                          className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
+                          loading="lazy"
+                        />
 
-                    {/* Tap / Click to Zoom Hint Overlay */}
-                    <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
-                      <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
-                        <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Tap to view full chart & zoom</span>
-                      </span>
+                        {/* Tap / Click to Zoom Hint Overlay */}
+                        <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
+                          <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
+                            <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Tap to view full chart & zoom</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Size Guide Card Footer */}
+                      <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
+                        <span className="flex items-center space-x-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
+                        </span>
+                        <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
+                          <span>Click to enlarge</span>
+                          <Maximize2 className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Size Guide Card Footer */}
-                  <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
-                    <span className="flex items-center space-x-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                      <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
-                    </span>
-                    <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
-                      <span>Click to enlarge</span>
-                      <Maximize2 className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Sub-section 1.3: Player Demographics & Status */}
               <div className="pt-3 border-t border-slate-100">

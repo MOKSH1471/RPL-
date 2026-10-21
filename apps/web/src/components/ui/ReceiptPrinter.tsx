@@ -129,12 +129,59 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       : [data.league || 'cricket'];
 
   const isSpectator = (data as any).registrationType === 'spectator' || sportsList.includes('spectator');
-  const isSpectatorAll3Days =
-    isSpectator &&
-    (data.accommodationRequired === 'Yes' ||
-      (data as any).spectatorOption === 'with-stay' ||
-      ((data as any).spectatorDates && (data as any).spectatorDates.length === 3) ||
-      ((data as any).spectatorDays && (data as any).spectatorDays.length === 3));
+  const specDatesList: string[] = Array.isArray((data as any).spectatorDates) && (data as any).spectatorDates.length > 0
+    ? (data as any).spectatorDates
+    : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
+      ? (data as any).spectatorDays
+      : ((data as any).checkInDate && (data as any).checkOutDate
+          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : [(data as any).checkInDate, (data as any).checkOutDate])
+          : ['2026-12-25']);
+
+  const specDayCount = Math.max(1, specDatesList.length);
+  const hasStay = data.accommodationRequired === 'Yes' || (data as any).spectatorOption === 'with-stay';
+  const isSpectatorAll3Days = isSpectator && (hasStay || specDayCount >= 3);
+
+  const formatDatesRangeLabel = (dates: string[]) => {
+    if (!dates || dates.length === 0) return '25-27 DEC 2026';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parsed = dates.map(d => {
+      const parts = String(d).trim().split('-');
+      if (parts.length === 3) {
+        return {
+          day: parseInt(parts[2], 10),
+          month: months[parseInt(parts[1], 10) - 1],
+          year: parts[0]
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (parsed.length === 1) {
+      return `${parsed[0]!.day} ${parsed[0]!.month.toUpperCase()} ${parsed[0]!.year} (1 DAY PASS)`;
+    }
+    if (parsed.length === 2) {
+      if (parsed[0]!.month === parsed[1]!.month) {
+        return `${parsed[0]!.day} & ${parsed[1]!.day} ${parsed[1]!.month.toUpperCase()} ${parsed[1]!.year} (2 DAY PASS)`;
+      }
+      return `${parsed[0]!.day} ${parsed[0]!.month.toUpperCase()} & ${parsed[1]!.day} ${parsed[1]!.month.toUpperCase()} ${parsed[1]!.year} (2 DAY PASS)`;
+    }
+    return '25-27 DEC 2026 (3 DAY PASS)';
+  };
+
+  const formatDatesPretty = (dates: string[]) => {
+    if (!dates || dates.length === 0) return 'Dec 25-27';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const formatted = dates.map(d => {
+      const parts = String(d).trim().split('-');
+      if (parts.length === 3) {
+        return `${months[parseInt(parts[1], 10) - 1]} ${parseInt(parts[2], 10)}`;
+      }
+      return d;
+    });
+    if (formatted.length === 1) return formatted[0];
+    if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
+    return formatted.join(', ');
+  };
 
   const formatSportName = (s: string) => {
     switch (s) {
@@ -158,9 +205,11 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       case 'kaccha-pakka':
         return 'Kaccha Pakka Cricket League';
       case 'spectator':
-        return isSpectatorAll3Days
-          ? 'Spectator Pass (90’s Nostalgia Games & Meals)'
-          : 'Spectator Pass (Night Snacks & Sessions)';
+        return hasStay
+          ? 'Spectator Pass (Stay, Full Meals & 90’s Games)'
+          : (isSpectatorAll3Days
+              ? 'Spectator Pass (3 Days • Night Snacks & 90’s Games)'
+              : `Spectator Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • Night Snacks & Sessions)`);
       default:
         return s;
     }
@@ -449,7 +498,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                       <span>PAYMENT SUCCESSFUL</span>
                     </div>
                     <div className="text-[8px] text-emerald-700 font-semibold tracking-wider uppercase mt-0.5">
-                      VERIFIED PASS • 25-27 DEC 2026
+                      VERIFIED PASS • {isSpectator && !hasStay ? formatDatesRangeLabel(specDatesList) : '25-27 DEC 2026'}
                     </div>
                   </div>
                 ) : (
@@ -511,7 +560,12 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27 (Compulsory)' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Day Pass (Without Stay)')} • {data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}
+                      {isSpectator
+                        ? (hasStay
+                            ? 'Stay: Dec 25-27 • Full Meals & Night Snacks'
+                            : `Day Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'}: ${formatDatesPretty(specDatesList)}) • Night Snacks Only`)
+                        : (data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27 (Compulsory)' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Day Pass (Without Stay)')) + ` • ${data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}`
+                      }
                     </span>
                   </div>
 
@@ -559,7 +613,15 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                     <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>{isSpectator ? (isSpectatorAll3Days ? 'Meals & 90’s Nostalgia Games' : 'Meals & Night Snacks') : 'Player Kit & Pass'}</span>
+                    <span>
+                      {isSpectator
+                        ? (hasStay
+                            ? 'Full Meals, Snacks & 90’s Games'
+                            : (isSpectatorAll3Days
+                                ? 'Night Snacks & 90’s Nostalgia Games'
+                                : `Night Snacks (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'})`))
+                        : 'Player Kit & Pass'}
+                    </span>
                     <span className="font-mono">INCLUDED</span>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">

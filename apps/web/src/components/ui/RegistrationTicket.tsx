@@ -36,6 +36,33 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     data.selectedSports && data.selectedSports.length > 0
       ? data.selectedSports
       : [data.league || 'cricket'];
+  const isSpectator = data.registrationType === 'spectator' || sportsList.includes('spectator');
+  const specDatesList: string[] = Array.isArray((data as any).spectatorDates) && (data as any).spectatorDates.length > 0
+    ? (data as any).spectatorDates
+    : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
+      ? (data as any).spectatorDays
+      : ((data as any).checkInDate && (data as any).checkOutDate
+          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : [(data as any).checkInDate, (data as any).checkOutDate])
+          : ['2026-12-25']);
+
+  const specDayCount = Math.max(1, specDatesList.length);
+  const hasStay = data.accommodationRequired === 'Yes' || (data as any).spectatorOption === 'with-stay';
+  const isSpectatorAll3Days = isSpectator && (hasStay || specDayCount >= 3);
+
+  const formatDatesPretty = (dates: string[]) => {
+    if (!dates || dates.length === 0) return 'Dec 25-27';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const formatted = dates.map(d => {
+      const parts = String(d).trim().split('-');
+      if (parts.length === 3) {
+        return `${months[parseInt(parts[1], 10) - 1]} ${parseInt(parts[2], 10)}`;
+      }
+      return d;
+    });
+    if (formatted.length === 1) return formatted[0];
+    if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
+    return formatted.join(', ');
+  };
 
   const formatSportName = (sport: string) => {
     switch (sport) {
@@ -59,7 +86,9 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       case 'kaccha-pakka':
         return 'Kaccha Pakka Cricket League';
       case 'spectator':
-        return 'Spectator Pass';
+        return hasStay
+          ? 'Spectator Pass (With Stay)'
+          : `Spectator Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • ${formatDatesPretty(specDatesList)})`;
       default:
         return sport;
     }
@@ -183,10 +212,14 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               Accommodation & Stay
             </span>
             <span className="font-bold text-slate-900 text-sm">
-              {data.accommodationRequired === 'Yes' ? (
+              {hasStay ? (
                 <span>RPL Stay ({data.checkInDate || '2026-12-25'} → {data.checkOutDate || '2026-12-27'})</span>
               ) : (
-                <span>{data.registrationType === 'spectator' ? 'Without Stay (Day Pass)' : 'Self-Arranged'} {data.stayingRoomNumber ? `• ${data.stayingRoomNumber}` : ''}</span>
+                <span>
+                  {isSpectator
+                    ? `Without Stay • ${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'} (${formatDatesPretty(specDatesList)})`
+                    : 'Self-Arranged'} {data.stayingRoomNumber ? `• ${data.stayingRoomNumber}` : ''}
+                </span>
               )}
             </span>
           </div>
@@ -207,19 +240,23 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
-                  {data.registrationType === 'spectator' ? 'Official Spectator Pass' : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
+                  {isSpectator
+                    ? `Official Spectator Pass (${hasStay ? 'With Stay' : `${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'}`})`
+                    : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
                 </span>
                 <span className="text-[11px] text-amber-800 font-medium">
-                  {data.registrationType === 'spectator'
-                    ? (data.accommodationRequired === 'Yes' || data.spectatorDates?.length === 3
+                  {isSpectator
+                    ? (hasStay
                       ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included'
-                      : 'Full Meals & Night Snacks Included')
+                      : (isSpectatorAll3Days
+                        ? 'Night Snacks & 90’s Nostalgia Games Included (Daytime meals not included)'
+                        : `Night Snacks Included for ${formatDatesPretty(specDatesList)} (Daytime meals not included)`))
                     : 'All selected sports included in event pass'}
                 </span>
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (data.registrationType === 'spectator' ? (data.accommodationRequired === 'Yes' ? 2700 : ((data.spectatorDates?.length || 1) * 400)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (isSpectator ? (hasStay ? 2700 : (specDayCount * 400)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

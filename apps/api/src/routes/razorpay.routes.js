@@ -131,6 +131,23 @@ router.post('/razorpay/create-order', async (req, res) => {
       } catch (e) {}
     }
 
+    // Resolve referrerCardNo if provided or from referrerMobile
+    let resolvedReferrerCardNo = cleanGeneral.referrerCardNo || null;
+    if (!resolvedReferrerCardNo && cleanGeneral.referrerMobile) {
+      try {
+        const refMob10 = cleanDomesticPhone(cleanGeneral.referrerMobile);
+        if (refMob10) {
+          const [refRows] = await db.query(
+            `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
+            [refMob10, `%${refMob10}`]
+          );
+          if (refRows.length > 0) {
+            resolvedReferrerCardNo = refRows[0].cardno;
+          }
+        }
+      } catch (e) {}
+    }
+
     if (!cardNoVal && mobile10) {
       try {
         cardNoVal = await ensureGuestCard({
@@ -140,7 +157,8 @@ router.post('/razorpay/create-order', async (req, res) => {
           gender: cleanGeneral.gender || 'Male',
           dob: cleanGeneral.dateOfBirth || null,
           centre: cleanGeneral.centre || 'Mumbai',
-          photoUrl: regPayload.player_photo_url || cleanGeneral.player_photo_url || null,
+          photoUrl: isSpectator ? null : (regPayload.player_photo_url || cleanGeneral.player_photo_url || null),
+          referrerCardNo: resolvedReferrerCardNo,
         });
       } catch (cardErr) {
         logger.warn(`[GUEST CARD AUTO-CREATE NOTICE] ${cardErr.message}`);
@@ -305,7 +323,7 @@ router.post('/razorpay/create-order', async (req, res) => {
 
       const cleanCheckIn = regPayload.check_in_date || cleanGeneral.checkInDate || '2026-12-25';
       const cleanCheckOut = regPayload.check_out_date || cleanGeneral.checkOutDate || '2026-12-27';
-      const cleanPhoto = regPayload.player_photo_url || cleanGeneral.player_photo_url || existingReg?.player_photo_url || null;
+      const cleanPhoto = isSpectator ? null : (regPayload.player_photo_url || cleanGeneral.player_photo_url || existingReg?.player_photo_url || null);
       const currentStatus = existingReg?.payment_status === 'approved' ? 'approved' : 'pending';
 
       if (existingReg) {
@@ -316,24 +334,15 @@ router.post('/razorpay/create-order', async (req, res) => {
                mobile = COALESCE(NULLIF(?, ''), mobile),
                check_in_date = ?,
                check_out_date = ?,
-               player_photo_url = COALESCE(?, player_photo_url),
+               player_photo_url = ${isSpectator ? 'NULL' : 'COALESCE(?, player_photo_url)'},
                payment_status = ?,
                general_details = ?,
                sport_answers = ?,
                submitted_at = NOW()
            WHERE id = ?`,
-          [
-            cleanFullName,
-            cleanEmail,
-            cleanMobile,
-            cleanCheckIn,
-            cleanCheckOut,
-            cleanPhoto,
-            currentStatus,
-            JSON.stringify(mergedGeneral),
-            JSON.stringify(mergedSports),
-            targetRegId,
-          ]
+          isSpectator
+            ? [cleanFullName, cleanEmail, cleanMobile, cleanCheckIn, cleanCheckOut, currentStatus, JSON.stringify(mergedGeneral), JSON.stringify(mergedSports), targetRegId]
+            : [cleanFullName, cleanEmail, cleanMobile, cleanCheckIn, cleanCheckOut, cleanPhoto, currentStatus, JSON.stringify(mergedGeneral), JSON.stringify(mergedSports), targetRegId]
         );
         logger.info(`[RAZORPAY PRE-ORDER] Draft registration updated for "${cleanFullName}" (ID: ${targetRegId})`);
       } else {
@@ -364,25 +373,43 @@ router.post('/razorpay/create-order', async (req, res) => {
       const sportsList = Array.isArray(selectedSports) ? selectedSports.join(', ') : 'Cricket';
       const txnCategory = isSpectator ? 'spectator' : 'sports';
 
-      await db.query(
-        `INSERT INTO ${RPL_DB}.rpl_transactions 
-         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-         VALUES (?, ?, ?, ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_PRE_ORDER', NOW(), NOW(), ?)
-         ON DUPLICATE KEY UPDATE 
-           cardno = VALUES(cardno),
-           category = VALUES(category),
-           amount = VALUES(amount),
-           description = VALUES(description),
-           updatedAt = NOW()`,
-        [
-          cardNoVal,
-          targetRegId,
-          txnCategory,
-          computedFee,
-          `RPL Season 9 Registration (${sportsList}) - Order Initiated (${cleanFullName || 'Participant'})`,
-          order.id,
-        ]
+      const [existingPendingTx] = await db.query(
+        `SELECT id FROM ${RPL_DB}.rpl_transactions 
+         WHERE razorpay_order_id = ? OR (bookingid = ? AND status = 'pending')
+         ORDER BY id DESC LIMIT 1`,
+        [order.id, targetRegId]
       );
+
+      if (existingPendingTx.length > 0) {
+        await db.query(
+          `UPDATE ${RPL_DB}.rpl_transactions 
+           SET cardno = ?, bookingid = ?, category = ?, amount = ?, description = ?, status = 'pending', updatedBy = 'RAZORPAY_PRE_ORDER', updatedAt = NOW(), razorpay_order_id = ?
+           WHERE id = ?`,
+          [
+            cardNoVal,
+            targetRegId,
+            txnCategory,
+            computedFee,
+            `RPL Season 9 Registration (${sportsList}) - Order Initiated (${cleanFullName || 'Participant'})`,
+            order.id,
+            existingPendingTx[0].id,
+          ]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO ${RPL_DB}.rpl_transactions 
+           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+           VALUES (?, ?, ?, ?, 0, 'PENDING', ?, 'pending', 'RAZORPAY_PRE_ORDER', NOW(), NOW(), ?)`,
+          [
+            cardNoVal,
+            targetRegId,
+            txnCategory,
+            computedFee,
+            `RPL Season 9 Registration (${sportsList}) - Order Initiated (${cleanFullName || 'Participant'})`,
+            order.id,
+          ]
+        );
+      }
     } catch (dbErr) {
       logger.warn(`[RAZORPAY PRE-RECORD WARNING] Could not pre-record transaction: ${dbErr.message}`);
     }
@@ -511,7 +538,8 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         cleanGeneralDetails.paymentMethod = 'Razorpay';
 
         const cleanSportAnswers = regBody.sport_answers || {};
-        const cleanPhotoUrl = regBody.player_photo_url || cleanGeneralDetails.player_photo_url || cleanGeneralDetails.photoUrl || null;
+        const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) || regBody.sport_id === 'spectator';
+        const cleanPhotoUrl = isSpectator ? null : (regBody.player_photo_url || cleanGeneralDetails.player_photo_url || cleanGeneralDetails.photoUrl || null);
         const cleanCheckInDate = regBody.check_in_date || cleanGeneralDetails.checkInDate || '2026-12-25';
         const cleanCheckOutDate = regBody.check_out_date || cleanGeneralDetails.checkOutDate || '2026-12-27';
 
@@ -539,6 +567,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         }
 
         let regId = uuidv4();
+        let mergedGeneralDetails = { ...cleanGeneralDetails };
 
         if (existingRegs.length > 0) {
           regId = existingRegs[0].id;
@@ -553,7 +582,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           } catch (e) { prevSports = {}; }
 
           const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
-          const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
+          mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
           const allSelectedSports = Array.from(new Set([
             ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
             ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
@@ -578,7 +607,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
               mobile.trim(),
               cleanCheckInDate,
               cleanCheckOutDate,
-              cleanPhotoUrl || existingRegs[0].player_photo_url || null,
+              isSpectator ? null : (cleanPhotoUrl || existingRegs[0].player_photo_url || null),
               mergedUtrList.join(', '),
               JSON.stringify(mergedGeneralDetails),
               JSON.stringify(mergedSportAnswers),
@@ -609,35 +638,110 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         // Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
-        const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator'));
         const txnCategory = isSpectator ? 'spectator' : 'sports';
-        const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+
+        const [existingTx] = await connection.query(
+          `SELECT id, cardno FROM ${RPL_DB}.rpl_transactions 
+           WHERE razorpay_order_id = ? OR (bookingid = ? AND status = 'pending')
+           ORDER BY id DESC LIMIT 1`,
+          [razorpay_order_id, regId]
+        );
+
+        let cardNoVal = cleanGeneralDetails.cardNo || mergedGeneralDetails?.cardNo || null;
+        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && existingTx.length > 0 && existingTx[0].cardno && !existingTx[0].cardno.startsWith('GUEST_')) {
+          cardNoVal = existingTx[0].cardno;
+        }
+        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && mobile10) {
+          try {
+            const [userCard] = await connection.query(
+              `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno = ? ORDER BY id DESC LIMIT 1`,
+              [mobile10, Number(mobile10)]
+            );
+            if (userCard.length > 0 && userCard[0].cardno) {
+              cardNoVal = String(userCard[0].cardno);
+            }
+          } catch (e) {}
+        }
+        if (!cardNoVal) {
+          cardNoVal = `GUEST_${mobile10 ? mobile10.slice(-6) : 'RPL'}`;
+        }
+        cleanGeneralDetails.cardNo = cardNoVal;
+        if (mergedGeneralDetails) {
+          mergedGeneralDetails.cardNo = cardNoVal;
+        }
+
         const finalAmount = cleanGeneralDetails.incrementalFee !== undefined && cleanGeneralDetails.incrementalFee !== null
           ? cleanGeneralDetails.incrementalFee
           : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2700);
 
-        await connection.query(
-          `INSERT INTO ${RPL_DB}.rpl_transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-           VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
-           ON DUPLICATE KEY UPDATE 
-             category = VALUES(category),
-             amount = VALUES(amount),
-             upi_ref = VALUES(upi_ref),
-             description = VALUES(description),
-             status = 'completed',
-             updatedAt = NOW(),
-             razorpay_order_id = VALUES(razorpay_order_id)`,
-          [
-            cardNoVal,
-            regId,
-            txnCategory,
-            finalAmount,
-            razorpay_payment_id,
-            `RPL Season 9 Registration (${sportsList}) - Paid via Razorpay`,
-            razorpay_order_id,
-          ]
-        );
+        if (existingTx.length > 0) {
+          await connection.query(
+            `UPDATE ${RPL_DB}.rpl_transactions 
+             SET cardno = ?, bookingid = ?, category = ?, amount = ?, upi_ref = ?, description = ?, status = 'completed', updatedBy = 'RAZORPAY_AUTO', updatedAt = NOW(), razorpay_order_id = ?
+             WHERE id = ?`,
+            [
+              cardNoVal,
+              regId,
+              txnCategory,
+              finalAmount,
+              razorpay_payment_id,
+              `RPL Season 9 Registration (${sportsList}) - Paid via Razorpay`,
+              razorpay_order_id,
+              existingTx[0].id,
+            ]
+          );
+        } else {
+          await connection.query(
+            `INSERT INTO ${RPL_DB}.rpl_transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+             VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)`,
+            [
+              cardNoVal,
+              regId,
+              txnCategory,
+              finalAmount,
+              razorpay_payment_id,
+              `RPL Season 9 Registration (${sportsList}) - Paid via Razorpay`,
+              razorpay_order_id,
+            ]
+          );
+        }
+
+        // Ensure guest_relationship is linked if referrer is known and card is a real cardNo
+        let resolvedReferrerCardNo = cleanGeneralDetails.referrerCardNo || mergedGeneralDetails?.referrerCardNo || null;
+        if (!resolvedReferrerCardNo && (cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile)) {
+          try {
+            const refMob10 = cleanDomesticPhone(cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile);
+            if (refMob10) {
+              const [refRows] = await connection.query(
+                `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
+                [refMob10, `%${refMob10}`]
+              );
+              if (refRows.length > 0) {
+                resolvedReferrerCardNo = refRows[0].cardno;
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (resolvedReferrerCardNo && cardNoVal && !cardNoVal.startsWith('GUEST_')) {
+          try {
+            const [relExists] = await connection.query(
+              `SELECT id FROM ${AASHRAY_DB}.guest_relationship WHERE cardno = ? AND guest = ? LIMIT 1`,
+              [resolvedReferrerCardNo, cardNoVal]
+            );
+            if (relExists.length === 0) {
+              await connection.query(
+                `INSERT INTO ${AASHRAY_DB}.guest_relationship (cardno, guest, type, updatedBy, createdAt, updatedAt)
+                 VALUES (?, ?, 'friend', 'RPL_SYSTEM', NOW(), NOW())`,
+                [resolvedReferrerCardNo, cardNoVal]
+              );
+              logger.info(`[GUEST RELATIONSHIP] Successfully linked ${resolvedReferrerCardNo} → ${cardNoVal} (friend)`);
+            }
+          } catch (relErr) {
+            logger.warn(`[GUEST RELATIONSHIP NOTICE] Could not verify/create relationship: ${relErr.message}`);
+          }
+        }
 
         // Process Accommodation and Meal Booking within transaction
         const hasStay = isSpectator
@@ -802,30 +906,37 @@ router.post('/razorpay/webhook', async (req, res) => {
               }
             } catch (e) {}
           }
-          if (targetReg?.sport_id === 'spectator') isSpectator = true;
-          const txnCategory = isSpectator ? 'spectator' : 'sports';
-
-          await connection.query(
-            `INSERT INTO ${RPL_DB}.rpl_transactions 
-             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-             VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)
-             ON DUPLICATE KEY UPDATE 
-               bookingid = COALESCE(VALUES(bookingid), bookingid),
-               category = VALUES(category),
-               amount = VALUES(amount),
-               upi_ref = COALESCE(VALUES(upi_ref), upi_ref),
-               status = 'completed',
-               updatedAt = NOW()`,
-            [
-              cardNoVal,
-              targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
-              txnCategory,
-              finalAmount,
-              paymentId,
-              `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
-              orderId,
-            ]
-          );
+          if (matchedTx.length > 0) {
+            await connection.query(
+              `UPDATE ${RPL_DB}.rpl_transactions 
+               SET cardno = ?, bookingid = COALESCE(?, bookingid), category = ?, amount = ?, upi_ref = ?, description = ?, status = 'completed', updatedBy = 'RAZORPAY_WEBHOOK', updatedAt = NOW()
+               WHERE id = ?`,
+              [
+                cardNoVal,
+                targetRegId,
+                txnCategory,
+                finalAmount,
+                paymentId,
+                `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
+                matchedTx[0].id,
+              ]
+            );
+          } else {
+            await connection.query(
+              `INSERT INTO ${RPL_DB}.rpl_transactions 
+               (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+               VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_WEBHOOK', NOW(), NOW(), ?)`,
+              [
+                cardNoVal,
+                targetRegId || `WEBHOOK_${orderId.slice(-8)}`,
+                txnCategory,
+                finalAmount,
+                paymentId,
+                `RPL Season 9 Registration - Paid via Razorpay (${playerName})`,
+                orderId,
+              ]
+            );
+          }
 
           // Mark player registration as approved if matched
           if (targetRegId) {

@@ -14,7 +14,7 @@ const VALID_SPORTS = [
   'spectator',
 ];
 
-const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', 'XXL', 'XXXL'];
 
 function validateSportsSelection(sportsList) {
   if (!Array.isArray(sportsList) || sportsList.length === 0) {
@@ -50,7 +50,9 @@ function validateJerseyNumber(numStr) {
 
 function validateTshirtSize(size) {
   if (!size) return { valid: false, error: 'T-shirt size is required' };
-  const upper = String(size).trim().toUpperCase();
+  let upper = String(size).trim().toUpperCase();
+  if (upper === 'XXL') upper = '2XL';
+  if (upper === 'XXXL') upper = '3XL';
   if (!VALID_TSHIRT_SIZES.includes(upper)) {
     return { valid: false, error: `Invalid T-Shirt size: ${size}. Must be one of ${VALID_TSHIRT_SIZES.join(', ')}` };
   }
@@ -90,7 +92,11 @@ test('Sports Validation: validates jersey number range 0 to 99', () => {
 test('Sports Validation: validates and normalizes T-shirt sizes against official standard', () => {
   assert.strictEqual(validateTshirtSize('m').sanitized, 'M');
   assert.strictEqual(validateTshirtSize('XL').sanitized, 'XL');
-  assert.strictEqual(validateTshirtSize('xxl').sanitized, 'XXL');
+  assert.strictEqual(validateTshirtSize('xxl').sanitized, '2XL');
+  assert.strictEqual(validateTshirtSize('2xl').sanitized, '2XL');
+  assert.strictEqual(validateTshirtSize('3XL').sanitized, '3XL');
+  assert.strictEqual(validateTshirtSize('4XL').sanitized, '4XL');
+  assert.strictEqual(validateTshirtSize('5XL').sanitized, '5XL');
 
   assert.strictEqual(validateTshirtSize('XXXXXL').valid, false);
   assert.strictEqual(validateTshirtSize('MEDIUM').valid, false);

@@ -58,7 +58,7 @@ export async function processFoodBooking({
           `INSERT INTO ${AASHRAY_DB}.food_db 
            (id, cardno, bookedBy, date, breakfast, breakfast_plate_issued, lunch, lunch_plate_issued, dinner, dinner_plate_issued, hightea, spicy, updatedBy, createdAt, updatedAt)
            VALUES (?, ?, ?, ?, 1, 0, 1, 0, 1, 0, 'NONE', ?, 'RPL_APP', ?, ?)`,
-          [foodId, cardno, cardno, dateStr, spicyVal, now, now]
+          [foodId, cardno, null, dateStr, spicyVal, now, now]
         );
         foodBookingsCreated.push({ id: foodId, date: dateStr, action: 'created', spicy: spicyVal });
       }
@@ -206,7 +206,7 @@ export async function processAccommodationBooking({
               [
                 preBookingId,
                 validCardNo,
-                validCardNo,
+                null,
                 'NA',
                 checkInDate,
                 RPL_START_DATE,
@@ -247,7 +247,7 @@ export async function processAccommodationBooking({
       if (existingRpl.length > 0) {
         await q.query(
           `UPDATE ${AASHRAY_DB}.room_booking 
-           SET status = 'pending checkin', roomno = 'NA', bookedBy = 'RPL_TEAM', updatedAt = ? 
+           SET status = 'pending checkin', roomno = 'NA', bookedBy = NULL, updatedAt = ? 
            WHERE bookingid = ?`,
           [now, existingRpl[0].bookingid]
         );
@@ -265,8 +265,8 @@ export async function processAccommodationBooking({
         await q.query(
           `INSERT INTO ${AASHRAY_DB}.room_booking 
            (bookingid, cardno, bookedBy, roomno, checkin, checkout, nights, roomtype, status, gender, updatedBy, createdAt, updatedAt)
-           VALUES (?, ?, 'RPL_TEAM', 'NA', ?, ?, ?, 'nac', 'pending checkin', ?, 'RPL_APP', ?, ?)`,
-          [rplBookingId, validCardNo, RPL_START_DATE, RPL_END_DATE, rplNights, mappedGender, now, now]
+           VALUES (?, ?, ?, 'NA', ?, ?, ?, 'nac', 'pending checkin', ?, 'RPL_APP', ?, ?)`,
+          [rplBookingId, validCardNo, null, RPL_START_DATE, RPL_END_DATE, rplNights, mappedGender, now, now]
         );
         bookingsCreated.push({
           type: 'rpl_tournament',
@@ -314,7 +314,7 @@ export async function processAccommodationBooking({
               [
                 postBookingId,
                 validCardNo,
-                validCardNo,
+                null,
                 'NA',
                 RPL_END_DATE,
                 checkOutDate,
