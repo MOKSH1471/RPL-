@@ -24,7 +24,6 @@ export function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
   const [checkStatusMobile, setCheckStatusMobile] = useState('');
-  const [autoTriggerPay, setAutoTriggerPay] = useState(false);
   const [registrationPrefill, setRegistrationPrefill] = useState<any>(null);
 
   // Background server spin-up on visit
@@ -42,12 +41,10 @@ export function App() {
       const hashParams = new URLSearchParams(hashQuery);
 
       const urlMob = searchParams.get('mobile') || searchParams.get('phone') || searchParams.get('check') || hashParams.get('mobile') || hashParams.get('phone') || hashParams.get('check');
-      const shouldPay = searchParams.get('pay') === '1' || searchParams.get('pay') === 'true' || hashParams.get('pay') === '1' || hashParams.get('pay') === 'true';
       const openCheckPass = searchParams.get('checkPass') === '1' || hashParams.get('checkPass') === '1';
 
       if (urlMob && urlMob.replace(/\D/g, '').length === 10) {
         setCheckStatusMobile(urlMob.replace(/\D/g, ''));
-        setAutoTriggerPay(shouldPay);
         setIsCheckStatusOpen(true);
       } else if (openCheckPass) {
         setIsCheckStatusOpen(true);
@@ -120,7 +117,6 @@ export function App() {
 
   const handleRegisterNewPlayer = (prefillData: any) => {
     setIsCheckStatusOpen(false);
-    setAutoTriggerPay(false);
     setRegistrationPrefill(prefillData);
     setCurrentPage('register');
     window.location.hash = '/register';
@@ -210,15 +206,13 @@ export function App() {
           />
         )}
 
-        {/* Global Check Pass / Pay Due Modal */}
+        {/* Global Check Pass Modal */}
         <CheckStatusModal
           isOpen={isCheckStatusOpen}
           onClose={() => {
             setIsCheckStatusOpen(false);
-            setAutoTriggerPay(false);
           }}
           initialMobile={checkStatusMobile}
-          autoTriggerPay={autoTriggerPay}
           onRegisterNewPlayer={handleRegisterNewPlayer}
         />
       </div>

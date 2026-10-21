@@ -235,13 +235,13 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Quantity</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 pt-1">
-            {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map((size) => {
-              const qty = tshirtSizes?.[size] || 0;
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-2.5 pt-1">
+            {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((size) => {
+              const qty = tshirtSizes?.[size] || (size === '2XL' ? (tshirtSizes?.['2XL'] || 0) + (tshirtSizes?.['XXL'] || 0) : size === '3XL' ? (tshirtSizes?.['3XL'] || 0) + (tshirtSizes?.['XXXL'] || 0) : 0);
               return (
                 <div
                   key={size}
-                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 text-center space-y-1 hover:border-amber-300 transition-colors"
+                  className="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-center space-y-1 hover:border-amber-300 transition-colors"
                 >
                   <span className="text-[11px] font-black uppercase text-slate-500 block">{size}</span>
                   <span className="text-xl font-black text-slate-900 font-mono block">{qty}</span>

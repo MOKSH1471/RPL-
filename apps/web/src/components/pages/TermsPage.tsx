@@ -61,7 +61,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
 
           <div className="mb-10 p-5 rounded-xl bg-slate-50 border border-slate-200">
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              These Terms &amp; Conditions ("Terms") govern registration, event participation, pass fulfillment, payment processing, and Research Centre hospitality for the <strong>Raj Premier League (RPL)</strong> held at the <strong>Shrimad Rajchandra Aatma Tatva Research Centre, Parli</strong>. By submitting a registration or completing an online transaction, you confirm that you have read, understood, and agreed to be bound by these Terms.
+              These Terms &amp; Conditions ("Terms") govern registration, event participation, pass fulfillment, payment processing, and hospitality for the <strong>Raj Premier League (RPL)</strong> held at the <strong>Shrimad Rajchandra Aatma Tatva Research Centre, Parli</strong>. By submitting a registration or completing an online transaction, you confirm that you have read, understood, and agreed to be bound by these Terms.
             </p>
           </div>
 
@@ -71,18 +71,33 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Age &amp; Guardian Consent:</strong> Players under 10 years of age must have prior parental or guardian consent and accompaniment during the event.</li>
               <li><strong>Authentic Details:</strong> Registration must be submitted through this official portal using valid and truthful personal information (Full Name, Contact Number, Email, Date of Birth, Gender, and Home Centre).</li>
-              <li><strong>Aashray Identity &amp; Guest Card Creation:</strong> To coordinate tournament accreditation, Research Centre gate security, and room allocation, registering as a new participant automatically provisions a digital Guest Card in the central Aashray database. Participants can log in to the Aashray ecosystem using their mobile number and designated credentials.</li>
+              <li><strong>Aashray Identity &amp; Guest Card Creation:</strong> To coordinate tournament accreditation, gate security, and room allocation, registering as a new participant automatically provisions a digital Guest Card in the central Aashray database. Participants can log in to the Aashray ecosystem using their mobile number and designated credentials.</li>
               <li><strong>Single Entry per Season:</strong> Each participant may register once per tournament season. Team assignments, draft rosters, and scheduling are managed exclusively by the RPL Committee.</li>
             </ul>
           </Section>
 
           {/* 2. Fee Structure & Payment Processing */}
           <Section icon={<CreditCard className="w-4 h-4" />} title="2. Fee Structure &amp; Secure Payment Processing">
-            <ul className="list-disc pl-5 space-y-1.5">
-              <li><strong>All-Inclusive Tournament Pass:</strong> Flat ₹2,700 covers enrollment in all selected sports, 2 nights of official tournament stay (Dec 25–27, 2026), meals, and the official player jersey kit. All sports are included with no additional extra fees.</li>
-              <li><strong>All Sports Included:</strong> There are no extra charges for participating in multiple sports. Returning players updating their sports selection incur ₹0 additional charge.</li>
-              <li><strong>Payment Gateway:</strong> Online transactions are encrypted and processed through <strong>Razorpay</strong> (supporting UPI, Net Banking, Debit Cards, and Credit Cards). We adhere to PCI-DSS security standards and do not store sensitive card credentials or CVVs on our servers.</li>
-              <li><strong>Pay Later / Offline Verification:</strong> Registrations submitted under offline/pay later terms remain in <code>PENDING</code> status until verified by the administration. Tournament passes are validated upon confirmation of payment proof.</li>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                <strong>Player Registration Fee:</strong>
+                <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
+                  <li><strong>Returning RPL Family:</strong> <strong>₹2,700</strong> for participants who have participated in prior RPL seasons.</li>
+                  <li><strong>New Participants:</strong> <strong>₹3,000</strong> for first-time athletes enrolling in the open player draft.</li>
+                  <li><strong>What's Included:</strong> Enrollment in all selected eligible sports, 2 nights of official tournament stay (check-in Dec 25 to check-out Dec 27, 2026), all daily meals (breakfast, lunch, dinner, late-night snacks), and one official RPL Season 9 tournament jersey.</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Spectator Pass Options:</strong>
+                <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
+                  <li><strong>Without Stay (Day Pass):</strong> <strong>₹400 per day</strong>. Spectators may choose 1 day (₹400), 2 days (₹800), or all 3 days (₹1,200). Covers arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals and overnight accommodation are not included and must be arranged separately.</li>
+                  <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹2,700</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
+                </ul>
+              </li>
+              <li><strong>All Sports Included:</strong> For players, there are no extra fees for selecting multiple sports (e.g., Cricket, Football, Table Tennis, Carrom, and 90s Nostalgia Games are all covered under the single player registration fee).</li>
+              <li><strong>Optional T-Shirt Add-on:</strong> Participants (players requesting an extra jersey or spectators wishing to purchase an official RPL Season 9 Fan T-shirt) can add an official T-shirt for an additional <strong>₹500</strong>.</li>
+              <li><strong>Payment Gateway &amp; Encryption:</strong> Online payments are encrypted and processed securely via <strong>Razorpay</strong> (supporting UPI, Net Banking, Debit Cards, and Credit Cards). We adhere strictly to PCI-DSS standards and do not store sensitive payment credentials or CVVs on our servers.</li>
+              <li><strong>Immediate Online Confirmation:</strong> All registrations must be completed with upfront payment via the integrated Razorpay gateway. Your official verifiable digital tournament pass and entry receipt are generated immediately upon successful transaction completion.</li>
             </ul>
           </Section>
 
@@ -112,11 +127,11 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
           </Section>
 
           {/* 5. Research Centre Stay & Decorum */}
-          <Section icon={<Building2 className="w-4 h-4" />} title="5. Shrimad Rajchandra Aatma Tatva Research Centre Hospitality &amp; Code of Conduct">
+          <Section icon={<Building2 className="w-4 h-4" />} title="5. Hospitality &amp; Code of Conduct">
             <p>The Raj Premier League is hosted at the spiritual and peaceful sanctuary of Shrimad Rajchandra Aatma Tatva Research Centre. All attendees must respect Research Centre guidelines:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li><strong>Tournament Stay (Dec 25–27):</strong> 2 nights of accommodation are arranged as part of the official registration.</li>
-              <li><strong>Extended Stay (Pre/Post Tournament):</strong> Stays requested prior to Dec 25 or after Dec 27 are created in <strong>Waitlist</strong> status and subject to room availability managed by the Shrimad Rajchandra Aatma Tatva Research Centre office. Participants will be notified via WhatsApp when confirmed.</li>
+              <li><strong>Extended Stay (Pre/Post Tournament):</strong> Stays requested prior to Dec 25 or after Dec 27 are created in <strong>Waitlist</strong> status and subject to room availability managed by the Research Centre office. Participants will be notified via WhatsApp when confirmed.</li>
               <li><strong>Research Centre Sanctity:</strong> The Research Centre is a strictly vegetarian, alcohol-free, non-smoking, and tobacco-free spiritual environment. Modest clothing and respectful decorum are mandatory across all sports arenas and living quarters.</li>
               <li><strong>Sportsmanship:</strong> Sledging, abusive language, violence, or unsporting conduct will lead to immediate disqualification and removal from the Research Centre premises.</li>
             </ul>

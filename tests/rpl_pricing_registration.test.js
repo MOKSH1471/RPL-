@@ -90,14 +90,14 @@ test('RPL Pricing Rule: Returning Participant with Extra T-shirt is charged ₹3
   }
 });
 
-test('RPL Pay Later Registration: registers with ₹3,000 for New Player and payment_status=pending', async () => {
+test('RPL Direct Registration: registers with ₹3,000 for New Player and payment_status=pending', async () => {
   const testMobile = '+91 9899009988';
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({
       sport_id: 'cricket',
-      full_name: 'Pay Later New Player',
-      email: 'paylaternew@example.com',
+      full_name: 'Direct Registration Player',
+      email: 'directregistration@example.com',
       mobile: testMobile,
       check_in_date: '2026-12-25',
       check_out_date: '2026-12-27',
@@ -126,3 +126,66 @@ test('RPL Pay Later Registration: registers with ₹3,000 for New Player and pay
   assert.strictEqual(gen.totalAmount, 3000);
   assert.strictEqual(gen.existingRplFamily, 'No');
 });
+
+test('RPL Standalone League: Table Tennis alone is charged ₹2,700 for returning RPL family', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'TT Solo Player',
+      email: 'ttsolo@example.com',
+      mobile: '9899003344',
+      selectedSports: ['table-tennis'],
+      existingRplFamily: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 270000, 'Standalone TT for returning family must be charged ₹2,700 (270000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 2700);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('RPL Standalone League: Carrom alone registers with ₹3,000 for New Player', async () => {
+  const testMobile = '+91 9899003355';
+  const res = await apiRequest('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      sport_id: 'carrom',
+      full_name: 'Carrom Solo Champion',
+      email: 'carromsolo@example.com',
+      mobile: testMobile,
+      check_in_date: '2026-12-25',
+      check_out_date: '2026-12-27',
+      payment_status: 'pending',
+      general_details: {
+        centre: 'Mumbai',
+        gender: 'Male',
+        existingRplFamily: 'No',
+        selectedSports: ['carrom'],
+      },
+      answers: {
+        carromCategory: 'Doubles',
+        carromGrip: 'Scissor Grip',
+        carromExperience: 'Intermediate (Club / College)',
+      },
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+
+  const [rows] = await db.query(
+    `SELECT general_details, payment_status FROM ${RPL_DB}.rpl_registrations WHERE mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
+    ['%9899003355']
+  );
+  assert.strictEqual(rows.length, 1);
+  assert.strictEqual(rows[0].payment_status, 'pending');
+  const gen = typeof rows[0].general_details === 'string' ? JSON.parse(rows[0].general_details) : rows[0].general_details;
+  assert.strictEqual(gen.totalAmount, 3000);
+  assert.strictEqual(gen.existingRplFamily, 'No');
+  assert.deepStrictEqual(gen.selectedSports, ['carrom']);
+});
+

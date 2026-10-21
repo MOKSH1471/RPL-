@@ -14,7 +14,7 @@ const VALID_SPORTS = [
   'spectator',
 ];
 
-const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+const VALID_TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', 'XXL', 'XXXL'];
 
 function validateSportsSelection(sportsList) {
   if (!Array.isArray(sportsList) || sportsList.length === 0) {
@@ -50,7 +50,9 @@ function validateJerseyNumber(numStr) {
 
 function validateTshirtSize(size) {
   if (!size) return { valid: false, error: 'T-shirt size is required' };
-  const upper = String(size).trim().toUpperCase();
+  let upper = String(size).trim().toUpperCase();
+  if (upper === 'XXL') upper = '2XL';
+  if (upper === 'XXXL') upper = '3XL';
   if (!VALID_TSHIRT_SIZES.includes(upper)) {
     return { valid: false, error: `Invalid T-Shirt size: ${size}. Must be one of ${VALID_TSHIRT_SIZES.join(', ')}` };
   }
@@ -90,7 +92,11 @@ test('Sports Validation: validates jersey number range 0 to 99', () => {
 test('Sports Validation: validates and normalizes T-shirt sizes against official standard', () => {
   assert.strictEqual(validateTshirtSize('m').sanitized, 'M');
   assert.strictEqual(validateTshirtSize('XL').sanitized, 'XL');
-  assert.strictEqual(validateTshirtSize('xxl').sanitized, 'XXL');
+  assert.strictEqual(validateTshirtSize('xxl').sanitized, '2XL');
+  assert.strictEqual(validateTshirtSize('2xl').sanitized, '2XL');
+  assert.strictEqual(validateTshirtSize('3XL').sanitized, '3XL');
+  assert.strictEqual(validateTshirtSize('4XL').sanitized, '4XL');
+  assert.strictEqual(validateTshirtSize('5XL').sanitized, '5XL');
 
   assert.strictEqual(validateTshirtSize('XXXXXL').valid, false);
   assert.strictEqual(validateTshirtSize('MEDIUM').valid, false);
@@ -144,14 +150,14 @@ test('Sports Validation: accepts spectator in valid sports', () => {
   assert.strictEqual(validateSportsSelection(['spectator']).valid, true);
 });
 
-test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,260, ₹1,890), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
+test('Spectator Pass Validation: verifies single-day (₹400), multi-day (₹800, ₹1,200), With Stay (₹2,700), optional T-shirt (+₹500), and omitted photo & family enrollment fields', () => {
   function validateSpectatorRules(payload) {
     if (payload.registrationType !== 'spectator') return { valid: false, error: 'Not spectator' };
 
     // Fee calculation
     const specDates = payload.spectatorDates || payload.spectatorDays || [];
     const daysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : (payload.daysCount || 1);
-    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : (daysCount * 630);
+    const baseFee = payload.accommodationRequired === 'Yes' ? 2700 : (daysCount * 400);
     const tshirtCost = (payload.spectatorTshirt === 'Yes' || payload.extraTshirt === 'Yes') ? 500 : 0;
     const totalFee = baseFee + tshirtCost;
 
@@ -176,7 +182,7 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     };
   }
 
-  // 1. Day Pass: 1 Day without stay, without T-shirt (₹630)
+  // 1. Day Pass: 1 Day without stay, without T-shirt (₹400)
   const dayPass1 = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
@@ -184,42 +190,42 @@ test('Spectator Pass Validation: verifies single-day (₹630), multi-day (₹1,2
     spectatorTshirt: 'No',
   });
   assert.strictEqual(dayPass1.valid, true);
-  assert.strictEqual(dayPass1.totalFee, 630);
+  assert.strictEqual(dayPass1.totalFee, 400);
   assert.strictEqual(dayPass1.daysCount, 1);
   assert.strictEqual(dayPass1.requiresPhoto, false);
   assert.strictEqual(dayPass1.requiresFamilyEnrollment, false);
   assert.strictEqual(dayPass1.isNostalgiaEligible, false, '1-day spectator is NOT eligible for nostalgia games');
 
-  // 2. Day Pass: 2 Days without stay, without T-shirt (₹1,260)
+  // 2. Day Pass: 2 Days without stay, without T-shirt (₹800)
   const dayPass2 = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
     spectatorDates: ['2026-12-25', '2026-12-26'],
     spectatorTshirt: 'No',
   });
-  assert.strictEqual(dayPass2.totalFee, 1260);
+  assert.strictEqual(dayPass2.totalFee, 800);
   assert.strictEqual(dayPass2.daysCount, 2);
   assert.strictEqual(dayPass2.isNostalgiaEligible, false, '2-day spectator is NOT eligible for nostalgia games');
 
-  // 3. Day Pass: 3 Days (All Dates) without stay, without T-shirt (₹1,890)
+  // 3. Day Pass: 3 Days (All Dates) without stay, without T-shirt (₹1,200)
   const dayPass3 = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
     spectatorDates: ['2026-12-25', '2026-12-26', '2026-12-27'],
     spectatorTshirt: 'No',
   });
-  assert.strictEqual(dayPass3.totalFee, 1890);
+  assert.strictEqual(dayPass3.totalFee, 1200);
   assert.strictEqual(dayPass3.daysCount, 3);
   assert.strictEqual(dayPass3.isNostalgiaEligible, true, '3-day spectator IS eligible for nostalgia games');
 
-  // 4. Day Pass: 2 Days without stay, with T-shirt (₹1,260 + ₹500 = ₹1,760)
+  // 4. Day Pass: 2 Days without stay, with T-shirt (₹800 + ₹500 = ₹1,300)
   const dayPassTshirt = validateSpectatorRules({
     registrationType: 'spectator',
     accommodationRequired: 'No',
     spectatorDates: ['2026-12-25', '2026-12-26'],
     spectatorTshirt: 'Yes',
   });
-  assert.strictEqual(dayPassTshirt.totalFee, 1760);
+  assert.strictEqual(dayPassTshirt.totalFee, 1300);
   assert.strictEqual(dayPassTshirt.isNostalgiaEligible, false);
 
   // 5. Pass with stay, without T-shirt (₹2,700)

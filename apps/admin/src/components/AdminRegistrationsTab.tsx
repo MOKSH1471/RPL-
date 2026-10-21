@@ -425,18 +425,33 @@ export function AdminRegistrationsTab({
                               <Ticket className="w-3 h-3 text-indigo-600" />
                               <span>Spectator Pass</span>
                             </span>
-                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
-                              {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? '🏨 Stay (₹2,700)' : '☀️ Day Pass (₹630)'}
-                            </span>
-                            {(gen.nostalgiaSport || gen.nostalgia_sport) && (
-                              <span
-                                className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
-                                title={`90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
-                              >
-                                <span>🕹️</span>
-                                <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
-                              </span>
-                            )}
+                            {(() => {
+                              const specDates = Array.isArray(gen.spectatorDates) && gen.spectatorDates.length > 0
+                                ? gen.spectatorDates
+                                : Array.isArray(gen.spectatorDays) && gen.spectatorDays.length > 0
+                                  ? gen.spectatorDays
+                                  : [];
+                              const dayCount = specDates.length > 0 ? specDates.length : 1;
+                              const isAll3Days = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' || dayCount >= 3;
+                              return (
+                                <>
+                                  <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
+                                    {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
+                                      ? '🏨 Stay (₹2,700)'
+                                      : `☀️ Day Pass (${dayCount > 1 ? `${dayCount} Days • ` : ''}₹${dayCount * 400})`}
+                                  </span>
+                                  {isAll3Days && (gen.nostalgiaSport || gen.nostalgia_sport) && (
+                                    <span
+                                      className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
+                                      title={`90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
+                                    >
+                                      <span>🕹️</span>
+                                      <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
+                                    </span>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-1 max-w-[160px]">
@@ -674,19 +689,25 @@ export function AdminRegistrationsTab({
           onClose={() => setReceiptModalPlayer(null)}
           registrationId={receiptModalPlayer.registration_id || `RPL9-${receiptModalPlayer.id}`}
           data={{
+            ...(receiptModalPlayer.general_details || {}),
             fullName: receiptModalPlayer.full_name,
             mobileNumber: receiptModalPlayer.mobile,
             email: receiptModalPlayer.email,
             centre: receiptModalPlayer.general_details?.centre,
             tshirtSize: receiptModalPlayer.general_details?.tshirtSize,
+            spectatorTshirt: receiptModalPlayer.general_details?.spectatorTshirt,
+            spectatorOption: receiptModalPlayer.general_details?.spectatorOption,
+            spectatorDates: receiptModalPlayer.general_details?.spectatorDates,
+            spectatorDays: receiptModalPlayer.general_details?.spectatorDays,
+            registrationType: receiptModalPlayer.general_details?.registrationType || (receiptModalPlayer.sport_id === 'spectator' ? 'spectator' : 'player'),
             selectedSports: receiptModalPlayer.general_details?.selectedSports || [receiptModalPlayer.sport_id],
             customJerseyName: receiptModalPlayer.general_details?.customJerseyName,
             preferredJerseyNumber: receiptModalPlayer.general_details?.preferredJerseyNumber,
             foodPreference: receiptModalPlayer.general_details?.foodPreference,
             accommodationRequired: receiptModalPlayer.general_details?.accommodationRequired,
             stayingRoomNumber: receiptModalPlayer.general_details?.stayingRoomNumber,
-            checkInDate: receiptModalPlayer.check_in_date,
-            checkOutDate: receiptModalPlayer.check_out_date,
+            checkInDate: receiptModalPlayer.check_in_date || receiptModalPlayer.general_details?.checkInDate,
+            checkOutDate: receiptModalPlayer.check_out_date || receiptModalPlayer.general_details?.checkOutDate,
             payment_utr: receiptModalPlayer.payment_utr,
             cardNo: receiptModalPlayer.general_details?.cardNo,
           }}

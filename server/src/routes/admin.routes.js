@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
 import { sanitizeDate } from '../utils/helpers.js';
-import { processAccommodationBooking } from '../../services/roomBookingService.js';
+import { processAccommodationBooking } from '../services/roomBookingService.js';
 
 const router = Router();
 
@@ -40,8 +40,10 @@ router.get('/admin/stats', async (req, res) => {
       M: 0,
       L: 0,
       XL: 0,
-      XXL: 0,
-      XXXL: 0,
+      '2XL': 0,
+      '3XL': 0,
+      '4XL': 0,
+      '5XL': 0,
       Other: 0,
     };
 
@@ -77,7 +79,7 @@ router.get('/admin/stats', async (req, res) => {
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
         const specDates = gen.spectatorDates || gen.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        calculatedFee = (hasStay ? 2700 : (specDaysCount * 630)) + (hasTshirt ? 500 : 0);
+        calculatedFee = (hasStay ? 2700 : (specDaysCount * 400)) + (hasTshirt ? 500 : 0);
       } else {
         const hasExtraTshirt = gen.extraTshirt === 'Yes';
         if (hasExtraTshirt) calculatedFee += 500;
@@ -102,9 +104,11 @@ router.get('/admin/stats', async (req, res) => {
       // Only count T-shirt for players, or spectators who opted in (+₹500)
       const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
       if (!isSpectator || spectatorHasTshirt) {
-        const rawSize = (gen.tshirtSize || '').trim();
+        let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
+        if (rawSize === 'XXL') rawSize = '2XL';
+        if (rawSize === 'XXXL') rawSize = '3XL';
         if (rawSize) {
-          const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize.startsWith(k)) || 'Other';
+          const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize === k || rawSize.startsWith(k)) || 'Other';
           tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
         }
       }
@@ -386,6 +390,7 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
       );
 
       let cancelledBookingsCount = 0;
+      let cancelledFoodCount = 0;
       let cancelledTransactionsCount = 0;
 
       try {
@@ -415,6 +420,18 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         }
 
         try {
+          const [foodRes] = await db.query(
+            `UPDATE ${AASHRAY_DB}.food_db 
+             SET breakfast = 0, lunch = 0, dinner = 0, updatedBy = 'RPL_CANCEL', updatedAt = NOW() 
+             WHERE cardno IN (?) AND date IN ('2026-12-25', '2026-12-26', '2026-12-27')`,
+            [cardList]
+          );
+          cancelledFoodCount = foodRes.affectedRows || 0;
+        } catch (foodErr) {
+          console.warn('[RPL Archive] Notice updating food_db:', foodErr.message);
+        }
+
+        try {
           const [txRes] = await db.query(
             `UPDATE ${AASHRAY_DB}.transactions 
              SET status = 'cancelled', updatedAt = NOW() 
@@ -427,15 +444,16 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         }
       }
 
-      console.log(`[RPL ARCHIVE] Registration "${reg.full_name}" (${id}) moved to archive. Cancelled ${cancelledBookingsCount} room bookings and ${cancelledTransactionsCount} transactions.`);
+      console.log(`[RPL ARCHIVE] Registration "${reg.full_name}" (${id}) moved to archive. Cancelled ${cancelledBookingsCount} room bookings, ${cancelledFoodCount} meals, and ${cancelledTransactionsCount} transactions.`);
 
       return res.json({
         success: true,
-        message: `Player "${reg.full_name}" has been moved to archive. Room and kit allocations have been set to cancelled.`,
+        message: `Player "${reg.full_name}" has been moved to archive. Room, meal, and kit allocations have been set to cancelled.`,
         is_archived: true,
         archived_at: new Date().toISOString(),
         released: {
           room_bookings: cancelledBookingsCount,
+          meals: cancelledFoodCount,
           transactions: cancelledTransactionsCount,
         }
       });
@@ -462,8 +480,12 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
         console.warn('[RPL Unarchive] Notice restoring RPL.rpl_transactions:', rplTxErr.message);
       }
 
+      const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator'));
+      const hasStay = isSpectator ? (gen.accommodationRequired === 'Yes' || gen.spectatorOption === 'with-stay') : (gen.accommodationRequired === 'Yes');
+      const shouldBookMeals = !isSpectator || hasStay;
+
       let accommodationRestored = null;
-      if (gen.accommodationRequired === 'Yes') {
+      if (hasStay || shouldBookMeals) {
         try {
           accommodationRestored = await processAccommodationBooking({
             cardno: gen.cardNo || null,
@@ -474,10 +496,14 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
             gender: gen.gender || 'Male',
             checkInDate: reg.check_in_date || gen.checkInDate || '2026-12-25',
             checkOutDate: reg.check_out_date || gen.checkOutDate || '2026-12-27',
-            accommodationRequired: 'Yes',
+            accommodationRequired: hasStay ? 'Yes' : 'No',
+            spectatorOption: gen.spectatorOption,
+            registrationType: isSpectator ? 'spectator' : 'player',
+            foodPreference: gen.foodPreference || 'Regular',
+            bookMeals: shouldBookMeals,
           });
         } catch (accErr) {
-          console.error('[RPL UNARCHIVE] Error restoring accommodation:', accErr);
+          console.error('[RPL UNARCHIVE] Error restoring accommodation/meals:', accErr);
         }
       }
 

@@ -100,11 +100,9 @@ interface SportOption {
   colorBorder: string;
   colorBadge: string;
   description?: string;
-  isAddon?: boolean;
 }
 
-export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football'];
-export const ADDON_SPORTS: SportType[] = ['table-tennis', 'carrom'];
+export const PRIMARY_SPORTS: SportType[] = ['cricket', 'womens-sports', 'kaccha-pakka', 'football', 'table-tennis', 'carrom'];
 
 const CENTRE_LIST = [
   'Ahmedabad',
@@ -196,13 +194,12 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
   {
     id: 'table-tennis',
-    name: 'Table Tennis Championship',
+    name: 'Table Tennis League',
     category: 'Fast-Paced Speed & Spin Arena',
     emoji: '🏓',
     colorBg: 'bg-indigo-50',
     colorBorder: 'border-indigo-400',
     colorBadge: 'bg-indigo-100 text-indigo-900 border-indigo-300',
-    isAddon: true,
   },
   {
     id: 'carrom',
@@ -212,7 +209,6 @@ const AVAILABLE_SPORTS: SportOption[] = [
     colorBg: 'bg-purple-50',
     colorBorder: 'border-purple-400',
     colorBadge: 'bg-purple-100 text-purple-900 border-purple-300',
-    isAddon: true,
   },
 ];
 
@@ -246,7 +242,7 @@ export const SPECTATOR_EVENT_DATES = [
   { id: '2026-12-27', label: '27 Dec 2026', day: 'Day 3 (Sunday)' },
 ] as const;
 
-const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as const;
+const JERSEY_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'] as const;
 
 export function calculateAge(dobString?: string): number | null {
   if (!dobString || typeof dobString !== 'string') return null;
@@ -283,8 +279,9 @@ const isSportAllowedForPlayer = (
   age?: number | null,
   isVerifiedMale?: boolean
 ) => {
-  // Football League is exclusively for male participants (HariBhai)
-  if (sportId === 'football') {
+  // Main Cricket League and Football League are exclusively for male participants (HariBhai)
+  // (Women participate in Main Cricket League on a selection basis from Women's Cricket League)
+  if (sportId === 'cricket' || sportId === 'football') {
     if (gender === 'Female') {
       return false;
     }
@@ -293,9 +290,9 @@ const isSportAllowedForPlayer = (
   if (sportId === 'table-tennis' || sportId === 'carrom') {
     return true;
   }
-  // Women's Cricket League is open to everyone unless the member is verified as Male in Ashram DB
+  // Women's Cricket League is exclusively for female participants (MeeraBen)
   if (sportId === 'womens-sports' || (sportId as string) === 'womens') {
-    if (isVerifiedMale) {
+    if (gender === 'Male' || isVerifiedMale) {
       return false;
     }
     return true;
@@ -342,10 +339,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const getInitialSports = (): SportType[] => {
     if (isInitialSpectator) return ['spectator' as any];
-    if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
-      const primary: SportType = initialGender === 'Female' ? 'womens-sports' : 'cricket';
-      return [primary, initialLeague as SportType];
-    }
     return [mapInitialSport(initialLeague, initialGender)];
   };
 
@@ -375,18 +368,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [previousReceiptUrls, setPreviousReceiptUrls] = useState<string[]>([]);
   const [previousUtrs, setPreviousUtrs] = useState<string[]>([]);
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
+  const [previouslyPaidExtraTshirt, setPreviouslyPaidExtraTshirt] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
   const [showSamplePhotoModal, setShowSamplePhotoModal] = useState(false);
-  const [showPayLaterConfirmModal, setShowPayLaterConfirmModal] = useState(false);
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const [serverWakingHint, setServerWakingHint] = useState(false);
-  const [isPayLater, setIsPayLater] = useState(false);
-  const isPayLaterRef = useRef(false);
   const photoUploadPromiseRef = useRef<Promise<string> | null>(null);
 
   useEffect(() => {
@@ -419,13 +410,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('registrationType', 'spectator', { shouldValidate: true });
       setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
       setSelectedSports(['spectator' as any]);
-    } else if (initialLeague === 'table-tennis' || initialLeague === 'carrom') {
-      setValue('registrationType', 'player', { shouldValidate: true });
-      const currentGen = watch('gender');
-      const primary: SportType = (currentGen === 'Female' || initialGender === 'Female') ? 'womens-sports' : 'cricket';
-      const sportsToSet: SportType[] = [primary, initialLeague as SportType];
-      setValue('selectedSports', sportsToSet, { shouldValidate: true });
-      setSelectedSports(sportsToSet);
     } else {
       setValue('registrationType', 'player', { shouldValidate: true });
       const sport = mapInitialSport(initialLeague, initialGender, null);
@@ -436,16 +420,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     return () => clearTimeout(t);
   }, [initialLeague]);
 
-  // Prevent background scrolling when size guide modal, sample photo modal, or pay later modal is open
+  // Prevent background scrolling when size guide modal or sample photo modal is open
   useEffect(() => {
-    if (showSizeGuideModal || showPayLaterConfirmModal || showSamplePhotoModal) {
+    if (showSizeGuideModal || showSamplePhotoModal) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = prevOverflow;
       };
     }
-  }, [showSizeGuideModal, showPayLaterConfirmModal, showSamplePhotoModal]);
+  }, [showSizeGuideModal, showSamplePhotoModal]);
 
 
   // Unregistered player reference verification states
@@ -538,9 +522,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       existingRplFamily: 'Yes',
       selectedSports: isInitialSpectator
         ? (['spectator'] as any)
-        : (initialLeague === 'table-tennis' || initialLeague === 'carrom')
-          ? ['cricket', initialLeague as SportType]
-          : [mapInitialSport(initialLeague, initialGender)],
+        : [mapInitialSport(initialLeague, initialGender)],
       // Cricket Defaults
       cricketRole: 'Batter',
       battingStyle: 'Right-hand bat',
@@ -656,7 +638,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // Registration Mode & Fee calculation:
   // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
-  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹630/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
+  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹400/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
@@ -686,6 +668,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
   }, [isSpectator, currentAcc, spectatorDates, setValue]);
 
+  // Spectators do not require a photo; clear any photo in state when in spectator mode
+  useEffect(() => {
+    if (isSpectator) {
+      setPhotoDriveUrl('');
+      setPhotoPreview(null);
+      setPhotoName('');
+      setPhotoError(null);
+    }
+  }, [isSpectator]);
+
   const isReturningPaidUser = isExistingPlayerRegistration && hasPreviouslyPaid;
   const totalSportsCount = Math.max(1, selectedSports.length);
   const newlyAddedSportsCount = isReturningPaidUser
@@ -695,17 +687,22 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorSelectedDaysCount = (isSpectator && currentAcc === 'No')
     ? spectatorDates.length
     : 1;
-  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 630);
+  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 400);
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
-  const spectatorTotalFee = spectatorBaseFee + spectatorTshirtCost;
 
   // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
   const playerBaseFee = currentExistingFamily === 'Yes' ? 2700 : 3000;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
-  const playerTotalFee = isReturningPaidUser ? extraTshirtCost : (playerBaseFee + extraTshirtCost);
+
+  // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
+  const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+  const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+
+  const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
-  const previousPaidAmount = isReturningPaidUser ? playerBaseFee : 0;
+  const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
 
   const nextReceiptIndex = (previousReceiptUrls.length || 0) + 1;
   const upiPaymentUri = `upi://pay?pa=info.rplevents@okicici&pn=Raj%20Premier%20League&am=${totalPayableFee}&cu=INR&tn=RPL%20Season%209%20Registration`;
@@ -725,15 +722,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      let valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
-      const hasPrimary = valid.some((s) => PRIMARY_SPORTS.includes(s));
-      const hasAddon = valid.some((s) => ADDON_SPORTS.includes(s));
-      if (hasAddon && !hasPrimary) {
-        const primaryFallback: SportType = currentGender === 'Female' ? 'womens-sports' : 'cricket';
-        valid = [primaryFallback, ...valid];
-      }
+      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
       if (valid.length > 0) {
-        if (valid.length !== prev.length || (hasAddon && !hasPrimary)) {
+        if (valid.length !== prev.length) {
           setValue('selectedSports', valid, { shouldValidate: true });
         }
         return valid;
@@ -796,7 +787,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
+      setPhotoDriveUrl('');
+      setPhotoPreview(null);
+      setPhotoName('');
+      setPhotoError(null);
       return;
     }
 
@@ -812,6 +808,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
       return;
     }
@@ -830,6 +827,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setPreviousReceiptUrls([]);
       setPreviousUtrs([]);
       setHasPreviouslyPaid(false);
+      setPreviouslyPaidExtraTshirt(false);
       setMumukshuCardInfo(null);
       return;
     }
@@ -914,8 +912,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             // Core fields
             if (reg.fullName) setValue('fullName', reg.fullName, { shouldValidate: true, shouldDirty: true });
             if (reg.email) setValue('email', reg.email, { shouldValidate: true, shouldDirty: true });
-            if (gen.centre) setValue('centre', gen.centre, { shouldValidate: true, shouldDirty: true });
-            if (gen.tshirtSize) setValue('tshirtSize', gen.tshirtSize as any, { shouldValidate: true, shouldDirty: true });
+            if (gen.tshirtSize) {
+              const rawSize = String(gen.tshirtSize).toUpperCase();
+              const normalizedSize = rawSize === 'XXL' ? '2XL' : (rawSize === 'XXXL' ? '3XL' : gen.tshirtSize);
+              setValue('tshirtSize', normalizedSize as any, { shouldValidate: true, shouldDirty: true });
+            }
             const resolvedExtraTshirt = gen.extraTshirt || gen.extra_tshirt || 'No';
             setValue('extraTshirt', (resolvedExtraTshirt === 'Yes' ? 'Yes' : 'No') as any, { shouldValidate: true, shouldDirty: true });
             if (gen.spectatorTshirt) {
@@ -975,6 +976,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             setPreviousReceiptUrls(rawReceiptList);
             setPreviousUtrs(rawUtrList);
             setHasPreviouslyPaid(isPaid);
+            const prevPaidTshirt = Boolean(
+              reg.previouslyPaidExtraTshirt ||
+              (isPaid && (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes' || gen.spectator_tshirt === 'Yes'))
+            );
+            setPreviouslyPaidExtraTshirt(prevPaidTshirt);
 
             // Restore sport answers
             if (sports.cricket) {
@@ -1088,6 +1094,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           setPreviousUtrs([]);
           setHasPreviouslyPaid(false);
           setMumukshuCardInfo(null);
+          setPhotoDriveUrl('');
+          setPhotoPreview(null);
+          setPhotoName('');
+          setPhotoError(null);
           // Clear fields that were auto-filled from the previous lookup
           setValue('fullName', '', { shouldValidate: false });
           setValue('email', '', { shouldValidate: false });
@@ -1110,6 +1120,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setPreviousUtrs([]);
         setHasPreviouslyPaid(false);
         setMumukshuCardInfo(null);
+        setPhotoDriveUrl('');
+        setPhotoPreview(null);
+        setPhotoName('');
+        setPhotoError(null);
         setValue('fullName', '', { shouldValidate: false });
         setValue('email', '', { shouldValidate: false });
         setValue('centre', '', { shouldValidate: false });
@@ -1238,6 +1252,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         }
 
         if (res.found && foundName) {
+          setMumukshuCardInfo(null);
           setReferrerFoundInfo({
             name: foundName,
             cardNo: cardNo || undefined,
@@ -1352,8 +1367,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const toggleSportSelection = (sportId: SportType) => {
     if (!isSportAllowedForPlayer(sportId, currentGender, playerAge, isVerifiedMale)) {
-      if (sportId === 'womens-sports' && isVerifiedMale) {
+      if (sportId === 'womens-sports' && (currentGender === 'Male' || isVerifiedMale)) {
         setSportRuleNotice("Women's Cricket League is exclusively for female participants (MeeraBen).");
+      }
+      if (sportId === 'cricket' && currentGender === 'Female') {
+        setSportRuleNotice("Participation in Main Cricket League is on a selection basis by the RPL core team. Please register for Women's Cricket League.");
       }
       if (sportId === 'football' && currentGender === 'Female') {
         setSportRuleNotice("Football League is exclusively for male participants (HariBhai). Female participants can register for Women's Cricket League, Table Tennis, or Carrom.");
@@ -1367,17 +1385,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       if (selectedSports.length === 1) {
         return;
       }
-      // If unchecking a primary sport, ensure at least one primary sport remains if an add-on sport is present
-      if (PRIMARY_SPORTS.includes(sportId)) {
-        const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
-        const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
-        if (remainingPrimary.length === 0 && hasAddon) {
-          setSportRuleNotice(
-            "Table Tennis & Carrom are free add-on tournaments and require registration in at least one primary league (Main Cricket, Women's Cricket, Kaccha Pakka, or Football)."
-          );
-          return;
-        }
-      }
       updated = selectedSports.filter((s) => s !== sportId);
     } else {
       // If user is selecting Women's Cricket League, automatically sync gender to Female
@@ -1385,17 +1392,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setValue('gender', 'Female', { shouldValidate: true, shouldDirty: true });
       }
 
-      // If adding an add-on sport, ensure at least one primary sport is selected (default to cricket if none)
-      const hasPrimary = selectedSports.some((s) => PRIMARY_SPORTS.includes(s));
-      if (ADDON_SPORTS.includes(sportId) && !hasPrimary) {
-        const primaryFallback: SportType = (currentGender === 'Female' || sportId === 'womens-sports') ? 'womens-sports' : 'cricket';
-        updated = [...selectedSports, primaryFallback, sportId];
-        setSportRuleNotice(
-          `${primaryFallback === 'womens-sports' ? "Women's Cricket League" : "Main Cricket League"} has been automatically included. Table Tennis & Carrom are free add-on tournaments requiring a primary league.`
-        );
-      } else {
-        updated = [...selectedSports, sportId];
-      }
+      updated = [...selectedSports, sportId];
     }
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -1406,16 +1403,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     if (selectedSports.length <= 1) return;
     setSportRuleNotice(null);
 
-    if (PRIMARY_SPORTS.includes(sportId)) {
-      const remainingPrimary = selectedSports.filter((s) => PRIMARY_SPORTS.includes(s) && s !== sportId);
-      const hasAddon = selectedSports.some((s) => ADDON_SPORTS.includes(s));
-      if (remainingPrimary.length === 0 && hasAddon) {
-        setSportRuleNotice(
-          "Table Tennis & Carrom require registration in at least one primary league."
-        );
-        return;
-      }
-    }
     const updated = selectedSports.filter((s) => s !== sportId);
     setSelectedSports(updated);
     setValue('selectedSports', updated, { shouldValidate: true });
@@ -1556,6 +1543,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       (data as any).paymentReceiptUrl ||
       undefined;
 
+    const effectiveTotalAmount = previousPaidAmount > 0
+      ? previousPaidAmount
+      : (isSpectator ? spectatorTotalFee : (playerBaseFee + extraTshirtCost));
+
+    const effectivePaymentUtr = paymentUtr || previousUtrs.join(', ') || undefined;
+    const effectivePaymentReceipt = paymentReceiptUrl || previousReceiptUrls.join(', ') || undefined;
+    const effectivePaymentStatus = existingPaymentStatus || (hasPreviouslyPaid ? 'approved' : 'pending');
+    const effectiveCardNo = isExistingPlayerRegistration
+      ? (mumukshuCardInfo?.cardNo || undefined)
+      : ((isUnregisteredPlayer || data.referrerMobile || data.referrerCardNo) ? undefined : (mumukshuCardInfo?.cardNo || undefined));
+
     const fullData: RegistrationFormData = {
       registrationType: isSpectator ? 'spectator' : 'player',
       spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
@@ -1567,6 +1565,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       mobileNumber: data.mobileNumber,
       email: data.email,
       centre: data.centre,
+      cardNo: effectiveCardNo,
       tshirtSize: data.tshirtSize,
       extraTshirt: data.extraTshirt || 'No',
       nostalgiaSport: isNostalgiaEligible && data.nostalgiaSport && data.nostalgiaSport !== 'None' ? data.nostalgiaSport : undefined,
@@ -1618,11 +1617,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       preferredTeamName: data.preferredTeamName,
       additionalNotes: data.additionalNotes?.trim() || undefined,
       comments: data.additionalNotes?.trim() || undefined,
-      totalAmount: cumulativeTotalFee,
-      calculatedFee: totalPayableFee,
-      payment_receipt: paymentReceiptUrl,
-      paymentReceiptUrl: paymentReceiptUrl,
-      payment_utr: paymentUtr,
+      paymentStatus: effectivePaymentStatus,
+      payment_status: effectivePaymentStatus,
+      totalAmount: effectiveTotalAmount,
+      calculatedFee: effectiveTotalAmount,
+      payment_receipt: effectivePaymentReceipt,
+      paymentReceiptUrl: effectivePaymentReceipt,
+      payment_utr: effectivePaymentUtr,
+      paymentUtr: effectivePaymentUtr,
     };
 
     // 1. Clean General Details
@@ -1645,7 +1647,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       checkInDate: data.checkInDate || '2026-12-25',
       checkOutDate: data.checkOutDate || '2026-12-27',
       existingRplFamily: data.existingRplFamily,
-      cardNo: mumukshuCardInfo?.cardNo || undefined,
+      cardNo: effectiveCardNo,
       selectedSports: isSpectator ? ['spectator'] : selectedSports,
       customJerseyName: data.customJerseyName || undefined,
       preferredJerseyNumber: data.preferredJerseyNumber || undefined,
@@ -1657,13 +1659,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       referrerCardNo: data.referrerCardNo || undefined,
       comments: data.additionalNotes?.trim() || undefined,
       additionalNotes: data.additionalNotes?.trim() || undefined,
-      totalAmount: cumulativeTotalFee,
+      totalAmount: effectiveTotalAmount,
       incrementalFee: totalPayableFee,
-      calculatedFee: totalPayableFee,
-      payment_receipt: paymentReceiptUrl,
-      payment_receipt_url: paymentReceiptUrl,
-      paymentReceiptUrl: paymentReceiptUrl,
-      payment_utr: paymentUtr,
+      calculatedFee: effectiveTotalAmount,
+      paymentStatus: effectivePaymentStatus,
+      payment_status: effectivePaymentStatus,
+      payment_receipt: effectivePaymentReceipt,
+      payment_receipt_url: effectivePaymentReceipt,
+      paymentReceiptUrl: effectivePaymentReceipt,
+      payment_utr: effectivePaymentUtr,
+      paymentUtr: effectivePaymentUtr,
     };
 
     // 2. Clean Sport-Specific Questionnaire (Grouped by Sport)
@@ -1750,7 +1755,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       }
     });
 
-    const playerPhotoUrl = photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined);
+    const playerPhotoUrl = isSpectator
+      ? undefined
+      : (photoDriveUrl || (photoPreview && photoPreview.startsWith('http') ? photoPreview : undefined));
 
     // Consolidated answers WITHOUT raw base64 data URLs
     const sanitizedAnswers = {
@@ -1760,7 +1767,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       totalAmount: cumulativeTotalFee,
       incrementalFee: totalPayableFee,
       calculatedFee: totalPayableFee,
-      photoDriveUrl: photoDriveUrl || undefined,
+      photoDriveUrl: isSpectator ? undefined : (photoDriveUrl || undefined),
       payment_receipt: paymentReceiptUrl,
       payment_utr: paymentUtr,
     };
@@ -1769,78 +1776,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       delete (sanitizedAnswers as any).nostalgiaSport;
       delete (sanitizedAnswers as any).nostalgia_sport;
       delete (sanitizedAnswers as any).nostalgiaSports;
-    }
-
-    // =========================================================================
-    // 0. PAY LATER PATH — Save registration as pending, skip payment
-    // =========================================================================
-    if (isPayLaterRef.current && totalPayableFee > 0) {
-      // Save the registration with payment_status = 'pending' (or 'approved_due' for returning paid users)
-      const payLaterStatus = isReturningPaidUser ? 'approved_due' : 'pending';
-      fullData.paymentStatus = payLaterStatus;
-      fullData.payment_status = payLaterStatus;
-
-      try {
-        const submitPromise = submitRegistration({
-          registration_id: existingRegistrationId || undefined,
-          sport_id: selectedSports[0] || 'cricket',
-          full_name: data.fullName.trim(),
-          email: data.email.trim(),
-          mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
-          check_in_date: data.checkInDate || '2026-12-25',
-          check_out_date: data.checkOutDate || '2026-12-27',
-          player_photo_url: playerPhotoUrl,
-          payment_utr: undefined,
-          payment_receipt_url: undefined,
-          payment_status: 'pending',
-          general_details: generalDetails,
-          sport_answers: sportAnswers,
-          answers: sanitizedAnswers,
-        });
-
-        const timeoutPromise = new Promise<{ isTimeout: true }>((resolve) =>
-          setTimeout(() => resolve({ isTimeout: true }), 3000)
-        );
-
-        const result = await Promise.race([submitPromise, timeoutPromise]);
-        if ('isTimeout' in result) {
-          console.warn('[RPL Pay Later] API taking >3s (cold-start), continuing in background.');
-          submitPromise
-            .then((res: any) => {
-              if (res && res.registration_id) activeRegistrationId = res.registration_id;
-            })
-            .catch((err) => console.warn('[RPL Pay Later Background Notice]', err));
-        } else {
-          if ((result as any)?.registration_id) {
-            activeRegistrationId = (result as any).registration_id;
-          }
-        }
-      } catch (apiErr: any) {
-        console.warn('[RPL Pay Later] Save notice:', apiErr);
-      }
-
-      // Store in localStorage
-      try {
-        const existing = JSON.parse(localStorage.getItem('rpl_registrations') || '[]');
-        const filtered = existing.filter((item: any) => item.id !== activeRegistrationId);
-        localStorage.setItem('rpl_registrations', JSON.stringify([...filtered, { id: activeRegistrationId, ...fullData }]));
-      } catch { }
-
-      setIsSubmitting(false);
-      setIsPayLater(false);
-      isPayLaterRef.current = false;
-      setRegistrationId(activeRegistrationId);
-      setSubmittedData(fullData);
-
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.5 },
-          colors: ['#F59E0B', '#10B981', '#3B82F6'],
-        });
-      } catch { }
-      return;
     }
 
     // =========================================================================
@@ -1868,7 +1803,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
           check_in_date: data.checkInDate || '2026-12-25',
           check_out_date: data.checkOutDate || '2026-12-27',
-          player_photo_url: playerPhotoUrl,
+          player_photo_url: isSpectator ? undefined : (playerPhotoUrl || undefined),
           general_details: generalDetails,
           sport_answers: sportAnswers,
           answers: sanitizedAnswers,
@@ -1888,6 +1823,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           isExistingPlayer: isExistingPlayerRegistration,
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
+          previouslyPaidExtraTshirt,
           registrationId: existingRegistrationId || undefined,
           registrationPayload,
         });
@@ -1999,7 +1935,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         mobile: `${data.countryCode || '+91'} ${data.mobileNumber}`.trim(),
         check_in_date: data.checkInDate || '2026-12-25',
         check_out_date: data.checkOutDate || '2026-12-27',
-        player_photo_url: playerPhotoUrl,
+        player_photo_url: isSpectator ? undefined : (playerPhotoUrl || undefined),
         payment_utr: paymentUtr,
         payment_receipt_url: paymentReceiptUrl,
         general_details: generalDetails,
@@ -2194,7 +2130,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <div className="space-y-1 text-center sm:text-left">
                 <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
                   <Clock className="w-3 h-3 text-amber-600" />
-                  <span>Registration Saved • Payment Due</span>
+                  <span>Registration Saved • Incomplete Payment</span>
                 </div>
                 <h4 className="font-black text-slate-900 text-base">
                   Welcome back, {getValues('fullName') || 'Player'}!
@@ -2206,13 +2142,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const currentMob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                  onOpenCheckStatus?.(currentMob);
+                  document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center space-x-2 shadow-sm transition-all active:scale-95 shrink-0 cursor-pointer"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Pay Now & Get Pass</span>
+                <span>Complete Payment Below</span>
               </button>
             </div>
           )}
@@ -2246,11 +2181,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             data={submittedData}
             registrationId={registrationId}
             onReset={handleReset}
-            onPayDue={() => {
-              if (onOpenCheckStatus) {
-                onOpenCheckStatus(submittedData.mobileNumber);
-              }
-            }}
           />
         ) : (
           <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 pb-8 sm:pb-12">
@@ -2260,7 +2190,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <InView
               viewOptions={{ once: true, amount: 0.05 }}
               transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-              className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden"
+              className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-slate-200 shadow-md space-y-6 sm:space-y-8 w-full max-w-full relative z-20"
             >
               <div className="flex items-start space-x-3 border-b border-slate-100 pb-4 sm:pb-5">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 border border-amber-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 shrink-0 aspect-square mt-0.5">
@@ -2294,7 +2224,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         </span>
                       </h4>
                       <p className="text-xs text-slate-600 font-medium mt-0.5">
-                        Your previous entries have been auto-filled. You can update any fields, register for additional sports, or upload payment proof below.
+                        Your previous entries have been auto-filled. You can update any fields or complete payment below.
                       </p>
                     </div>
                   </div>
@@ -2384,7 +2314,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {isLookingUpMumukshu && (
                     <p className="mt-1.5 text-xs text-amber-600 font-semibold flex items-center space-x-1.5 animate-pulse">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Checking registration & Ashram records...</span>
+                      <span>Checking registration & records...</span>
                     </p>
                   )}
 
@@ -2392,7 +2322,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   {isUnregisteredPlayer && !isExistingPlayerRegistration && !mumukshuCardInfo && !mobileInputError && !mobileInputHint && (
                     <div className="mt-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center space-x-2 text-amber-900 text-xs font-bold shadow-sm">
                       <Users className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Mobile number not found in The Research Centre's records. Please provide a Mumukshu reference below to proceed.</span>
+                      <span>Mobile number not found in the records. Please provide a Mumukshu reference below to proceed.</span>
                     </div>
                   )}
                   {isExistingPlayerRegistration ? (
@@ -2451,7 +2381,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <span className="text-pink-600">*</span>
                           </h4>
                           <p className="text-xs text-slate-600 font-medium mt-0.5">
-                            Your mobile number was not found in our Ashram records. RPL participation requires a referral from an existing registered Mumukshu.
+                            Your mobile number was not found in our records. RPL participation requires a referral from an existing registered Mumukshu.
                           </p>
                         </div>
                       </div>
@@ -2733,7 +2663,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             value={currentTshirtSize || 'L'}
                             onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
                             layoutId="spectator-size-indicator"
-                            gridCols="grid-cols-4 sm:grid-cols-7"
+                            gridCols="grid-cols-3 sm:grid-cols-9"
                             activeColor="bg-slate-900"
                             activeTextColor="text-amber-300"
                           />
@@ -2771,7 +2701,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     value={currentTshirtSize}
                     onChange={(size) => setValue('tshirtSize', size, { shouldValidate: true })}
                     layoutId="tshirt-size-indicator"
-                    gridCols="grid-cols-4 sm:grid-cols-7"
+                    gridCols="grid-cols-3 sm:grid-cols-9"
                     activeColor="bg-slate-900"
                     activeTextColor="text-amber-300"
                   />
@@ -2832,42 +2762,52 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               )}
 
-              {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive) */}
-              <div className="mt-3">
-                <div
-                  onClick={() => setShowSizeGuideModal(true)}
-                  className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
-                >
-                  <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
-                    <img
-                      src="/jersey-size-guide.jpg"
-                      alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
-                      className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
-                      loading="lazy"
-                    />
+              {/* Jersey Size Guide Card (Fully Mobile-Adjusted & Responsive - Only shown for players, or spectators who opt for a T-shirt) */}
+              <AnimatePresence>
+                {(!isSpectator || currentSpectatorTshirt === 'Yes') && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="mt-3 overflow-hidden"
+                  >
+                    <div
+                      onClick={() => setShowSizeGuideModal(true)}
+                      className="group relative w-full max-w-2xl mx-auto rounded-xl sm:rounded-2xl border border-slate-200/90 bg-white hover:border-amber-400 shadow-2xs hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                    >
+                      <div className="relative w-full bg-slate-50 flex items-center justify-center p-2 sm:p-4">
+                        <img
+                          src="/jersey-size-guide.jpg"
+                          alt="RPL Season 9 T-Shirt & Jersey Size Guide with Chest and Length in Inches"
+                          className="w-full h-auto max-h-[260px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.01]"
+                          loading="lazy"
+                        />
 
-                    {/* Tap / Click to Zoom Hint Overlay */}
-                    <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
-                      <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
-                        <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Tap to view full chart & zoom</span>
-                      </span>
+                        {/* Tap / Click to Zoom Hint Overlay */}
+                        <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 sm:transition-colors flex items-end sm:items-center justify-center p-2.5 sm:p-3 pointer-events-none">
+                          <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs text-white text-[10px] sm:text-xs font-bold shadow-lg">
+                            <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Tap to view full chart & zoom</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Size Guide Card Footer */}
+                      <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
+                        <span className="flex items-center space-x-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                          <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
+                        </span>
+                        <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
+                          <span>Click to enlarge</span>
+                          <Maximize2 className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Size Guide Card Footer */}
-                  <div className="px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-50/70 via-slate-50 to-amber-50/50 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-xs text-slate-600">
-                    <span className="flex items-center space-x-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                      <span className="font-semibold text-slate-700">All measurements in inches (±0.5" buffer in all sizes)</span>
-                    </span>
-                    <span className="font-bold text-amber-700 hidden sm:inline-flex items-center space-x-1">
-                      <span>Click to enlarge</span>
-                      <Maximize2 className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Sub-section 1.3: Player Demographics & Status */}
               <div className="pt-3 border-t border-slate-100">
@@ -2942,6 +2882,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           const nextSports: SportType[] = hasPrimary ? remaining : ['cricket', ...remaining];
                           setSelectedSports(nextSports);
                           setValue('selectedSports', nextSports, { shouldValidate: true });
+                        } else if (genderOption === 'Female' && (selectedSports.includes('football') || selectedSports.includes('cricket'))) {
+                          const remaining = selectedSports.filter((s) => s !== 'football' && s !== 'cricket');
+                          const hasPrimary = remaining.some((s) => PRIMARY_SPORTS.includes(s));
+                          const nextSports: SportType[] = hasPrimary ? remaining : ['womens-sports', ...remaining];
+                          setSelectedSports(nextSports);
+                          setValue('selectedSports', nextSports, { shouldValidate: true });
                         }
                       }}
                       layoutId="gender-indicator"
@@ -2989,7 +2935,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={isSpectator ? [
-                      { value: 'No', label: 'Without Stay (₹630/day)' },
+                      { value: 'No', label: 'Without Stay (₹400/day)' },
                       { value: 'Yes', label: 'With Stay (₹2,700)' },
                     ] : [
                       { value: 'No', label: 'No, Self-Arranged' },
@@ -3035,7 +2981,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹630/day)
+                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹400/day)
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
                             ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
@@ -3067,7 +3013,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {/* Optional room number for self-arranged spectator */}
                         <div className="pt-2 border-t border-emerald-200/80">
                           <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Staying self-arranged in Ashram? Enter Room / Flat No. (Optional):
+                            Staying self-arranged? Enter Room / Flat No. (Optional):
                           </label>
                           <input
                             type="text"
@@ -3129,13 +3075,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Select Attending Dates <span className="text-pink-600">*</span>
                         </h4>
                         <p className="text-[11px] text-slate-600 font-medium">
-                          Choose tournament days you will attend (Single Day Pass: ₹630 / Day)
+                          Choose tournament days you will attend (Single Day Pass: ₹400 / Day)
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
-                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 630).toLocaleString('en-IN')}
+                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 400).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -3184,13 +3130,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           className={`font-black text-xs sm:text-sm ${isAllDatesSelected ? 'text-white' : 'text-emerald-800'
                             }`}
                         >
-                          ₹1,890
+                          ₹1,200
                         </span>
                         <span
                           className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'
                             }`}
                         >
-                          (3 × ₹630)
+                          (3 × ₹400)
                         </span>
                       </div>
                     </div>
@@ -3226,7 +3172,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-xs text-emerald-800">₹630</span>
+                            <span className="font-black text-xs text-emerald-800">₹400</span>
                           </div>
                         </div>
                       );
@@ -3560,12 +3506,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span className="font-extrabold uppercase tracking-wider text-amber-950 block text-[11px] mb-0.5">
                           Kaccha Pakka Cricket League Available (Age: {playerAge} years):
                         </span>
-                        <p className="font-semibold text-amber-900 leading-snug mb-1">
-                          At Kaccha Pakka Cricket League we bring in the energy and talent of our young stars age below 16 and experience of our young at our heart stars age 56 and above
-                        </p>
-                        <p className="text-[11px] font-medium text-amber-800">
-                          Based on your age ({playerAge <= 16 ? '16 and below' : '56 and above'}), you are eligible to participate in the <strong>Kaccha Pakka Cricket League</strong> along with other sports!
-                        </p>
                       </div>
                     </div>
                   )}
@@ -3606,14 +3546,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         {selectedSports.map((sportId) => {
                           const sport = AVAILABLE_SPORTS.find((s) => s.id === sportId);
                           if (!sport) return null;
-                          const isAddon = ADDON_SPORTS.includes(sport.id);
                           return (
                             <span
                               key={sport.id}
-                              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs ${isAddon
-                                ? 'bg-gradient-to-r from-teal-600 to-emerald-600 border border-emerald-400/50'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40'
-                                }`}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-white text-xs font-extrabold shadow-xs bg-gradient-to-r from-amber-500 to-orange-600 border border-amber-400/40"
                             >
                               <span>{sport.emoji}</span>
                               <span>{sport.name}</span>
@@ -3688,7 +3624,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                             {filteredSports.map((sport) => {
                               const isChecked = selectedSports.includes(sport.id);
-                              const isAddon = ADDON_SPORTS.includes(sport.id);
                               return (
                                 <div
                                   key={sport.id}
@@ -3704,11 +3639,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                                       <span className="font-extrabold text-sm text-slate-900 block">
                                         {sport.name}
                                       </span>
-                                      {isAddon && (
-                                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                          FREE ADD-ON
-                                        </span>
-                                      )}
                                     </div>
                                   </div>
 
@@ -4723,270 +4653,227 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
             {/* ========================================================================= */}
             {/* PAYMENT VERIFICATION & FEE BREAKDOWN (OFFICIAL RAZORPAY GATEWAY) */}
             {/* ========================================================================= */}
-            <InView
-              viewOptions={{ once: true, amount: 0.05 }}
-              transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
-              className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
-                <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
-                    {isSpectator ? 3 : 4}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                        {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
-                      </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
-                        ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                        : 'bg-amber-100 text-amber-900 border border-amber-300'
-                        }`}>
-                        {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
-                      </span>
+            <div id="payment-section" className="scroll-mt-24">
+              <InView
+                viewOptions={{ once: true, amount: 0.05 }}
+                transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
+                className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                  <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
+                      {isSpectator ? 3 : 4}
                     </div>
-                    <p className="text-emerald-800 text-xs font-medium leading-relaxed">
-                      Official Razorpay Gateway: Instant auto-verification with UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards & NetBanking.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Registration Fee Calculation & Summary Card */}
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
-                  <div className="flex items-center space-x-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                      ₹
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                        {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
-                      </span>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                        {isSpectator ? (
-                          currentAcc === 'Yes'
-                            ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
-                            : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹630 = ₹${(spectatorDates.length * 630).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
-                        ) : isReturningPaidUser ? (
-                          currentExtraTshirt === 'Yes'
-                            ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
-                            : `All Sports Included in Tournament Pass (Verified)`
-                        ) : (
-                          `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
-                        )}
-                      </h4>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
-                    <span className="text-xs font-semibold text-slate-600">
-                      {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
-                    </span>
-                    <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
-                      ₹{totalPayableFee.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Non-Spectator Player Inclusions Breakdown Callout */}
-                {!isSpectator && (
-                  <>
-                    {/* Returning User Notification Callout */}
-                    {isReturningPaidUser && (
-                      <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
-                        <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
-                        <div>
-                          <span>
-                            <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Extra T-Shirt Line Item if selected */}
-                    {currentExtraTshirt === 'Yes' && (
-                      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
-                        <span className="flex items-center space-x-2">
-                          <Shirt className="w-4 h-4 text-amber-700" />
-                          <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                          {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
+                          ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                          {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
                         </span>
-                        <span className="text-amber-900 font-extrabold">+₹500</span>
                       </div>
-                    )}
+                      <p className="text-emerald-800 text-xs font-medium leading-relaxed">
+                        Official Razorpay Gateway: Instant auto-verification with UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards & NetBanking.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Sport Breakdown List */}
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                        Selected Sports ({selectedSports.length}):
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSports.map((sportId) => {
-                          const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-
-                          return (
-                            <div
-                              key={sportId}
-                              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
-                            >
-                              <span>{sportObj?.emoji || '🏅'}</span>
-                              <span>{sportObj?.name || sportId}</span>
-                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${ADDON_SPORTS.includes(sportId)
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : 'bg-amber-200 text-amber-950'
-                                }`}>
-                                {ADDON_SPORTS.includes(sportId) ? 'FREE Add-on' : 'Included in Pass'}
-                              </span>
-                            </div>
-                          );
-                        })}
+                {/* Dynamic Registration Fee Calculation & Summary Card */}
+                <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                        ₹
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                          {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
+                        </span>
+                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
+                          {isSpectator ? (
+                            currentAcc === 'Yes'
+                              ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
+                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹400 = ₹${(spectatorDates.length * 400).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
+                          ) : isReturningPaidUser ? (
+                            currentExtraTshirt === 'Yes'
+                              ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
+                              : `All Sports Included in Tournament Pass (Verified)`
+                          ) : (
+                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                          )}
+                        </h4>
                       </div>
                     </div>
-                  </>
-                )}
 
-                {/* Razorpay Online Payment Checkout Banner */}
-                {totalPayableFee > 0 && (
-                  <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
-                        <Zap className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Instant Online Payment via Razorpay</span>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        ⚡ Instant Auto-Approval
+                    <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
+                      <span className="text-xs font-semibold text-slate-600">
+                        {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
+                      </span>
+                      <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
+                        ₹{totalPayableFee.toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      When you click <strong className="text-slate-950 font-black">Pay ₹{totalPayableFee} & Complete Registration</strong> below, the official Razorpay payment window will open. You can pay securely via <strong>Google Pay, PhonePe, Paytm, BHIM, UPI Apps, Debit/Credit Card, or NetBanking</strong>. Your payment is verified automatically in real-time, and your official Digital Pass will be issued instantly.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-slate-600">
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Google Pay</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ PhonePe</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Paytm / BHIM</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ All UPI Apps</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Cards & NetBanking</span>
-                    </div>
                   </div>
-                )}
 
-                {/* Tournament Cancellation & Refund Policy Notice */}
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
-                  <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
-                      Tournament Policy: No refund in case of no show or cancellation.
-                    </span>
-
-                  </div>
-                </div>
-              </div>
-
-              {totalPayableFee === 0 && (
-                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                  <div className="text-xs font-semibold leading-relaxed">
-                    <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment is required. Click <strong>Update Registration & Save</strong> below to save any changes.
-                  </div>
-                </div>
-              )}
-
-              {/* Submission Controls & Assurance */}
-              <div className="pt-4 border-t border-emerald-200/80 space-y-4">
-                <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
-                  <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
-                  <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                    Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
-                  </p>
-                </div>
-
-                {/* Primary Pay Now button & Pay Later */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                    onClick={() => { isPayLaterRef.current = false; setIsPayLater(false); }}
-                    className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
-                  >
-                    {isRazorpayLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Opening Razorpay Gateway...</span>
-                      </div>
-                    ) : isUploadingReceipt ? (
-                      <span>Uploading Payment Receipt to Drive...</span>
-                    ) : isSubmitting && !isPayLater ? (
-                      <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
-                    ) : totalPayableFee > 0 ? (
-                      <>
-                        <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
-                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                      </>
-                    ) : (
-                      <>
-                        <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
-                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                      </>
-                    )}
-                  </button>
-
-                  {/* Pay Later button — only shown when there is an outstanding fee */}
-                  {totalPayableFee > 0 && (
-                    <button
-                      type="button"
-                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                      onClick={() => {
-                        // Validate form first, and open sleek confirmation modal if valid
-                        handleSubmit(() => {
-                          setShowPayLaterConfirmModal(true);
-                        }, onInvalid)();
-                      }}
-                      className="flex-1 sm:flex-initial px-6 py-4 min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 text-slate-700 font-extrabold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-50"
-                    >
-                      {isSubmitting && isPayLater ? (
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Saving Registration...</span>
+                  {/* Non-Spectator Player Inclusions Breakdown Callout */}
+                  {!isSpectator && (
+                    <>
+                      {/* Returning User Notification Callout */}
+                      {isReturningPaidUser && (
+                        <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
+                          <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
+                          <div>
+                            <span>
+                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹2,700' : '₹3,000'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                            </span>
+                          </div>
                         </div>
+                      )}
+
+                      {/* Extra T-Shirt Line Item if selected */}
+                      {currentExtraTshirt === 'Yes' && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                          <span className="flex items-center space-x-2">
+                            <Shirt className="w-4 h-4 text-amber-700" />
+                            <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                          </span>
+                          {isReturningPaidUser && previouslyPaidExtraTshirt ? (
+                            <span className="text-emerald-800 font-extrabold bg-emerald-100 px-2.5 py-0.5 rounded-md text-[11px] border border-emerald-200">
+                              Paid in Pass (₹0 Due)
+                            </span>
+                          ) : (
+                            <span className="text-amber-900 font-extrabold">+₹500</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Sport Breakdown List */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                          Selected Sports ({selectedSports.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSports.map((sportId) => {
+                            const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+
+                            return (
+                              <div
+                                key={sportId}
+                                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
+                              >
+                                <span>{sportObj?.emoji || '🏅'}</span>
+                                <span>{sportObj?.name || sportId}</span>
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                  Included in Pass
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Razorpay Online Payment Checkout Banner */}
+                  {totalPayableFee > 0 && (
+                    <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
+                          <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Instant Online Payment via Razorpay</span>
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          ⚡ Instant Auto-Approval
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        When you click <strong className="text-slate-950 font-black">Pay ₹{totalPayableFee} & Complete Registration</strong> below, the official Razorpay payment window will open. You can pay securely via <strong>Google Pay, PhonePe, Paytm, BHIM, UPI Apps, Debit/Credit Card, or NetBanking</strong>. Your payment is verified automatically in real-time, and your official Digital Pass will be issued instantly.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-slate-600">
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Google Pay</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ PhonePe</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Paytm / BHIM</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ All UPI Apps</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Cards & NetBanking</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tournament Cancellation & Refund Policy Notice */}
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                    <div>
+                      <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                        Tournament Policy: No refund in case of no show or cancellation.
+                      </span>
+
+                    </div>
+                  </div>
+                </div>
+
+                {totalPayableFee === 0 && (
+                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                    <div className="text-xs font-semibold leading-relaxed">
+                      <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment is required. Click <strong>Update Registration & Save</strong> below to save any changes.
+                    </div>
+                  </div>
+                )}
+
+                {/* Submission Controls & Assurance */}
+                <div className="pt-4 border-t border-emerald-200/80 space-y-4">
+                  <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
+                    <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                      Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
+                    </p>
+                  </div>
+
+                  {/* Primary Pay Now button */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
+                      className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
+                    >
+                      {isRazorpayLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Opening Razorpay Gateway...</span>
+                        </div>
+                      ) : isUploadingReceipt ? (
+                        <span>Uploading Payment Receipt to Drive...</span>
+                      ) : isSubmitting ? (
+                        <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
+                      ) : totalPayableFee > 0 ? (
+                        <>
+                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
+                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                        </>
                       ) : (
                         <>
-                          <Clock className="w-4 h-4 text-slate-500" />
-                          <span>Pay Later</span>
+                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
+                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                         </>
                       )}
                     </button>
+                  </div>
+
+                  {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+                  {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
+                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
+                      <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                      <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
+                    </div>
                   )}
                 </div>
-
-                {/* Pay Later hint */}
-                {totalPayableFee > 0 && (
-                  <div className="mt-4 pt-3.5 border-t border-emerald-200/60 space-y-2 text-center">
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                      💡 Prefer to pay later?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const mob = cleanPhoneNumber(getValues('mobileNumber') || '');
-                          onOpenCheckStatus?.(mob);
-                        }}
-                        className="font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer"
-                      >
-                        Check Pass / Pay Due
-                      </button>
-                      {' '}— register now and complete payment anytime using your mobile number.
-                    </p>
-                  </div>
-                )}
-
-                {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
-                {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
-                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
-                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
-                    <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
-                  </div>
-                )}
-              </div>
-            </InView>
+              </InView>
+            </div>
 
             {/* Physical spacer to guarantee clear separation between Section 3 and the footer on mobile */}
             <div className="h-16 sm:h-24 w-full block clear-both pointer-events-none" aria-hidden="true" />
@@ -5169,121 +5056,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </div>
                 </motion.div>
               </motion.div>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
-
-      {/* Pay Later 24-Hour Confirmation Modal */}
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <AnimatePresence>
-            {showPayLaterConfirmModal && (
-              <div
-                className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto"
-                onClick={() => setShowPayLaterConfirmModal(false)}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.94, y: 15 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.94, y: 15 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-amber-200/90 shadow-2xl overflow-hidden my-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Decorative Top Gradient Accent */}
-                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
-
-                  {/* Close button */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPayLaterConfirmModal(false)}
-                    className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                    aria-label="Close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-
-                  <div className="text-center pt-2">
-                    {/* Icon */}
-                    <div className="w-14 h-14 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
-                      <Clock className="w-7 h-7 text-amber-600 animate-pulse" />
-                    </div>
-
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                      Confirm Pay Later
-                    </h3>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-bold mt-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Payment required within 24 hours</span>
-                    </div>
-
-                    {/* Fee Card */}
-                    <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 font-semibold">Total Payable Due:</span>
-                        <span className="text-xl font-black text-slate-900">₹{totalPayableFee}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-200/60">
-                        <span>Registration Status:</span>
-                        <span className="font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
-                          Pending Payment
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* How to Pay Notice */}
-                    <div className="mt-3.5 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-left text-xs text-slate-600 space-y-1">
-                      <p className="font-bold text-amber-950 flex items-center gap-1.5">
-                        <span>💡</span> How to complete payment later:
-                      </p>
-                      <p className="text-[11.5px] leading-relaxed text-slate-600">
-                        Open <strong className="text-slate-900">"Check Pass / Pay Due"</strong> from the tournament homepage, enter your registered number (<strong>{watch('mobileNumber') ? `${watch('countryCode') || '+91'} ${watch('mobileNumber')}` : 'your mobile number'}</strong>), and pay via UPI, Card, or NetBanking.
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-5 space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPayLaterConfirmModal(false);
-                          isPayLaterRef.current = true;
-                          setIsPayLater(true);
-                          handleSubmit(onSubmit, onInvalid)();
-                        }}
-                        className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-extrabold text-sm shadow-md shadow-amber-500/25 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>Confirm & Save Registration</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPayLaterConfirmModal(false);
-                          isPayLaterRef.current = false;
-                          setIsPayLater(false);
-                          setPaymentMethod('razorpay');
-                          handleSubmit(onSubmit, onInvalid)();
-                        }}
-                        className="w-full py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                        <span>Pay Online Now via Razorpay</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPayLaterConfirmModal(false)}
-                        className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                      >
-                        ← Keep Editing / Close
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
             )}
           </AnimatePresence>,
           document.body

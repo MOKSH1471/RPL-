@@ -9,11 +9,11 @@ export const HowItWorksSection: React.FC = () => {
     {
       title: 'Online Registration',
       subtitle: 'Step 1 of 4',
-      desc: 'Submit your entry form with your preferred league, sport role or position, and WhatsApp contact details.',
+      desc: 'Submit your entry form with your preferred league, sport role or position, and other details.',
       details: [
-        'Select Cricket, Football, or Women’s Sports League',
+        'Select Cricket, Football, or any other Sports League',
         'Specify your playing role (Batter, Bowler, Striker, etc.)',
-        'Instant confirmation & direct Gmail submission to organizers',
+        'Instant confirmation & direct submission to organizers',
       ],
 
       icon: UserCheck,
@@ -34,11 +34,11 @@ export const HowItWorksSection: React.FC = () => {
     {
       title: 'Fixtures & Schedule Release',
       subtitle: 'Step 3 of 4',
-      desc: 'Official match dates, venue locations, and team jerseys announced in WhatsApp groups.',
+      desc: 'Official match dates & team jerseys announcment.',
       details: [
         'Full tournament schedule & matchday timetables',
         'Official RPL jersey allocations',
-        'Rules briefing & referee introductions',
+        'Rules briefing',
       ],
       icon: CalendarCheck,
       color: 'border-pink-400 text-pink-600 bg-pink-50',
@@ -92,11 +92,10 @@ export const HowItWorksSection: React.FC = () => {
                 >
                   <button
                     onClick={() => setActiveStep(idx)}
-                    className={`w-full p-4 sm:p-5 rounded-2xl text-left transition-all flex items-center justify-between border min-h-[56px] touch-manipulation ${
-                      isActive
-                        ? 'bg-white border-amber-400 shadow-md scale-[1.02]'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:border-slate-300'
-                    }`}
+                    className={`w-full p-4 sm:p-5 rounded-2xl text-left transition-all flex items-center justify-between border min-h-[56px] touch-manipulation ${isActive
+                      ? 'bg-white border-amber-400 shadow-md scale-[1.02]'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:border-slate-300'
+                      }`}
                   >
                     <div className="flex items-center space-x-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${item.color}`}>

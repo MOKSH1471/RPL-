@@ -525,12 +525,15 @@ Sent via RPL Official Registration Portal
                       {...register('tshirtSize')}
                       className="w-full px-4 py-3.5 min-h-[48px] rounded-xl bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 text-base sm:text-sm"
                     >
+                      <option value="XS">Extra Small (XS)</option>
                       <option value="S">Small (S)</option>
                       <option value="M">Medium (M)</option>
                       <option value="L">Large (L)</option>
                       <option value="XL">Extra Large (XL)</option>
-                      <option value="XXL">XXL</option>
-                      <option value="XXXL">XXXL</option>
+                      <option value="2XL">Double Extra Large (2XL)</option>
+                      <option value="3XL">Triple Extra Large (3XL)</option>
+                      <option value="4XL">4XL</option>
+                      <option value="5XL">5XL</option>
                     </select>
                   </div>
 

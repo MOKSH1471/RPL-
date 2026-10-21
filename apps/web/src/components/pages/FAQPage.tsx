@@ -69,7 +69,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'Does registering in a league guarantee my participation, and how do I check my status?',
     searchableAnswer:
-      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and pay pending dues online anytime using the "Check Pass / Pay Due" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.',
+      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and download your Digital Pass online anytime using the "Check Pass" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp with their team assignment and jersey allocation.',
     answer: (
       <div className="space-y-3">
         <p>
@@ -78,15 +78,15 @@ const FAQ_DATA: FAQItem[] = [
         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
           <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong>Check Pass &amp; Pay Dues Online:</strong> You can check your registration status, download your pass, and pay any pending dues anytime directly on this website by clicking the <strong className="text-amber-800 underline">Check Pass / Pay Due</strong> button in the navigation bar or hero section.
+            <strong>Check Pass Online:</strong> You can check your registration status and download your pass anytime directly on this website by clicking the <strong className="text-amber-800 underline">Check Pass</strong> button in the navigation bar or hero section.
           </div>
         </div>
         <p className="text-xs text-slate-600">
-          Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.
+          Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp with their team assignment and jersey allocation.
         </p>
       </div>
     ),
-    tags: ['Confirmation', 'Roster', 'Approval', 'Check Pass', 'Pay Due', 'Pass Status'],
+    tags: ['Confirmation', 'Roster', 'Approval', 'Check Pass', 'Pass Status'],
     important: true,
   },
   {
@@ -94,7 +94,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'What is the registration fee for players, and what does it include?',
     searchableAnswer:
-      'Returning RPL Family ₹2,700 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Ashram, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
+      'Returning RPL Family ₹2,700 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
     answer: (
       <div className="space-y-3">
         <p>The standard player registration is an all-inclusive 3-day sports &amp; stay package:</p>
@@ -115,7 +115,7 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
-          <li><strong>Stay:</strong> 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Ashram.</li>
+          <li><strong>Stay:</strong> 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre.</li>
           <li><strong>Meals:</strong> All daily sattvic vegetarian meals and late-night tournament snacks.</li>
           <li><strong>Sports:</strong> Unlimited entry across all selected eligible leagues and 90s Nostalgia Games.</li>
           <li><strong>Kit:</strong> One official RPL Season 9 tournament jersey included free! <em>(Extra t-shirts can be purchased for ₹500).</em></li>
@@ -131,14 +131,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'Can female players participate in both the Female League and the RPL Main Cricket League?',
     searchableAnswer:
-      'Yes! All registered female players can participate in the Women’s Cricket League. Additionally, based on last few year\'s performance, the RPL Organizing Committee will select 18 outstanding female athletes who will earn a prestigious spot to draft and compete directly in the RPL Main Cricket League alongside male players.',
+      'Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.',
     answer: (
       <div className="space-y-2">
         <p>
-          <strong>Yes!</strong> All registered female players can participate in the <strong>Women’s Cricket League</strong>.
-        </p>
-        <p>
-          Additionally, based on last few year's performance, the RPL Organizing Committee will select <strong>18 outstanding female athletes</strong> who will earn a prestigious spot to draft and compete directly in the <strong>RPL Main Cricket League</strong> alongside male players.
+          Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.
         </p>
       </div>
     ),
@@ -173,7 +170,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a male player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship (free add-on), Carrom League (free add-on), and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
+      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football League (held 27 Dec), Table Tennis League, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
     answer: (
       <div className="space-y-2">
         <p>
@@ -181,9 +178,9 @@ const FAQ_DATA: FAQItem[] = [
         </p>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
           <li>RPL Main Cricket League</li>
-          <li>Football Championship League (Matches held entirely on 27 Dec)</li>
-          <li>Table Tennis Championship (Free add-on)</li>
-          <li>Carrom League (Free add-on)</li>
+          <li>Football League (Matches held entirely on 27 Dec)</li>
+          <li>Table Tennis League</li>
+          <li>Carrom League</li>
           <li>90s Nostalgia Games (Dec 25–26, finals Dec 27)</li>
         </ul>
         <p className="text-xs text-slate-600">
@@ -219,22 +216,22 @@ const FAQ_DATA: FAQItem[] = [
     tags: ['Kaccha Pakka', 'Age Limit', 'Juniors & Veterans', '16', '56'],
   },
   {
-    id: 'table-tennis-carrom-addon',
+    id: 'table-tennis-carrom-leagues',
     category: 'leagues',
-    question: 'Are Table Tennis and Carrom separate leagues or add-on tournaments?',
+    question: 'Can I register exclusively for Table Tennis or Carrom?',
     searchableAnswer:
-      'Table Tennis and Carrom are free, complimentary add-on tournaments open to all participants (male, female, juniors, and veterans). Simply select them as add-on sports alongside any primary league (Main Cricket, Women’s Cricket, Kaccha Pakka, or Football). There is no extra registration fee for these championships.',
+      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹2,700 (returning RPL Family) or ₹3,000 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
     answer: (
       <div className="space-y-2">
         <p>
-          Table Tennis and Carrom are <strong>free, complimentary add-on tournaments</strong> open to all participants (male, female, juniors, and veterans).
+          <strong>Yes!</strong> Table Tennis and Carrom are official RPL tournament leagues open to all participants (male, female, juniors, and veterans).
         </p>
         <p className="text-xs text-slate-600">
-          To enter Table Tennis or Carrom, simply select them as add-on sports alongside any primary league (Main Cricket, Women’s Cricket, Kaccha Pakka, or Football). There is <strong>no extra registration fee</strong> for these championships.
+          You can register solely for Table Tennis or Carrom for <strong>₹2,700</strong> (returning RPL Family) or <strong>₹3,000</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
         </p>
       </div>
     ),
-    tags: ['Table Tennis', 'Carrom', 'Add-on Sports', 'Free'],
+    tags: ['Table Tennis', 'Carrom', 'Official Leagues', 'Single-Sport', '2700'],
   },
 
   // 3. Single-Sport & Football Participation
@@ -267,7 +264,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'schedule',
     question: 'What are the exact tournament dates, timings, and standard stay inclusions?',
     searchableAnswer:
-      'Tournament Starts: Friday, 25 Dec 2026 at 8:00 AM. Tournament Concludes: Sunday, 27 Dec 2026 at 10:00 PM. Includes 2-night stay (Check-in: 25 Dec, Check-out: 27 Dec) at Shrimad Rajchandra Aatma Tatva Research Centre, Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.',
+      'Tournament Starts: Friday, 25 Dec 2026 at 8:00 AM. Tournament Concludes: Sunday, 27 Dec 2026 at 10:00 PM. Includes 2-night stay (Check-in: 25 Dec, Check-out: 27 Dec) at Shrimad Rajchandra Aatma Tatva Research Centre - Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.',
     answer: (
       <div className="space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-2">
@@ -281,7 +278,7 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
         <p>
-          The standard registration includes a <strong>2-night stay (Check-in: 25 Dec, Check-out: 27 Dec)</strong> at the Shrimad Rajchandra Aatma Tatva Research Centre, Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.
+          The standard registration includes a <strong>2-night stay (Check-in: 25 Dec, Check-out: 27 Dec)</strong> at the Shrimad Rajchandra Aatma Tatva Research Centre - Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.
         </p>
       </div>
     ),
@@ -319,9 +316,6 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-500 italic">
-          *Note: You can also mention your exact arrival schedule or room preferences in the <strong>Comments &amp; Special Requests</strong> box in the form.
-        </p>
       </div>
     ),
     tags: ['Early Arrival', 'Extended Stay', 'Pre Stay', 'Post Stay', 'Waitlist', 'Research Centre', 'WhatsApp', 'Hospitality', 'Check In', 'Check Out', '24 Dec', '28 Dec'],
@@ -333,7 +327,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'spectator',
     question: 'What spectator pass options are available, and what are the charges?',
     searchableAnswer:
-      'Single-Day Day Pass (Without Stay): ₹630 / day. Pick 1, 2, or all 3 days (1 day = ₹630, 2 days = ₹1,260, 3 days = ₹1,890). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹2,700 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
+      'Single-Day Day Pass (Without Stay): ₹400 / day. Pick 1, 2, or all 3 days (1 day = ₹400, 2 days = ₹800, 3 days = ₹1,200). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹2,700 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
     answer: (
       <div className="space-y-3">
         <p>We offer two spectator tiers designed for family members, devotees, and cheerleaders:</p>
@@ -342,9 +336,9 @@ const FAQ_DATA: FAQItem[] = [
             <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
               Single-Day Day Pass (Without Stay)
             </span>
-            <span className="text-xl font-black text-slate-900">₹630 <span className="text-xs font-normal text-slate-500">/ day</span></span>
+            <span className="text-xl font-black text-slate-900">₹400 <span className="text-xs font-normal text-slate-500">/ day</span></span>
             <p className="text-xs text-slate-600 mt-1">
-              Pick 1, 2, or all 3 days (1 day: ₹630, 2 days: ₹1,260, 3 days: ₹1,890). Includes arena entry, match viewing, cheering zones, and late-night snacks.
+              Pick 1, 2, or all 3 days (1 day: ₹400, 2 days: ₹800, 3 days: ₹1,200). Includes arena entry, match viewing, cheering zones, and late-night snacks.
             </p>
             <p className="text-[11px] text-amber-900 font-semibold mt-2 bg-amber-100/90 p-2 rounded-lg border border-amber-300">
               📌 <strong>Daytime Meals:</strong> Day pass attendees must book their Breakfast, Lunch &amp; Dinner separately on the <strong>Aashray App</strong>.
@@ -365,21 +359,21 @@ const FAQ_DATA: FAQItem[] = [
         </p>
       </div>
     ),
-    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '630', '1260', '1890', '2700', 'Meals', 'Aashray App'],
+    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '400', '800', '1200', '2700', 'Meals', 'Aashray App'],
   },
   {
     id: 'spectator-single-day-overnight',
     category: 'spectator',
     question: 'Can I get a 1-day spectator pass that includes an overnight stay and full meals?',
     searchableAnswer:
-      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full ashram dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹630/day) must arrange their own stay and book their meals on the Aashray App.',
+      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹400/day) must arrange their own stay and book their meals on the Aashray App.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, that is not possible.</strong> Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis.
         </p>
         <p className="text-xs text-slate-700">
-          If you require overnight stay and full ashram dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹630/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
+          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹400/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
         </p>
       </div>
     ),
@@ -410,11 +404,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'rules',
     question: 'Where can I find the official tournament rules, pitch guidelines, and team lineups?',
     searchableAnswer:
-      'Official tournament rulebooks, turf pitch rules (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player auctions/drafts conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
+      'Official tournament rulebooks, turf pitch rules, team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player Squad Selection Showdown conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
     answer: (
       <div className="space-y-2">
         <p>
-          Official tournament rulebooks, turf pitch guidelines (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player auctions/drafts conclude.
+          Official tournament rulebooks, turf pitch guidelines, team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player Squad Selection Showdown conclude.
         </p>
         <p className="text-xs text-slate-700">
           All finalized schedules, rules, and live match scores will be accessible right here on this portal for all participants and supporters.

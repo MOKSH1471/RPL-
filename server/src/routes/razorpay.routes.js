@@ -22,6 +22,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       isExistingPlayer = false,
       previouslyPaidSportsCount = 0,
       hasPreviouslyPaid = false,
+      previouslyPaidExtraTshirt = false,
       registrationId,
       registrationPayload,
     } = req.body;
@@ -34,15 +35,20 @@ router.post('/razorpay/create-order', async (req, res) => {
     const extraTshirtChoice = isSpectator
       ? (req.body.spectatorTshirt || regPayload.spectatorTshirt || cleanGeneral.spectatorTshirt || extraTshirt || 'No')
       : (extraTshirt || regPayload.extraTshirt || cleanGeneral.extraTshirt || 'No');
-    const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
+    const extraTshirtPaidInPast = Boolean(
+      previouslyPaidExtraTshirt ||
+      regPayload.previouslyPaidExtraTshirt ||
+      cleanGeneral.previouslyPaidExtraTshirt
+    );
+    const extraTshirtCost = (extraTshirtChoice === 'Yes' && (!isExistingPlayer || !hasPreviouslyPaid || !extraTshirtPaidInPast)) ? 500 : 0;
     const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
     const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
 
     let computedFee;
 
     if (isSpectator) {
-      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹630 per day. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹400 per day. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 400);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {
@@ -131,6 +137,30 @@ router.post('/razorpay/create-order', async (req, res) => {
       } catch (e) {}
     }
 
+    // Resolve referrerCardNo if provided or from referrerMobile
+    let resolvedReferrerCardNo = cleanGeneral.referrerCardNo || null;
+    if (!resolvedReferrerCardNo && cleanGeneral.referrerMobile) {
+      try {
+        const refMob10 = cleanDomesticPhone(cleanGeneral.referrerMobile);
+        if (refMob10) {
+          const [refRows] = await db.query(
+            `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
+            [refMob10, `%${refMob10}`]
+          );
+          if (refRows.length > 0) {
+            resolvedReferrerCardNo = refRows[0].cardno;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Safety guard: A player cannot have the same card number as their referrer!
+    if (cardNoVal && resolvedReferrerCardNo && cardNoVal === resolvedReferrerCardNo) {
+      logger.warn(`[GUEST CARD NOTICE] Participant cardNo matched referrer cardNo (${cardNoVal}). Resetting cardNoVal to create dedicated guest card.`);
+      cardNoVal = null;
+      cleanGeneral.cardNo = null;
+    }
+
     if (!cardNoVal && mobile10) {
       try {
         cardNoVal = await ensureGuestCard({
@@ -140,7 +170,8 @@ router.post('/razorpay/create-order', async (req, res) => {
           gender: cleanGeneral.gender || 'Male',
           dob: cleanGeneral.dateOfBirth || null,
           centre: cleanGeneral.centre || 'Mumbai',
-          photoUrl: regPayload.player_photo_url || cleanGeneral.player_photo_url || null,
+          photoUrl: isSpectator ? null : (regPayload.player_photo_url || cleanGeneral.player_photo_url || null),
+          referrerCardNo: resolvedReferrerCardNo,
         });
       } catch (cardErr) {
         logger.warn(`[GUEST CARD AUTO-CREATE NOTICE] ${cardErr.message}`);
@@ -511,7 +542,8 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         cleanGeneralDetails.paymentMethod = 'Razorpay';
 
         const cleanSportAnswers = regBody.sport_answers || {};
-        const cleanPhotoUrl = regBody.player_photo_url || cleanGeneralDetails.player_photo_url || cleanGeneralDetails.photoUrl || null;
+        const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) || regBody.sport_id === 'spectator';
+        const cleanPhotoUrl = isSpectator ? null : (regBody.player_photo_url || cleanGeneralDetails.player_photo_url || cleanGeneralDetails.photoUrl || null);
         const cleanCheckInDate = regBody.check_in_date || cleanGeneralDetails.checkInDate || '2026-12-25';
         const cleanCheckOutDate = regBody.check_out_date || cleanGeneralDetails.checkOutDate || '2026-12-27';
 
@@ -539,6 +571,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
         }
 
         let regId = uuidv4();
+        let mergedGeneralDetails = { ...cleanGeneralDetails };
 
         if (existingRegs.length > 0) {
           regId = existingRegs[0].id;
@@ -553,7 +586,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           } catch (e) { prevSports = {}; }
 
           const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
-          const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
+          mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
           const allSelectedSports = Array.from(new Set([
             ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
             ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
@@ -578,7 +611,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
               mobile.trim(),
               cleanCheckInDate,
               cleanCheckOutDate,
-              cleanPhotoUrl || existingRegs[0].player_photo_url || null,
+              isSpectator ? null : (cleanPhotoUrl || existingRegs[0].player_photo_url || null),
               mergedUtrList.join(', '),
               JSON.stringify(mergedGeneralDetails),
               JSON.stringify(mergedSportAnswers),
@@ -609,9 +642,74 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         // Record transaction in RPL.rpl_transactions
         const sportsList = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports.join(', ') : 'Sports';
-        const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator'));
         const txnCategory = isSpectator ? 'spectator' : 'sports';
-        const cardNoVal = cleanGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+
+        const [existingTx] = await connection.query(
+          `SELECT id, cardno FROM ${RPL_DB}.rpl_transactions 
+           WHERE razorpay_order_id = ? OR (bookingid = ? AND status = 'pending')
+           ORDER BY id DESC LIMIT 1`,
+          [razorpay_order_id, regId]
+        );
+
+        // Ensure referrer card is resolved first
+        let resolvedReferrerCardNo = cleanGeneralDetails.referrerCardNo || mergedGeneralDetails?.referrerCardNo || null;
+        if (!resolvedReferrerCardNo && (cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile)) {
+          try {
+            const refMob10 = cleanDomesticPhone(cleanGeneralDetails.referrerMobile || mergedGeneralDetails?.referrerMobile);
+            if (refMob10) {
+              const [refRows] = await connection.query(
+                `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE (mobno = ? OR mobno LIKE ?) AND (issuedto IS NOT NULL AND issuedto != '') ORDER BY cardno DESC LIMIT 1`,
+                [refMob10, `%${refMob10}`]
+              );
+              if (refRows.length > 0) {
+                resolvedReferrerCardNo = refRows[0].cardno;
+              }
+            }
+          } catch (e) {}
+        }
+
+        let cardNoVal = cleanGeneralDetails.cardNo || mergedGeneralDetails?.cardNo || null;
+
+        // Safety guard: A participant cannot have their referrer's card number!
+        if (cardNoVal && resolvedReferrerCardNo && cardNoVal === resolvedReferrerCardNo) {
+          logger.warn(`[GUEST CARD NOTICE] In payment verification, cardNoVal matched referrer cardNo (${cardNoVal}). Resetting to generate distinct guest card.`);
+          cardNoVal = null;
+        }
+
+        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && existingTx.length > 0 && existingTx[0].cardno && !existingTx[0].cardno.startsWith('GUEST_') && existingTx[0].cardno !== resolvedReferrerCardNo) {
+          cardNoVal = existingTx[0].cardno;
+        }
+        if ((!cardNoVal || cardNoVal.startsWith('GUEST_')) && mobile10) {
+          try {
+            const [userCard] = await connection.query(
+              `SELECT cardno FROM ${AASHRAY_DB}.card_db WHERE mobno = ? OR mobno = ? ORDER BY id DESC LIMIT 1`,
+              [mobile10, Number(mobile10)]
+            );
+            if (userCard.length > 0 && userCard[0].cardno && userCard[0].cardno !== resolvedReferrerCardNo) {
+              cardNoVal = String(userCard[0].cardno);
+            } else {
+              cardNoVal = await ensureGuestCard({
+                fullName: full_name.trim(),
+                mobile: mobile10,
+                email: email.trim(),
+                gender: cleanGeneralDetails.gender || 'Male',
+                dob: cleanGeneralDetails.dateOfBirth || null,
+                centre: cleanGeneralDetails.centre || 'Mumbai',
+                photoUrl: isSpectator ? null : (cleanPhotoUrl || null),
+                referrerCardNo: resolvedReferrerCardNo,
+                connection,
+              });
+            }
+          } catch (e) {}
+        }
+        if (!cardNoVal) {
+          cardNoVal = `GUEST_${mobile10 ? mobile10.slice(-6) : 'RPL'}`;
+        }
+        cleanGeneralDetails.cardNo = cardNoVal;
+        if (mergedGeneralDetails) {
+          mergedGeneralDetails.cardNo = cardNoVal;
+        }
+
         const finalAmount = cleanGeneralDetails.incrementalFee !== undefined && cleanGeneralDetails.incrementalFee !== null
           ? cleanGeneralDetails.incrementalFee
           : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2700);
@@ -621,6 +719,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
            (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
            VALUES (?, ?, ?, ?, 0, ?, ?, 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
            ON DUPLICATE KEY UPDATE 
+             cardno = VALUES(cardno),
              category = VALUES(category),
              amount = VALUES(amount),
              upi_ref = VALUES(upi_ref),
@@ -639,8 +738,32 @@ router.post('/razorpay/verify-payment', async (req, res) => {
           ]
         );
 
-        // Process Accommodation Booking within transaction
-        if (cleanGeneralDetails.accommodationRequired === 'Yes') {
+        if (resolvedReferrerCardNo && cardNoVal && resolvedReferrerCardNo !== cardNoVal && !cardNoVal.startsWith('GUEST_')) {
+          try {
+            const [relExists] = await connection.query(
+              `SELECT id FROM ${AASHRAY_DB}.guest_relationship WHERE cardno = ? AND guest = ? LIMIT 1`,
+              [resolvedReferrerCardNo, cardNoVal]
+            );
+            if (relExists.length === 0) {
+              await connection.query(
+                `INSERT INTO ${AASHRAY_DB}.guest_relationship (cardno, guest, type, updatedBy, createdAt, updatedAt)
+                 VALUES (?, ?, 'friend', 'RPL_SYSTEM', NOW(), NOW())`,
+                [resolvedReferrerCardNo, cardNoVal]
+              );
+              logger.info(`[GUEST RELATIONSHIP] Successfully linked ${resolvedReferrerCardNo} → ${cardNoVal} (friend)`);
+            }
+          } catch (relErr) {
+            logger.warn(`[GUEST RELATIONSHIP NOTICE] Could not verify/create relationship: ${relErr.message}`);
+          }
+        }
+
+        // Process Accommodation and Meal Booking within transaction
+        const hasStay = isSpectator
+          ? (cleanGeneralDetails.accommodationRequired === 'Yes' || cleanGeneralDetails.spectatorOption === 'with-stay')
+          : (cleanGeneralDetails.accommodationRequired === 'Yes');
+        const shouldBookMeals = !isSpectator || hasStay;
+
+        if (hasStay || shouldBookMeals) {
           await processAccommodationBooking({
             cardno: cleanGeneralDetails.cardNo || null,
             fullName: full_name.trim(),
@@ -650,7 +773,11 @@ router.post('/razorpay/verify-payment', async (req, res) => {
             gender: cleanGeneralDetails.gender || 'Male',
             checkInDate: cleanCheckInDate,
             checkOutDate: cleanCheckOutDate,
-            accommodationRequired: 'Yes',
+            accommodationRequired: hasStay ? 'Yes' : 'No',
+            spectatorOption: cleanGeneralDetails.spectatorOption,
+            registrationType: isSpectator ? 'spectator' : 'player',
+            foodPreference: cleanGeneralDetails.foodPreference || 'Regular',
+            bookMeals: shouldBookMeals,
             connection,
           });
         }
@@ -827,6 +954,35 @@ router.post('/razorpay/webhook', async (req, res) => {
               [paymentId, targetRegId]
             );
             logger.info(`[RAZORPAY FAIL-SAFE APPROVED] Registration "${targetRegId}" confirmed via webhook.`);
+
+            if (targetReg?.general_details) {
+              try {
+                const gd = typeof targetReg.general_details === 'string' ? JSON.parse(targetReg.general_details) : targetReg.general_details;
+                const specOpt = gd.spectatorOption;
+                const hasStay = isSpectator ? (gd.accommodationRequired === 'Yes' || specOpt === 'with-stay') : (gd.accommodationRequired === 'Yes');
+                const shouldBookMeals = !isSpectator || hasStay;
+                if (hasStay || shouldBookMeals) {
+                  await processAccommodationBooking({
+                    cardno: gd.cardNo || null,
+                    fullName: targetReg.full_name || 'Participant',
+                    email: targetReg.email || '',
+                    mobile: targetReg.mobile || '',
+                    centre: gd.centre || 'Mumbai',
+                    gender: gd.gender || 'Male',
+                    checkInDate: targetReg.check_in_date || gd.checkInDate || '2026-12-25',
+                    checkOutDate: targetReg.check_out_date || gd.checkOutDate || '2026-12-27',
+                    accommodationRequired: hasStay ? 'Yes' : 'No',
+                    spectatorOption: specOpt,
+                    registrationType: isSpectator ? 'spectator' : 'player',
+                    foodPreference: gd.foodPreference || 'Regular',
+                    bookMeals: shouldBookMeals,
+                    connection,
+                  });
+                }
+              } catch (hookAccErr) {
+                logger.warn(`[RAZORPAY WEBHOOK] Notice processing accommodation/food in fail-safe: ${hookAccErr.message}`);
+              }
+            }
           }
 
           await connection.commit();

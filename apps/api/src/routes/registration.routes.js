@@ -48,20 +48,23 @@ router.post('/register', async (req, res) => {
       delete cleanGeneralDetails.photoPreview;
     }
 
+    const cleanSportAnswers = sport_answers ? { ...sport_answers } : {};
+
     if (req.body.referrerMobile) cleanGeneralDetails.referrerMobile = req.body.referrerMobile;
     if (req.body.referrerName) cleanGeneralDetails.referrerName = req.body.referrerName;
     if (req.body.referrerCardNo) cleanGeneralDetails.referrerCardNo = req.body.referrerCardNo;
 
-    const cleanSportAnswers = sport_answers || {};
+    const isSpectator = cleanGeneralDetails.registrationType === 'spectator' || (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) || req.body.sport_id === 'spectator';
 
-    const cleanPhotoUrl = 
+    const cleanPhotoUrl = isSpectator ? null : (
       player_photo_url || 
       sanitizedAnswers.photoDriveUrl || 
       sanitizedAnswers.player_photo_url || 
       cleanGeneralDetails.player_photo_url || 
       cleanGeneralDetails.photoDriveUrl || 
       cleanGeneralDetails.photoUrl || 
-      null;
+      null
+    );
 
     const cleanPaymentUtr = 
       payment_utr || 
@@ -207,7 +210,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 400);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete mergedGeneralDetails.nostalgiaSport;
@@ -265,7 +268,7 @@ router.post('/register', async (req, res) => {
         mergedGeneralDetails.payment_utr = finalPaymentUtr;
         finalGeneralDetails = mergedGeneralDetails;
 
-        const finalPhotoUrl = cleanPhotoUrl || prevRow.player_photo_url || null;
+        const finalPhotoUrl = isSpectator ? null : (cleanPhotoUrl || prevRow.player_photo_url || null);
         const hasNewPayment = newUtrs.length > 0 || newReceipts.length > 0;
         const hasNewSports = newlyAddedSportsCount > 0;
         const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
@@ -310,7 +313,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 630);
+        const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 400);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete cleanGeneralDetails.nostalgiaSport;
@@ -413,7 +416,12 @@ router.post('/register', async (req, res) => {
         ]
       );
 
-      // Process Room Booking within the transaction
+      // Process Room & Meal Booking within the transaction
+      const hasStay = isSpectator
+        ? (finalGeneralDetails.accommodationRequired === 'Yes' || finalGeneralDetails.spectatorOption === 'with-stay')
+        : (finalGeneralDetails.accommodationRequired === 'Yes');
+      const shouldBookMeals = !isSpectator || hasStay;
+
       accommodationResult = await processAccommodationBooking({
         cardno: finalGeneralDetails.cardNo || null,
         fullName: cleanFullName,
@@ -423,7 +431,11 @@ router.post('/register', async (req, res) => {
         gender: finalGeneralDetails.gender || 'Male',
         checkInDate: cleanCheckInDate,
         checkOutDate: cleanCheckOutDate,
-        accommodationRequired: finalGeneralDetails.accommodationRequired || 'No',
+        accommodationRequired: hasStay ? 'Yes' : 'No',
+        spectatorOption: finalGeneralDetails.spectatorOption,
+        registrationType: isSpectator ? 'spectator' : 'player',
+        foodPreference: finalGeneralDetails.foodPreference || 'Regular',
+        bookMeals: shouldBookMeals,
         connection,
       });
 
