@@ -218,8 +218,8 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   <span className="text-[10px] xl:text-[11px] font-extrabold uppercase tracking-wider text-sky-700 whitespace-nowrap">
                     SPEED, REFLEX &amp; SPIN
                   </span>
-                  <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 whitespace-nowrap shrink-0">
-                    FREE ADD-ON
+                  <span className="text-[10px] font-extrabold text-sky-800 uppercase tracking-wider bg-sky-100 px-2 py-0.5 rounded-full border border-sky-300 whitespace-nowrap shrink-0">
+                    OFFICIAL LEAGUE
                   </span>
                 </div>
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2 group-hover:text-sky-700 transition-colors">
@@ -259,8 +259,8 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                   <span className="text-[10px] xl:text-[11px] font-extrabold uppercase tracking-wider text-purple-700 whitespace-nowrap">
                     STRIKE &amp; POCKET MASTERY
                   </span>
-                  <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 whitespace-nowrap shrink-0">
-                    FREE ADD-ON
+                  <span className="text-[10px] font-extrabold text-purple-800 uppercase tracking-wider bg-purple-100 px-2 py-0.5 rounded-full border border-purple-300 whitespace-nowrap shrink-0">
+                    OFFICIAL LEAGUE
                   </span>
                 </div>
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2 group-hover:text-purple-700 transition-colors">
@@ -323,7 +323,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </h3>
 
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                  Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy evening &amp; late-night snacks, access opening ceremonies, and arrange optional stay.
+                  Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy late-night snacks, access opening ceremonies, and arrange optional stay.
                 </p>
               </div>
 

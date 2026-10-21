@@ -285,7 +285,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
 
-              {/* Check Pass / Pay Due CTA */}
+              {/* Check Pass CTA */}
               <button
                 type="button"
                 onClick={() => {
@@ -296,7 +296,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden sm:flex py-1.5 px-3 sm:px-4 sm:py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] sm:text-xs uppercase tracking-wider items-center space-x-1.5 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
               >
                 <Search className="w-3.5 h-3.5 text-amber-600" />
-                <span>Check Pass / Pay Due</span>
+                <span>Check Pass</span>
               </button>
 
               {/* Primary "Register Now" CTA with Character Flip Animation */}
@@ -417,7 +417,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full py-2 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs uppercase tracking-wider border border-amber-300 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[38px]"
                     >
                       <Search className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Check Pass / Pay Due</span>
+                      <span>Check Pass</span>
                     </button>
                   </div>
                 </div>

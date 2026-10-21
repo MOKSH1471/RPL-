@@ -76,6 +76,61 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
       ? data.selectedSports
       : [data.league || 'cricket'];
 
+  const isSpectator = (data as any).registrationType === 'spectator' || sportsList.includes('spectator');
+  const specDatesList: string[] = Array.isArray((data as any).spectatorDates) && (data as any).spectatorDates.length > 0
+    ? (data as any).spectatorDates
+    : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
+      ? (data as any).spectatorDays
+      : ((data as any).checkInDate && (data as any).checkOutDate
+          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : [(data as any).checkInDate, (data as any).checkOutDate])
+          : ['2026-12-25']);
+
+  const specDayCount = Math.max(1, specDatesList.length);
+  const hasStay = data.accommodationRequired === 'Yes' || (data as any).spectatorOption === 'with-stay';
+  const isSpectatorAll3Days = isSpectator && (hasStay || specDayCount >= 3);
+
+  const formatDatesRangeLabel = (dates: string[]) => {
+    if (!dates || dates.length === 0) return '25-27 DEC 2026';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parsed = dates.map(d => {
+      const parts = String(d).trim().split('-');
+      if (parts.length === 3) {
+        return {
+          day: parseInt(parts[2], 10),
+          month: months[parseInt(parts[1], 10) - 1],
+          year: parts[0]
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (parsed.length === 1) {
+      return `${parsed[0]!.day} ${parsed[0]!.month.toUpperCase()} ${parsed[0]!.year} (1 DAY PASS)`;
+    }
+    if (parsed.length === 2) {
+      if (parsed[0]!.month === parsed[1]!.month) {
+        return `${parsed[0]!.day} & ${parsed[1]!.day} ${parsed[1]!.month.toUpperCase()} ${parsed[1]!.year} (2 DAY PASS)`;
+      }
+      return `${parsed[0]!.day} ${parsed[0]!.month.toUpperCase()} & ${parsed[1]!.day} ${parsed[1]!.month.toUpperCase()} ${parsed[1]!.year} (2 DAY PASS)`;
+    }
+    return '25-27 DEC 2026 (3 DAY PASS)';
+  };
+
+  const formatDatesPretty = (dates: string[]) => {
+    if (!dates || dates.length === 0) return 'Dec 25-27';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const formatted = dates.map(d => {
+      const parts = String(d).trim().split('-');
+      if (parts.length === 3) {
+        return `${months[parseInt(parts[1], 10) - 1]} ${parseInt(parts[2], 10)}`;
+      }
+      return d;
+    });
+    if (formatted.length === 1) return formatted[0];
+    if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
+    return formatted.join(', ');
+  };
+
   const formatSportName = (s: string) => {
     switch (s) {
       case 'cricket':
@@ -97,6 +152,12 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
         return "Women's Multi-Sport";
       case 'kaccha-pakka':
         return 'Kaccha Pakka Cricket League';
+      case 'spectator':
+        return hasStay
+          ? 'Spectator Pass (Stay, Full Meals & 90’s Games)'
+          : (isSpectatorAll3Days
+              ? 'Spectator Pass (3 Days • Night Snacks & 90’s Games)'
+              : `Spectator Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • Night Snacks & Sessions)`);
       default:
         return s;
     }
@@ -194,7 +255,7 @@ Player: ${data.fullName || 'Participant'}
 Sports: ${sportsList.map(formatSportName).join(', ')}
 Centre: ${data.centre || 'Mumbai'}
 Stay: ${data.accommodationRequired === 'Yes' ? 'Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')}
-Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
+Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
     `.trim();
 
     navigator.clipboard.writeText(summary).then(() => {
@@ -324,7 +385,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       RAJ PREMIER LEAGUE
                     </div>
                     <div className="text-[9px] font-bold text-amber-800 tracking-wider">
-                      SEASON 9 • TOURNAMENT PASS
+                      SEASON 9 • {isSpectator ? 'SPECTATOR PASS' : 'TOURNAMENT PASS'}
                     </div>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
@@ -340,17 +401,17 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                       <span>PAYMENT SUCCESSFUL</span>
                     </div>
                     <div className="text-[8px] text-emerald-700 font-semibold tracking-wider uppercase mt-0.5">
-                      VERIFIED PASS • 25-27 DEC 2026 | RESEARCH CENTRE
+                      VERIFIED PASS • {isSpectator && !hasStay ? formatDatesRangeLabel(specDatesList) : '25-27 DEC 2026'}
                     </div>
                   </div>
                 ) : (
                   <div className="my-2 text-center bg-amber-50 border-2 border-amber-500/80 p-2 rounded-lg shadow-xs">
                     <div className="text-xs font-black tracking-widest text-amber-800 uppercase flex items-center justify-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                      <span>PAYMENT DUE</span>
+                      <span>PAYMENT PENDING</span>
                     </div>
                     <div className="text-[8px] text-amber-700 font-semibold tracking-wider uppercase mt-0.5">
-                      ATTACH PROOF AT DESK • RESEARCH CENTRE
+                      COMPLETE PAYMENT ONLINE
                     </div>
                   </div>
                 )}
@@ -360,9 +421,9 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Participant Details Rows */}
                 <div className="space-y-1 text-[9.5px]">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">PLAYER:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'SPECTATOR:' : 'PLAYER:'}</span>
                     <span className="font-extrabold text-slate-950 text-right max-w-[190px] truncate">
-                      {data.fullName || 'RPL Athlete'}
+                      {data.fullName || 'Participant'}
                     </span>
                   </div>
 
@@ -382,18 +443,31 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                   </div>
 
                   <div className="flex justify-between items-baseline">
-                    <span className="text-neutral-500 font-bold uppercase">JERSEY:</span>
+                    <span className="text-neutral-500 font-bold uppercase">{isSpectator ? 'T-SHIRT:' : 'JERSEY:'}</span>
                     <span className="font-mono font-bold text-amber-800">
-                      SIZE {data.tshirtSize || 'L'}
-                      {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
-                      {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                      {isSpectator ? (
+                        (data.spectatorTshirt === 'Yes' || data.extraTshirt === 'Yes')
+                          ? `PURCHASED (SIZE ${data.tshirtSize || 'L'})`
+                          : 'NOT ORDERED'
+                      ) : (
+                        <>
+                          SIZE {data.tshirtSize || 'L'}
+                          {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
+                          {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}
+                        </>
+                      )}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-baseline">
                     <span className="text-neutral-500 font-bold uppercase">HOSPITALITY:</span>
                     <span className="font-medium text-slate-800 text-[8.5px]">
-                      {data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')} • {data.foodPreference || 'Regular'}
+                      {isSpectator
+                        ? (hasStay
+                            ? 'Stay: Dec 25-27 • Full Meals & Night Snacks'
+                            : `Day Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'}: ${formatDatesPretty(specDatesList)}) • Night Snacks Only`)
+                        : (data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Self-Arranged')) + ` • ${data.foodPreference || 'Regular'}`
+                      }
                     </span>
                   </div>
 
@@ -406,7 +480,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                           ? `UTR: ${data.payment_utr}`
                           : (data.payment_receipt || data.paymentReceiptUrl)
                             ? 'PAYMENT SCREENSHOT ATTACHED'
-                            : 'PAYMENT DUE (NO PROOF)'}
+                            : 'PAYMENT PENDING'}
                     </span>
                   </div>
                 </div>
@@ -416,7 +490,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Registered Sports */}
                 <div className="mb-2">
                   <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    CHAMPIONSHIP ARENAS (1X INCLUDED)
+                    {isSpectator ? (isSpectatorAll3Days ? 'ARENAS & 90’S NOSTALGIA GAMES' : 'ARENAS & SESSIONS') : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
                   </div>
                   <div className="space-y-1">
                     {sportsList.map((sport, idx) => (
@@ -435,17 +509,25 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
                 {/* Status / Total breakdown */}
                 <div className="space-y-0.5 text-[9px] mb-2">
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Tournament Registration</span>
+                    <span>{isSpectator ? 'Spectator Entry' : 'Tournament Registration'}</span>
                     <span className="font-mono">{hasPaymentProof ? 'VERIFIED' : 'PENDING PROOF'}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 font-medium">
-                    <span>Player Kit & Pass</span>
+                    <span>
+                      {isSpectator
+                        ? (hasStay
+                            ? 'Full Meals, Snacks & 90’s Games'
+                            : (isSpectatorAll3Days
+                                ? 'Night Snacks & 90’s Nostalgia Games'
+                                : `Night Snacks (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'})`))
+                        : 'Player Kit & Pass'}
+                    </span>
                     <span className="font-mono">INCLUDED</span>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black text-[11px] pt-1 border-t border-neutral-400 mt-1">
                     <span>TOTAL STATUS</span>
                     <span className={`font-mono ${hasPaymentProof ? 'text-emerald-700' : 'text-amber-700'}`}>
-                      {hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT DUE'}
+                      {hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                     </span>
                   </div>
                 </div>

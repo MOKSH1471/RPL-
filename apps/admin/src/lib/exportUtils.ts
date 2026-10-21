@@ -77,15 +77,24 @@ export function exportMasterRegistrations(registrations: any[]) {
     const isArchived = Boolean(r.is_archived || gen.isArchived);
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const participantType = isSpectator ? 'SPECTATOR' : 'PLAYER';
+    const specDates = Array.isArray(gen.spectatorDates) && gen.spectatorDates.length > 0
+      ? gen.spectatorDates
+      : Array.isArray(gen.spectatorDays) && gen.spectatorDays.length > 0
+        ? gen.spectatorDays
+        : [];
+    const specDaysCount = specDates.length > 0 ? specDates.length : 1;
+    const isSpectatorAll3Days = isSpectator && (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' || specDaysCount >= 3);
     const passOption = isSpectator
-      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)')
+      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 400})`)
       : 'Player League Entry';
     const spectatorTshirt = isSpectator
       ? (gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `YES (+₹500, Size ${gen.tshirtSize || 'L'})` : 'NO')
       : 'N/A (Included with Player)';
-    const nostalgiaGames = Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
-      ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
-      : (gen.nostalgiaSport || gen.nostalgia_sport || '-');
+    const nostalgiaGames = isSpectator && !isSpectatorAll3Days
+      ? 'Not Eligible (Requires 3-Day Pass)'
+      : (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
+          ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+          : (gen.nostalgiaSport || gen.nostalgia_sport || '-'));
 
     return [
       escapeCSV(r.id),
@@ -198,8 +207,23 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const gen = r.general_details || {};
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
     const sportDetails = r.sport_answers?.[sportKey] || {};
+    const specDates = Array.isArray(gen.spectatorDates) && gen.spectatorDates.length > 0
+      ? gen.spectatorDates
+      : Array.isArray(gen.spectatorDays) && gen.spectatorDays.length > 0
+        ? gen.spectatorDays
+        : [];
+    const specDaysCount = specDates.length > 0 ? specDates.length : 1;
+    const isSpectatorAll3Days = isSpectator && (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' || specDaysCount >= 3);
+    const passPkg = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
+      ? 'With Stay (₹2,700)'
+      : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 400})`;
+    const specNostalgia = !isSpectatorAll3Days
+      ? 'Not Eligible'
+      : (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
+          ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ')
+          : (gen.nostalgiaSport || gen.nostalgia_sport || 'Open'));
     const formattedDetails = isSpectator
-      ? `Package: ${gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : 'Day Pass (₹630)'} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ') : 'Open'}`
+      ? `Package: ${passPkg} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90's Nostalgia Games: ${specNostalgia}`
       : Object.entries(sportDetails)
         .map(([k, v]) => `${k}: ${v}`)
         .join(' | ');

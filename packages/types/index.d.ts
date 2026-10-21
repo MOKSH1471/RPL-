@@ -25,7 +25,8 @@ export interface RegistrationFormData {
     mobileNumber: string;
     email: string;
     centre: string;
-    tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | string;
+    cardNo?: string;
+    tshirtSize: 'XS' | 'S' | 'M' | 'L' | 'XL' | '2XL' | '3XL' | '4XL' | '5XL' | 'XXL' | 'XXXL' | string;
     extraTshirt?: 'Yes' | 'No' | string;
     dateOfBirth: string;
     gender: 'Male' | 'Female' | 'Other' | string;
@@ -100,7 +101,7 @@ export interface GalleryItem {
     category: 'cricket' | 'football' | 'womens' | 'ceremony' | string;
     image: string;
     thumbnail?: string;
-    caption: string;
+    caption?: string;
     teamName?: string;
     captain?: string;
     viceCaptain?: string;

@@ -48,6 +48,14 @@ export async function lookupPlayer(input) {
 
     const previouslyPaidSportsCount = Math.max(1, savedSports.length);
     const hasPreviouslyPaid = (reg.payment_status || '').toLowerCase() === 'approved' || receiptList.length > 0 || utrList.length > 0;
+    const previouslyPaidExtraTshirt = Boolean(
+      hasPreviouslyPaid && (
+        parsedGeneralDetails.extraTshirt === 'Yes' ||
+        parsedGeneralDetails.extra_tshirt === 'Yes' ||
+        parsedGeneralDetails.spectatorTshirt === 'Yes' ||
+        parsedGeneralDetails.spectator_tshirt === 'Yes'
+      )
+    );
 
     return {
       found: true,
@@ -66,6 +74,7 @@ export async function lookupPlayer(input) {
         paymentUtrs: utrList,
         hasPreviouslyPaid,
         previouslyPaidSportsCount,
+        previouslyPaidExtraTshirt,
         selectedSports: savedSports,
         generalDetails: parsedGeneralDetails,
         general_details: parsedGeneralDetails,
@@ -84,6 +93,7 @@ export async function lookupPlayer(input) {
         centre: parsedGeneralDetails.centre || '',
         photoUrl: reg.player_photo_url || '',
         isMumukshu: !!parsedGeneralDetails.cardNo,
+        previouslyPaidExtraTshirt,
       },
     };
   }
