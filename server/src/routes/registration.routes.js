@@ -48,6 +48,8 @@ router.post('/register', async (req, res) => {
       delete cleanGeneralDetails.photoPreview;
     }
 
+    const cleanSportAnswers = sport_answers ? { ...sport_answers } : {};
+
     if (req.body.referrerMobile) cleanGeneralDetails.referrerMobile = req.body.referrerMobile;
     if (req.body.referrerName) cleanGeneralDetails.referrerName = req.body.referrerName;
     if (req.body.referrerCardNo) cleanGeneralDetails.referrerCardNo = req.body.referrerCardNo;
