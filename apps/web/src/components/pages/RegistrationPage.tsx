@@ -194,7 +194,7 @@ const AVAILABLE_SPORTS: SportOption[] = [
   },
   {
     id: 'table-tennis',
-    name: 'Table Tennis Championship',
+    name: 'Table Tennis League',
     category: 'Fast-Paced Speed & Spin Arena',
     emoji: '🏓',
     colorBg: 'bg-indigo-50',
@@ -279,8 +279,9 @@ const isSportAllowedForPlayer = (
   age?: number | null,
   isVerifiedMale?: boolean
 ) => {
-  // Football League is exclusively for male participants (HariBhai)
-  if (sportId === 'football') {
+  // Main Cricket League and Football League are exclusively for male participants (HariBhai)
+  // (Women participate in Main Cricket League on a selection basis from Women's Cricket League)
+  if (sportId === 'cricket' || sportId === 'football') {
     if (gender === 'Female') {
       return false;
     }
@@ -289,9 +290,9 @@ const isSportAllowedForPlayer = (
   if (sportId === 'table-tennis' || sportId === 'carrom') {
     return true;
   }
-  // Women's Cricket League is open to everyone unless the member is verified as Male in Ashram DB
+  // Women's Cricket League is exclusively for female participants (MeeraBen)
   if (sportId === 'womens-sports' || (sportId as string) === 'womens') {
-    if (isVerifiedMale) {
+    if (gender === 'Male' || isVerifiedMale) {
       return false;
     }
     return true;
@@ -1326,8 +1327,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   const toggleSportSelection = (sportId: SportType) => {
     if (!isSportAllowedForPlayer(sportId, currentGender, playerAge, isVerifiedMale)) {
-      if (sportId === 'womens-sports' && isVerifiedMale) {
+      if (sportId === 'womens-sports' && (currentGender === 'Male' || isVerifiedMale)) {
         setSportRuleNotice("Women's Cricket League is exclusively for female participants (MeeraBen).");
+      }
+      if (sportId === 'cricket' && currentGender === 'Female') {
+        setSportRuleNotice("Participation in Main Cricket League is on a selection basis by the RPL core team. Please register for Women's Cricket League.");
       }
       if (sportId === 'football' && currentGender === 'Female') {
         setSportRuleNotice("Football League is exclusively for male participants (HariBhai). Female participants can register for Women's Cricket League, Table Tennis, or Carrom.");
@@ -2805,6 +2809,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           const remaining = selectedSports.filter((s) => s !== 'womens-sports');
                           const hasPrimary = remaining.some((s) => PRIMARY_SPORTS.includes(s));
                           const nextSports: SportType[] = hasPrimary ? remaining : ['cricket', ...remaining];
+                          setSelectedSports(nextSports);
+                          setValue('selectedSports', nextSports, { shouldValidate: true });
+                        } else if (genderOption === 'Female' && (selectedSports.includes('football') || selectedSports.includes('cricket'))) {
+                          const remaining = selectedSports.filter((s) => s !== 'football' && s !== 'cricket');
+                          const hasPrimary = remaining.some((s) => PRIMARY_SPORTS.includes(s));
+                          const nextSports: SportType[] = hasPrimary ? remaining : ['womens-sports', ...remaining];
                           setSelectedSports(nextSports);
                           setValue('selectedSports', nextSports, { shouldValidate: true });
                         }
@@ -4584,215 +4594,215 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 transition={{ duration: 0.45, delay: 0.05, ease: 'easeOut' }}
                 className="bg-emerald-50/90 rounded-3xl p-4 sm:p-6 md:p-8 border-2 border-emerald-300 shadow-md space-y-6 mb-12 sm:mb-16"
               >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
-                <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
-                    {isSpectator ? 3 : 4}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                        {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
-                      </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
-                        ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
-                        : 'bg-amber-100 text-amber-900 border border-amber-300'
-                        }`}>
-                        {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
-                      </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-emerald-200 pb-4">
+                  <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 w-full sm:w-auto flex-1">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400 text-white flex items-center justify-center font-extrabold text-sm sm:text-base shadow-md shadow-emerald-600/20 shrink-0 aspect-square mt-0.5">
+                      {isSpectator ? 3 : 4}
                     </div>
-                    <p className="text-emerald-800 text-xs font-medium leading-relaxed">
-                      Official Razorpay Gateway: Instant auto-verification with UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards & NetBanking.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Registration Fee Calculation & Summary Card */}
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
-                  <div className="flex items-center space-x-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                      ₹
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
+                          {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
+                          ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                          {existingPaymentStatus === 'approved' && totalPayableFee === 0 ? '✅ Verified & Completed' : '⚡ Razorpay Instant Checkout'}
+                        </span>
+                      </div>
+                      <p className="text-emerald-800 text-xs font-medium leading-relaxed">
+                        Official Razorpay Gateway: Instant auto-verification with UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards & NetBanking.
+                      </p>
                     </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                        {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
-                      </span>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                        {isSpectator ? (
-                          currentAcc === 'Yes'
-                            ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
-                            : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹540 = ₹${(spectatorDates.length * 540).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
-                        ) : isReturningPaidUser ? (
-                          currentExtraTshirt === 'Yes'
-                            ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
-                            : `All Sports Included in Tournament Pass (Verified)`
-                        ) : (
-                          `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
-                        )}
-                      </h4>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
-                    <span className="text-xs font-semibold text-slate-600">
-                      {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
-                    </span>
-                    <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
-                      ₹{totalPayableFee.toLocaleString('en-IN')}
-                    </span>
                   </div>
                 </div>
 
-                {/* Non-Spectator Player Inclusions Breakdown Callout */}
-                {!isSpectator && (
-                  <>
-                    {/* Returning User Notification Callout */}
-                    {isReturningPaidUser && (
-                      <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
-                        <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
-                        <div>
-                          <span>
-                            <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                {/* Dynamic Registration Fee Calculation & Summary Card */}
+                <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-2xl border-2 border-amber-300 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                        ₹
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                          {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
+                        </span>
+                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
+                          {isSpectator ? (
+                            currentAcc === 'Yes'
+                              ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
+                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹540 = ₹${(spectatorDates.length * 540).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
+                          ) : isReturningPaidUser ? (
+                            currentExtraTshirt === 'Yes'
+                              ? `Tournament Pass Verified + Extra T-Shirt (₹500)`
+                              : `All Sports Included in Tournament Pass (Verified)`
+                          ) : (
+                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                          )}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
+                      <span className="text-xs font-semibold text-slate-600">
+                        {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
+                      </span>
+                      <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
+                        ₹{totalPayableFee.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Non-Spectator Player Inclusions Breakdown Callout */}
+                  {!isSpectator && (
+                    <>
+                      {/* Returning User Notification Callout */}
+                      {isReturningPaidUser && (
+                        <div className="p-3.5 rounded-xl border text-xs leading-relaxed flex items-start space-x-2.5 bg-emerald-100/70 border-emerald-300 text-emerald-950">
+                          <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
+                          <div>
+                            <span>
+                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹2,700). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Extra T-Shirt Line Item if selected */}
+                      {currentExtraTshirt === 'Yes' && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                          <span className="flex items-center space-x-2">
+                            <Shirt className="w-4 h-4 text-amber-700" />
+                            <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
                           </span>
+                          <span className="text-amber-900 font-extrabold">+₹500</span>
+                        </div>
+                      )}
+
+                      {/* Sport Breakdown List */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                          Selected Sports ({selectedSports.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSports.map((sportId) => {
+                            const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
+
+                            return (
+                              <div
+                                key={sportId}
+                                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
+                              >
+                                <span>{sportObj?.emoji || '🏅'}</span>
+                                <span>{sportObj?.name || sportId}</span>
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                  Included in Pass
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+                    </>
+                  )}
 
-                    {/* Extra T-Shirt Line Item if selected */}
-                    {currentExtraTshirt === 'Yes' && (
-                      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
-                        <span className="flex items-center space-x-2">
-                          <Shirt className="w-4 h-4 text-amber-700" />
-                          <span>Extra Tournament T-Shirt ({currentTshirtSize})</span>
+                  {/* Razorpay Online Payment Checkout Banner */}
+                  {totalPayableFee > 0 && (
+                    <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
+                          <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>Instant Online Payment via Razorpay</span>
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          ⚡ Instant Auto-Approval
                         </span>
-                        <span className="text-amber-900 font-extrabold">+₹500</span>
                       </div>
-                    )}
-
-                    {/* Sport Breakdown List */}
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
-                        Selected Sports ({selectedSports.length}):
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSports.map((sportId) => {
-                          const sportObj = AVAILABLE_SPORTS.find((s) => s.id === sportId);
-
-                          return (
-                            <div
-                              key={sportId}
-                              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
-                            >
-                              <span>{sportObj?.emoji || '🏅'}</span>
-                              <span>{sportObj?.name || sportId}</span>
-                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
-                                Included in Pass
-                              </span>
-                            </div>
-                          );
-                        })}
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        When you click <strong className="text-slate-950 font-black">Pay ₹{totalPayableFee} & Complete Registration</strong> below, the official Razorpay payment window will open. You can pay securely via <strong>Google Pay, PhonePe, Paytm, BHIM, UPI Apps, Debit/Credit Card, or NetBanking</strong>. Your payment is verified automatically in real-time, and your official Digital Pass will be issued instantly.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-slate-600">
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Google Pay</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ PhonePe</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Paytm / BHIM</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ All UPI Apps</span>
+                        <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Cards & NetBanking</span>
                       </div>
                     </div>
-                  </>
+                  )}
+
+                  {/* Tournament Cancellation & Refund Policy Notice */}
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
+                    <div>
+                      <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
+                        Tournament Policy: No refund in case of no show or cancellation.
+                      </span>
+
+                    </div>
+                  </div>
+                </div>
+
+                {totalPayableFee === 0 && (
+                  <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                    <div className="text-xs font-semibold leading-relaxed">
+                      <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment is required. Click <strong>Update Registration & Save</strong> below to save any changes.
+                    </div>
+                  </div>
                 )}
 
-                {/* Razorpay Online Payment Checkout Banner */}
-                {totalPayableFee > 0 && (
-                  <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
-                        <Zap className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Instant Online Payment via Razorpay</span>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        ⚡ Instant Auto-Approval
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      When you click <strong className="text-slate-950 font-black">Pay ₹{totalPayableFee} & Complete Registration</strong> below, the official Razorpay payment window will open. You can pay securely via <strong>Google Pay, PhonePe, Paytm, BHIM, UPI Apps, Debit/Credit Card, or NetBanking</strong>. Your payment is verified automatically in real-time, and your official Digital Pass will be issued instantly.
+                {/* Submission Controls & Assurance */}
+                <div className="pt-4 border-t border-emerald-200/80 space-y-4">
+                  <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
+                    <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                      Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-slate-600">
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Google Pay</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ PhonePe</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Paytm / BHIM</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ All UPI Apps</span>
-                      <span className="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs">✓ Cards & NetBanking</span>
+                  </div>
+
+                  {/* Primary Pay Now button */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
+                      className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
+                    >
+                      {isRazorpayLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Opening Razorpay Gateway...</span>
+                        </div>
+                      ) : isUploadingReceipt ? (
+                        <span>Uploading Payment Receipt to Drive...</span>
+                      ) : isSubmitting ? (
+                        <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
+                      ) : totalPayableFee > 0 ? (
+                        <>
+                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
+                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
+                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
+                  {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
+                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
+                      <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                      <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Tournament Cancellation & Refund Policy Notice */}
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border-2 border-amber-300/90 text-xs flex items-start space-x-2.5 text-amber-950">
-                  <AlertCircle className="w-4 h-4 mt-0.5 text-amber-700 shrink-0" />
-                  <div>
-                    <span className="font-extrabold uppercase tracking-wider block text-[11px] text-amber-900 mb-0.5">
-                      Tournament Policy: No refund in case of no show or cancellation.
-                    </span>
-
-                  </div>
+                  )}
                 </div>
-              </div>
-
-              {totalPayableFee === 0 && (
-                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-300 flex items-center space-x-3 text-emerald-950">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
-                  <div className="text-xs font-semibold leading-relaxed">
-                    <strong>Payment Already Verified:</strong> You have previously paid for all {selectedSports.length} selected sports. No additional payment is required. Click <strong>Update Registration & Save</strong> below to save any changes.
-                  </div>
-                </div>
-              )}
-
-              {/* Submission Controls & Assurance */}
-              <div className="pt-4 border-t border-emerald-200/80 space-y-4">
-                <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
-                  <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
-                  <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                    Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
-                  </p>
-                </div>
-
-                {/* Primary Pay Now button */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                    className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
-                  >
-                    {isRazorpayLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Opening Razorpay Gateway...</span>
-                      </div>
-                    ) : isUploadingReceipt ? (
-                      <span>Uploading Payment Receipt to Drive...</span>
-                    ) : isSubmitting ? (
-                      <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
-                    ) : totalPayableFee > 0 ? (
-                      <>
-                        <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
-                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                      </>
-                    ) : (
-                      <>
-                        <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
-                        <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
-                {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
-                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-300 text-amber-900 text-xs flex items-center justify-center space-x-2 animate-in fade-in duration-300">
-                    <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
-                    <span className="font-medium">Connecting to secure cloud server... (waking up, please hold on ~15s)</span>
-                  </div>
-                )}
-              </div>
-            </InView>
-          </div>
+              </InView>
+            </div>
 
             {/* Physical spacer to guarantee clear separation between Section 3 and the footer on mobile */}
             <div className="h-16 sm:h-24 w-full block clear-both pointer-events-none" aria-hidden="true" />
@@ -4980,6 +4990,6 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           document.body
         )}
 
-          </div>
+    </div>
   );
 };

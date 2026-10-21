@@ -323,7 +323,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </h3>
 
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                  Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy evening &amp; late-night snacks, access opening ceremonies, and arrange optional stay.
+                  Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy late-night snacks, access opening ceremonies, and arrange optional stay.
                 </p>
               </div>
 

@@ -69,7 +69,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'Does registering in a league guarantee my participation, and how do I check my status?',
     searchableAnswer:
-      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and download your Digital Pass online anytime using the "Check Pass" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.',
+      'No registration does not automatically guarantee final entry. All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities. You can check your registration status, pass details, and download your Digital Pass online anytime using the "Check Pass" button on this website. Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp with their team assignment and jersey allocation.',
     answer: (
       <div className="space-y-3">
         <p>
@@ -82,7 +82,7 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
         <p className="text-xs text-slate-600">
-          Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp and SMS with their team assignment and jersey allocation.
+          Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp with their team assignment and jersey allocation.
         </p>
       </div>
     ),
@@ -170,7 +170,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a male player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football Championship League (held 27 Dec), Table Tennis Championship, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
+      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football League (held 27 Dec), Table Tennis League, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
     answer: (
       <div className="space-y-2">
         <p>
@@ -178,8 +178,8 @@ const FAQ_DATA: FAQItem[] = [
         </p>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
           <li>RPL Main Cricket League</li>
-          <li>Football Championship League (Matches held entirely on 27 Dec)</li>
-          <li>Table Tennis Championship</li>
+          <li>Football League (Matches held entirely on 27 Dec)</li>
+          <li>Table Tennis League</li>
           <li>Carrom League</li>
           <li>90s Nostalgia Games (Dec 25–26, finals Dec 27)</li>
         </ul>
@@ -264,7 +264,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'schedule',
     question: 'What are the exact tournament dates, timings, and standard stay inclusions?',
     searchableAnswer:
-      'Tournament Starts: Friday, 25 Dec 2026 at 8:00 AM. Tournament Concludes: Sunday, 27 Dec 2026 at 10:00 PM. Includes 2-night stay (Check-in: 25 Dec, Check-out: 27 Dec) at Shrimad Rajchandra Aatma Tatva Research Centre, Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.',
+      'Tournament Starts: Friday, 25 Dec 2026 at 8:00 AM. Tournament Concludes: Sunday, 27 Dec 2026 at 10:00 PM. Includes 2-night stay (Check-in: 25 Dec, Check-out: 27 Dec) at Shrimad Rajchandra Aatma Tatva Research Centre - Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.',
     answer: (
       <div className="space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-2">
@@ -278,7 +278,7 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
         <p>
-          The standard registration includes a <strong>2-night stay (Check-in: 25 Dec, Check-out: 27 Dec)</strong> at the Shrimad Rajchandra Aatma Tatva Research Centre, Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.
+          The standard registration includes a <strong>2-night stay (Check-in: 25 Dec, Check-out: 27 Dec)</strong> at the Shrimad Rajchandra Aatma Tatva Research Centre - Parli, all sattvic vegetarian meals, late-night snacks, and unlimited access to all matches and ceremonies.
         </p>
       </div>
     ),
@@ -316,9 +316,6 @@ const FAQ_DATA: FAQItem[] = [
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-500 italic">
-          *Note: You can also mention your exact arrival schedule or room preferences in the <strong>Comments &amp; Special Requests</strong> box in the form.
-        </p>
       </div>
     ),
     tags: ['Early Arrival', 'Extended Stay', 'Pre Stay', 'Post Stay', 'Waitlist', 'Research Centre', 'WhatsApp', 'Hospitality', 'Check In', 'Check Out', '24 Dec', '28 Dec'],
@@ -407,11 +404,11 @@ const FAQ_DATA: FAQItem[] = [
     category: 'rules',
     question: 'Where can I find the official tournament rules, pitch guidelines, and team lineups?',
     searchableAnswer:
-      'Official tournament rulebooks, turf pitch rules (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player Squad Selection Showdown conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
+      'Official tournament rulebooks, turf pitch rules, team rosters, and group-stage schedules will be published directly on this website itself once registration closes and player Squad Selection Showdown conclude. All finalized schedules, rules, and live scores will be accessible on this portal.',
     answer: (
       <div className="space-y-2">
         <p>
-          Official tournament rulebooks, turf pitch guidelines (e.g., spin bowling only for bowlers), team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player Squad Selection Showdown conclude.
+          Official tournament rulebooks, turf pitch guidelines, team rosters, and group-stage schedules will be <strong>added and published directly on this website itself</strong> once registration closes and player Squad Selection Showdown conclude.
         </p>
         <p className="text-xs text-slate-700">
           All finalized schedules, rules, and live match scores will be accessible right here on this portal for all participants and supporters.

@@ -66,7 +66,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
               </h3>
 
               <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed mb-8">
-                Teams and squad compositions will be drafted post registration. Once the team captains finish the player bidding and squad allotments, all group-stage and knockout fixtures will go live here in real-time.
+                Teams and squad compositions will be drafted post registration. Once the team captains finish the player bidding and squad allotments, all group-stage and knockout fixtures will go live here.
               </p>
 
               {/* Step Roadmap Indicators */}
@@ -95,7 +95,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
                     <span>Phase 3 • Next</span>
                   </div>
                   <h4 className="font-extrabold text-sm text-slate-800">Fixtures Go Live</h4>
-                  <p className="text-[11px] text-slate-500 mt-1">Complete dates, timings &amp; pitch grounds announced.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Complete dates &amp; timings announced.</p>
                 </div>
               </div>
             </div>

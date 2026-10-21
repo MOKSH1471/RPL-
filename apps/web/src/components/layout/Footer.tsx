@@ -31,7 +31,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 Official Media
               </span>
               <FlipLink
-                href="https://www.instagram.com/researchcentre_global/"
+                href="https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTAzMTUwNTIzMDU4ODUx?story_media_id=3882939722385675094_8604235348&rpxt=dGt5Y2RzNDgxOWp3"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-900 hover:text-pink-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
@@ -51,19 +51,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               </FlipLink>
             </div>
 
-            <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Player Community
-              </span>
-              <FlipLink
-                href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-900 hover:text-emerald-600 transition-colors text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-extrabold tracking-tight"
-              >
-                WhatsApp
-              </FlipLink>
-            </div>
+
           </div>
 
 

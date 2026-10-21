@@ -127,7 +127,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           </button>
         </div>
 
-        {/* 4. Table Tennis Championship Draw Sheet */}
+        {/* 4. Table Tennis League Draw Sheet */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-2xl bg-sky-100 text-sky-800 flex items-center justify-center">

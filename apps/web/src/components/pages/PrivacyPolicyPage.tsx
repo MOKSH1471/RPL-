@@ -49,7 +49,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
             Your Privacy &amp; Data Security
           </h1>
           <p className="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
-            This policy outlines how the Raj Premier League (RPL) at Shrimad Rajchandra Aatma Tatva Research Centre collects, utilizes, and protects your personal and payment details.
+            This policy outlines how the Raj Premier League (RPL) collects, utilizes, and protects your personal and payment details.
           </p>
           <p className="text-slate-500 text-xs mt-4">Last updated: October 2026</p>
         </div>
@@ -72,7 +72,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
               <li><strong>Personal Identification Data:</strong> Full Name, Date of Birth, Gender, Home Centre/City, and Player Photograph (shared with third-party auction platform <a href="https://auctionarena.in/" target="_blank" rel="noopener noreferrer" className="text-amber-600 underline font-medium hover:text-amber-700">https://auctionarena.in/</a> for player profile creation and Squad Selection bidding).</li>
               <li><strong>Contact Information:</strong> Active Mobile Number and Email Address (utilized strictly for communication purposes, including tournament updates, match announcements, schedule changes, and emergency notifications).</li>
               <li><strong>Athletic &amp; Kit Preferences:</strong> Selected sports (Cricket and Football), preferred jersey sizes (XS–XXXL), custom jersey names, preferred numbers, and cricket playing styles.</li>
-              <li><strong>Hospitality &amp; Research Centre Stay:</strong> Check-in and check-out dates, food preference (Spicy / Non-Spicy), and accommodation records.</li>
+              <li><strong>Hospitality &amp; Stay:</strong> Check-in and check-out dates, food preference (Spicy / Non-Spicy), and accommodation records.</li>
               <li><strong>Payment Metadata:</strong> Transaction reference IDs, Razorpay Order IDs, Payment IDs, and UTR numbers. <em>Note:</em> We do not store or have access to your credit/debit card numbers, CVVs, or Net Banking PINs. All payment transactions are encrypted and processed through Razorpay.</li>
               <li><strong>System &amp; Security Logs:</strong> IP address, device type, browser information, and server correlation identifiers (<code>X-Request-Id</code>) to monitor system health and prevent fraudulent activities.</li>
             </ul>
@@ -80,11 +80,11 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBackToHo
 
           {/* 2. How We Use Information */}
           <Section icon={<Eye className="w-4 h-4" />} title="2. Purpose of Data Processing">
-            <p>Your information is used strictly for legitimate tournament administration and Research Centre hospitality purposes:</p>
+            <p>Your information is used strictly for legitimate tournament administration and hospitality purposes:</p>
             <ul className="list-disc pl-5 space-y-1.5 mt-2">
               <li>Processing your tournament enrollment and generating official team rosters.</li>
               <li>Issuing your digital player pass, verification QR codes, and payment receipts.</li>
-              <li>Synchronizing participant guest identities and Research Centre stay records with the central <strong>Aashray</strong> system at Shrimad Rajchandra Aatma Tatva Research Centre for gate security and room allocations.</li>
+              <li>Synchronizing participant guest identities and stay records with the central <strong>Aashray</strong> system at Shrimad Rajchandra Aatma Tatva Research Centre for gate security and room allocations.</li>
               <li>Delivering critical tournament notifications, match schedules, and room waitlist updates via WhatsApp and Email.</li>
               <li>Reconciling financial transactions and maintaining audited bookkeeping records.</li>
             </ul>
