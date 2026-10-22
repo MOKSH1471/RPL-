@@ -41,24 +41,22 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
     <div
       onClick={() => onSelect(idx)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '320px' }}
-      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${
-        item.category === 'winners' 
-          ? 'border-amber-300 ring-1 ring-amber-400/30' 
-          : isSponsor
-            ? 'border-amber-300/80 ring-1 ring-amber-400/25 shadow-amber-500/5'
-            : 'border-slate-200/90'
-      }`}
+      className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border shadow-xs hover:shadow-lg transition-[transform,box-shadow] duration-200 hover:-translate-y-1 active:scale-[0.98] group cursor-pointer flex flex-col h-full transform-gpu ${item.category === 'winners'
+        ? 'border-amber-300 ring-1 ring-amber-400/30'
+        : isSponsor
+          ? 'border-amber-300/80 ring-1 ring-amber-400/25 shadow-amber-500/5'
+          : 'border-slate-200/90'
+        }`}
     >
       {/* Image Container with Consistent 4:3 Aspect Ratio */}
-      <div className={`relative aspect-[4/3] overflow-hidden ${
-        isSponsor
-          ? (isPortrait
-              ? 'bg-slate-200'
-              : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
-                ? 'p-0 bg-transparent'
-                : 'bg-white flex items-center justify-center p-3 sm:p-4')
-          : 'bg-slate-200'
-      }`}>
+      <div className={`relative aspect-[4/3] overflow-hidden ${isSponsor
+        ? (isPortrait
+          ? 'bg-slate-200'
+          : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+            ? 'p-0 bg-transparent'
+            : 'bg-white flex items-center justify-center p-3 sm:p-4')
+        : 'bg-slate-200'
+        }`}>
         {!loaded && (
           <div className="absolute inset-0 bg-slate-200 animate-pulse" />
         )}
@@ -75,17 +73,15 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}
-            className={`w-full h-full ${
-              isSponsor
-                ? (isPortrait 
-                    ? (item.id === 'sp-patron-2' ? 'object-cover object-center' : 'object-cover object-top')
-                    : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
-                      ? 'object-cover w-full h-full'
-                      : 'object-contain max-h-full max-w-full')
-                : 'object-cover'
-            } group-hover:scale-105 transition-transform duration-300 transform-gpu ${
-              loaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`w-full h-full ${isSponsor
+              ? (isPortrait
+                ? (item.id === 'sp-patron-2' ? 'object-cover object-center' : 'object-cover object-top')
+                : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+                  ? 'object-cover w-full h-full'
+                  : 'object-contain max-h-full max-w-full')
+              : 'object-cover'
+              } group-hover:scale-105 transition-transform duration-300 transform-gpu ${loaded ? 'opacity-100' : 'opacity-0'
+              }`}
           />
         </picture>
         {!isSponsor && (
@@ -177,11 +173,73 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
 };
 
 export const GallerySection: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'winners' | 'cricket' | 'football' | 'womens' | 'ceremony' | 'sponsors' | 'all'>('winners');
+  const [activeFilter, setActiveFilter] = useState<'sponsors' | 'winners' | 'cricket' | 'football' | 'womens' | 'ceremony' | 'all'>('sponsors');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   const galleryItems: GalleryItem[] = [
+    // ── Hall of Sponsors ──
+    {
+      id: 'sp-doshi',
+      title: 'Doshi Decor',
+      category: 'sponsors',
+      image: '/sponsors/doshi-decor-v2.jpg',
+    },
+    {
+      id: 'sp-enrich',
+      title: 'Enrich',
+      category: 'sponsors',
+      image: '/sponsors/enrich.jpg',
+    },
+    {
+      id: 'sp-patron-1',
+      title: 'Bakul Bhai Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-1.jpg',
+    },
+    {
+      id: 'sp-patron-2',
+      title: 'Elesh Bhai Davey',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-2-v2.jpg',
+    },
+    {
+      id: 'sp-patron-3',
+      title: 'Darshana Ben Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-3.jpg',
+    },
+    {
+      id: 'sp-patron-4',
+      title: 'Roopa Ben Gupta',
+      category: 'sponsors',
+      image: '/sponsors/roopa ben gupta.jpg',
+    },
+    {
+      id: 'sp-seamak',
+      title: 'SeaMak Group',
+      category: 'sponsors',
+      image: '/sponsors/seamak.png',
+    },
+    {
+      id: 'sp-sia',
+      title: 'Mastiff Grand The Sia Palace',
+      category: 'sponsors',
+      image: '/sponsors/sia-palace.jpg',
+    },
+    {
+      id: 'sp-traket',
+      title: 'TRAKET Multiventures Pvt. Ltd.',
+      category: 'sponsors',
+      image: '/sponsors/traket.jpg',
+    },
+    {
+      id: 'sp-yuvraaj',
+      title: 'Yuvraaj Hospitality',
+      category: 'sponsors',
+      image: '/sponsors/yuvraaj-hospitality-v2.jpg',
+    },
+
     // ── All Seasons Winners (Season 1 to Season 8) ──
     {
       id: 'w8',
@@ -402,62 +460,6 @@ export const GallerySection: React.FC = () => {
       category: 'ceremony',
       image: '/rpl-photos/rpl-23.jpg',
       thumbnail: '/rpl-photos/thumbs/rpl-23.jpg',
-      caption: 'Supporters waving team banners and flags from the sidelines during championship matches.',
-    },
-    // ── Esteemed Sponsors ──
-    {
-      id: 'sp-doshi',
-      title: 'Doshi Decor',
-      category: 'sponsors',
-      image: '/sponsors/doshi-decor-v2.jpg',
-    },
-    {
-      id: 'sp-enrich',
-      title: 'Enrich',
-      category: 'sponsors',
-      image: '/sponsors/enrich.jpg',
-    },
-    {
-      id: 'sp-patron-1',
-      title: 'Bakul Bhai Doshi',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-1.jpg',
-    },
-    {
-      id: 'sp-patron-2',
-      title: 'Elesh Bhai Davey',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-2-v2.jpg',
-    },
-    {
-      id: 'sp-patron-3',
-      title: 'Darshana Ben Doshi',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-3.jpg',
-    },
-    {
-      id: 'sp-seamak',
-      title: 'SeaMak Group',
-      category: 'sponsors',
-      image: '/sponsors/seamak.png',
-    },
-    {
-      id: 'sp-sia',
-      title: 'Mastiff Grand The Sia Palace',
-      category: 'sponsors',
-      image: '/sponsors/sia-palace.jpg',
-    },
-    {
-      id: 'sp-traket',
-      title: 'TRAKET Multiventures Pvt. Ltd.',
-      category: 'sponsors',
-      image: '/sponsors/traket.jpg',
-    },
-    {
-      id: 'sp-yuvraaj',
-      title: 'Yuvraaj Hospitality',
-      category: 'sponsors',
-      image: '/sponsors/yuvraaj-hospitality-v2.jpg',
     },
   ];
 
@@ -536,12 +538,12 @@ export const GallerySection: React.FC = () => {
           className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center items-center gap-2 sm:gap-2.5 mb-10 md:mb-12 overflow-x-auto mobile-hide-scrollbar px-1 pb-1"
         >
           {[
+            { id: 'sponsors', label: '🤝 Hall of Sponsors', count: galleryItems.filter((i) => i.category === 'sponsors').length },
             { id: 'winners', label: '🏆 Season Winners (S1–S8)', count: galleryItems.filter((i) => i.category === 'winners').length },
             { id: 'cricket', label: '🏏 Cricket', count: galleryItems.filter((i) => i.category === 'cricket').length },
             { id: 'football', label: '⚽ Football', count: galleryItems.filter((i) => i.category === 'football').length },
             { id: 'womens', label: "🏆 Women's League", count: galleryItems.filter((i) => i.category === 'womens').length },
             { id: 'ceremony', label: '✨ Ceremonies & Trophies', count: galleryItems.filter((i) => i.category === 'ceremony').length },
-            { id: 'sponsors', label: '🤝 Esteemed Sponsors', count: galleryItems.filter((i) => i.category === 'sponsors').length },
             { id: 'all', label: 'All Highlights', count: galleryItems.length },
           ].map((tab) => (
             <button
@@ -658,13 +660,12 @@ export const GallerySection: React.FC = () => {
                           maxHeight: 'min(60vh, 580px)',
                           maxWidth: '100%',
                         }}
-                        className={`w-auto h-auto object-contain select-none rounded-xl shadow-md border ${
-                          currentPhoto.category === 'sponsors'
-                            ? (currentPhoto.id === 'sp-doshi' || currentPhoto.id === 'sp-yuvraaj' || currentPhoto.id.includes('patron'))
-                              ? 'border-transparent p-0'
-                              : 'bg-white p-3 sm:p-4 border-slate-200/80'
-                            : 'border-slate-200/80'
-                        }`}
+                        className={`w-auto h-auto object-contain select-none rounded-xl shadow-md border ${currentPhoto.category === 'sponsors'
+                          ? (currentPhoto.id === 'sp-doshi' || currentPhoto.id === 'sp-yuvraaj' || currentPhoto.id.includes('patron'))
+                            ? 'border-transparent p-0'
+                            : 'bg-white p-3 sm:p-4 border-slate-200/80'
+                          : 'border-slate-200/80'
+                          }`}
                       />
                     </picture>
 

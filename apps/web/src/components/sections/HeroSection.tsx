@@ -15,15 +15,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSpectatorClick,
   onCheckPassClick,
 }) => {
-  const tickerItems = [
+  const sponsorTickerItems = [
     'Raj Premier League',
-    'Main Cricket League',
-    "Women's Cricket League",
-    'Kaccha Pakka Cricket League',
-    'Football League',
-    'Table Tennis League',
-    'Carrom League',
-    'Register Now',
+    'Hall of Sponsors',
+    'Doshi Decor',
+    'Yuvraj Caterers',
+    'Aartiben Satsang Group Ghatkopar',
+    'Roopaben Gupta',
+    'Darshanaben Doshi',
+    'Traket Multiventures Pvt.Ltd',
+    'Pragnaben Maniar',
   ];
 
   return (
@@ -94,9 +95,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
       </div>
 
-      {/* Kinetic Velocity Text Marquee Banner */}
+      {/* Kinetic Velocity Text Marquee Banner - Hall of Sponsors */}
       <div className="w-full max-w-full border-y border-slate-200 bg-white/80 my-4 sm:my-8 overflow-hidden shadow-xs">
-        <KineticText items={tickerItems} />
+        <KineticText items={sponsorTickerItems} speed="38s" />
       </div>
     </section>
   );
