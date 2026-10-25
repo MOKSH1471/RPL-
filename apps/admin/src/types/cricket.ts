@@ -14,6 +14,7 @@ export interface CricketPlayer {
   bowlingStyle?: string;
   avatarUrl?: string;
   registrationId?: string;
+  jerseyNumber?: number;
   isCaptain?: boolean;
   isViceCaptain?: boolean;
   mobile?: string;
