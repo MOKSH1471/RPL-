@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import {
   getAllTeams,
+  createTeam,
+  updateTeam,
+  deleteTeam,
   getAllMatches,
   getMatchById,
   createMatch,
@@ -15,6 +18,36 @@ router.get('/cricket/teams', async (req, res, next) => {
   try {
     const teams = await getAllTeams();
     res.json(teams);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST create or save a team
+router.post('/cricket/teams', async (req, res, next) => {
+  try {
+    const team = await createTeam(req.body);
+    res.status(201).json(team);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT update a team
+router.put('/cricket/teams/:id', async (req, res, next) => {
+  try {
+    const team = await updateTeam(req.params.id, req.body);
+    res.json(team);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE a team
+router.delete('/cricket/teams/:id', async (req, res, next) => {
+  try {
+    const result = await deleteTeam(req.params.id);
+    res.json(result);
   } catch (error) {
     next(error);
   }

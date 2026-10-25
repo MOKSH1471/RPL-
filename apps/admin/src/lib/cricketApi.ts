@@ -24,6 +24,39 @@ export async function fetchCricketTeamsFromDb(): Promise<CricketTeam[]> {
 }
 
 /**
+ * Save or create a cricket team directly in MySQL Database
+ */
+export async function saveCricketTeamToDb(team: CricketTeam): Promise<CricketTeam | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cricket/teams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(team),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('⚠️ [CRICKET API] Error saving team to database:', err);
+    return null;
+  }
+}
+
+/**
+ * Delete a cricket team from MySQL Database
+ */
+export async function deleteCricketTeamFromDb(teamId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cricket/teams/${teamId}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('⚠️ [CRICKET API] Error deleting team from database:', err);
+    return false;
+  }
+}
+
+/**
  * Fetch all matches directly from MySQL Database
  */
 export async function fetchCricketMatchesFromDb(): Promise<CricketMatch[]> {

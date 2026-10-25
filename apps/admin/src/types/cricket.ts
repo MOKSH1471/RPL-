@@ -9,12 +9,16 @@ export type WicketType = 'none' | 'bowled' | 'caught' | 'run_out' | 'lbw' | 'stu
 export interface CricketPlayer {
   id: string;
   name: string;
-  role: 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+  role: 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper' | string;
   battingStyle?: string;
   bowlingStyle?: string;
-  jerseyNumber?: number;
   avatarUrl?: string;
   registrationId?: string;
+  isCaptain?: boolean;
+  isViceCaptain?: boolean;
+  mobile?: string;
+  centre?: string;
+  sportId?: string;
 }
 
 export interface CricketTeam {

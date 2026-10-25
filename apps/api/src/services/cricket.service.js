@@ -11,8 +11,66 @@ export async function getAllTeams() {
     shortName: r.short_name,
     logoUrl: r.logo_url,
     colorCode: r.color_code,
-    players: typeof r.players === 'string' ? JSON.parse(r.players) : r.players,
+    players: typeof r.players === 'string' ? JSON.parse(r.players) : (r.players || []),
   }));
+}
+
+/**
+ * Create or save a new team with roster
+ */
+export async function createTeam(team) {
+  const id = team.id || `team-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const name = team.name || 'New Team';
+  const shortName = team.shortName || team.name?.substring(0, 3).toUpperCase() || 'NEW';
+  const logoUrl = team.logoUrl || null;
+  const colorCode = team.colorCode || '#F59E0B';
+  const players = JSON.stringify(team.players || []);
+
+  await pool.query(
+    `INSERT INTO rpl_cricket_teams (id, name, short_name, logo_url, color_code, players)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE 
+       name = VALUES(name),
+       short_name = VALUES(short_name),
+       logo_url = VALUES(logo_url),
+       color_code = VALUES(color_code),
+       players = VALUES(players)`,
+    [id, name, shortName, logoUrl, colorCode, players]
+  );
+
+  return { id, name, shortName, logoUrl, colorCode, players: team.players || [] };
+}
+
+/**
+ * Update an existing team
+ */
+export async function updateTeam(id, team) {
+  const name = team.name;
+  const shortName = team.shortName;
+  const logoUrl = team.logoUrl;
+  const colorCode = team.colorCode;
+  const players = JSON.stringify(team.players || []);
+
+  await pool.query(
+    `UPDATE rpl_cricket_teams 
+     SET name = COALESCE(?, name),
+         short_name = COALESCE(?, short_name),
+         logo_url = COALESCE(?, logo_url),
+         color_code = COALESCE(?, color_code),
+         players = ?
+     WHERE id = ?`,
+    [name, shortName, logoUrl, colorCode, players, id]
+  );
+
+  return { id, ...team };
+}
+
+/**
+ * Delete a team
+ */
+export async function deleteTeam(id) {
+  await pool.query(`DELETE FROM rpl_cricket_teams WHERE id = ?`, [id]);
+  return { success: true, id };
 }
 
 /**
