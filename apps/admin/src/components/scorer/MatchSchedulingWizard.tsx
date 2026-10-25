@@ -17,6 +17,13 @@ import {
   Swords,
   ChevronRight,
   Flame,
+  Edit3,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  X,
+  UserPlus,
 } from 'lucide-react';
 import { CricketMatch, CricketTeam, CricketPlayer } from '@/types/cricket';
 import { DEFAULT_TEAMS, createConfiguredMatch } from '@/lib/cricketMockData';
@@ -80,6 +87,61 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
   const [strikerId, setStrikerId] = useState<string>('');
   const [nonStrikerId, setNonStrikerId] = useState<string>('');
   const [openingBowlerId, setOpeningBowlerId] = useState<string>('');
+
+  // Step 3: Lineup Editing State
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editableSquad, setEditableSquad] = useState<CricketPlayer[]>([]);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerRole, setNewPlayerRole] = useState<'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper'>('Batter');
+
+  const openEditLineup = (teamId: string) => {
+    const targetTeam = teams.find((t) => t.id === teamId);
+    if (targetTeam) {
+      setEditableSquad([...targetTeam.players]);
+      setEditingTeamId(teamId);
+      setNewPlayerName('');
+      setNewPlayerRole('Batter');
+    }
+  };
+
+  const handleMovePlayer = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= editableSquad.length) return;
+    const updated = [...editableSquad];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
+    setEditableSquad(updated);
+  };
+
+  const handleRemoveFromLineup = (playerId: string) => {
+    setEditableSquad((prev) => prev.filter((p) => p.id !== playerId));
+  };
+
+  const handleAddPlayerToLineup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlayerName.trim()) return;
+    const newP: CricketPlayer = {
+      id: `custom-p-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: newPlayerName.trim(),
+      role: newPlayerRole,
+      battingStyle: 'Right Hand Bat',
+      bowlingStyle: newPlayerRole === 'Bowler' ? 'Right Arm Fast' : undefined,
+    };
+    setEditableSquad((prev) => [...prev, newP]);
+    setNewPlayerName('');
+  };
+
+  const handleSaveLineup = () => {
+    if (!editingTeamId) return;
+    setTeams((prev) =>
+      prev.map((t) => (t.id === editingTeamId ? { ...t, players: editableSquad } : t))
+    );
+    // If current opener was removed, reset opener IDs
+    setStrikerId('');
+    setNonStrikerId('');
+    setOpeningBowlerId('');
+    setEditingTeamId(null);
+  };
 
   // Auto-init openers if empty when reaching openers step
   const handleProceedToOpeners = () => {
@@ -621,9 +683,20 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-500">
-                      {battingTeam.players.length} Players
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-500">
+                        {battingTeam.players.length} Players
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => openEditLineup(battingTeam.id)}
+                        className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[11px] flex items-center space-x-1 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                        title="Edit Batting Lineup Order & Players"
+                      >
+                        <Edit3 className="w-3 h-3 text-amber-600" />
+                        <span>Edit Lineup</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1 text-xs">
@@ -634,7 +707,7 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                       >
                         <div className="flex items-center space-x-2">
                           <span className="w-5 font-mono font-bold text-[11px] text-slate-400">
-                            #{player.jerseyNumber || idx + 1}
+                            {idx + 1}.
                           </span>
                           <span className="font-bold text-slate-800">{player.name}</span>
                         </div>
@@ -663,9 +736,20 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-500">
-                      {bowlingTeam.players.length} Players
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-slate-500">
+                        {bowlingTeam.players.length} Players
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => openEditLineup(bowlingTeam.id)}
+                        className="px-2.5 py-1 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-900 border border-cyan-300 font-bold text-[11px] flex items-center space-x-1 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                        title="Edit Bowling Lineup Order & Players"
+                      >
+                        <Edit3 className="w-3 h-3 text-cyan-600" />
+                        <span>Edit Lineup</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1 text-xs">
@@ -676,7 +760,7 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                       >
                         <div className="flex items-center space-x-2">
                           <span className="w-5 font-mono font-bold text-[11px] text-slate-400">
-                            #{player.jerseyNumber || idx + 1}
+                            {idx + 1}.
                           </span>
                           <span className="font-bold text-slate-800">{player.name}</span>
                         </div>
@@ -688,6 +772,148 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* ── EDIT LINEUP MODAL ── */}
+              {editingTeamId && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-scaleUp">
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <Edit3 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-sm text-slate-900">
+                            Edit Playing Lineup • {teams.find((t) => t.id === editingTeamId)?.name}
+                          </h3>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            Reorder batting sequence, add or remove players for this match.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingTeamId(null)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Quick Add Player Form */}
+                    <form onSubmit={handleAddPlayerToLineup} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add new player name..."
+                        value={newPlayerName}
+                        onChange={(e) => setNewPlayerName(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                      />
+                      <select
+                        value={newPlayerRole}
+                        onChange={(e) => setNewPlayerRole(e.target.value as any)}
+                        className="px-2.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none"
+                      >
+                        <option value="Batter">Batter</option>
+                        <option value="Bowler">Bowler</option>
+                        <option value="All-rounder">All-rounder</option>
+                        <option value="Wicketkeeper">Wicketkeeper</option>
+                      </select>
+                      <button
+                        type="submit"
+                        className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add</span>
+                      </button>
+                    </form>
+
+                    {/* Reorderable Player List */}
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px]">
+                      {editableSquad.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400 text-xs">
+                          No players in this lineup. Use the form above to add players.
+                        </div>
+                      ) : (
+                        editableSquad.map((player, idx) => (
+                          <div
+                            key={player.id}
+                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2 hover:border-slate-300 transition-colors"
+                          >
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <span className="w-6 font-mono font-black text-xs text-slate-400">
+                                {idx + 1}.
+                              </span>
+                              <div className="min-w-0">
+                                <span className="font-extrabold text-xs text-slate-900 block truncate">
+                                  {player.name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  {player.role}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Reorder & Action Controls */}
+                            <div className="flex items-center space-x-1 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMovePlayer(idx, 'up')}
+                                className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                                title="Move Up (Bat earlier)"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === editableSquad.length - 1}
+                                onClick={() => handleMovePlayer(idx, 'down')}
+                                className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                                title="Move Down (Bat later)"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFromLineup(player.id)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer ml-1"
+                                title="Remove from this match"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">
+                        {editableSquad.length} Players in Lineup
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingTeamId(null)}
+                          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveLineup}
+                          className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md cursor-pointer active:scale-95 transition-all"
+                        >
+                          Save Lineup
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Navigation */}
               <div className="flex justify-between pt-3">
