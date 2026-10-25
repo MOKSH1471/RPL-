@@ -30,8 +30,10 @@ export class ConnectionMonitor {
       this.monitoringInterval.unref();
     }
 
-    // Initial check
-    this.checkConnectionPool();
+    // Initial check (skip immediate un-awaited ping in test environment)
+    if (process.env.NODE_ENV !== 'test') {
+      this.checkConnectionPool();
+    }
   }
 
   stop() {
@@ -73,6 +75,10 @@ export class ConnectionMonitor {
         logger.info(`[CONNECTION MONITOR] Pool health OK (ping: ${pingMs}ms)`, status);
       }
     } catch (err) {
+      // Ignore if pool was closed intentionally during server shutdown or test teardown
+      if (err?.message?.includes('Pool is closed')) {
+        return;
+      }
       logger.error(`[CONNECTION MONITOR ERROR] Database ping failed: ${err.message}`, {
         code: err.code,
         errno: err.errno,
