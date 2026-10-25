@@ -75,7 +75,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
             onLoad={() => setLoaded(true)}
             className={`w-full h-full ${isSponsor
               ? (isPortrait
-                ? (item.id === 'sp-patron-2' ? 'object-cover object-center' : 'object-cover object-top')
+                ? (item.id === 'sp-patron-2' || item.id === 'sp-patron-4' ? 'object-cover object-center' : 'object-cover object-top')
                 : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
                   ? 'object-cover w-full h-full'
                   : 'object-contain max-h-full max-w-full')
@@ -192,30 +192,6 @@ export const GallerySection: React.FC = () => {
       image: '/sponsors/enrich.jpg',
     },
     {
-      id: 'sp-patron-1',
-      title: 'Bakul Bhai Doshi',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-1.jpg',
-    },
-    {
-      id: 'sp-patron-2',
-      title: 'Elesh Bhai Davey',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-2-v2.jpg',
-    },
-    {
-      id: 'sp-patron-3',
-      title: 'Darshana Ben Doshi',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-3.jpg',
-    },
-    {
-      id: 'sp-patron-4',
-      title: 'Roopa Ben Gupta',
-      category: 'sponsors',
-      image: '/sponsors/roopa ben gupta.jpg',
-    },
-    {
       id: 'sp-seamak',
       title: 'SeaMak Group',
       category: 'sponsors',
@@ -238,6 +214,30 @@ export const GallerySection: React.FC = () => {
       title: 'Yuvraaj Hospitality',
       category: 'sponsors',
       image: '/sponsors/yuvraaj-hospitality-v2.jpg',
+    },
+    {
+      id: 'sp-patron-1',
+      title: 'Bakul Bhai Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-1.jpg',
+    },
+    {
+      id: 'sp-patron-2',
+      title: 'Elesh Bhai Davey',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-2-v2.jpg',
+    },
+    {
+      id: 'sp-patron-3',
+      title: 'Darshana Ben Doshi',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-3.jpg',
+    },
+    {
+      id: 'sp-patron-4',
+      title: 'Roopa Ben Gupta',
+      category: 'sponsors',
+      image: '/sponsors/roopa-ben-gupta-v2.jpg',
     },
 
     // ── All Seasons Winners (Season 1 to Season 8) ──
