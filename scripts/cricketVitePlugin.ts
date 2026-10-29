@@ -44,26 +44,34 @@ export function cricketDevSyncPlugin(rootDir: string): Plugin {
     });
   }
 
-  // Ensure store file exists
-  if (!fs.existsSync(storeFilePath)) {
-    try {
-      fs.writeFileSync(storeFilePath, '[]', 'utf-8');
-    } catch (e) {}
-  }
-
-  // Watch for changes made by the other Vite server instance
-  try {
-    fs.watch(storeFilePath, (eventType) => {
-      if (eventType === 'change') {
-        const matches = readMatches();
-        broadcast(matches);
-      }
-    });
-  } catch (e) {}
-
   return {
     name: 'cricket-dev-sync-plugin',
+    apply: 'serve', // Only run during local dev server, do not hang production builds
     configureServer(server: ViteDevServer) {
+      // Ensure store file exists
+      if (!fs.existsSync(storeFilePath)) {
+        try {
+          fs.writeFileSync(storeFilePath, '[]', 'utf-8');
+        } catch (e) {}
+      }
+
+      // Watch for changes made by the other Vite server instance
+      let watcher: fs.FSWatcher | null = null;
+      try {
+        watcher = fs.watch(storeFilePath, (eventType) => {
+          if (eventType === 'change') {
+            const matches = readMatches();
+            broadcast(matches);
+          }
+        });
+      } catch (e) {}
+
+      server.httpServer?.on('close', () => {
+        try {
+          watcher?.close();
+        } catch (e) {}
+      });
+
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const parsedUrl = new URL(req.url || '/', 'http://localhost');
         const pathname = parsedUrl.pathname;
