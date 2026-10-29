@@ -4,6 +4,23 @@ import { ChevronRight } from 'lucide-react';
 import { LeagueType } from '@/types';
 import { TeamOwnerModal } from '@/components/ui/TeamOwnerModal';
 
+export interface TitleSponsorConfig {
+  name: string;
+  logo: string;
+  badgeText?: string;
+  presenterText?: string;
+  altText?: string;
+}
+
+// ── Easily configurable Title Sponsor (modify or set to null if changed) ──
+export const TITLE_SPONSOR: TitleSponsorConfig | null = {
+  name: 'Doshi Decor',
+  logo: '/sponsors/doshi-decor-transparent.png',
+  badgeText: 'TITLE SPONSOR',
+  presenterText: 'PRESENTS',
+  altText: 'Doshi Decor - Official Title Sponsor',
+};
+
 interface HeroSectionProps {
   onSelectLeague?: (league: LeagueType) => void;
   onRegisterClick?: () => void;
@@ -23,8 +40,28 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
   ];
 
   return (
-    <section className="relative pt-20 pb-10 sm:pt-28 sm:pb-16 md:pt-40 md:pb-28 overflow-hidden min-h-[85vh] md:min-h-screen flex flex-col justify-between w-full max-w-full">
+    <section className="relative pt-16 pb-10 sm:pt-24 sm:pb-16 md:pt-32 md:pb-24 overflow-hidden min-h-[85vh] md:min-h-screen flex flex-col justify-between w-full max-w-full">
       <div className="w-full max-w-5xl lg:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10 my-auto text-center">
+        {/* Title Sponsor Presentation Header */}
+        {TITLE_SPONSOR && (
+          <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 md:mb-10">
+            {/* Title Sponsor Logo (Prominently enlarged) */}
+            <div className="h-14 sm:h-18 md:h-24 lg:h-28 flex items-center justify-center mb-1 sm:mb-2">
+              <img
+                src={TITLE_SPONSOR.logo}
+                alt={TITLE_SPONSOR.altText || TITLE_SPONSOR.name}
+                className="h-full w-auto max-w-[210px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[460px] object-contain drop-shadow-xs"
+                loading="eager"
+              />
+            </div>
+
+            {/* Presents Text with generous breathing room */}
+            <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-500 tracking-[0.28em] sm:tracking-[0.35em] uppercase mt-2 sm:mt-3 md:mt-4">
+              {TITLE_SPONSOR.presenterText || 'PRESENTS'}
+            </div>
+          </div>
+        )}
+
         {/* Main Display Headline (wraps naturally on mobile with bold size like old version, single line on desktop) */}
         <h1 className="font-display font-extrabold tracking-tight leading-[1.1] mb-3 sm:mb-6 max-w-full">
           <span className="block text-slate-900 text-3xl sm:text-5xl md:text-6xl lg:text-[3.25rem] xl:text-[4.25rem] 2xl:text-7xl break-words lg:whitespace-nowrap uppercase tracking-wider">
