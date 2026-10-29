@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CricketMatch, InningsState } from '@/types';
 import { formatOvers, calculateRunRate, calculateRequiredRunRate } from '@/lib/cricketData';
 import { BoundaryStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
-import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck, Sparkles } from 'lucide-react';
+import { WicketStrikeAnimation } from '@/components/ui/WicketStrikeAnimation';
+import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck, Sparkles, ChevronDown } from 'lucide-react';
 
 interface MatchDetailsModalProps {
   match: CricketMatch | null;
@@ -18,16 +19,27 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
   const [showBoundaryAnimation, setShowBoundaryAnimation] = useState(false);
   const [boundaryRuns, setBoundaryRuns] = useState<4 | 6>(6);
   const [boundaryAnimKey, setBoundaryAnimKey] = useState(0);
+
+  const [showWicketAnimation, setShowWicketAnimation] = useState(false);
+  const [wicketAnimKey, setWicketAnimKey] = useState(0);
+
   const lastSeenBallIdRef = useRef<string | null>(null);
   const isInitialMount = useRef(true);
 
   const triggerBoundaryAnimation = (runs: 4 | 6) => {
+    setShowWicketAnimation(false);
     setBoundaryRuns(runs);
     setBoundaryAnimKey((k) => k + 1);
     setShowBoundaryAnimation(true);
   };
 
-  // Real-time detector: triggers 4s / 6s & Traket reveal animation as soon as admin records a boundary
+  const triggerWicketAnimation = () => {
+    setShowBoundaryAnimation(false);
+    setWicketAnimKey((k) => k + 1);
+    setShowWicketAnimation(true);
+  };
+
+  // Real-time detector: triggers wickets & boundaries animation as soon as admin records an event
   useEffect(() => {
     if (!match) return;
 
@@ -50,8 +62,10 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
     if (latestBall && latestBall.id !== lastSeenBallIdRef.current) {
       lastSeenBallIdRef.current = latestBall.id;
 
-      // If the newly recorded delivery from admin is a 6 or 4!
-      if (latestBall.runsOffBat === 6) {
+      // If the newly recorded delivery from admin is a wicket!
+      if (latestBall.isWicket || (latestBall.wicketType && latestBall.wicketType !== 'none')) {
+        triggerWicketAnimation();
+      } else if (latestBall.runsOffBat === 6) {
         triggerBoundaryAnimation(6);
       } else if (latestBall.runsOffBat === 4) {
         triggerBoundaryAnimation(4);
@@ -98,31 +112,44 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
             </h3>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            <button
+              type="button"
+              onClick={triggerWicketAnimation}
+              title="Preview OUT & SeaMak Sponsor Reveal Animation"
+              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
+            >
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500" />
+              </span>
+              <span>⚡ Out</span>
+            </button>
+
             <button
               type="button"
               onClick={() => triggerBoundaryAnimation(4)}
               title="Preview 4s & Sponsor Reveal Animation"
-              className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
+              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
             >
               <span className="flex h-1.5 w-1.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500" />
               </span>
-              <span>⚡ Test 4</span>
+              <span>⚡ 4</span>
             </button>
 
             <button
               type="button"
               onClick={() => triggerBoundaryAnimation(6)}
               title="Preview 6er & Sponsor Reveal Animation"
-              className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
+              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
             >
               <span className="flex h-1.5 w-1.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
               </span>
-              <span>⚡ Test 6er</span>
+              <span>⚡ 6</span>
             </button>
 
             <button
@@ -471,6 +498,14 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
           key={boundaryAnimKey}
           runs={boundaryRuns}
           onComplete={() => setShowBoundaryAnimation(false)}
+        />
+      )}
+
+      {/* Floating OUT & SeaMak GROUP Animation at z-[60] directly above the live scorecard */}
+      {showWicketAnimation && (
+        <WicketStrikeAnimation
+          key={wicketAnimKey}
+          onComplete={() => setShowWicketAnimation(false)}
         />
       )}
     </div>
