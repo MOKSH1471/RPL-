@@ -1,7 +1,7 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
 import { LeagueType } from '@/types';
-import { ArrowRight, Star, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 
 interface LeaguesSectionProps {
   onSelectLeague: (league: LeagueType) => void;
@@ -25,9 +25,9 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
           </p>
         </InView>
 
-        {/* Row 1: 3 Cricket Leagues (Main Cricket League, Women's Cricket League, Kaccha Pakka Cricket League) */}
+        {/* Row 1: 3 Cricket Leagues (RPL Cricket League, Women's Cricket League, Kaccha Pakka Cricket League) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-6 lg:mb-8 items-stretch">
-          {/* 1. Main Cricket League Card */}
+          {/* 1. RPL Cricket League Card */}
           <InView
             viewOptions={{ once: true, amount: 0.05 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
@@ -49,7 +49,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 </div>
 
                 <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 group-hover:text-amber-700 transition-colors">
-                  Main Cricket League
+                  RPL Cricket League
                 </h3>
 
                 <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
@@ -65,7 +65,7 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
                 }}
                 className="w-full py-3.5 px-3 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white flex items-center justify-center space-x-1.5 transition-all shadow-md active:scale-95 touch-manipulation min-h-[48px] whitespace-nowrap"
               >
-                <span>Register for Main Cricket League</span>
+                <span>Register for RPL Cricket League</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
             </div>
@@ -286,97 +286,6 @@ export const LeaguesSection: React.FC<LeaguesSectionProps> = ({ onSelectLeague }
           </InView>
         </div>
 
-        {/* Divider between 6 Leagues and Event Passes / Sponsorship */}
-        <div className="relative my-8 sm:my-12">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-slate-300/80" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-[#FFFDF5] px-4 py-1 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-500 rounded-full border border-slate-200/80 shadow-2xs">
-              Event Passes &amp; Sponsorships
-            </span>
-          </div>
-        </div>
-
-        {/* Bottom Row: Official Spectator Pass & Team Ownership / Sponsorship (In One Line) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-          {/* Card 1: Official Spectator Pass */}
-          <InView
-            viewOptions={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.45, delay: 0.18, ease: 'easeOut' }}
-            className="flex flex-col"
-          >
-            <div
-              onClick={() => onSelectLeague('spectator')}
-              className="group cursor-pointer p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-300 hover:border-amber-400 active:scale-[0.99] transition-all duration-200 flex flex-col justify-between h-full shadow-md touch-manipulation"
-            >
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-white font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Non-Playing Event Pass</span>
-                  </span>
-                </div>
-
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2 group-hover:text-amber-700 transition-colors">
-                  Official Spectator Pass
-                </h3>
-
-                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                  Don’t want to play in tournament matches? Join as an official spectator! Cheer your teams, participate in 90’s Nostalgia games, enjoy late-night snacks, access opening ceremonies, and arrange optional stay.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectLeague('spectator');
-                }}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-sm sm:text-base shadow-md shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all active:scale-95 touch-manipulation min-h-[48px]"
-              >
-                <span>Get Spectator Pass</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </InView>
-
-          {/* Card 2: Team Ownership and Sponsorship */}
-          <InView
-            viewOptions={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.45, delay: 0.22, ease: 'easeOut' }}
-            className="flex flex-col"
-          >
-            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-2 border-emerald-300/80 shadow-md flex flex-col justify-between h-full">
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
-                    <span>🤝</span>
-                    <span>Franchise &amp; Partner Opportunities</span>
-                  </span>
-                </div>
-
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 mb-2">
-                  Team Ownership &amp; Sponsorship
-                </h3>
-
-                <p className="text-slate-700 text-xs sm:text-sm font-medium leading-relaxed mb-6">
-                  Partner with RPL to showcase your brand or lead an official tournament squad. For team ownership, title sponsorships, and franchise inquiries, connect with our organizing committee directly.
-                </p>
-              </div>
-
-              <a
-                href="https://wa.me/919321001499?text=Hello%20RPL%20Team%2C%20I%20am%20interested%20in%20Team%20Ownership%20and%20Sponsorship"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 px-3 sm:px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs xs:text-sm sm:text-base shadow-md flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all active:scale-95 min-h-[48px] whitespace-nowrap"
-              >
-                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-white shrink-0" />
-                <span className="whitespace-nowrap">Chat on WhatsApp: +91 9321001499</span>
-              </a>
-            </div>
-          </InView>
-        </div>
       </div>
     </section>
   );

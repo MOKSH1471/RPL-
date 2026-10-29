@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanDomesticPhone, formatWhatsAppPhone } from '../apps/api/src/utils/phoneFormatter.js';

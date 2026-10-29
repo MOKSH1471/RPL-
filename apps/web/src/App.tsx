@@ -90,6 +90,7 @@ export function App() {
 
   const handleSelectLeague = (league: LeagueType) => {
     setSelectedLeague(league);
+    setRegistrationPrefill(null);
     setCurrentPage('register');
     window.location.hash = '/register';
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -103,6 +104,8 @@ export function App() {
   };
 
   const handleRegisterClick = () => {
+    setSelectedLeague('cricket');
+    setRegistrationPrefill(null);
     setCurrentPage('register');
     window.location.hash = '/register';
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -117,6 +120,7 @@ export function App() {
 
   const handleRegisterNewPlayer = (prefillData: any) => {
     setIsCheckStatusOpen(false);
+    setSelectedLeague('cricket');
     setRegistrationPrefill(prefillData);
     setCurrentPage('register');
     window.location.hash = '/register';
@@ -131,6 +135,8 @@ export function App() {
   };
 
   const handleBackToHome = () => {
+    setSelectedLeague('cricket');
+    setRegistrationPrefill(null);
     setCurrentPage('home');
     if (window.location.pathname !== '/' && window.location.pathname !== '') {
       window.history.pushState(null, '', '/');
@@ -163,6 +169,7 @@ export function App() {
       <div className="relative z-10 w-full max-w-full overflow-x-hidden">
         <Navbar
           onRegisterClick={handleRegisterClick}
+          onSpectatorClick={() => handleSelectLeague('spectator')}
           currentPage={currentPage}
           onNavigateHome={handleBackToHome}
           onCheckPassClick={() => setIsCheckStatusOpen(true)}
@@ -171,6 +178,7 @@ export function App() {
         <main>
           {currentPage === 'register' ? (
             <RegistrationPage
+              key={`${selectedLeague}-${registrationPrefill ? 'prefill' : 'default'}`}
               initialLeague={selectedLeague}
               initialPrefillData={registrationPrefill}
               onBackToHome={handleBackToHome}
@@ -196,12 +204,12 @@ export function App() {
           )}
         </main>
 
-        <Footer onRegisterClick={handleRegisterClick} />
+        <Footer onRegisterClick={handleRegisterClick} onCheckPassClick={() => setIsCheckStatusOpen(true)} />
 
         {/* Mobile Sticky Quick Action Bar (Option 1) */}
         {currentPage === 'home' && (
           <MobileStickyBar
-            onCheckPassClick={() => setIsCheckStatusOpen(true)}
+            onSpectatorClick={() => handleSelectLeague('spectator')}
             onRegisterClick={handleRegisterClick}
           />
         )}
