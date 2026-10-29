@@ -157,7 +157,7 @@ const CENTRE_LIST = [
 const AVAILABLE_SPORTS: SportOption[] = [
   {
     id: 'cricket',
-    name: 'Main Cricket League',
+    name: 'RPL Cricket League',
     category: 'High-Energy Turf Arena',
     emoji: '🏏',
     colorBg: 'bg-amber-50',
@@ -279,8 +279,8 @@ const isSportAllowedForPlayer = (
   age?: number | null,
   isVerifiedMale?: boolean
 ) => {
-  // Main Cricket League and Football League are exclusively for male participants (HariBhai)
-  // (Women participate in Main Cricket League on a selection basis from Women's Cricket League)
+  // RPL Cricket League and Football League are exclusively for male participants (HariBhai)
+  // (Women participate in RPL Cricket League on a selection basis from Women's Cricket League)
   if (sportId === 'cricket' || sportId === 'football') {
     if (gender === 'Female') {
       return false;
@@ -1371,7 +1371,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         setSportRuleNotice("Women's Cricket League is exclusively for female participants (MeeraBen).");
       }
       if (sportId === 'cricket' && currentGender === 'Female') {
-        setSportRuleNotice("Participation in Main Cricket League is on a selection basis by the RPL core team. Please register for Women's Cricket League.");
+        setSportRuleNotice("Participation in RPL Cricket League is on a selection basis by the RPL core team. Please register for Women's Cricket League.");
       }
       if (sportId === 'football' && currentGender === 'Female') {
         setSportRuleNotice("Football League is exclusively for male participants (HariBhai). Female participants can register for Women's Cricket League, Table Tennis, or Carrom.");
@@ -3704,7 +3704,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                                  Main Cricket League Questions
+                                  RPL Cricket League Questions
                                 </h3>
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] sm:text-xs shrink-0">
                                   Active Sport

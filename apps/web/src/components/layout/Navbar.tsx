@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, Search } from 'lucide-react';
+import { Menu, X, ArrowRight, Search, Ticket } from 'lucide-react';
 import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
@@ -9,6 +9,7 @@ interface NavbarProps {
   onNavigateHome?: () => void;
   onScorerClick?: () => void;
   onCheckPassClick?: () => void;
+  onSpectatorClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -17,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigateHome,
   onScorerClick,
   onCheckPassClick,
+  onSpectatorClick,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
@@ -69,11 +71,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               document.documentElement.scrollHeight - 80;
 
             if (isAtBottom) {
-              setActiveSection((prev) => (prev !== 'how-it-works' ? 'how-it-works' : prev));
+              setActiveSection((prev) => (prev !== 'connect' ? 'connect' : prev));
             } else if (scrollY < 120) {
               setActiveSection((prev) => (prev !== 'about' ? 'about' : prev));
             } else {
-              const sections = ['about', 'leagues', 'schedule', 'gallery', 'how-it-works'];
+              const sections = ['about', 'leagues', 'schedule', 'gallery', 'connect'];
               let currentSection = '';
 
               for (const sectionId of sections) {
@@ -121,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
     { id: 'schedule', label: 'Schedule', href: '#schedule' },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
-    { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
+    { id: 'connect', label: 'Connect with RPL', href: '#connect' },
     { id: 'faq', label: 'FAQ', href: '#/faq' },
   ];
 
@@ -285,18 +287,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
 
-              {/* Check Pass CTA */}
+              {/* Spectator Reg CTA */}
               <button
                 type="button"
                 onClick={() => {
                   document.body.style.overflow = '';
                   setMobileMenuOpen(false);
-                  onCheckPassClick?.();
+                  onSpectatorClick?.();
                 }}
                 className="hidden sm:flex py-1.5 px-3 sm:px-4 sm:py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] sm:text-xs uppercase tracking-wider items-center space-x-1.5 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
               >
-                <Search className="w-3.5 h-3.5 text-amber-600" />
-                <span>Check Pass</span>
+                <Ticket className="w-3.5 h-3.5 text-amber-600" />
+                <span>Spectator Registration</span>
               </button>
 
               {/* Primary "Register Now" CTA with Character Flip Animation */}
@@ -312,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="hidden sm:flex py-1.5 px-3 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
               >
-                <FlipText>Register Now</FlipText>
+                <FlipText>Player Registration</FlipText>
               </motion.button>
 
               {/* Mobile Hamburger Toggle (3 Bars) */}
@@ -412,12 +414,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={() => {
                         document.body.style.overflow = '';
                         setMobileMenuOpen(false);
-                        onCheckPassClick?.();
+                        onSpectatorClick?.();
                       }}
                       className="w-full py-2 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs uppercase tracking-wider border border-amber-300 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[38px]"
                     >
-                      <Search className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Check Pass</span>
+                      <Ticket className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Spectator Reg</span>
                     </button>
                   </div>
                 </div>
