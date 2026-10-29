@@ -189,6 +189,11 @@ export function loadSavedMatch(): CricketMatch {
 export function saveMatchToStorage(match: CricketMatch) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(match));
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const channel = new BroadcastChannel('rpl_cricket_live_sync');
+      channel.postMessage({ type: 'MATCH_UPDATED', match });
+      channel.close();
+    }
   } catch (e) {
     console.error('Failed to save match:', e);
   }
@@ -336,6 +341,11 @@ export function loadMatchesList(): CricketMatch[] {
 export function saveMatchesList(matches: CricketMatch[]) {
   try {
     localStorage.setItem(MATCHES_LIST_STORAGE_KEY, JSON.stringify(matches));
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const channel = new BroadcastChannel('rpl_cricket_live_sync');
+      channel.postMessage({ type: 'MATCHES_LIST_UPDATED', matches });
+      channel.close();
+    }
   } catch (e) {
     console.error('Failed to save matches list:', e);
   }

@@ -5,11 +5,12 @@ import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
   onRegisterClick: () => void;
-  currentPage?: 'home' | 'register' | 'scorer' | 'privacy' | 'terms' | 'faq';
+  currentPage?: 'home' | 'register' | 'scorer' | 'privacy' | 'terms' | 'faq' | 'scorecard';
   onNavigateHome?: () => void;
   onScorerClick?: () => void;
   onCheckPassClick?: () => void;
   onSpectatorClick?: () => void;
+  onScorecardClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onScorerClick,
   onCheckPassClick,
   onSpectatorClick,
+  onScorecardClick,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
@@ -270,6 +272,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Right Action CTA & Mobile Controls */}
             <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+              {/* Live Matches & Scorecard CTA */}
+              {onScorecardClick && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.body.style.overflow = '';
+                    setMobileMenuOpen(false);
+                    onScorecardClick();
+                  }}
+                  className="py-1.5 px-2.5 sm:px-3.5 sm:py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider flex items-center space-x-1.5 border border-slate-700/80 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  <span className="text-amber-400 font-extrabold">LIVE</span>
+                  <span>Matches</span>
+                </button>
+              )}
+
               {/* Live Scorer CTA (Desktop & Tablet) */}
               {onScorerClick && (
                 <button
@@ -346,6 +368,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="md:hidden pb-3 relative z-50"
               >
                 <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200 shadow-xl space-y-2.5">
+                  {/* Live Matches & Scorecard Button in Mobile Menu */}
+                  {onScorecardClick && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        document.body.style.overflow = '';
+                        setMobileMenuOpen(false);
+                        onScorecardClick();
+                      }}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 transition-all border border-slate-800 cursor-pointer shadow-xs"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-extrabold text-white">Live Matches & Scorecards</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-amber-400 text-slate-950">
+                        SCORES
+                      </span>
+                    </button>
+                  )}
+
                   {/* Live Cricket Scorer Button in Mobile Menu */}
                   {onScorerClick && (
                     <button

@@ -25,6 +25,7 @@ apps/api/logs/
 Thumbs.db
 *.code-workspace
 *.zip
+.cricket_matches_store.json
 
 # Database sync exports & dumps
 sync_rpl_to_prod_aashray.sql

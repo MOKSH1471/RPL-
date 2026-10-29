@@ -61,6 +61,10 @@ export const ScorerHeader: React.FC<ScorerHeaderProps> = ({
               <CheckCircle2 className="w-3 h-3 text-emerald-700" />
               <span>Match Completed</span>
             </span>
+          ) : match.status === 'upcoming' ? (
+            <span className="px-2.5 py-0.5 rounded-md bg-cyan-100 border border-cyan-300 text-cyan-900 font-extrabold text-[11px] uppercase tracking-wider">
+              Upcoming Match
+            </span>
           ) : (
             <span className="px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[11px]">
               {currentInnings.inningsNumber === 1 ? '1st Innings' : '2nd Innings'}
@@ -103,6 +107,11 @@ export const ScorerHeader: React.FC<ScorerHeaderProps> = ({
               <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 Target {target} • Need {remainingRuns} runs from {remainingBalls} balls (Req RR: {reqRunRate})
               </span>
+            ) : match.status === 'upcoming' && !match.tossWinnerId ? (
+              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-md bg-cyan-50 border border-cyan-200 text-cyan-900 font-bold">
+                <span>🗓️ Fixture:</span>
+                <span>Scheduled Match • Ready for Toss & Play</span>
+              </div>
             ) : (
               <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-bold">
                 <span>🏆 Toss:</span>

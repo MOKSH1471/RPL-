@@ -62,13 +62,23 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
   const [isOverEndPrompt, setIsOverEndPrompt] = useState(false);
   const [isNewMatchModalOpen, setIsNewMatchModalOpen] = useState(false);
 
-  // Initial load from MySQL Database (replaces hardcoded demo cache when online)
+  // Initial load from Database / Vite store (replaces hardcoded demo cache when online)
   useEffect(() => {
     fetchCricketMatchesFromDb().then((dbMatches) => {
+      const localMatches = loadMatchesList();
       if (dbMatches && dbMatches.length > 0) {
-        setMatchesList(dbMatches);
-        saveMatchesList(dbMatches);
-        setMatch((current) => dbMatches.find((m) => m.id === current.id) || dbMatches[0]);
+        // Sync any locally scheduled fixtures that haven't reached the DB yet
+        const dbIds = new Set(dbMatches.map((m) => m.id));
+        const pendingSync = (localMatches || []).filter((m) => !dbIds.has(m.id));
+        pendingSync.forEach((m) => syncMatchToDb(m));
+
+        const merged = [...pendingSync, ...dbMatches];
+        setMatchesList(merged);
+        saveMatchesList(merged);
+        setMatch((current) => merged.find((m) => m.id === current.id) || merged[0]);
+      } else if (localMatches && localMatches.length > 0) {
+        localMatches.forEach((m) => syncMatchToDb(m));
+        setMatchesList(localMatches);
       }
     });
   }, []);
@@ -830,7 +840,12 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
               });
               setMatch(newM);
               saveMatchToStorage(newM);
-              setViewMode('scoring');
+              // If match is scheduled as upcoming, exit cleanly back to Match Hub
+              if (newM.status === 'upcoming') {
+                setViewMode('hub');
+              } else {
+                setViewMode('scoring');
+              }
             }}
             nextMatchNumber={matchesList.length + 1}
           />
@@ -842,7 +857,12 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
             matches={matchesList}
             activeMatchId={match.id}
             onSelectMatch={(selected) => {
-              setMatch(selected);
+              const matchToLoad =
+                selected.status === 'upcoming'
+                  ? { ...selected, status: 'live' as const }
+                  : selected;
+              setMatch(matchToLoad);
+              syncMatchToDb(matchToLoad);
               setViewMode('scoring');
             }}
             onOpenScheduleWizard={() => setViewMode('wizard')}
