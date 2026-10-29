@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CricketMatch, InningsState } from '@/types';
 import { formatOvers, calculateRunRate, calculateRequiredRunRate } from '@/lib/cricketData';
-import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck } from 'lucide-react';
+import { SixerStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
+import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface MatchDetailsModalProps {
   match: CricketMatch | null;
@@ -14,6 +15,45 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
   const [selectedInningsNum, setSelectedInningsNum] = useState<1 | 2>(
     match.currentInningsNumber || 1
   );
+  const [showSixerAnimation, setShowSixerAnimation] = useState(false);
+  const [sixerAnimKey, setSixerAnimKey] = useState(0);
+  const lastSeenBallIdRef = useRef<string | null>(null);
+  const isInitialMount = useRef(true);
+
+  const triggerSixerAnimation = () => {
+    setSixerAnimKey((k) => k + 1);
+    setShowSixerAnimation(true);
+  };
+
+  // Real-time detector: triggers 6er & Traket reveal animation as soon as admin records a 6
+  useEffect(() => {
+    if (!match) return;
+
+    const currentInnings = match.currentInningsNumber === 1 ? match.innings1 : match.innings2;
+    if (!currentInnings) return;
+
+    const deliveries =
+      currentInnings.currentOverBalls && currentInnings.currentOverBalls.length > 0
+        ? currentInnings.currentOverBalls
+        : currentInnings.balls;
+
+    const latestBall = deliveries && deliveries.length > 0 ? deliveries[deliveries.length - 1] : null;
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      lastSeenBallIdRef.current = latestBall ? latestBall.id : null;
+      return;
+    }
+
+    if (latestBall && latestBall.id !== lastSeenBallIdRef.current) {
+      lastSeenBallIdRef.current = latestBall.id;
+
+      // If the newly recorded delivery from admin is a 6!
+      if (latestBall.runsOffBat === 6) {
+        triggerSixerAnimation();
+      }
+    }
+  }, [match]);
 
   const innings: InningsState | undefined =
     selectedInningsNum === 1 ? match.innings1 : match.innings2;
@@ -54,13 +94,28 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
             </h3>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={triggerSixerAnimation}
+              title="Preview 6er & Sponsor Reveal Animation"
+              className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
+            >
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+              </span>
+              <span>⚡ Test 6er</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* ── Live Match Summary Banner ── */}
@@ -392,6 +447,14 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
           </button>
         </div>
       </div>
+
+      {/* Floating 6er & Traket Animation at z-[60] directly above the live scorecard */}
+      {showSixerAnimation && (
+        <SixerStrikeAnimation
+          key={sixerAnimKey}
+          onComplete={() => setShowSixerAnimation(false)}
+        />
+      )}
     </div>
   );
 };
