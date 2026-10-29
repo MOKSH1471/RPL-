@@ -129,7 +129,7 @@ const FAQ_DATA: FAQItem[] = [
   {
     id: 'female-main-league',
     category: 'leagues',
-    question: 'Can female players participate in both the Female League and the RPL Main Cricket League?',
+    question: 'Can female players participate in both the Female League and the RPL Cricket League?',
     searchableAnswer:
       'Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.',
     answer: (
@@ -146,14 +146,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a female player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, absolutely. Female athletes are welcome to register across the Women’s Cricket League, Kaccha Pakka Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games. Entry to the RPL Main Cricket League is reserved for the 18 selected female players chosen by the committee. Organizing committee will make every effort to accommodate multi-sport registrations.',
+      'Yes, absolutely. Female athletes are welcome to register across the Women’s Cricket League, Kaccha Pakka Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games. Entry to the RPL Cricket League is reserved for the 18 selected female players chosen by the committee. Organizing committee will make every effort to accommodate multi-sport registrations.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>Yes, absolutely.</strong> Female athletes are welcome to register across the Women’s Cricket League, Kaccha Pakka Cricket League, Table Tennis, Carrom, and the 90s Nostalgia Games.
         </p>
         <p>
-          Entry to the RPL Main Cricket League is reserved for the 18 selected female players chosen by the committee.
+          Entry to the RPL Cricket League is reserved for the 18 selected female players chosen by the committee.
         </p>
         <div className="p-3 rounded-lg bg-slate-100 text-xs text-slate-600 flex items-start gap-2">
           <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
@@ -170,14 +170,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'I am a male player. Can I register for multiple leagues?',
     searchableAnswer:
-      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Main Cricket League, Football League (held 27 Dec), Table Tennis League, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
+      'Yes, you are encouraged to register for multiple sports! Male players can participate in RPL Cricket League, Football League (held 27 Dec), Table Tennis League, Carrom League, and 90s Nostalgia Games (Dec 25-26, finals Dec 27). Age Note: Kaccha Pakka Cricket League is age-restricted to participants aged 16 & below or 56 & above.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>Yes, you are encouraged to register for multiple sports!</strong> Male players can participate in:
         </p>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">
-          <li>RPL Main Cricket League</li>
+          <li>RPL Cricket League</li>
           <li>Football League (Matches held entirely on 27 Dec)</li>
           <li>Table Tennis League</li>
           <li>Carrom League</li>

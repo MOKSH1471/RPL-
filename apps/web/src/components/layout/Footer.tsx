@@ -5,9 +5,10 @@ import { MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'lucide-react
 
 interface FooterProps {
   onRegisterClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick }) => {
 
   return (
     <footer className="relative z-10 border-t border-slate-200 bg-white pt-10 sm:pt-16 pb-24 sm:pb-16 safe-bottom w-full max-w-full overflow-hidden">
@@ -17,7 +18,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
         className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"
       >
         {/* Interactive Staggered Reveal Links Section */}
-        <div className="mb-16 pb-12 border-b border-slate-200">
+        <div id="connect" className="mb-16 pb-12 border-b border-slate-200 scroll-mt-24">
           <div className="flex items-center space-x-2 mb-6">
             <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-extrabold text-[11px] uppercase tracking-wider shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
@@ -75,7 +76,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
               </span>
             </div>
             <p className="text-slate-600 text-sm font-medium max-w-md leading-relaxed">
-              Raj Premier League (RPL) is an annual community sports championship, bringing together athletes for Football, Cricket, and Women's League.
+              Raj Premier League (RPL) is an annual community sports championship, bringing together athletes from all around the world.
             </p>
           </div>
 
@@ -119,6 +120,15 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 <a href="#register" className="hover:text-amber-600 transition-colors">
                   Player Registration
                 </a>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={onCheckPassClick}
+                  className="hover:text-amber-600 transition-colors text-left font-medium cursor-pointer"
+                >
+                  Check Pass
+                </button>
               </li>
             </ul>
           </div>
