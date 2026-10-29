@@ -9,6 +9,7 @@ import {
   History,
   LayoutGrid,
   Plus,
+  Play,
 } from 'lucide-react';
 import {
   CricketMatch,
@@ -152,21 +153,50 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
   const bowlingTeam =
     currentInnings.bowlingTeamId === match.teamA.id ? match.teamA : match.teamB;
 
-  const striker = currentInnings.batsmen.find((b) => b.isStriker);
-  const nonStriker = currentInnings.batsmen.find((b) => !b.isStriker && !b.isOut);
+  const striker =
+    currentInnings.batsmen.find((b) => b.playerId === currentInnings.activeStrikerId) ||
+    currentInnings.batsmen.find((b) => b.isStriker);
+  const nonStriker =
+    currentInnings.batsmen.find((b) => b.playerId === currentInnings.activeNonStrikerId) ||
+    currentInnings.batsmen.find((b) => !b.isStriker && !b.isOut && b.playerId !== currentInnings.activeStrikerId);
   const activeBowler = currentInnings.bowlers.find(
     (b) => b.playerId === currentInnings.activeBowlerId
   );
 
-  // Available batsmen in batting lineup who haven't batted yet
-  const battedPlayerIds = new Set(currentInnings.batsmen.map((b) => b.playerId));
-  const availableBatsmen = battingTeam.players.filter((p) => !battedPlayerIds.has(p.id));
+  // Available batsmen who have not batted yet, are not currently at the crease, and are not already out
+  const unavailablePlayerIds = new Set(
+    currentInnings.batsmen
+      .filter(
+        (b) =>
+          b.isOut ||
+          b.balls > 0 ||
+          b.runs > 0 ||
+          b.playerId === currentInnings.activeStrikerId ||
+          b.playerId === currentInnings.activeNonStrikerId
+      )
+      .map((b) => b.playerId)
+  );
+  if (currentInnings.activeStrikerId) unavailablePlayerIds.add(currentInnings.activeStrikerId);
+  if (currentInnings.activeNonStrikerId) unavailablePlayerIds.add(currentInnings.activeNonStrikerId);
+
+  const availableBatsmen = battingTeam.players.filter((p) => !unavailablePlayerIds.has(p.id));
 
   // Strike Rotation Helper
   const handleRotateStrike = () => {
     setMatch((prev) => {
       const innKey = prev.currentInningsNumber === 1 ? 'innings1' : 'innings2';
       const inn = { ...prev[innKey]! };
+      const maxBalls = prev.oversPerSide * 6;
+
+      // Hard stop: Cannot bowl once max overs are reached or all 10 wickets have fallen
+      if (
+        inn.legalBallsBowled >= maxBalls ||
+        inn.totalWickets >= 10 ||
+        inn.isCompleted ||
+        prev.status === 'completed'
+      ) {
+        return prev;
+      }
       const updatedBatsmen = inn.batsmen.map((b) => {
         if (b.isOut) return b;
         return { ...b, isStriker: !b.isStriker };
@@ -381,6 +411,18 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
             ...updatedBatsmen[nsIdx],
             isOut: true,
             dismissalText: `run out (${fielderName || 'throw'})`,
+          };
+        }
+      }
+
+      // Ensure any dismissed batsman is always marked isOut: true
+      if (isWicket && dismissedPlayerId) {
+        const disIdx = updatedBatsmen.findIndex((b) => b.playerId === dismissedPlayerId);
+        if (disIdx !== -1) {
+          updatedBatsmen[disIdx] = {
+            ...updatedBatsmen[disIdx],
+            isOut: true,
+            dismissalText: updatedBatsmen[disIdx].dismissalText || `${wicketType}${fielderName ? ` c ${fielderName}` : ''} b ${activeBowler?.name || ''}`,
           };
         }
       }
@@ -1056,7 +1098,43 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
                 </div>
               </div>
             ) : (
+              <>
+                {match.currentInningsNumber === 1 &&
+              (currentInnings.isCompleted ||
+                currentInnings.legalBallsBowled >= match.oversPerSide * 6 ||
+                currentInnings.totalWickets >= 10) && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                      1st Innings Concluded
+                    </span>
+                    <h3 className="text-xl font-black text-slate-950 mt-0.5">
+                      {battingTeam.name} scored {currentInnings.totalRuns}/{currentInnings.totalWickets} ({formatOvers(currentInnings.legalBallsBowled)} ov)
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Target for {bowlingTeam.name}:{' '}
+                      <strong className="text-slate-900 font-extrabold">
+                        {currentInnings.totalRuns + 1} runs
+                      </strong>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSwitchInnings}
+                    className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer flex items-center space-x-2 shrink-0 active:scale-95"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Start 2nd Innings</span>
+                  </button>
+                </div>
+              )}
+
               <ScorerKeypad
+                disabled={
+                  currentInnings.isCompleted ||
+                  currentInnings.legalBallsBowled >= match.oversPerSide * 6 ||
+                  currentInnings.totalWickets >= 10
+                }
                 onScoreRun={(runs) =>
                   recordBallDelivery({ runsOffBat: runs, isLegalDelivery: true })
                 }
@@ -1073,6 +1151,7 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
                 onRotateStrike={handleRotateStrike}
                 canUndo={currentInnings.balls.length > 0}
               />
+              </>
             )}
           </div>
         )}

@@ -73,20 +73,19 @@ export async function fetchScorecardMatches(): Promise<CricketMatch[]> {
     }
   }
 
-  // 3. Third source: Single active match in LocalStorage (only if it matches an existing match)
-  try {
-    const cachedActive = localStorage.getItem(ACTIVE_MATCH_STORAGE_KEY);
-    if (cachedActive) {
-      const activeMatch = JSON.parse(cachedActive);
-      if (activeMatch && activeMatch.id) {
-        // If API has matches, only update if activeMatch is one of the verified matches
-        if (!hasApiMatches || matchesMap.has(activeMatch.id)) {
+  // 3. Third source: Single active match in LocalStorage ONLY when API has no matches (offline fallback)
+  if (!hasApiMatches) {
+    try {
+      const cachedActive = localStorage.getItem(ACTIVE_MATCH_STORAGE_KEY);
+      if (cachedActive) {
+        const activeMatch = JSON.parse(cachedActive);
+        if (activeMatch && activeMatch.id && !matchesMap.has(activeMatch.id)) {
           matchesMap.set(activeMatch.id, activeMatch);
         }
       }
+    } catch (e) {
+      // Ignore
     }
-  } catch (e) {
-    // Ignore
   }
 
   return Array.from(matchesMap.values()).sort((a, b) => {

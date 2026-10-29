@@ -90,16 +90,20 @@ export const MatchScorecardView: React.FC<MatchScorecardViewProps> = ({ match })
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {innings.batsmen.map((batsman) => (
+                  {innings.batsmen.map((batsman) => {
+                    const isAtCrease = batsman.playerId === innings.activeStrikerId || batsman.playerId === innings.activeNonStrikerId;
+                    const hasBatted = batsman.balls > 0 || batsman.runs > 0 || isAtCrease || batsman.isOut;
+                    const statusText = batsman.isOut ? batsman.dismissalText || 'out' : hasBatted ? 'not out' : 'Did not bat';
+                    return (
                     <tr key={batsman.playerId} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-2.5 px-3 sm:px-4">
                         <div className="font-bold text-slate-900 flex items-center space-x-1.5">
                           <span>{batsman.name}</span>
-                          {!batsman.isOut && <span className="text-amber-500 font-bold">*</span>}
+                          {!batsman.isOut && isAtCrease && <span className="text-amber-500 font-bold">*</span>}
                         </div>
                       </td>
-                      <td className="py-2.5 px-2 sm:px-3 text-slate-500 text-xs italic">
-                        {batsman.isOut ? batsman.dismissalText || 'out' : 'not out'}
+                      <td className={`py-2.5 px-2 sm:px-3 text-xs italic ${hasBatted ? 'text-slate-500' : 'text-slate-400 font-normal'}`}>
+                        {statusText}
                       </td>
                       <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
                         {batsman.runs}
@@ -117,7 +121,8 @@ export const MatchScorecardView: React.FC<MatchScorecardViewProps> = ({ match })
                         {batsman.strikeRate.toFixed(1)}
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
 
                   {/* Extras Row */}
                   <tr className="bg-slate-50/70 font-semibold text-xs text-slate-700">

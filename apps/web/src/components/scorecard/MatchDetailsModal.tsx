@@ -243,7 +243,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                       {(() => {
                         const deliveries = innings.currentOverBalls && innings.currentOverBalls.length > 0
                           ? innings.currentOverBalls
-                          : innings.balls.slice(-6);
+                          : innings.balls.slice(0, 6).reverse();
                         if (deliveries.length === 0) return <span className="text-slate-500 text-xs font-mono">-</span>;
                         return deliveries.map((b, i) => {
                           let bg = 'bg-slate-800 text-slate-200 border-slate-700';
@@ -358,14 +358,18 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                           </td>
                         </tr>
                       ) : (
-                        innings.batsmen.map((batsman) => (
+                        innings.batsmen.map((batsman) => {
+                          const isAtCrease = batsman.playerId === innings.activeStrikerId || batsman.playerId === innings.activeNonStrikerId;
+                          const hasBatted = batsman.balls > 0 || batsman.runs > 0 || isAtCrease || batsman.isOut;
+                          const statusText = batsman.isOut ? batsman.dismissalText || 'out' : hasBatted ? 'not out' : 'Did not bat';
+                          return (
                           <tr key={batsman.playerId} className="hover:bg-slate-800/40 transition-colors">
                             <td className="py-2.5 px-3 sm:px-4">
                               <span className="font-bold text-slate-100">{batsman.name}</span>
-                              {!batsman.isOut && <span className="text-amber-400 ml-1 font-bold">*</span>}
+                              {!batsman.isOut && isAtCrease && <span className="text-amber-400 ml-1 font-bold">*</span>}
                             </td>
-                            <td className="py-2.5 px-2 sm:px-3 text-slate-400 text-xs">
-                              {batsman.isOut ? batsman.dismissalText || 'out' : 'not out'}
+                            <td className={`py-2.5 px-2 sm:px-3 text-xs ${hasBatted ? 'text-slate-400' : 'text-slate-500 italic'}`}>
+                              {statusText}
                             </td>
                             <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-100">
                               {batsman.runs}
@@ -383,7 +387,8 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                               {batsman.strikeRate.toFixed(1)}
                             </td>
                           </tr>
-                        ))
+                        );
+                        })
                       )}
                     </tbody>
                   </table>

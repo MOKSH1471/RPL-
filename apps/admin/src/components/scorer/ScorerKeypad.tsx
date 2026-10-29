@@ -8,6 +8,7 @@ interface ScorerKeypadProps {
   onUndoLastBall: () => void;
   onRotateStrike: () => void;
   canUndo: boolean;
+  disabled?: boolean;
 }
 
 export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
@@ -17,14 +18,21 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
   onUndoLastBall,
   onRotateStrike,
   canUndo,
+  disabled = false,
 }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-2xs space-y-3">
+    <div className={`bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-2xs space-y-3 ${disabled ? "opacity-40 pointer-events-none select-none" : ""}`}>
+      {disabled && (
+        <div className="text-center py-2 text-rose-600 font-extrabold text-xs tracking-wide bg-rose-50 border border-rose-200 rounded-xl">
+          Innings Concluded (All Overs Bowled or All Out). Switch innings or finish match above.
+        </div>
+      )}
       {/* ── Row 1: Standard Runs (Primary Keypad) ── */}
       <div className="grid grid-cols-6 gap-2">
         {/* 0 (Dot) */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(0)}
           className="h-14 sm:h-16 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-mono font-bold text-2xl border border-slate-200 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all"
         >
@@ -35,6 +43,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* 1 */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(1)}
           className="h-14 sm:h-16 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-mono font-bold text-2xl border border-slate-300 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -45,6 +54,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* 2 */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(2)}
           className="h-14 sm:h-16 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-mono font-bold text-2xl border border-slate-300 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -55,6 +65,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* 3 */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(3)}
           className="h-14 sm:h-16 rounded-xl bg-white hover:bg-slate-50 text-slate-900 font-mono font-bold text-2xl border border-slate-300 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -65,6 +76,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* 4 (Boundary) */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(4)}
           className="h-14 sm:h-16 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-mono font-bold text-2xl border border-emerald-700 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -75,6 +87,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* 6 (Maximum) */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onScoreRun(6)}
           className="h-14 sm:h-16 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-mono font-bold text-2xl border border-purple-700 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all shadow-2xs"
         >
@@ -88,6 +101,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* Wide */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onQuickExtra('wide', 1)}
           className="py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95"
         >
@@ -98,6 +112,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* No Ball */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onQuickExtra('noball', 1)}
           className="py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-900 border border-orange-300 font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95"
         >
@@ -108,6 +123,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* Bye */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onQuickExtra('bye', 1)}
           className="py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95"
         >
@@ -118,6 +134,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* Leg Bye */}
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onQuickExtra('legbye', 1)}
           className="py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95"
         >
@@ -128,6 +145,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* Swap Strike */}
         <button
           type="button"
+          disabled={disabled}
           onClick={onRotateStrike}
           className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95 border border-slate-200"
         >
@@ -153,6 +171,7 @@ export const ScorerKeypad: React.FC<ScorerKeypadProps> = ({
         {/* WICKET BUTTON (Direct, clear red) */}
         <button
           type="button"
+          disabled={disabled}
           onClick={onOpenWicketModal}
           className="col-span-4 sm:col-span-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex flex-col items-center justify-center cursor-pointer active:scale-95 shadow-xs border border-red-700"
         >
