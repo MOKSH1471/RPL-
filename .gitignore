@@ -25,4 +25,5 @@ apps/api/logs/
 Thumbs.db
 *.code-workspace
 *.zip
+.cricket_matches_store.json
 

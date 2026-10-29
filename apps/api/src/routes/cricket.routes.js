@@ -89,7 +89,10 @@ router.post('/cricket/matches', async (req, res, next) => {
 // PUT update match (scores, live balls, status)
 router.put('/cricket/matches/:id', async (req, res, next) => {
   try {
-    const updated = await updateMatch(req.params.id, req.body);
+    let updated = await updateMatch(req.params.id, req.body);
+    if (!updated) {
+      updated = await createMatch({ ...req.body, id: req.params.id });
+    }
     res.json(updated);
   } catch (error) {
     next(error);

@@ -189,6 +189,96 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
     onMatchCreated(createdMatch);
   };
 
+  const handleScheduleAsUpcomingAndExit = () => {
+    const validOvers = Math.max(1, Math.min(50, Number(oversInput) || 10));
+    const effectiveTossWinnerId = currentStep !== 'details' ? tossWinnerId : '';
+    const effectiveTossDecision = currentStep !== 'details' ? tossDecision : 'bat';
+
+    // Determine who bats 1st if toss occurred, else teamA
+    const batTeam =
+      effectiveTossWinnerId && effectiveTossWinnerId === teamB.id && effectiveTossDecision === 'bat'
+        ? teamB
+        : effectiveTossWinnerId && effectiveTossWinnerId === teamA.id && effectiveTossDecision === 'bowl'
+        ? teamB
+        : teamA;
+    const bowlTeam = batTeam.id === teamA.id ? teamB : teamA;
+
+    const sPlayer = batTeam.players[0] || { id: 'p-1', name: `${batTeam.shortName} Batter 1`, role: 'Batter' as const };
+    const nsPlayer = batTeam.players[1] || { id: 'p-2', name: `${batTeam.shortName} Batter 2`, role: 'Batter' as const };
+    const bPlayer = bowlTeam.players[bowlTeam.players.length - 1] || bowlTeam.players[0] || { id: 'b-1', name: `${bowlTeam.shortName} Bowler 1`, role: 'Bowler' as const };
+
+    const upcomingMatch: CricketMatch = {
+      id: `match-rpl-${Date.now()}`,
+      tournamentName,
+      matchNumber,
+      stage,
+      venue,
+      oversPerSide: validOvers,
+      teamA,
+      teamB,
+      tossWinnerId: effectiveTossWinnerId,
+      tossDecision: effectiveTossDecision,
+      status: 'upcoming',
+      currentInningsNumber: 1,
+      innings1: {
+        inningsNumber: 1,
+        battingTeamId: batTeam.id,
+        bowlingTeamId: bowlTeam.id,
+        totalRuns: 0,
+        totalWickets: 0,
+        legalBallsBowled: 0,
+        extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0, total: 0 },
+        activeStrikerId: sPlayer.id,
+        activeNonStrikerId: nsPlayer.id,
+        activeBowlerId: bPlayer.id,
+        batsmen: [
+          {
+            playerId: sPlayer.id,
+            name: sPlayer.name,
+            runs: 0,
+            balls: 0,
+            fours: 0,
+            sixes: 0,
+            strikeRate: 0,
+            isStriker: true,
+            isOut: false,
+          },
+          {
+            playerId: nsPlayer.id,
+            name: nsPlayer.name,
+            runs: 0,
+            balls: 0,
+            fours: 0,
+            sixes: 0,
+            strikeRate: 0,
+            isStriker: false,
+            isOut: false,
+          },
+        ],
+        bowlers: [
+          {
+            playerId: bPlayer.id,
+            name: bPlayer.name,
+            legalBalls: 0,
+            maidens: 0,
+            runsConceded: 0,
+            wickets: 0,
+            economy: 0,
+            wides: 0,
+            noballs: 0,
+          },
+        ],
+        balls: [],
+        currentOverBalls: [],
+        fallOfWickets: [],
+        isCompleted: false,
+      },
+      streamOverlayToken: `rpl_obs_${Math.random().toString(36).substring(2, 10)}`,
+    };
+
+    onMatchCreated(upcomingMatch);
+  };
+
   const stepsList: { id: WizardStep; label: string; num: number }[] = [
     { id: 'details', label: 'Match Setup', num: 1 },
     { id: 'toss', label: 'Toss & Decision', num: 2 },
@@ -213,14 +303,25 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={onCancel}
-            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-900 font-bold text-xs shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Cancel & Return</span>
-          </button>
+          <div className="flex items-center space-x-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={handleScheduleAsUpcomingAndExit}
+              className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Schedule & Exit</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-900 font-bold text-xs shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Cancel</span>
+            </button>
+          </div>
         </div>
 
         {/* Stepper Progress Bar */}
@@ -446,7 +547,17 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
               </div>
 
               {/* Next Step Action */}
-              <div className="flex justify-end pt-3">
+              <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={handleScheduleAsUpcomingAndExit}
+                  className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer border border-amber-400/30 active:scale-95"
+                  title="Schedule this match fixture as upcoming and exit to Match Hub without starting play"
+                >
+                  <Calendar className="w-4 h-4 text-amber-400" />
+                  <span>Schedule Match & Exit</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -454,7 +565,7 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                     setTossWinnerId(selectedTeamAId);
                     setCurrentStep('toss');
                   }}
-                  className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95"
                 >
                   <span>Proceed to Toss & Decision</span>
                   <ArrowRight className="w-4 h-4" />
@@ -634,7 +745,7 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
               </div>
 
               {/* Navigation */}
-              <div className="flex justify-between pt-3">
+              <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setCurrentStep('details')}
@@ -644,14 +755,26 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
                   <span>Back to Details</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep('lineups')}
-                  className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
-                >
-                  <span>Review Squad Lineups</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={handleScheduleAsUpcomingAndExit}
+                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-xs shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer border border-amber-400/30 active:scale-95"
+                    title="Save fixture with toss result and return to Match Hub"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Schedule & Exit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep('lineups')}
+                    className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center space-x-2 cursor-pointer active:scale-95"
+                  >
+                    <span>Review Squad Lineups</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

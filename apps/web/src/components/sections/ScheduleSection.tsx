@@ -102,8 +102,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
               </div>
 
               {/* CTA */}
-              {onRegisterClick && (
-                <div className="flex items-center justify-center">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {onRegisterClick && (
                   <button
                     type="button"
                     onClick={onRegisterClick}
@@ -112,8 +112,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
                     <span>Register Before Auction</span>
                     <ArrowRight className="w-4 h-4 text-amber-400" />
                   </button>
-                </div>
-              )}
+                )}
+                <a
+                  href="#/scorecard"
+                  className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs sm:text-sm border border-amber-300 transition-all cursor-pointer shadow-xs"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>View Live Match Scorecard</span>
+                </a>
+              </div>
             </div>
           </div>
         </InView>

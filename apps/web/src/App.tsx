@@ -11,13 +11,14 @@ import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
+import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { Footer } from '@/components/layout/Footer';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
 import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'scorecard'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -70,6 +71,18 @@ export function App() {
       } else if (hash === '#/terms' || hash === '#terms') {
         setCurrentPage('terms');
         setShowIntro(false);
+      } else if (
+        path === '/scorecard' ||
+        path.startsWith('/scorecard') ||
+        hash === '#/scorecard' ||
+        hash === '#scorecard' ||
+        path === '/matches' ||
+        path.startsWith('/matches') ||
+        hash === '#/matches' ||
+        hash === '#matches'
+      ) {
+        setCurrentPage('scorecard');
+        setShowIntro(false);
       } else {
         setCurrentPage('home');
       }
@@ -95,6 +108,12 @@ export function App() {
   const handleRegisterClick = () => {
     setCurrentPage('register');
     window.location.hash = '/register';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleScorecardClick = () => {
+    setCurrentPage('scorecard');
+    window.location.hash = '/scorecard';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -130,6 +149,7 @@ export function App() {
           currentPage={currentPage}
           onNavigateHome={handleBackToHome}
           onCheckPassClick={() => setIsCheckStatusOpen(true)}
+          onScorecardClick={handleScorecardClick}
         />
 
         <main>
@@ -142,6 +162,8 @@ export function App() {
                 setIsCheckStatusOpen(true);
               }}
             />
+          ) : currentPage === 'scorecard' ? (
+            <ScorecardPage onBackToHome={handleBackToHome} />
           ) : (
             <>
               <HeroSection
