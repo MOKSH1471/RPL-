@@ -1,6 +1,6 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
-import { Calendar, Clock, Lock, Sparkles, ShieldCheck, Flame } from 'lucide-react';
+import { Calendar, Clock, Lock, Sparkles, ShieldCheck, Flame, ArrowRight } from 'lucide-react';
 
 interface ScheduleSectionProps {
   onRegisterClick?: () => void;
