@@ -5,11 +5,12 @@ import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
   onRegisterClick: () => void;
-  currentPage?: 'home' | 'register' | 'scorer' | 'scorecard';
+  currentPage?: 'home' | 'register' | 'scorer' | 'scorecard' | 'rules' | 'privacy' | 'terms';
   onNavigateHome?: () => void;
   onScorerClick?: () => void;
   onCheckPassClick?: () => void;
   onScorecardClick?: () => void;
+  onRulesClick?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onScorerClick,
   onCheckPassClick,
   onScorecardClick,
+  onRulesClick,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
@@ -122,9 +124,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'about', label: 'About', href: '#about' },
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
     { id: 'schedule', label: 'Schedule', href: '#schedule' },
-    { id: 'gallery', label: 'Gallery', href: '#gallery' },
     { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
+    { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true },
+    { id: 'gallery', label: 'Gallery', href: '#gallery' },
   ];
+
+  const handleItemClick = (
+    item: { id: string; label: string; href: string; isRoute?: boolean },
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    if (item.isRoute && item.id === 'rules' && onRulesClick) {
+      document.body.style.overflow = '';
+      setMobileMenuOpen(false);
+      onRulesClick();
+      return;
+    }
+    handleNavClick(item.href, e);
+  };
 
   const scrollToElement = (targetId: string) => {
     const targetElement = document.getElementById(targetId);
@@ -229,16 +246,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             </a>
 
             {/* Desktop Motion Navigation Menu */}
-            <nav className="hidden md:flex items-center space-x-1 relative">
+            <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1 relative">
               {navItems.map((item) => {
-                const isActive = activeSection === item.id;
+                const isActive = item.isRoute
+                  ? currentPage === item.id
+                  : activeSection === item.id && currentPage === 'home';
+
                 return (
                   <a
                     key={item.id}
                     href={item.href}
-                    onClick={(e) => handleNavClick(item.href, e)}
-                    className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
-                      isActive ? 'text-amber-600' : 'text-slate-700 hover:text-slate-900'
+                    onClick={(e) => handleItemClick(item, e)}
+                    className={`relative px-2.5 lg:px-3 py-1.5 text-xs lg:text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${
+                      isActive ? 'text-amber-600 font-bold' : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {item.label}
@@ -247,10 +267,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {isActive && (
                       <motion.div
                         layoutId="active-nav-indicator"
-                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full"
                         transition={{
                           type: 'spring',
-                          stiffness: 300,
+                          stiffness: 350,
                           damping: 30,
                           mass: 0.8,
                         }}
@@ -262,7 +282,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </nav>
 
             {/* Right Action CTA & Mobile Controls */}
-            <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
               {/* Live Matches & Scorecard CTA */}
               {onScorecardClick && (
                 <button
@@ -272,35 +292,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setMobileMenuOpen(false);
                     onScorecardClick();
                   }}
-                  className="py-1.5 px-2.5 sm:px-3.5 sm:py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider flex items-center space-x-1.5 border border-slate-700/80 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="py-1 px-2.5 sm:px-3 sm:py-1.5 rounded-full bg-slate-950 hover:bg-slate-800 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider flex items-center space-x-1.5 border border-slate-800 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+                  title="View Live Matches & Scores"
                 >
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                   </span>
                   <span className="text-amber-400 font-extrabold">LIVE</span>
-                  <span>Matches</span>
+                  <span className="hidden sm:inline">Matches</span>
                 </button>
               )}
 
-              {/* Live Scorer CTA (Desktop & Tablet) */}
-              {onScorerClick && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    document.body.style.overflow = '';
-                    setMobileMenuOpen(false);
-                    onScorerClick();
-                  }}
-                  className="hidden sm:flex py-1.5 px-2.5 sm:px-3 sm:py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider items-center space-x-1.5 border border-slate-700/80 shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                  <span className="text-amber-400 font-extrabold">LIVE</span>
-                  <span>Scorer</span>
-                </button>
-              )}
-
-              {/* Check Pass / Pay Due CTA */}
+              {/* Check Pass CTA */}
               <button
                 type="button"
                 onClick={() => {
@@ -308,10 +312,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                   onCheckPassClick?.();
                 }}
-                className="hidden sm:flex py-1.5 px-3 sm:px-4 sm:py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] sm:text-xs uppercase tracking-wider items-center space-x-1.5 shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+                className="hidden lg:inline-flex items-center space-x-1.5 py-1 px-3 sm:py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300/80 font-bold text-[10px] sm:text-xs uppercase tracking-wider shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+                title="Check Registration Pass or Pay Pending Dues"
               >
                 <Search className="w-3.5 h-3.5 text-amber-600" />
-                <span>Check Pass / Pay Due</span>
+                <span>Check Pass</span>
               </button>
 
               {/* Primary "Register Now" CTA with Character Flip Animation */}
@@ -325,7 +330,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                   onRegisterClick();
                 }}
-                className="py-1.5 px-3 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
+                className="py-1 px-3.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-xs hover:shadow-sm active:scale-95 transition-all flex items-center justify-center min-h-[30px] sm:min-h-[36px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
               >
                 <FlipText>Register Now</FlipText>
               </motion.button>
@@ -405,19 +410,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {/* Navigation Links with Proper Smooth Scroll */}
                   <nav className="flex flex-col space-y-1">
                     {navItems.map((item) => {
-                      const isActive = activeSection === item.id;
+                      const isActive = item.isRoute
+                        ? currentPage === item.id
+                        : activeSection === item.id && currentPage === 'home';
                       return (
                         <a
                           key={item.id}
                           href={item.href}
-                          onClick={(e) => handleNavClick(item.href, e)}
+                          onClick={(e) => handleItemClick(item, e)}
                           className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[42px] cursor-pointer ${
                             isActive
                               ? 'bg-amber-100/90 text-amber-950 font-extrabold border border-amber-300 shadow-2xs'
                               : 'text-slate-800 hover:bg-slate-50 active:bg-slate-100'
                           }`}
                         >
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2.5">
                             {isActive ? (
                               <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                             ) : (

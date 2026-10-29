@@ -11,6 +11,7 @@ import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
+import { RulesPage } from '@/components/pages/RulesPage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { Footer } from '@/components/layout/Footer';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
@@ -18,7 +19,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'scorecard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'scorecard' | 'rules'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -72,6 +73,16 @@ export function App() {
         setCurrentPage('terms');
         setShowIntro(false);
       } else if (
+        path === '/rules' ||
+        path.startsWith('/rules') ||
+        hash === '#/rules' ||
+        hash === '#rules' ||
+        hash === '#/rules-regulations' ||
+        hash === '#rules-regulations'
+      ) {
+        setCurrentPage('rules');
+        setShowIntro(false);
+      } else if (
         path === '/scorecard' ||
         path.startsWith('/scorecard') ||
         hash === '#/scorecard' ||
@@ -117,6 +128,12 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleRulesClick = () => {
+    setCurrentPage('rules');
+    window.location.hash = '/rules';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleBackToHome = () => {
     setCurrentPage('home');
     if (window.location.pathname !== '/' && window.location.pathname !== '') {
@@ -132,6 +149,10 @@ export function App() {
 
   if (currentPage === 'terms') {
     return <TermsPage onBackToHome={handleBackToHome} />;
+  }
+
+  if (currentPage === 'rules') {
+    return <RulesPage onBackToHome={handleBackToHome} onScorecardClick={handleScorecardClick} />;
   }
 
   return (
@@ -150,6 +171,7 @@ export function App() {
           onNavigateHome={handleBackToHome}
           onCheckPassClick={() => setIsCheckStatusOpen(true)}
           onScorecardClick={handleScorecardClick}
+          onRulesClick={handleRulesClick}
         />
 
         <main>
