@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CricketMatch, InningsState } from '@/types';
 import { formatOvers, calculateRunRate, calculateRequiredRunRate } from '@/lib/cricketData';
-import { SixerStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
+import { BoundaryStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
 import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface MatchDetailsModalProps {
@@ -15,17 +15,19 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
   const [selectedInningsNum, setSelectedInningsNum] = useState<1 | 2>(
     match.currentInningsNumber || 1
   );
-  const [showSixerAnimation, setShowSixerAnimation] = useState(false);
-  const [sixerAnimKey, setSixerAnimKey] = useState(0);
+  const [showBoundaryAnimation, setShowBoundaryAnimation] = useState(false);
+  const [boundaryRuns, setBoundaryRuns] = useState<4 | 6>(6);
+  const [boundaryAnimKey, setBoundaryAnimKey] = useState(0);
   const lastSeenBallIdRef = useRef<string | null>(null);
   const isInitialMount = useRef(true);
 
-  const triggerSixerAnimation = () => {
-    setSixerAnimKey((k) => k + 1);
-    setShowSixerAnimation(true);
+  const triggerBoundaryAnimation = (runs: 4 | 6) => {
+    setBoundaryRuns(runs);
+    setBoundaryAnimKey((k) => k + 1);
+    setShowBoundaryAnimation(true);
   };
 
-  // Real-time detector: triggers 6er & Traket reveal animation as soon as admin records a 6
+  // Real-time detector: triggers 4s / 6s & Traket reveal animation as soon as admin records a boundary
   useEffect(() => {
     if (!match) return;
 
@@ -48,9 +50,11 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
     if (latestBall && latestBall.id !== lastSeenBallIdRef.current) {
       lastSeenBallIdRef.current = latestBall.id;
 
-      // If the newly recorded delivery from admin is a 6!
+      // If the newly recorded delivery from admin is a 6 or 4!
       if (latestBall.runsOffBat === 6) {
-        triggerSixerAnimation();
+        triggerBoundaryAnimation(6);
+      } else if (latestBall.runsOffBat === 4) {
+        triggerBoundaryAnimation(4);
       }
     }
   }, [match]);
@@ -97,7 +101,20 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
           <div className="flex items-center space-x-2">
             <button
               type="button"
-              onClick={triggerSixerAnimation}
+              onClick={() => triggerBoundaryAnimation(4)}
+              title="Preview 4s & Sponsor Reveal Animation"
+              className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
+            >
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500" />
+              </span>
+              <span>⚡ Test 4</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => triggerBoundaryAnimation(6)}
               title="Preview 6er & Sponsor Reveal Animation"
               className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
             >
@@ -448,11 +465,12 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
         </div>
       </div>
 
-      {/* Floating 6er & Traket Animation at z-[60] directly above the live scorecard */}
-      {showSixerAnimation && (
-        <SixerStrikeAnimation
-          key={sixerAnimKey}
-          onComplete={() => setShowSixerAnimation(false)}
+      {/* Floating Boundary (4 or 6) & Traket Animation at z-[60] directly above the live scorecard */}
+      {showBoundaryAnimation && (
+        <BoundaryStrikeAnimation
+          key={boundaryAnimKey}
+          runs={boundaryRuns}
+          onComplete={() => setShowBoundaryAnimation(false)}
         />
       )}
     </div>
