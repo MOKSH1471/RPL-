@@ -12,6 +12,7 @@ import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { FAQPage } from '@/components/pages/FAQPage';
+import { RulesPage } from '@/components/pages/RulesPage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { Footer } from '@/components/layout/Footer';
 import { MobileStickyBar } from '@/components/layout/MobileStickyBar';
@@ -20,7 +21,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -73,6 +74,16 @@ export function App() {
         setShowIntro(false);
       } else if (path === '/faq' || hash === '#/faq' || hash === '#faq') {
         setCurrentPage('faq');
+      } else if (
+        path === '/rules' ||
+        path.startsWith('/rules') ||
+        hash === '#/rules' ||
+        hash === '#rules' ||
+        hash === '#/rules-regulations' ||
+        hash === '#rules-regulations'
+      ) {
+        setCurrentPage('rules');
+        setShowIntro(false);
       } else if (
         path === '/scorecard' ||
         path.startsWith('/scorecard') ||
@@ -152,6 +163,12 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleRulesClick = () => {
+    setCurrentPage('rules');
+    window.location.hash = '/rules';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleBackToHome = () => {
     setSelectedLeague('cricket');
     setRegistrationPrefill(null);
@@ -175,6 +192,10 @@ export function App() {
     return <FAQPage onBackToHome={handleBackToHome} onRegisterClick={handleRegisterClick} />;
   }
 
+  if (currentPage === 'rules') {
+    return <RulesPage onBackToHome={handleBackToHome} onScorecardClick={handleScorecardClick} />;
+  }
+
   return (
     <div className="relative min-h-screen w-full max-w-full overflow-x-hidden text-slate-900 bg-slate-50 selection:bg-amber-400 selection:text-slate-950">
       {/* Intro Splash Screen with TextMorph */}
@@ -192,6 +213,7 @@ export function App() {
           onNavigateHome={handleBackToHome}
           onCheckPassClick={() => setIsCheckStatusOpen(true)}
           onScorecardClick={handleScorecardClick}
+          onRulesClick={handleRulesClick}
         />
 
         <main>
