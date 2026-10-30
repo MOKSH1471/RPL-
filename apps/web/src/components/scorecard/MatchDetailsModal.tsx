@@ -3,7 +3,7 @@ import { CricketMatch, InningsState } from '@/types';
 import { formatOvers, calculateRunRate, calculateRequiredRunRate } from '@/lib/cricketData';
 import { BoundaryStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
 import { WicketStrikeAnimation } from '@/components/ui/WicketStrikeAnimation';
-import { X, Trophy, MapPin, Calendar, Clock, Activity, ShieldCheck, Sparkles, ChevronDown } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
 
 interface MatchDetailsModalProps {
   match: CricketMatch | null;
@@ -46,7 +46,6 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
     const currentInnings = match.currentInningsNumber === 1 ? match.innings1 : match.innings2;
     if (!currentInnings) return;
 
-    // Always inspect the newest ball recorded across the innings (balls[0] is newest)
     const latestBall = currentInnings.balls && currentInnings.balls.length > 0 ? currentInnings.balls[0] : null;
 
     if (isInitialMount.current) {
@@ -58,7 +57,6 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
     if (latestBall && latestBall.id !== lastSeenBallIdRef.current) {
       lastSeenBallIdRef.current = latestBall.id;
 
-      // If the newly recorded delivery from admin is a wicket!
       if (latestBall.isWicket || (latestBall.wicketType && latestBall.wicketType !== 'none')) {
         triggerWicketAnimation();
       } else if (latestBall.runsOffBat === 6) {
@@ -79,7 +77,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
 
   // Key live metrics
   const crr = innings ? calculateRunRate(innings.totalRuns, innings.legalBallsBowled) : '0.00';
-  let rrr = '0.00';
+  let rrr = '';
   if (match.status === 'live' && selectedInningsNum === 2 && match.target && innings) {
     const runsNeeded = Math.max(0, match.target - innings.totalRuns);
     const ballsRemaining = Math.max(0, match.oversPerSide * 6 - innings.legalBallsBowled);
@@ -87,185 +85,151 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto"
+      onClick={onClose}
+    >
       <div
-        className="relative w-full max-w-4xl bg-[#14161b] text-slate-100 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-3xl bg-white text-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Top Bar with Match Title and Close Button ── */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-800 bg-[#181a20]">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] uppercase tracking-wider border border-amber-500/30">
+        {/* ── Top Bar: Match Header & Close Button ── */}
+        <div className="flex items-center justify-between p-3.5 sm:p-5 border-b border-slate-100 bg-slate-50/70">
+          <div className="min-w-0 pr-3">
+            <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
                 {match.tournamentName || 'RPL Season 9'}
               </span>
-              <span className="text-xs text-slate-400 font-medium">
-                {match.stage || `Match ${match.matchNumber}`}
+              <span className="text-[11px] sm:text-xs text-slate-500 font-semibold truncate">
+                {match.stage || `Match ${match.matchNumber || 1}`} · {match.oversPerSide || 10} Overs
               </span>
             </div>
-            <h3 className="text-lg sm:text-2xl font-black text-slate-100 tracking-tight mt-1 flex items-center space-x-2">
-              <span>{match.teamA.name}</span>
-              <span className="text-amber-400 text-sm font-normal">vs</span>
-              <span>{match.teamB.name}</span>
+            <h3 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight mt-1 flex items-center space-x-1.5 truncate leading-tight">
+              <span className="truncate">{match.teamA.name}</span>
+              <span className="text-amber-600 text-xs font-bold px-1 py-0.2 rounded bg-amber-100/70 shrink-0">vs</span>
+              <span className="truncate">{match.teamB.name}</span>
             </h3>
           </div>
 
-          <div className="flex items-center space-x-1.5 sm:space-x-2">
-            <button
-              type="button"
-              onClick={triggerWicketAnimation}
-              title="Preview OUT & SeaMak Sponsor Reveal Animation"
-              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
-            >
-              <span className="flex h-1.5 w-1.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500" />
-              </span>
-              <span>⚡ Out</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => triggerBoundaryAnimation(4)}
-              title="Preview 4s & Sponsor Reveal Animation"
-              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
-            >
-              <span className="flex h-1.5 w-1.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500" />
-              </span>
-              <span>⚡ 4</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => triggerBoundaryAnimation(6)}
-              title="Preview 6er & Sponsor Reveal Animation"
-              className="inline-flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] sm:text-xs font-bold transition-all cursor-pointer"
-            >
-              <span className="flex h-1.5 w-1.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
-              </span>
-              <span>⚡ 6</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* ── Live Match Summary Banner ── */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-[#1c1f27] to-[#171920] border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="text-xs text-slate-400 font-medium flex items-center space-x-2">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              <span>{match.venue}</span>
-            </div>
-            <div className="text-sm font-semibold text-amber-400">
+        {/* ── Match Summary & Rates Bar ── */}
+        <div className="p-3 sm:p-4 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="space-y-0.5 min-w-0">
+            {match.venue && (
+              <div className="text-xs text-slate-500 font-medium flex items-center space-x-1 truncate">
+                <MapPin className="w-3 h-3 text-amber-600 shrink-0" />
+                <span className="truncate">{match.venue}</span>
+              </div>
+            )}
+            <div className="text-xs sm:text-sm font-bold text-slate-900">
               {match.resultSummary || (match.target ? `Target: ${match.target} runs` : 'Match in progress')}
             </div>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs font-mono">
-            <div className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
-              <span className="text-slate-400 block text-[10px] uppercase font-sans">CRR</span>
-              <span className="text-slate-100 font-bold text-sm">{crr}</span>
+          <div className="flex items-center space-x-2 text-xs font-mono shrink-0">
+            <div className="bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-center">
+              <span className="text-slate-400 block text-[9px] uppercase font-sans font-bold">CRR</span>
+              <span className="text-slate-900 font-bold">{crr}</span>
             </div>
-            {match.status === 'live' && selectedInningsNum === 2 && (
-              <div className="bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/30">
-                <span className="text-amber-400 block text-[10px] uppercase font-sans">RRR</span>
-                <span className="text-amber-300 font-bold text-sm">{rrr}</span>
+            {match.status === 'live' && selectedInningsNum === 2 && rrr && (
+              <div className="bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 text-center">
+                <span className="text-amber-800 block text-[9px] uppercase font-sans font-bold">RRR</span>
+                <span className="text-amber-900 font-bold">{rrr}</span>
               </div>
             )}
-            <div className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
-              <span className="text-slate-400 block text-[10px] uppercase font-sans">Format</span>
-              <span className="text-slate-100 font-bold text-sm">{match.oversPerSide} Ov</span>
+            <div className="bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-center">
+              <span className="text-slate-400 block text-[9px] uppercase font-sans font-bold">Overs</span>
+              <span className="text-slate-900 font-bold">{match.oversPerSide} Ov</span>
             </div>
           </div>
         </div>
 
         {/* ── Innings Tab Selector ── */}
-        <div className="flex items-center space-x-2 p-3 sm:p-4 bg-[#181a20] border-b border-slate-800">
+        <div className="flex items-center space-x-1.5 p-2 sm:p-3 bg-slate-50/70 border-b border-slate-100 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setSelectedInningsNum(1)}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               selectedInningsNum === 1
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-amber-500 text-slate-950 shadow-2xs font-black'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
             }`}
           >
-            1st Inns · {inn1BatTeam.shortName} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
+            1st Inns · {inn1BatTeam.shortName || inn1BatTeam.name} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
           </button>
 
           {match.innings2 && (
             <button
               type="button"
               onClick={() => setSelectedInningsNum(2)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 selectedInningsNum === 2
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-amber-500 text-slate-950 shadow-2xs font-black'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
               }`}
             >
-              2nd Inns · {inn2BatTeam.shortName} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
+              2nd Inns · {inn2BatTeam.shortName || inn2BatTeam.name} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
             </button>
           )}
         </div>
 
         {/* ── Scorecard Body ── */}
-        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-6">
+        <div className="p-3.5 sm:p-5 overflow-y-auto space-y-5 flex-1">
           {!innings ? (
-            <div className="text-center py-12 text-slate-400 text-sm">
+            <div className="text-center py-10 text-slate-400 text-xs">
               Innings has not commenced yet.
             </div>
           ) : (
             <>
-              {/* Live Crease & Current Over Widget (when live) */}
+              {/* Live Crease & Current Over Strip (when live) */}
               {match.status === 'live' && selectedInningsNum === match.currentInningsNumber && (
-                <div className="bg-[#1c1f27] border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center space-x-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="bg-amber-50/40 border border-amber-200/70 rounded-xl p-3 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center space-x-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       <span>Live at Crease</span>
                     </span>
+
                     {/* Recent Over Deliveries */}
-                    <div className="flex items-center space-x-1">
-                      <span className="text-[10px] text-slate-400 font-medium mr-1">This Over:</span>
+                    <div className="flex items-center space-x-1 overflow-hidden">
+                      <span className="text-[10px] text-slate-500 font-semibold mr-1">Over:</span>
                       {(() => {
                         const deliveries = innings.currentOverBalls && innings.currentOverBalls.length > 0
                           ? innings.currentOverBalls
                           : innings.balls.slice(0, 6).reverse();
-                        if (deliveries.length === 0) return <span className="text-slate-500 text-xs font-mono">-</span>;
+                        if (deliveries.length === 0) return <span className="text-slate-400 text-xs font-mono">-</span>;
                         return deliveries.map((b, i) => {
-                          let bg = 'bg-slate-800 text-slate-200 border-slate-700';
+                          let badgeClass = 'bg-white text-slate-700 border-slate-200';
                           let label = b.runsOffBat.toString();
                           if (b.isWicket) {
-                            bg = 'bg-rose-500 text-white border-rose-400 font-bold';
+                            badgeClass = 'bg-rose-100 text-rose-800 border-rose-300 font-black animate-pulse';
                             label = 'W';
                           } else if (b.runsOffBat === 6) {
-                            bg = 'bg-amber-500 text-slate-950 font-black border-amber-400';
+                            badgeClass = 'bg-amber-100 text-amber-900 border-amber-300 font-black';
                             label = '6';
                           } else if (b.runsOffBat === 4) {
-                            bg = 'bg-cyan-500 text-slate-950 font-black border-cyan-400';
+                            badgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300 font-black';
                             label = '4';
                           } else if (b.runsOffBat === 0 && !b.isExtra) {
-                            bg = 'bg-slate-800 text-slate-400 border-slate-700';
+                            badgeClass = 'bg-slate-100 text-slate-500 border-slate-200 font-bold';
                             label = '•';
                           } else if (b.isExtra) {
-                            bg = 'bg-indigo-500 text-white font-bold border-indigo-400';
+                            badgeClass = 'bg-orange-50 text-orange-800 border-orange-200 text-[10px]';
                             label = `${b.extraType === 'wide' ? 'Wd' : b.extraType === 'noball' ? 'Nb' : 'Ex'}`;
                           }
                           return (
                             <span
                               key={i}
-                              className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full text-[10px] font-mono flex items-center justify-center border shadow-xs ${bg}`}
+                              className={`w-5 h-5 rounded-full text-[10px] font-mono font-bold flex items-center justify-center border shrink-0 ${badgeClass}`}
                             >
                               {label}
                             </span>
@@ -275,19 +239,19 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                     </div>
                   </div>
 
-                  {/* Batsmen & Bowler Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  {/* Active Crease Duo Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     {/* Striker */}
                     {(() => {
                       const striker = innings.batsmen.find((b) => b.playerId === innings.activeStrikerId || b.isStriker) || innings.batsmen[0];
                       return striker ? (
-                        <div className="bg-[#14161b] p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-400 block">Striker</span>
-                          <span className="font-bold text-slate-100 truncate block">
-                            {striker.name} <span className="text-amber-400 font-black">*</span>
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
+                          <span className="text-[10px] text-slate-500 font-semibold block uppercase">Striker</span>
+                          <span className="font-bold text-slate-900 truncate block">
+                            {striker.name} <span className="text-amber-600 font-black">*</span>
                           </span>
-                          <span className="font-mono text-slate-300 text-[11px]">
-                            {striker.runs} ({striker.balls}) · {striker.fours} 4s, {striker.sixes} 6s
+                          <span className="font-mono text-slate-600 text-[11px]">
+                            {striker.runs} ({striker.balls}b) · {striker.fours} 4s, {striker.sixes} 6s
                           </span>
                         </div>
                       ) : null;
@@ -297,24 +261,24 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                     {(() => {
                       const nonStriker = innings.batsmen.find((b) => b.playerId === innings.activeNonStrikerId || (!b.isStriker && !b.isOut)) || innings.batsmen[1];
                       return nonStriker ? (
-                        <div className="bg-[#14161b] p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-400 block">Non-Striker</span>
-                          <span className="font-bold text-slate-100 truncate block">{nonStriker.name}</span>
-                          <span className="font-mono text-slate-300 text-[11px]">
-                            {nonStriker.runs} ({nonStriker.balls}) · {nonStriker.fours} 4s, {nonStriker.sixes} 6s
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
+                          <span className="text-[10px] text-slate-500 font-semibold block uppercase">Non-Striker</span>
+                          <span className="font-bold text-slate-900 truncate block">{nonStriker.name}</span>
+                          <span className="font-mono text-slate-600 text-[11px]">
+                            {nonStriker.runs} ({nonStriker.balls}b) · {nonStriker.fours} 4s, {nonStriker.sixes} 6s
                           </span>
                         </div>
                       ) : null;
                     })()}
 
-                    {/* Active Bowler */}
+                    {/* Bowler */}
                     {(() => {
                       const bowler = innings.bowlers.find((b) => b.playerId === innings.activeBowlerId) || innings.bowlers[innings.bowlers.length - 1];
                       return bowler ? (
-                        <div className="bg-[#14161b] p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-400 block">Bowler</span>
-                          <span className="font-bold text-slate-100 truncate block">{bowler.name}</span>
-                          <span className="font-mono text-slate-300 text-[11px]">
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
+                          <span className="text-[10px] text-slate-500 font-semibold block uppercase">Bowler</span>
+                          <span className="font-bold text-slate-900 truncate block">{bowler.name}</span>
+                          <span className="font-mono text-slate-600 text-[11px]">
                             {bowler.wickets}/{bowler.runsConceded} ({formatOvers(bowler.legalBalls)} ov) · Econ {bowler.economy.toFixed(1)}
                           </span>
                         </div>
@@ -324,34 +288,41 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                 </div>
               )}
 
-              {/* Batting Scorecard Table */}
+              {/* ── Batting Scorecard Table (Clean & No Overflow) ── */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">
-                    Batting Scorecard — <span className="text-slate-200">{battingTeam.name}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600">
+                    Batting Scorecard — <span className="text-slate-900">{battingTeam.name}</span>
                   </h4>
-                  <span className="text-xs font-mono font-bold text-amber-400">
+                  <span className="text-xs font-mono font-bold text-amber-700">
                     {innings.totalRuns}/{innings.totalWickets} ({formatOvers(innings.legalBallsBowled)} ov)
                   </span>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-[#181a20]">
-                  <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="bg-slate-800/60 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold text-[10px] sm:text-xs">
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs table-fixed">
+                    <colgroup>
+                      <col className="w-auto" />
+                      <col className="w-8 sm:w-10" />
+                      <col className="w-7 sm:w-9" />
+                      <col className="w-6 sm:w-8" />
+                      <col className="w-6 sm:w-8" />
+                      <col className="w-11 sm:w-13" />
+                    </colgroup>
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                       <tr>
-                        <th className="py-2.5 px-3 sm:px-4">Batter</th>
-                        <th className="py-2.5 px-2 sm:px-3">Dismissal</th>
-                        <th className="py-2.5 px-2 text-right">R</th>
-                        <th className="py-2.5 px-2 text-right">B</th>
-                        <th className="py-2.5 px-2 text-right">4s</th>
-                        <th className="py-2.5 px-2 text-right">6s</th>
-                        <th className="py-2.5 px-3 text-right">SR</th>
+                        <th className="py-2 px-2.5 sm:px-3">Batter</th>
+                        <th className="py-2 px-1 text-right">R</th>
+                        <th className="py-2 px-1 text-right">B</th>
+                        <th className="py-2 px-1 text-right">4s</th>
+                        <th className="py-2 px-1 text-right">6s</th>
+                        <th className="py-2 px-2 text-right">SR</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/80 font-medium">
+                    <tbody className="divide-y divide-slate-100 font-medium">
                       {innings.batsmen.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-6 text-center text-slate-500">
+                          <td colSpan={6} className="py-6 text-center text-slate-400">
                             No batting stats recorded yet
                           </td>
                         </tr>
@@ -361,114 +332,126 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                           const hasBatted = batsman.balls > 0 || batsman.runs > 0 || isAtCrease || batsman.isOut;
                           const statusText = batsman.isOut ? batsman.dismissalText || 'out' : hasBatted ? 'not out' : 'Did not bat';
                           return (
-                          <tr key={batsman.playerId} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-2.5 px-3 sm:px-4">
-                              <span className="font-bold text-slate-100">{batsman.name}</span>
-                              {!batsman.isOut && isAtCrease && <span className="text-amber-400 ml-1 font-bold">*</span>}
-                            </td>
-                            <td className={`py-2.5 px-2 sm:px-3 text-xs ${hasBatted ? 'text-slate-400' : 'text-slate-500 italic'}`}>
-                              {statusText}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-100">
-                              {batsman.runs}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono text-slate-400">
-                              {batsman.balls}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono text-slate-400">
-                              {batsman.fours}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono text-slate-400">
-                              {batsman.sixes}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-300">
-                              {batsman.strikeRate.toFixed(1)}
-                            </td>
-                          </tr>
-                        );
+                            <tr key={batsman.playerId} className="hover:bg-amber-50/15 transition-colors">
+                              <td className="py-2 px-2.5 sm:px-3 truncate">
+                                <div className="truncate">
+                                  <span className="font-bold text-slate-900 truncate">
+                                    {batsman.name}
+                                    {!batsman.isOut && isAtCrease && <span className="text-amber-600 ml-1 font-black">*</span>}
+                                  </span>
+                                  <div className="text-[10px] text-slate-400 truncate italic">
+                                    {statusText}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-1 text-right font-mono font-black text-slate-900">
+                                {batsman.runs}
+                              </td>
+                              <td className="py-2 px-1 text-right font-mono text-slate-500">
+                                {batsman.balls}
+                              </td>
+                              <td className="py-2 px-1 text-right font-mono text-slate-600">
+                                {batsman.fours}
+                              </td>
+                              <td className="py-2 px-1 text-right font-mono text-slate-600">
+                                {batsman.sixes}
+                              </td>
+                              <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
+                                {batsman.strikeRate.toFixed(1)}
+                              </td>
+                            </tr>
+                          );
                         })
                       )}
                     </tbody>
                   </table>
 
                   {/* Extras and Total Footer */}
-                  <div className="p-3 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>
-                      Extras: <strong className="text-slate-200">{innings.extras.total}</strong>{' '}
+                  <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                    <span className="text-[11px] truncate pr-2">
+                      Extras: <strong className="text-slate-900">{innings.extras.total}</strong>{' '}
                       (w {innings.extras.wides}, nb {innings.extras.noballs}, b {innings.extras.byes}, lb {innings.extras.legbyes})
                     </span>
-                    <span className="font-bold text-slate-200">
+                    <span className="font-black text-slate-900 shrink-0 font-mono">
                       Total: {innings.totalRuns}/{innings.totalWickets} ({formatOvers(innings.legalBallsBowled)} Ov)
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Fall of Wickets */}
+              {/* ── Fall of Wickets ── */}
               {innings.fallOfWickets && innings.fallOfWickets.length > 0 && (
                 <div>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600 mb-1.5">
                     Fall of Wickets
                   </h4>
-                  <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex flex-wrap gap-1.5 text-xs">
                     {innings.fallOfWickets.map((fow) => (
                       <span
                         key={fow.wicketNumber}
-                        className="bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60 text-slate-300"
+                        className="bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 text-slate-700 font-medium"
                       >
-                        <strong className="text-amber-400">{fow.score}/{fow.wicketNumber}</strong> ({fow.playerOutName}, {fow.overDisplay} ov)
+                        <strong className="text-amber-700 font-mono">{fow.score}/{fow.wicketNumber}</strong> ({fow.playerOutName}, {fow.overDisplay} ov)
                       </span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Bowling Scorecard Table */}
+              {/* ── Bowling Scorecard Table (Clean & No Overflow) ── */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">
-                    Bowling — <span className="text-slate-200">{bowlingTeam.name}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600">
+                    Bowling — <span className="text-slate-900">{bowlingTeam.name}</span>
                   </h4>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-[#181a20]">
-                  <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="bg-slate-800/60 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold text-[10px] sm:text-xs">
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs table-fixed">
+                    <colgroup>
+                      <col className="w-auto" />
+                      <col className="w-8 sm:w-10" />
+                      <col className="w-6 sm:w-8" />
+                      <col className="w-8 sm:w-10" />
+                      <col className="w-7 sm:w-9" />
+                      <col className="w-11 sm:w-13" />
+                    </colgroup>
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold text-[10px]">
                       <tr>
-                        <th className="py-2.5 px-3 sm:px-4">Bowler</th>
-                        <th className="py-2.5 px-2 text-right">O</th>
-                        <th className="py-2.5 px-2 text-right">M</th>
-                        <th className="py-2.5 px-2 text-right">R</th>
-                        <th className="py-2.5 px-2 text-right">W</th>
-                        <th className="py-2.5 px-3 text-right">Econ</th>
+                        <th className="py-2 px-2.5 sm:px-3">Bowler</th>
+                        <th className="py-2 px-1 text-right">O</th>
+                        <th className="py-2 px-1 text-right">M</th>
+                        <th className="py-2 px-1 text-right">R</th>
+                        <th className="py-2 px-1 text-right font-bold text-amber-700">W</th>
+                        <th className="py-2 px-2 text-right">Econ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/80 font-medium">
+                    <tbody className="divide-y divide-slate-100 font-medium">
                       {innings.bowlers.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-6 text-center text-slate-500">
+                          <td colSpan={6} className="py-6 text-center text-slate-400">
                             No bowling figures recorded
                           </td>
                         </tr>
                       ) : (
                         innings.bowlers.map((bowler) => (
-                          <tr key={bowler.playerId} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-2.5 px-3 sm:px-4 font-bold text-slate-100">
+                          <tr key={bowler.playerId} className="hover:bg-amber-50/15 transition-colors">
+                            <td className="py-2 px-2.5 sm:px-3 font-bold text-slate-900 truncate">
                               {bowler.name}
                             </td>
-                            <td className="py-2.5 px-2 text-right font-mono text-slate-300">
+                            <td className="py-2 px-1 text-right font-mono text-slate-600">
                               {formatOvers(bowler.legalBalls)}
                             </td>
-                            <td className="py-2.5 px-2 text-right font-mono text-slate-400">
+                            <td className="py-2 px-1 text-right font-mono text-slate-400">
                               {bowler.maidens}
                             </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-100">
+                            <td className="py-2 px-1 text-right font-mono font-bold text-slate-900">
                               {bowler.runsConceded}
                             </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-bold text-amber-400">
+                            <td className="py-2 px-1 text-right font-mono font-black text-amber-700">
                               {bowler.wickets}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-300">
+                            <td className="py-2 px-2 text-right font-mono font-bold text-slate-700">
                               {bowler.economy.toFixed(2)}
                             </td>
                           </tr>
@@ -482,20 +465,55 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
           )}
         </div>
 
-        {/* ── Modal Footer ── */}
-        <div className="p-4 sm:p-5 bg-[#181a20] border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Toss: {match.tossWinnerId ? `${match.tossWinnerId === match.teamA.id ? match.teamA.name : match.teamB.name} elected to ${match.tossDecision}` : 'Yet to be conducted'}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors cursor-pointer"
-          >
-            Close
-          </button>
+        {/* ── Modal Footer with Integrated Test FX Controls ── */}
+        <div className="p-3 sm:p-4 bg-slate-50/90 border-t border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 text-xs text-slate-600 shrink-0">
+          {/* Strike Animation Test Controls (Permanently docked, zero overflow) */}
+          <div className="flex items-center space-x-1.5 flex-wrap">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-0.5">
+              Test FX:
+            </span>
+            <button
+              type="button"
+              onClick={triggerWicketAnimation}
+              title="Test OUT strike animation"
+              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold transition-colors cursor-pointer active:scale-95"
+            >
+              <span>⚡ Out</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => triggerBoundaryAnimation(4)}
+              title="Test 4s boundary animation"
+              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-colors cursor-pointer active:scale-95"
+            >
+              <span>⚡ 4</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => triggerBoundaryAnimation(6)}
+              title="Test 6er strike animation"
+              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer active:scale-95"
+            >
+              <span>⚡ 6</span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end space-x-3 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/70">
+            <span className="truncate pr-2 text-[11px] text-slate-500 max-w-[200px] sm:max-w-xs">
+              Toss: {match.tossWinnerId ? `${match.tossWinnerId === match.teamA.id ? match.teamA.shortName || match.teamA.name : match.teamB.shortName || match.teamB.name} elected to ${match.tossDecision}` : 'Yet to be conducted'}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold transition-colors cursor-pointer shrink-0 text-xs shadow-2xs"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Floating Boundary (4 or 6) & Traket Animation at z-[60] directly above the live scorecard */}
+      {/* Floating Boundary (4 or 6) & Traket Animation directly above the live scorecard */}
       {showBoundaryAnimation && (
         <BoundaryStrikeAnimation
           key={boundaryAnimKey}
@@ -504,7 +522,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
         />
       )}
 
-      {/* Floating OUT & SeaMak GROUP Animation at z-[60] directly above the live scorecard */}
+      {/* Floating OUT & SeaMak GROUP Animation directly above the live scorecard */}
       {showWicketAnimation && (
         <WicketStrikeAnimation
           key={wicketAnimKey}
