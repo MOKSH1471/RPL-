@@ -1,12 +1,12 @@
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
-import { Calendar, Clock, Lock, Sparkles, ShieldCheck, Flame, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Lock, Sparkles, ShieldCheck, Flame } from 'lucide-react';
 
 interface ScheduleSectionProps {
   onRegisterClick?: () => void;
 }
 
-export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClick }) => {
+export const ScheduleSection: React.FC<ScheduleSectionProps> = () => {
   return (
     <section id="schedule" className="py-16 md:py-24 relative z-10 w-full max-w-full overflow-hidden bg-gradient-to-b from-white via-amber-50/40 to-slate-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -97,27 +97,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClic
                   <h4 className="font-extrabold text-sm text-slate-800">Fixtures Go Live</h4>
                   <p className="text-[11px] text-slate-500 mt-1">Complete dates &amp; timings announced.</p>
                 </div>
-              </div>
-
-              {/* CTA */}
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {onRegisterClick && (
-                  <button
-                    type="button"
-                    onClick={onRegisterClick}
-                    className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-extrabold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
-                  >
-                    <span>Register Before Auction</span>
-                    <ArrowRight className="w-4 h-4 text-amber-400" />
-                  </button>
-                )}
-                <a
-                  href="#/scorecard"
-                  className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs sm:text-sm border border-amber-300 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>View Live Match Scorecard</span>
-                </a>
               </div>
             </div>
           </div>

@@ -129,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
     { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true },
     { id: 'faq', label: 'FAQ', href: '#/faq', isRoute: true },
-    { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
+    { id: 'connect', label: 'Connect with RPL', href: '#connect' },
   ];
 
   const handleItemClick = (
