@@ -6,7 +6,7 @@ import { TeamOwnerModal } from '@/components/ui/TeamOwnerModal';
 
 export interface TitleSponsorConfig {
   name: string;
-  logo: string;
+  logo?: string;
   badgeText?: string;
   presenterText?: string;
   altText?: string;
@@ -14,11 +14,10 @@ export interface TitleSponsorConfig {
 
 // ── Easily configurable Title Sponsor (modify or set to null if changed) ──
 export const TITLE_SPONSOR: TitleSponsorConfig | null = {
-  name: 'Doshi Decor',
-  logo: '/sponsors/doshi-decor-transparent.png',
+  name: 'Shri Bakul Bhai Doshi',
   badgeText: 'TITLE SPONSOR',
   presenterText: 'PRESENTS',
-  altText: 'Doshi Decor - Official Title Sponsor',
+  altText: 'Shri Bakul Bhai Doshi',
 };
 
 interface HeroSectionProps {
@@ -33,7 +32,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
 
   const sponsorTickerItems = [
     'Raj Premier League',
-    'Doshi Decor',
+    'Shri Bakul Bhai Doshi',
     'Yuvraj Caterers',
     'Traket Multiventures Pvt.Ltd',
     'SeaMak Group',
@@ -45,18 +44,23 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         {/* Title Sponsor Presentation Header */}
         {TITLE_SPONSOR && (
           <div className="flex flex-col items-center justify-center mb-6 sm:mb-8 md:mb-10">
-            {/* Title Sponsor Logo (Prominently enlarged) */}
-            <div className="h-14 sm:h-18 md:h-24 lg:h-28 flex items-center justify-center mb-1 sm:mb-2">
-              <img
-                src={TITLE_SPONSOR.logo}
-                alt={TITLE_SPONSOR.altText || TITLE_SPONSOR.name}
-                className="h-full w-auto max-w-[210px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[460px] object-contain drop-shadow-xs"
-                loading="eager"
-              />
-            </div>
+            {TITLE_SPONSOR.logo ? (
+              <div className="h-14 sm:h-18 md:h-24 lg:h-28 flex items-center justify-center mb-1 sm:mb-2">
+                <img
+                  src={TITLE_SPONSOR.logo}
+                  alt={TITLE_SPONSOR.altText || TITLE_SPONSOR.name}
+                  className="h-full w-auto max-w-[210px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[460px] object-contain drop-shadow-xs"
+                  loading="eager"
+                />
+              </div>
+            ) : (
+              <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-extrabold text-slate-900 tracking-wide uppercase drop-shadow-xs">
+                {TITLE_SPONSOR.name}
+              </div>
+            )}
 
             {/* Presents Text with generous breathing room */}
-            <div className="text-xs sm:text-sm md:text-base font-extrabold text-slate-500 tracking-[0.28em] sm:tracking-[0.35em] uppercase mt-2 sm:mt-3 md:mt-4">
+            <div className="text-xs sm:text-sm md:text-base font-extrabold text-amber-600 tracking-[0.32em] sm:tracking-[0.4em] uppercase mt-2 sm:mt-3">
               {TITLE_SPONSOR.presenterText || 'PRESENTS'}
             </div>
           </div>
