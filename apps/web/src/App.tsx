@@ -14,6 +14,8 @@ import { TermsPage } from '@/components/pages/TermsPage';
 import { FAQPage } from '@/components/pages/FAQPage';
 import { RulesPage } from '@/components/pages/RulesPage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
+import { PostAuctionLockedPage } from '@/components/ui/PostAuctionLockedPage';
+import { checkIsAdminPreview, lockAdminPreview } from '@/lib/previewAuth';
 import { Footer } from '@/components/layout/Footer';
 import { MobileStickyBar } from '@/components/layout/MobileStickyBar';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
@@ -27,6 +29,7 @@ export function App() {
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
   const [checkStatusMobile, setCheckStatusMobile] = useState('');
   const [registrationPrefill, setRegistrationPrefill] = useState<any>(null);
+  const [isAdminPreview, setIsAdminPreview] = useState<boolean>(() => checkIsAdminPreview());
 
   // Background server spin-up on visit
   useEffect(() => {
@@ -50,6 +53,10 @@ export function App() {
         setIsCheckStatusOpen(true);
       } else if (openCheckPass) {
         setIsCheckStatusOpen(true);
+      }
+
+      if (checkIsAdminPreview()) {
+        setIsAdminPreview(true);
       }
     };
 
@@ -192,7 +199,7 @@ export function App() {
     return <FAQPage onBackToHome={handleBackToHome} onRegisterClick={handleRegisterClick} />;
   }
 
-  if (currentPage === 'rules') {
+  if (currentPage === 'rules' && isAdminPreview) {
     return <RulesPage onBackToHome={handleBackToHome} onScorecardClick={handleScorecardClick} />;
   }
 
@@ -214,6 +221,7 @@ export function App() {
           onCheckPassClick={() => setIsCheckStatusOpen(true)}
           onScorecardClick={handleScorecardClick}
           onRulesClick={handleRulesClick}
+          isAdminPreview={isAdminPreview}
         />
 
         <main>
@@ -229,7 +237,23 @@ export function App() {
               }}
             />
           ) : currentPage === 'scorecard' ? (
-            <ScorecardPage onBackToHome={handleBackToHome} />
+            !isAdminPreview ? (
+              <PostAuctionLockedPage
+                type="scorecard"
+                onBackToHome={handleBackToHome}
+                onUnlocked={() => setIsAdminPreview(true)}
+                onRegisterClick={handleRegisterClick}
+              />
+            ) : (
+              <ScorecardPage onBackToHome={handleBackToHome} />
+            )
+          ) : currentPage === 'rules' ? (
+            <PostAuctionLockedPage
+              type="rules"
+              onBackToHome={handleBackToHome}
+              onUnlocked={() => setIsAdminPreview(true)}
+              onRegisterClick={handleRegisterClick}
+            />
           ) : (
             <>
               <HeroSection
@@ -247,7 +271,30 @@ export function App() {
           )}
         </main>
 
-        <Footer onRegisterClick={handleRegisterClick} onCheckPassClick={() => setIsCheckStatusOpen(true)} />
+        <Footer
+          onRegisterClick={handleRegisterClick}
+          onCheckPassClick={() => setIsCheckStatusOpen(true)}
+          isAdminPreview={isAdminPreview}
+        />
+
+        {/* Floating indicator when Admin Preview Mode is active */}
+        {isAdminPreview && (
+          <div className="fixed bottom-3 right-3 z-50 flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/40 text-xs font-bold shadow-2xl backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Admin Preview Active</span>
+            <button
+              type="button"
+              onClick={() => {
+                lockAdminPreview();
+                setIsAdminPreview(false);
+              }}
+              className="ml-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] uppercase font-bold transition-colors cursor-pointer"
+              title="Lock preview mode"
+            >
+              Lock
+            </button>
+          </div>
+        )}
 
         {/* Mobile Sticky Quick Action Bar (Option 1) */}
         {currentPage === 'home' && (

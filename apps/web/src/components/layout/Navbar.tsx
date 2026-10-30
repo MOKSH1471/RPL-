@@ -12,6 +12,7 @@ interface NavbarProps {
   onSpectatorClick?: () => void;
   onScorecardClick?: () => void;
   onRulesClick?: () => void;
+  isAdminPreview?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSpectatorClick,
   onScorecardClick,
   onRulesClick,
+  isAdminPreview = false,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
@@ -122,15 +124,17 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
   }, [mobileMenuOpen]);
 
-  const navItems = [
+  const allNavItems = [
     { id: 'about', label: 'About', href: '#about' },
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
     { id: 'schedule', label: 'Schedule', href: '#schedule' },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
-    { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true },
+    { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true, adminOnly: true },
     { id: 'faq', label: 'FAQ', href: '#/faq', isRoute: true },
     { id: 'connect', label: 'Connect with RPL', href: '#connect' },
   ];
+
+  const navItems = allNavItems.filter((item) => !item.adminOnly || isAdminPreview);
 
   const handleItemClick = (
     item: { id: string; label: string; href: string; isRoute?: boolean },
@@ -266,9 +270,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     key={item.id}
                     href={item.href}
                     onClick={(e) => handleItemClick(item, e)}
-                    className={`relative px-2.5 lg:px-3 py-1.5 text-xs lg:text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${
-                      isActive ? 'text-amber-600 font-bold' : 'text-slate-700 hover:text-slate-900'
-                    }`}
+                    className={`relative px-2.5 lg:px-3 py-1.5 text-xs lg:text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${isActive ? 'text-amber-600 font-bold' : 'text-slate-700 hover:text-slate-900'
+                      }`}
                   >
                     <span className="whitespace-nowrap">{item.label}</span>
 
@@ -292,8 +295,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Right Action CTA & Mobile Controls */}
             <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-              {/* Live Matches & Scorecard CTA */}
-              {onScorecardClick && (
+              {/* Live Matches & Scorecard CTA (Visible when admin preview is enabled) */}
+              {onScorecardClick && isAdminPreview && (
                 <button
                   type="button"
                   onClick={() => {
@@ -373,8 +376,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="md:hidden pb-3 relative z-50"
               >
                 <div className="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200 shadow-xl space-y-2.5">
-                  {/* Live Matches & Scorecard Button in Mobile Menu */}
-                  {onScorecardClick && (
+                  {/* Live Matches & Scorecard Button in Mobile Menu (Visible when admin preview is enabled) */}
+                  {onScorecardClick && isAdminPreview && (
                     <button
                       type="button"
                       onClick={() => {
@@ -426,11 +429,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                           key={item.id}
                           href={item.href}
                           onClick={(e) => handleItemClick(item, e)}
-                          className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[42px] cursor-pointer ${
-                            isActive
-                              ? 'bg-amber-100/90 text-amber-950 font-extrabold border border-amber-300 shadow-2xs'
-                              : 'text-slate-800 hover:bg-slate-50 active:bg-slate-100'
-                          }`}
+                          className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[42px] cursor-pointer ${isActive
+                            ? 'bg-amber-100/90 text-amber-950 font-extrabold border border-amber-300 shadow-2xs'
+                            : 'text-slate-800 hover:bg-slate-50 active:bg-slate-100'
+                            }`}
                         >
                           <div className="flex items-center space-x-2.5">
                             {isActive ? (
@@ -457,7 +459,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }}
                       className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-xs uppercase tracking-wider shadow-sm active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[42px]"
                     >
-                      <span>Register for Season 9</span>
+                      <span>Player Registration</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                     <button
@@ -470,7 +472,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full py-2 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs uppercase tracking-wider border border-amber-300 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[38px]"
                     >
                       <Ticket className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Spectator Reg</span>
+                      <span>Spectator Registration</span>
                     </button>
                   </div>
                 </div>
