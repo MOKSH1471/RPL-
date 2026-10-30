@@ -6,7 +6,7 @@ interface ScheduleSectionProps {
   onRegisterClick?: () => void;
 }
 
-export const ScheduleSection: React.FC<ScheduleSectionProps> = ({ onRegisterClick }) => {
+export const ScheduleSection: React.FC<ScheduleSectionProps> = () => {
   return (
     <section id="schedule" className="py-16 md:py-24 relative z-10 w-full max-w-full overflow-hidden bg-gradient-to-b from-white via-amber-50/40 to-slate-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">

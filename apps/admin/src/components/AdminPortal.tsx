@@ -11,6 +11,8 @@ import {
   Sparkles,
   ShieldCheck,
   CreditCard,
+  Activity,
+  Shield,
 } from 'lucide-react';
 import { fetchAdminStats, fetchAdminRegistrations, fetchAdminAccommodation } from '@/lib/api';
 import { AdminDashboardTab } from './AdminDashboardTab';
@@ -18,14 +20,21 @@ import { AdminRegistrationsTab } from './AdminRegistrationsTab';
 import { AdminAccommodationTab } from './AdminAccommodationTab';
 import { AdminTransactionsTab } from './AdminTransactionsTab';
 import { AdminExportTab } from './AdminExportTab';
+import { AdminTeamMakerTab } from './AdminTeamMakerTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
+import { ScorerPage } from './scorer/ScorerPage';
+
+export type AdminRole = 'admin' | 'scorer';
 
 interface AdminPortalProps {
   onBackToHome: () => void;
+  userRole?: AdminRole;
 }
 
-export function AdminPortal({ onBackToHome }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports'>('dashboard');
+export function AdminPortal({ onBackToHome, userRole = 'admin' }: AdminPortalProps) {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer'>(
+    userRole === 'scorer' ? 'scorer' : 'dashboard'
+  );
   const [stats, setStats] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
@@ -250,6 +259,33 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
             <span>1-Click Exports</span>
           </button>
 
+          <button
+            type="button"
+            onClick={() => setActiveTab('teams')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'teams'
+                ? 'bg-slate-900 text-amber-300 shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+              }`}
+          >
+            <Shield className="w-4 h-4 text-amber-500" />
+            <span>Team Maker</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('scorer')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'scorer'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+                : 'text-slate-700 hover:bg-amber-50 hover:text-amber-900'
+              }`}
+          >
+            <Activity className="w-4 h-4 text-emerald-600" />
+            <span>Live Scorer</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-slate-900 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold">
+              Live
+            </span>
+          </button>
+
         </div>
       </header>
 
@@ -286,6 +322,20 @@ export function AdminPortal({ onBackToHome }: AdminPortalProps) {
             registrations={registrations}
             accommodationList={accommodationList}
           />
+        )}
+
+        {activeTab === 'teams' && (
+          <AdminTeamMakerTab
+            registrations={registrations}
+            loading={loading}
+            onRefresh={loadData}
+          />
+        )}
+
+        {activeTab === 'scorer' && (
+          <div className="rounded-3xl min-h-[85vh]">
+            <ScorerPage onBackToHome={() => setActiveTab('dashboard')} />
+          </div>
         )}
 
       </main>
