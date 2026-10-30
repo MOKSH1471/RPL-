@@ -1,148 +1,599 @@
 import React, { useState, useMemo } from 'react';
 import {
-  FileText,
   ArrowLeft,
   Search,
-  Zap,
-  Sparkles,
   Trophy,
-  Shield,
+  Zap,
   Clock,
-  AlertTriangle,
+  ShieldCheck,
   Scale,
-  Users,
-  Target,
-  Flame,
-  CheckCircle2,
+  Sparkles,
+  Share2,
+  Check,
   ChevronRight,
-  ExternalLink,
+  Award,
   BookOpen,
+  Phone,
+  MessageCircle,
+  ExternalLink,
 } from 'lucide-react';
+import { Footer } from '@/components/layout/Footer';
 
 interface RulesPageProps {
   onBackToHome: () => void;
-  onScorecardClick?: () => void;
+  onRegisterClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
-type CategoryTab =
+type RuleCategory =
   | 'all'
-  | 'powerball'
-  | 'meeraben'
   | 'format'
-  | 'bowling'
   | 'batting'
+  | 'bowling'
+  | 'meeraben'
+  | 'powerball'
   | 'fielding'
-  | 'timings'
-  | 'conduct';
+  | 'timings';
 
-export const RulesPage: React.FC<RulesPageProps> = ({ onBackToHome, onScorecardClick }) => {
-  const [activeTab, setActiveTab] = useState<CategoryTab>('all');
+interface RuleItem {
+  id: number;
+  category: RuleCategory;
+  categoryLabel: string;
+  plainText: string;
+  text: React.ReactNode;
+}
+
+export const RulesPage: React.FC<RulesPageProps> = ({
+  onBackToHome,
+  onRegisterClick,
+  onCheckPassClick,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<RuleCategory>('all');
+  const [copiedRuleId, setCopiedRuleId] = useState<number | null>(null);
 
-  const tabs: { id: CategoryTab; label: string; icon: React.ReactNode; count?: number }[] = [
-    { id: 'all', label: 'All Rules', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'powerball', label: '⚡ Powerball (New)', icon: <Zap className="w-4 h-4 text-amber-500" /> },
-    { id: 'meeraben', label: '🌸 Meeraben Rules', icon: <Sparkles className="w-4 h-4 text-pink-500" /> },
-    { id: 'format', label: 'Match Format', icon: <Trophy className="w-4 h-4 text-blue-500" /> },
-    { id: 'bowling', label: 'Bowling Rules', icon: <Target className="w-4 h-4 text-emerald-500" /> },
-    { id: 'batting', label: 'Batting & Crease', icon: <Flame className="w-4 h-4 text-orange-500" /> },
-    { id: 'fielding', label: 'Fielding Limits', icon: <Shield className="w-4 h-4 text-indigo-500" /> },
-    { id: 'timings', label: 'Timings & Penalties', icon: <Clock className="w-4 h-4 text-red-500" /> },
-    { id: 'conduct', label: 'Code of Conduct', icon: <Scale className="w-4 h-4 text-purple-500" /> },
+  const rules: RuleItem[] = [
+    {
+      id: 1,
+      category: 'format',
+      categoryLabel: 'Match Format',
+      plainText:
+        'Matches will be played for 6 overs including one MeeraBen Over…Maximum 1 overs per bowler...Over Format (1,1,1,1,1,1) (First Meeraben over compulsory).',
+      text: (
+        <>
+          Matches will be played for 6 overs including one MeeraBen Over… Maximum 1 overs per bowler... Over Format (1,1,1,1,1,1){' '}
+          <span className="font-bold text-slate-900">
+            (First Meeraben over compulsory)
+          </span>
+          .
+        </>
+      ),
+    },
+    {
+      id: 2,
+      category: 'format',
+      categoryLabel: 'Quarter / Finals',
+      plainText:
+        'For Quarter Finals – Semi Finals & Finals – Matches will be held for 8 overs (Overs Format – 2,2,1,1,1,1) – First Meeraben Over Compulsory.',
+      text: (
+        <>
+          For Quarter Finals – Semi Finals &amp; Finals – Matches will be held for 8 overs{' '}
+          <span className="font-bold text-slate-900">
+            (Overs Format – 2,2,1,1,1,1) – First Meeraben Over Compulsory
+          </span>
+          .
+        </>
+      ),
+    },
+    {
+      id: 3,
+      category: 'format',
+      categoryLabel: 'Squad & Players',
+      plainText:
+        'On field there can be 11 players, all 11 can bat, there is no LAST MAN STANDING. If a team doesn’t have 11 players they’ll have to play with short players. (Their owner can play instead of the Player but no one else)',
+      text: (
+        <>
+          On field there can be 11 players, all 11 can bat, there is no <strong>LAST MAN STANDING</strong>. If a team doesn’t have 11 players they’ll have to play with short players.{' '}
+          <span className="font-bold text-slate-900">
+            (Their owner can play instead of the Player but no one else)
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 4,
+      category: 'batting',
+      categoryLabel: 'Dismissals',
+      plainText: 'No leg before wicket.',
+      text: <>No leg before wicket (LBW).</>,
+    },
+    {
+      id: 5,
+      category: 'fielding',
+      categoryLabel: 'Fielding',
+      plainText:
+        'Run out can be direct hit or if bowler, fielder, wicketkeeper hit wickets with ball in same hand.',
+      text: (
+        <>
+          Run out can be direct hit or if bowler, fielder, wicketkeeper hit wickets with ball in same hand.
+        </>
+      ),
+    },
+    {
+      id: 6,
+      category: 'bowling',
+      categoryLabel: 'Deliveries',
+      plainText: 'Wide and no ball as per cricket rules.',
+      text: <>Wide and no ball as per standard cricket rules.</>,
+    },
+    {
+      id: 7,
+      category: 'bowling',
+      categoryLabel: 'Bowling Speed',
+      plainText:
+        'Fast bowling is not allowed and will be called No ball after 2 warnings. First two fast balls warning will be considered dead balls.',
+      text: (
+        <>
+          Fast bowling is not allowed and will be called No ball after 2 warnings. First two fast balls warning will be considered dead balls.
+        </>
+      ),
+    },
+    {
+      id: 8,
+      category: 'batting',
+      categoryLabel: 'Retirement Rule',
+      plainText:
+        'A batsman has to retire if he crosses 36 Individual runs. This Rule is applicable for League stages only. He can Bat again if the complete team gets dismissed. But Please Note Last Man Batting is not allowed…',
+      text: (
+        <>
+          A batsman has to retire if he crosses 36 Individual runs.{' '}
+          <span className="font-bold text-slate-900">
+            This Rule is applicable for League stages only. He can Bat again if the complete team gets dismissed. But Please Note Last Man Batting is not allowed…
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 9,
+      category: 'meeraben',
+      categoryLabel: 'Meeraben Over',
+      plainText:
+        'In Meeraben over 1 wicket = minus 5 runs for batting side. Whatever runs scored by batting side will be divided by 2 (Applicable only for Haribhai batsmen) and then 5 runs will be deducted from the total…Meeraben bowling to Meeraben batsmen normal cricket rules are applicable.',
+      text: (
+        <>
+          In Meeraben over 1 wicket = minus 5 runs for batting side.{' '}
+          <span className="font-bold text-slate-900">
+            Whatever runs scored by batting side will be divided by 2 (Applicable only for Haribhai batsmen) and then 5 runs will be deducted from the total… Meeraben bowling to Meeraben batsmen normal cricket rules are applicable.
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 10,
+      category: 'meeraben',
+      categoryLabel: 'Meeraben Scoring',
+      plainText:
+        'In Meeraben batting 1 touch = 1 run, one running run =2, 4=8, 6=12 (Meeraben getting out while batting in the Meeraben over is not equal to minus 5 run).',
+      text: (
+        <>
+          In Meeraben batting:{' '}
+          <span className="font-bold text-slate-900">
+            1 touch = 1 run, one running run = 2, 4 = 8, 6 = 12 (Meeraben getting out while batting in the Meeraben over is not equal to minus 5 run).
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 11,
+      category: 'meeraben',
+      categoryLabel: 'Meeraben Bowling',
+      plainText: 'Spin bowling to Meeraben player is allowed.',
+      text: (
+        <>
+          <span className="font-bold text-slate-900">
+            Spin bowling to Meeraben player is allowed.
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 12,
+      category: 'fielding',
+      categoryLabel: 'Field Placements',
+      plainText:
+        'Max 3 fielders on boundary behind the 3rd last pole including the boundary pole (which is the last pole). Max 5 fielders behind bowler. No restrictions in the number of fielders inside the bowling line.',
+      text: (
+        <>
+          Max 3 fielders on boundary behind the 3rd last pole including the boundary pole (which is the last pole). Max 5 fielders behind bowler. No restrictions in the number of fielders inside the bowling line.
+        </>
+      ),
+    },
+    {
+      id: 13,
+      category: 'fielding',
+      categoryLabel: 'Net Taps & Stumping',
+      plainText:
+        '2 or more taps is dead ball but if ball goes wide then it will be considered wide. Stumping in such wide balls will be considered out.',
+      text: (
+        <>
+          2 or more taps is dead ball but if ball goes wide then it will be considered wide. Stumping in such wide balls will be considered out.
+        </>
+      ),
+    },
+    {
+      id: 14,
+      category: 'fielding',
+      categoryLabel: 'Turf Boundaries',
+      plainText:
+        'If the ball goes outside the playing turf on either side, it is declared as 1 run. Batsmen’s crossing is allowed.',
+      text: (
+        <>
+          If the ball goes outside the playing turf on either side, it is declared as 1 run. Batsmen’s crossing is allowed.
+        </>
+      ),
+    },
+    {
+      id: 15,
+      category: 'timings',
+      categoryLabel: 'Match Clock & Penalties',
+      plainText:
+        'Kindly adhere to the timings since a match has to be completed within 30 minutes. Penalty of 5 runs/over will be levied depending upon the no of over left to be bowled. Each team will have 15 minutes to complete their quota of 6 overs. Even the team bowling 1st will be levied a penalty of 5 runs per over which is bowled after 15 minutes. Time wasting while arguing with the umpire will also be considered in the 15 minutes that each team has to complete the overs. For example – while batting if a team argues and wastes time - that much time will be added to their time while they are bowling.',
+      text: (
+        <>
+          Kindly adhere to the timings since a match has to be completed within <strong>30 minutes</strong>.{' '}
+          <span className="text-amber-900 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+            Penalty of 5 runs/over will be levied depending upon the no of over left to be bowled.
+          </span>{' '}
+          Each team will have 15 minutes to complete their quota of 6 overs. Even the team bowling 1st will be levied a penalty of 5 runs per over which is bowled after 15 minutes. Time wasting while arguing with the umpire will also be considered in the 15 minutes that each team has to complete the overs. For example – while batting if a team argues and wastes time - that much time will be added to their time while they are bowling.
+        </>
+      ),
+    },
+    {
+      id: 16,
+      category: 'bowling',
+      categoryLabel: 'Bowling Action',
+      plainText:
+        'A bowler cannot run and bowl while bowling. Walking 1-2 steps is allowed but evasive or side arm action is prohibited. Hiding the ball while bowling is not allowed. Evasive Action will be given no ball after two warnings. Evasive action ball will be considered dead ball for first two warnings',
+      text: (
+        <>
+          A bowler cannot run and bowl while bowling. Walking 1-2 steps is allowed but evasive or side arm action is prohibited. Hiding the ball while bowling is not allowed. Evasive Action will be given no ball after two warnings. Evasive action ball will be considered dead ball for first two warnings.
+        </>
+      ),
+    },
+    {
+      id: 17,
+      category: 'bowling',
+      categoryLabel: 'Full Toss Height',
+      plainText:
+        'Above waist height full toss or one tap above waist height is a no ball. Runs scored of this ball will be considered as extra runs.',
+      text: (
+        <>
+          Above waist height full toss or one tap above waist height is a no ball. Runs scored of this ball will be considered as extra runs.
+        </>
+      ),
+    },
+    {
+      id: 18,
+      category: 'fielding',
+      categoryLabel: 'Net Touches',
+      plainText: 'If the ball touches the nets above and, on the side, it is considered as one tap.',
+      text: <>If the ball touches the nets above and, on the side, it is considered as one tap.</>,
+    },
+    {
+      id: 19,
+      category: 'bowling',
+      categoryLabel: 'Crease & Lines',
+      plainText:
+        'While bowling, if the front leg is completely outside the front line or side line then it is considered as a no ball by umpire.',
+      text: (
+        <>
+          While bowling, if the front leg is completely outside the front line or side line then it is considered as a no ball by umpire.
+        </>
+      ),
+    },
+    {
+      id: 20,
+      category: 'bowling',
+      categoryLabel: 'Side Call',
+      plainText:
+        'If the bowler doesn’t say SIDE while starting his/her over, then it will be given no ball by umpire. SIDE to be said to the umpire at the start of every over.',
+      text: (
+        <>
+          If the bowler doesn’t say <strong>"SIDE"</strong> while starting his/her over, then it will be given no ball by umpire.{' '}
+          <span className="font-bold text-slate-900">
+            SIDE to be said to the umpire at the start of every over.
+          </span>
+        </>
+      ),
+    },
+    {
+      id: 21,
+      category: 'meeraben',
+      categoryLabel: 'Umpire Protocol',
+      plainText:
+        'Meeraben over to be conveyed to the main umpire and scorer before start of over. Leg umpire will signal so that all are aware including scorer.',
+      text: (
+        <>
+          Meeraben over to be conveyed to the main umpire and scorer before start of over. Leg umpire will signal so that all are aware including scorer.
+        </>
+      ),
+    },
+    {
+      id: 22,
+      category: 'timings',
+      categoryLabel: 'Dugout Protocol',
+      plainText: 'All batting team players should wait inside the batting dugout.',
+      text: <>All batting team players should wait inside the batting dugout.</>,
+    },
+    {
+      id: 23,
+      category: 'timings',
+      categoryLabel: 'Toss Presence',
+      plainText:
+        'Every team is requested to present at the toss counter 30 minutes’ prior their actual match schedule. If the team or captain is not present during that time the other team will be given winning points.',
+      text: (
+        <>
+          Every team is requested to present at the toss counter <strong>30 minutes prior</strong> their actual match schedule. If the team or captain is not present during that time the other team will be given winning points.
+        </>
+      ),
+    },
+    {
+      id: 24,
+      category: 'fielding',
+      categoryLabel: 'Wicketkeeper Swap',
+      plainText: 'Change of wicketkeeper should be conveyed to leg umpire or else leg umpire will call it a No Ball.',
+      text: (
+        <>
+          Change of wicketkeeper should be conveyed to leg umpire or else leg umpire will call it a No Ball.
+        </>
+      ),
+    },
+    {
+      id: 25,
+      category: 'format',
+      categoryLabel: 'Tie-Breaker & NRR',
+      plainText:
+        'In case of teams tied on points after the league stage, NRR formula will be used to decide which team goes ahead. The calculation of NRR will be as per Cric-heroes.',
+      text: (
+        <>
+          In case of teams tied on points after the league stage, NRR formula will be used to decide which team goes ahead. The calculation of NRR will be as per <strong>Cric-heroes</strong>.
+        </>
+      ),
+    },
+    {
+      id: 26,
+      category: 'bowling',
+      categoryLabel: 'Free Hit Penalty',
+      plainText: 'In case of NO BALL, 1 run will be given to the opponent team (free hit as per cricket rules)',
+      text: (
+        <>
+          In case of NO BALL, 1 run will be given to the opponent team (free hit as per cricket rules).
+        </>
+      ),
+    },
+    {
+      id: 27,
+      category: 'batting',
+      categoryLabel: 'Extras & Overthrows',
+      plainText:
+        'Over throws, Byes and Leg Byes are allowed (running between the wickets is required to score extra runs)',
+      text: (
+        <>
+          Over throws, Byes and Leg Byes are allowed (running between the wickets is required to score extra runs).
+        </>
+      ),
+    },
+    {
+      id: 28,
+      category: 'batting',
+      categoryLabel: 'Running Runs',
+      plainText: 'Players can score runs by running while the ball is in the ground.',
+      text: <>Players can score runs by running while the ball is in the ground.</>,
+    },
+    {
+      id: 29,
+      category: 'meeraben',
+      categoryLabel: 'Opening Pairing',
+      plainText:
+        'This Year Both Meeraben will Open the Batting and also 1st Over to be bowled by Meeraben – Meeraben to Meeraben rules Apply & Meeraben to Haribhai Rules Apply.',
+      text: (
+        <div className="space-y-1">
+          <p className="font-bold text-slate-900">
+            This Year Both Meeraben will Open the Batting and also 1st Over to be bowled by Meeraben –
+          </p>
+          <p className="text-slate-700 font-medium">
+            Meeraben to Meeraben rules Apply &amp; Meeraben to Haribhai Rules Apply.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 30,
+      category: 'batting',
+      categoryLabel: 'Retired Out',
+      plainText:
+        'Batsmen / Batswomen can be Retired Out during the match. (Meeraben cannot be retired during the First Over)',
+      text: (
+        <>
+          <span className="font-bold text-slate-900">
+            Batsmen / Batswomen can be Retired Out during the match. (Meeraben cannot be retired during the First Over)
+          </span>
+        </>
+      ),
+    },
   ];
 
+  const powerballRules = [
+    {
+      id: 'pb-1',
+      title: '3rd Ball Powerball',
+      text: 'Every 3rd ball of the over will be a Powerball.',
+    },
+    {
+      id: 'pb-2',
+      title: '2X Runs Multiplier',
+      text: 'In batting Powerball, the runs scored off the Powerball will be doubled for the batting team. This means if the batting team scores 2 runs then it will be considered as 4 runs.',
+    },
+    {
+      id: 'pb-3',
+      title: '-5 Runs Wicket Penalty',
+      text: 'If the batting team loses a wicket in the Powerball 5 runs per wicket will be deducted.',
+    },
+    {
+      id: 'pb-4',
+      title: 'Wide & No-Ball Extension',
+      text: 'If a no ball or wide ball is bowled the power ball will continue. The runs scored in that no ball and also in the subsequent proper powerball will be doubled. For the wide ball 2 runs will be accorded.',
+    },
+    {
+      id: 'pb-5',
+      title: 'Team Responsibility',
+      text: "It is the responsibility of both sides to keep a tab on the Powerball. Umpire's signal is not mandatory for Powerball to be considered.",
+    },
+  ];
+
+  const categories: { id: RuleCategory; label: string; icon: React.ReactNode }[] = [
+    { id: 'all', label: 'All Rules (30)', icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { id: 'powerball', label: '⚡ Powerball', icon: <Zap className="w-3.5 h-3.5 text-amber-500" /> },
+    { id: 'meeraben', label: '🌸 Meeraben Rules', icon: <Sparkles className="w-3.5 h-3.5 text-rose-500" /> },
+    { id: 'format', label: 'Match Format', icon: <Trophy className="w-3.5 h-3.5 text-amber-500" /> },
+    { id: 'batting', label: 'Batting & Runs', icon: <Award className="w-3.5 h-3.5 text-blue-500" /> },
+    { id: 'bowling', label: 'Bowling & Actions', icon: <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" /> },
+    { id: 'fielding', label: 'Fielding & Turf', icon: <Scale className="w-3.5 h-3.5 text-emerald-500" /> },
+    { id: 'timings', label: 'Timings & Dugout', icon: <Clock className="w-3.5 h-3.5 text-purple-500" /> },
+  ];
+
+  const filteredRules = useMemo(() => {
+    return rules.filter((rule) => {
+      // Category filter
+      if (selectedCategory !== 'all' && selectedCategory !== 'powerball') {
+        if (rule.category !== selectedCategory) return false;
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          rule.plainText.toLowerCase().includes(q) ||
+          rule.categoryLabel.toLowerCase().includes(q) ||
+          String(rule.id).includes(q)
+        );
+      }
+
+      return true;
+    });
+  }, [selectedCategory, searchQuery]);
+
+  const handleCopyRule = (rule: RuleItem) => {
+    navigator.clipboard.writeText(`RPL Season 8 Rule #${rule.id}: ${rule.plainText}`);
+    setCopiedRuleId(rule.id);
+    setTimeout(() => setCopiedRuleId(null), 2000);
+  };
+
+  const handleShareRules = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'RAJ PREMIER LEAGUE (SEASON 8) - Turf Cricket Rules 2026',
+        text: 'Official Turf Cricket 2026 Final Rules & Regulations for RPL Season 8.',
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-      {/* ── Top Bar ── */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 transition-colors">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-amber-400 selection:text-slate-950 font-sans">
+      {/* ── 1. Sticky Navigation Header (Light Theme) ── */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 transition-shadow duration-200 shadow-2xs">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
+          {/* Left: Back button & brand */}
           <div className="flex items-center gap-3">
             <button
-              type="button"
               onClick={onBackToHome}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+              className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-amber-600 transition-colors cursor-pointer group"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               <span>Back to Home</span>
             </button>
-            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
             <div className="hidden sm:flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 font-bold text-[11px] uppercase tracking-wider border border-amber-500/25">
-                Season 8 / 2026
+              <img
+                src="/rpl-logo.png"
+                alt="RPL Logo"
+                className="h-6 w-auto object-contain drop-shadow-2xs"
+              />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-900 font-display">
+                Turf Cricket Rules
               </span>
-              <span className="text-xs text-slate-500 font-medium">Turf Cricket Regulations</span>
             </div>
           </div>
 
+          {/* Right: Quick actions */}
           <div className="flex items-center gap-2">
-            {onScorecardClick && (
+            <button
+              onClick={handleShareRules}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer active:scale-95"
+              title="Share Rules URL"
+            >
+              <Share2 className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+
+            {onRegisterClick && (
               <button
-                type="button"
-                onClick={onScorecardClick}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                onClick={onRegisterClick}
+                className="py-1.5 px-3.5 sm:px-5 sm:py-2 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0"
               >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span>Live Matches</span>
+                <span>Player Registration</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             )}
-            <a
-              href="https://docs.google.com/document/d/1ebK1tatVr6BfUt7D36yC7pWYwa1s1QFQwVOy-QXDQY4/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-              title="Open Official Google Doc"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-              <span className="hidden sm:inline">Google Doc</span>
-            </a>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Hero Banner ── */}
-      <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-14 sm:py-20 px-4 overflow-hidden border-b border-slate-800">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.18),transparent_70%)] pointer-events-none" />
+      {/* ── 2. Light Theme Hero Section (Clean Light Canvas) ── */}
+      <section className="relative bg-white border-b border-slate-200 py-10 sm:py-14 px-4 overflow-hidden">
+        {/* Subtle ambient radiant lighting matching main page */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-rose-400/10 blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-extrabold uppercase tracking-widest mb-5 shadow-xs">
-            <Trophy className="w-4 h-4 text-amber-400" />
-            <span>RAJ PREMIER LEAGUE — TURF CRICKET</span>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          {/* RPL Season Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-bold uppercase tracking-widest mb-3 shadow-2xs">
+            <Trophy className="w-3.5 h-3.5 text-amber-600" />
+            <span>RAJ PREMIER LEAGUE (SEASON 8)</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4">
-            Official Rules &amp; Regulations
+          {/* Main Tournament Heading */}
+          <h1 className="text-3xl sm:text-5xl font-extrabold mb-2 tracking-tight font-display text-slate-900">
+            TURF CRICKET – <span className="text-amber-600">2026</span>
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed">
-            Final approved tournament rulebook for RPL Turf Cricket 2026. Includes all new Powerball rules,
-            Meeraben opening guidelines, timing caps, and umpire protocols.
+          <p className="text-base sm:text-xl font-bold text-slate-700 mb-4 font-display tracking-wide">
+            Final Rules &amp; Regulations
           </p>
 
-          {/* Quick Notice Pill */}
-          <div className="mt-6 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-200 text-xs font-bold">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span>Updated with New Additions &amp; Highlighted Regulations</span>
-          </div>
+          <p className="text-slate-600 max-w-2xl mx-auto text-xs sm:text-sm leading-relaxed font-medium">
+            Official rulebook for team captains, players, and umpires. Familiarize yourself with the 6-over format, MeeraBen dynamics, and the Powerball 2x scoring multiplier.
+          </p>
 
-          {/* Search Bar */}
-          <div className="mt-8 max-w-xl mx-auto relative">
-            <div className="relative">
-              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          {/* Search Box in Light Theme */}
+          <div className="mt-7 max-w-xl mx-auto relative">
+            <div className="relative flex items-center">
+              <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search rules (e.g. Powerball, Meeraben, No ball, Penalty, 36 runs)..."
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/10 hover:bg-white/15 focus:bg-white text-white focus:text-slate-900 placeholder:text-slate-400 border border-slate-700 focus:border-amber-500 outline-none text-sm font-medium transition-all shadow-inner"
+                placeholder="Search rules (e.g. powerball, meeraben, 36 runs, side, fine)..."
+                className="w-full pl-12 pr-16 py-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 shadow-xs outline-none transition-all text-xs sm:text-sm font-medium"
               />
               {searchQuery && (
                 <button
-                  type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-white bg-white/10 px-2 py-0.5 rounded-md"
+                  className="absolute right-4 text-xs font-bold text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   Clear
                 </button>
@@ -150,587 +601,329 @@ export const RulesPage: React.FC<RulesPageProps> = ({ onBackToHome, onScorecardC
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Category Filter Tabs ── */}
-      <div className="bg-white border-b border-slate-200 sticky top-[57px] z-30 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 overflow-x-auto scrollbar-none flex items-center gap-2">
-          {tabs.map((tab) => {
-            const isSelected = activeTab === tab.id;
+      {/* ── 3. Quick Overview Grid ── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Card 1: 6 / 8 Overs Format */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center gap-3.5 hover:border-amber-300 transition-colors">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Match Format</span>
+              <span className="text-sm sm:text-base font-extrabold text-slate-900 block font-display">
+                6 Overs Quota
+              </span>
+              <span className="text-[11px] text-amber-800 font-semibold block">1st Meeraben Over Compulsory</span>
+            </div>
+          </div>
+
+          {/* Card 2: Powerball Feature */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center gap-3.5 hover:border-amber-300 transition-colors">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+              <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Powerball Mechanic</span>
+              <span className="text-sm sm:text-base font-extrabold text-slate-900 block font-display">
+                Every 3rd Ball = 2x
+              </span>
+              <span className="text-[11px] text-amber-800 font-semibold block">-5 Runs on Wicket Lost</span>
+            </div>
+          </div>
+
+          {/* Card 3: Match Timing */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center gap-3.5 hover:border-amber-300 transition-colors">
+            <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Match Clock</span>
+              <span className="text-sm sm:text-base font-extrabold text-slate-900 block font-display">
+                30 Mins Total
+              </span>
+              <span className="text-[11px] text-purple-700 font-semibold block">15 min/side (5-run fine/over)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. Main Body: Category Filters & Rule Cards ── */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6">
+        {/* Horizontal Category Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+          {categories.map((cat) => {
+            const isActive = selectedCategory === cat.id;
             return (
               <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-slate-900 text-amber-300 shadow-sm border border-slate-900'
+                    : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
+                {cat.icon}
+                <span>{cat.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* ── Main Content Grid ── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 1: POWERBALL RULES (Special Highlight)
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'powerball') && (
-          <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-white rounded-3xl border-2 border-amber-400/80 shadow-md p-6 sm:p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 px-4 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] sm:text-xs uppercase tracking-wider rounded-bl-2xl shadow-xs">
-              ⚡ Exclusive RPL Rule
-            </div>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
-                <Zap className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Powerball Rules
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                  High-stakes 3rd ball mechanic applicable to every single over
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl border border-amber-200/80 p-5 shadow-xs space-y-2">
-                <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Every 3rd Ball is a Powerball</span>
-                </div>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed pl-6">
-                  Every 3rd legal delivery of every over is officially designated as a <strong>Powerball</strong>.
-                  Both teams are required to keep track; umpire signal is not mandatory for Powerball status.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-amber-200/80 p-5 shadow-xs space-y-2">
-                <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Runs Scored are DOUBLED (2X)</span>
-                </div>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed pl-6">
-                  In batting Powerball, all runs scored off the bat are doubled for the batting team.
-                  For example: 1 run becomes <strong>2</strong>, 2 runs become <strong>4</strong>, 4 becomes <strong>8</strong>, and a 6 becomes <strong>12 runs</strong>!
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-red-200/80 p-5 shadow-xs space-y-2">
-                <div className="flex items-center gap-2 text-red-900 font-bold text-sm">
-                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>Wicket on Powerball = MINUS 5 Runs (-5)</span>
-                </div>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed pl-6">
-                  If the batting team loses a wicket on the Powerball, <strong>5 runs will be deducted (-5)</strong> from the team total alongside the loss of wicket.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-amber-200/80 p-5 shadow-xs space-y-2">
-                <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Wide &amp; No Ball Powerball Continuation</span>
-                </div>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed pl-6">
-                  If a wide or no-ball is bowled on the Powerball, the Powerball continues! Runs scored off the no-ball and the subsequent proper Powerball are doubled. For a wide ball, <strong>2 runs</strong> are awarded.
-                </p>
-              </div>
-            </div>
+        {/* Results Counter if searching */}
+        {searchQuery && (
+          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+            <span>
+              Showing {filteredRules.length} matching rule{filteredRules.length === 1 ? '' : 's'} for &ldquo;
+              <strong className="text-slate-800">{searchQuery}</strong>&rdquo;
+            </span>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-amber-600 hover:underline font-semibold cursor-pointer"
+            >
+              Reset Search
+            </button>
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 2: MEERABEN RULES (Women Player Feature)
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'meeraben') && (
-          <div className="bg-gradient-to-br from-pink-500/10 via-pink-500/5 to-white rounded-3xl border-2 border-pink-300 shadow-md p-6 sm:p-8 relative overflow-hidden">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-600 flex items-center justify-center text-white font-black shadow-md shrink-0">
-                <Sparkles className="w-6 h-6" />
+        {/* ── Powerball Spotlight Banner (Light Theme) ── */}
+        {(selectedCategory === 'all' || selectedCategory === 'powerball') && !searchQuery && (
+          <div className="rounded-3xl bg-amber-50/60 border border-amber-200 p-5 sm:p-7 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs">
+                  <Zap className="w-5 h-5 fill-slate-950 text-slate-950" />
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-950 font-display">
+                    POWERBALL RULES
+                  </h3>
+                  <span className="text-[11px] text-slate-600 font-medium">Critical Match Multiplier Guidelines</span>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Meeraben Special Rules
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                  Regulations governing women participation, opening over, and scoring multipliers
-                </p>
-              </div>
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black uppercase tracking-widest shadow-2xs">
+                Active Every Over
+              </span>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-pink-200 p-5 shadow-xs">
-                <h3 className="font-bold text-pink-900 text-sm mb-2 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-black">1</span>
-                  Opening Batting &amp; Compulsory 1st Over
-                </h3>
-                <p className="text-slate-700 text-xs sm:text-sm leading-relaxed pl-8">
-                  Both Meeraben players will <strong>Open the Batting</strong>, and the <strong>1st Over of the match must be bowled by a Meeraben player</strong>.
-                  Meeraben players cannot be retired out during the first over.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-pink-200 p-5 shadow-xs">
-                <h3 className="font-bold text-pink-900 text-sm mb-2 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-black">2</span>
-                  Meeraben Batting Multipliers
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pl-8 mt-3">
-                  <div className="p-3 rounded-xl bg-pink-50 border border-pink-200 text-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase">1 Touch</div>
-                    <div className="text-lg font-black text-pink-600 mt-0.5">1 Run</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-pink-50 border border-pink-200 text-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase">1 Running Run</div>
-                    <div className="text-lg font-black text-pink-600 mt-0.5">2 Runs</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-pink-50 border border-pink-200 text-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase">Boundary 4</div>
-                    <div className="text-lg font-black text-pink-600 mt-0.5">8 Runs</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-pink-50 border border-pink-200 text-center">
-                    <div className="text-xs text-slate-500 font-bold uppercase">Maximum 6</div>
-                    <div className="text-lg font-black text-pink-600 mt-0.5">12 Runs</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {powerballRules.map((pb, idx) => (
+                <div
+                  key={pb.id}
+                  className="p-3.5 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm leading-relaxed shadow-2xs"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-black text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs mb-0.5">{pb.title}</div>
+                      <div className="text-slate-700 font-medium leading-relaxed">
+                        {pb.text}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <p className="text-slate-500 text-xs pl-8 mt-2.5 italic">
-                  * Meeraben getting out while batting in the Meeraben over is NOT equal to minus 5 runs.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-pink-200 p-5 shadow-xs">
-                <h3 className="font-bold text-pink-900 text-sm mb-2 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-black">3</span>
-                  Meeraben Over Wicket &amp; Run Deduction Rules
-                </h3>
-                <ul className="text-slate-700 text-xs sm:text-sm space-y-2 pl-8 list-disc">
-                  <li>
-                    In the Meeraben over, <strong>1 wicket = minus 5 runs (-5)</strong> for the batting side.
-                  </li>
-                  <li>
-                    Whatever runs scored by the batting side will be <strong>divided by 2</strong> (applicable only for Haribhai batsmen), and then 5 runs will be deducted from the total.
-                  </li>
-                  <li>
-                    Meeraben bowling to Meeraben batsmen: normal cricket rules are fully applicable.
-                  </li>
-                  <li>
-                    Spin bowling to Meeraben players is permitted.
-                  </li>
-                  <li>
-                    The Meeraben over must be formally conveyed to the main umpire and scorer prior to start. The leg umpire will signal so all participants are aware.
-                  </li>
-                </ul>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 3: MATCH FORMAT & OVERS
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'format') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black shrink-0">
-                <Trophy className="w-6 h-6" />
+        {/* ── Meeraben Special Scoring Matrix (Light Theme) ── */}
+        {(selectedCategory === 'all' || selectedCategory === 'meeraben') && !searchQuery && (
+          <div className="rounded-3xl bg-rose-50/50 border border-rose-200 p-5 sm:p-7 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-xl bg-rose-500 text-white flex items-center justify-center font-black shadow-xs">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-rose-950 font-display">
+                    Meeraben Scoring &amp; Over Rules
+                  </h3>
+                  <span className="text-[11px] text-slate-600 font-medium">Special scoring multipliers &amp; Wicket deductions</span>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Match Format &amp; Overs
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Innings lengths, bowler quotas, squad size, and team substitutes
-                </p>
+              <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[10px] font-black uppercase tracking-widest">
+                Special Guidelines
+              </span>
+            </div>
+
+            {/* Quick Multiplier Pill Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+              <div className="bg-white p-3 rounded-2xl border border-rose-200/80 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">1 Touch</span>
+                <span className="text-base sm:text-lg font-extrabold text-rose-600 font-display">= 1 Run</span>
+              </div>
+              <div className="bg-white p-3 rounded-2xl border border-rose-200/80 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">1 Running</span>
+                <span className="text-base sm:text-lg font-extrabold text-rose-600 font-display">= 2 Runs</span>
+              </div>
+              <div className="bg-white p-3 rounded-2xl border border-rose-200/80 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Boundary (4)</span>
+                <span className="text-base sm:text-lg font-extrabold text-rose-600 font-display">= 8 Runs</span>
+              </div>
+              <div className="bg-white p-3 rounded-2xl border border-rose-200/80 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Maximum (6)</span>
+                <span className="text-base sm:text-lg font-extrabold text-rose-600 font-display">= 12 Runs</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  League Stage (6 Overs)
-                </h3>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Matches will be played for <strong>6 overs</strong> including one Meeraben over. Maximum 1 over per bowler (Over format: 1, 1, 1, 1, 1, 1). First Meeraben over is compulsory.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  Quarter-Finals, Semi-Finals &amp; Finals (8 Overs)
-                </h3>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  Knockout matches will be held for <strong>8 overs</strong> (Over format: 2, 2, 1, 1, 1, 1). First Meeraben over is compulsory.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  11 Players on Field (No Last Man Standing)
-                </h3>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  On the field there can be 11 players; all 11 can bat. There is <strong>NO LAST MAN STANDING</strong>. If a team doesn't have 11 players, they must play short.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  Team Owner Substitute Rule
-                </h3>
-                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-                  If a player is missing, the official team owner can take the field instead of the player, but absolutely no outside substitutes are permitted.
-                </p>
-              </div>
+            <div className="p-3.5 bg-white border border-rose-200 rounded-2xl text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
+              <strong className="text-slate-900">Wicket in Meeraben Over:</strong> 1 wicket = <strong>minus 5 runs</strong> for the batting side. Whatever runs scored by the batting side will be <strong>divided by 2</strong> (applicable only for Haribhai batsmen) and then 5 runs will be deducted from the total. <em>(Note: Meeraben getting out while batting in the Meeraben over does NOT subtract 5 runs).</em>
             </div>
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 4: BOWLING RULES & RESTRICTIONS
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'bowling') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-black shrink-0">
-                <Target className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Bowling Rules &amp; Restrictions
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Speed restrictions, delivery action, crease lines, and mandatory umpire calls
-                </p>
-              </div>
+        {/* ── Rules List (Consistent Light Theme) ── */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
+            <span>
+              Showing {filteredRules.length} {filteredRules.length === 1 ? 'Rule' : 'Rules'}
+            </span>
+          </div>
+
+          {filteredRules.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs">
+              <BookOpen className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-900 mb-1 font-display">No matching rules found</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                We couldn&apos;t find a rule matching &ldquo;{searchQuery}&rdquo;. Try another search term or reset filters.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                View All Rules
+              </button>
             </div>
+          ) : (
+            filteredRules.map((rule) => {
+              const isCopied = copiedRuleId === rule.id;
+              return (
+                <div
+                  key={rule.id}
+                  id={`rule-${rule.id}`}
+                  className="rounded-2xl border border-slate-200 hover:border-slate-300 bg-white shadow-2xs transition-all duration-200 overflow-hidden"
+                >
+                  <div className="p-4 sm:p-5">
+                    {/* Header Row: ID, Badges, Copy */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="w-7 h-7 rounded-lg flex items-center justify-center font-display font-black text-xs shrink-0 bg-slate-900 text-white">
+                          #{rule.id}
+                        </span>
 
-            <div className="space-y-3.5 text-xs sm:text-sm text-slate-700">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Fast Bowling is NOT Allowed:</strong>
-                  Fast bowling will be called No Ball after 2 warnings. The first two fast ball warnings will be considered dead balls.
-                </div>
-              </div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md">
+                          {rule.categoryLabel}
+                        </span>
+                      </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">No Run-Up Bowling:</strong>
-                  A bowler cannot run and bowl. Walking 1–2 steps is allowed, but evasive or side-arm action is strictly prohibited. Hiding the ball while bowling is not allowed. Evasive action will be called No Ball after two warnings (first two are dead balls).
-                </div>
-              </div>
+                      <button
+                        onClick={() => handleCopyRule(rule)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer active:scale-95 shrink-0"
+                        title="Copy Rule Text"
+                        aria-label={`Copy Rule #${rule.id}`}
+                      >
+                        {isCopied ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Copied</span>
+                          </span>
+                        ) : (
+                          <Share2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Waist-Height Full Toss:</strong>
-                  Above waist height full toss or one tap above waist height is a No Ball. Runs scored off this ball will be considered as extra runs.
+                    {/* Rule Text */}
+                    <div className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
+                      {rule.text}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              );
+            })
+          )}
+        </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Crease Line Crossing:</strong>
-                  While bowling, if the front leg is completely outside the front line or side line, it is called a No Ball by the umpire.
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Mandatory "SIDE" Declaration:</strong>
-                  If the bowler doesn’t say <strong>SIDE</strong> while starting his/her over, it will be called a No Ball by the umpire. "SIDE" must be audibly said to the umpire at the start of every over.
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Wicketkeeper Change Notification:</strong>
-                  Any change of wicketkeeper must be formally conveyed to the leg umpire, or else the leg umpire will call a No Ball.
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                <div>
-                  <strong className="text-slate-900 font-bold block mb-0.5">Free Hit on No Balls:</strong>
-                  In case of a No Ball, 1 run will be awarded to the opponent team alongside a Free Hit as per cricket rules.
-                </div>
-              </div>
+        {/* ── 5. Tournament Governance & Authority Card (Light Card Theme) ── */}
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 lg:p-10 shadow-xs space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </span>
+            <div>
+              <h4 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 font-display">
+                Tournament Governance &amp; Umpire Authority
+              </h4>
+              <span className="text-xs text-slate-500 font-medium">Strictly enforced across all tournament matches</span>
             </div>
           </div>
-        )}
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 5: BATTING, DISMISSALS & NET TAP RULES
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'batting') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 font-black shrink-0">
-                <Flame className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Batting &amp; Dismissals
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Retirement thresholds, net contact rules, run out criteria, and scoring extras
-                </p>
-              </div>
+          <div className="space-y-3 text-xs sm:text-sm leading-relaxed pt-1">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700">
+              <strong className="text-slate-900">RPL Committee Rights:</strong> The RPL TEAM reserves all rights to change, alter and modify any decision with regards to the RAJ PREMIER LEAGUE - Turf Cricket Tournament, at any point before and during the tournament without any prior notifications.
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
-              <div className="p-5 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
-                <strong className="text-amber-900 font-bold block text-sm">
-                  ⚡ 36-Run Individual Retirement Rule
-                </strong>
-                <p className="text-slate-700 leading-relaxed">
-                  A batsman must retire if he crosses <strong>36 individual runs</strong>. This rule is applicable for League stages only. He can bat again only if the complete team gets dismissed (Last man batting is not allowed).
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🚫 No Leg Before Wicket (No LBW)
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  There is <strong>no LBW</strong> dismissal in RPL Turf Cricket under any circumstances.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🥅 Net Contact = One Tap
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  If the ball touches the nets above (roof) or on the side, it is counted as <strong>one tap</strong>.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  2 or More Taps = Dead Ball
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  Two or more taps is considered a dead ball. However, if the ball goes wide it remains a wide ball. Stumping on such wide balls will be considered OUT.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🌐 Ball Outside Playing Turf = 1 Run
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  If the ball goes outside the playing turf on either side, it is declared as <strong>1 run</strong>. Batsmen crossing is allowed.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🎯 Run Out Requirements
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  A run out can be a direct hit or executed if the bowler, fielder, or wicketkeeper hits the wickets with the ball in the same hand.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🏃 Byes, Leg Byes &amp; Overthrows
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  Overthrows, byes, and leg byes are permitted (running between the wickets is required to score extra runs). Players can score runs by running while the ball is live.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <strong className="text-slate-900 font-bold block text-sm">
-                  🚪 Voluntary Retired Out
-                </strong>
-                <p className="text-slate-600 leading-relaxed">
-                  Batsmen / Batswomen can choose to be Retired Out during the match (except Meeraben during the First Over).
-                </p>
-              </div>
+            <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-slate-800">
+              <strong className="text-amber-900">Note — Umpire's Decision is Final:</strong> Any argument with the umpire will lead to deduction of runs or in worst case disqualification of the player/team. In case of any query only the captain can consult the umpire but arguing will lead to penalty of runs or disqualification.
             </div>
           </div>
-        )}
+        </div>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 6: FIELDING RESTRICTIONS
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'fielding') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-black shrink-0">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Field Placement Restrictions
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Boundary pole markers, bowler boundary lines, and dugout requirements
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
-                <div className="text-3xl font-black text-indigo-600">3</div>
-                <div className="font-bold text-slate-900">Max on Boundary</div>
-                <p className="text-slate-600 text-xs">
-                  Maximum 3 fielders on the boundary behind the 3rd last pole including the boundary pole (which is the last pole).
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
-                <div className="text-3xl font-black text-indigo-600">5</div>
-                <div className="font-bold text-slate-900">Behind Bowler</div>
-                <p className="text-slate-600 text-xs">
-                  Maximum 5 fielders permitted behind the bowler at the point of delivery.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
-                <div className="text-3xl font-black text-indigo-600">∞</div >
-                <div className="font-bold text-slate-900">Inside Bowling Line</div>
-                <p className="text-slate-600 text-xs">
-                  No restrictions in the number of fielders positioned inside the bowling line.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 p-4 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs text-indigo-900 flex items-center gap-2">
-              <Users className="w-4 h-4 text-indigo-600 shrink-0" />
-              <span><strong>Dugout Requirement:</strong> All batting team players must wait inside the designated batting dugout during live play.</span>
-            </div>
+        {/* ── 6. Coordinator & Helpline Callout ── */}
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-1 text-center md:text-left">
+            <h4 className="text-base sm:text-lg font-extrabold text-slate-900 font-display">
+              Have a Query Regarding Rules or Roster?
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Connect with our tournament coordinators for captain meetings, draft clarifications, or umpire inquiries.
+            </p>
           </div>
-        )}
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 7: MATCH TIMINGS & OVER PENALTIES
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'timings') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-black shrink-0">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Match Timings &amp; Over Penalties
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Strict 30-minute match limit, over penalties, and pre-match toss protocols
-                </p>
-              </div>
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 shrink-0">
+            <a
+              href="tel:+919321001499"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold tracking-wide shadow-xs transition-all hover:scale-105 active:scale-95"
+            >
+              <Phone className="w-4 h-4 text-slate-950 shrink-0" />
+              <span>Call Helpline</span>
+            </a>
 
-            <div className="space-y-4 text-xs sm:text-sm">
-              <div className="p-5 rounded-2xl bg-red-50/60 border border-red-200 space-y-2">
-                <h3 className="font-bold text-red-900 text-sm flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>30 Minutes Match Limit &amp; 5 Runs/Over Penalty</span>
-                </h3>
-                <p className="text-slate-700 leading-relaxed">
-                  Every match must be completed within <strong>30 minutes</strong>. Each team will have <strong>15 minutes to complete their quota of 6 overs</strong>.
-                  A strict penalty of <strong>5 runs per over</strong> will be levied for every over bowled after 15 minutes.
-                  The team bowling 1st will also be penalized 5 runs per over bowled after 15 minutes.
-                </p>
-              </div>
+            <a
+              href="https://wa.me/919321001499"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-wide shadow-xs transition-all hover:scale-105 active:scale-95"
+            >
+              <MessageCircle className="w-4 h-4 shrink-0" />
+              <span>WhatsApp</span>
+              <ExternalLink className="w-3 h-3 opacity-80 shrink-0" />
+            </a>
 
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-slate-600 shrink-0" />
-                  <span>Time-Wasting Deductions</span>
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Time wasted arguing with the umpire will be counted against the team's 15-minute allotment. For example, if a team argues and wastes time while batting, that exact amount of time will be added against them when they bowl.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>30 Minutes Prior Toss Attendance</span>
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Every team is requested to be present at the toss counter <strong>30 minutes prior to their actual match schedule</strong>. If a team or captain is not present during that time, the opponent team will be awarded winning walkover points.
-                </p>
-              </div>
-            </div>
+            <button
+              onClick={onBackToHome}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer active:scale-95"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Main Site</span>
+            </button>
           </div>
-        )}
+        </div>
+      </main>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            SECTION 8: CODE OF CONDUCT & TIEBREAKERS
-            ════════════════════════════════════════════════════════════════════ */}
-        {(activeTab === 'all' || activeTab === 'conduct') && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 font-black shrink-0">
-                <Scale className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Code of Conduct &amp; Tiebreakers
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  Umpire authority, dispute protocols, CricHeroes NRR calculations, and tournament rights
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4 text-xs sm:text-sm">
-              <div className="p-5 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-2">
-                <h3 className="font-bold text-purple-900 text-sm flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-purple-600 shrink-0" />
-                  <span>UMPIRE DECISION IS FINAL</span>
-                </h3>
-                <p className="text-slate-700 leading-relaxed">
-                  The umpire's decision is absolute and final. Any argument with the umpire will lead to deduction of runs or, in severe cases, immediate disqualification of the player or team. In case of any query, <strong>only the captain</strong> can consult with the umpire.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Tied Points &amp; CricHeroes NRR Formula</span>
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  In case of teams tied on points after the league stage, the Net Run Rate (NRR) formula will be used to determine standings and qualification. The calculation of NRR will be as per the official <strong>CricHeroes</strong> platform.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-slate-600 shrink-0" />
-                  <span>RPL Organizing Committee Rights</span>
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  The RPL Team reserves all rights to change, alter, or modify any decision with regards to the RAJ PREMIER LEAGUE Turf Cricket Tournament at any point before and during the championship without prior notification.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* ── 7. Global Official Footer ── */}
+      <Footer onRegisterClick={onRegisterClick} onCheckPassClick={onCheckPassClick} />
     </div>
   );
 };
 
+export default RulesPage;

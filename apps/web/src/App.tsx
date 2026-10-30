@@ -13,6 +13,7 @@ import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { FAQPage } from '@/components/pages/FAQPage';
 import { RulesPage } from '@/components/pages/RulesPage';
+import { SchedulePage } from '@/components/pages/SchedulePage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { PostAuctionLockedPage } from '@/components/ui/PostAuctionLockedPage';
 import { checkIsAdminPreview, lockAdminPreview } from '@/lib/previewAuth';
@@ -23,7 +24,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules' | 'schedule'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -90,6 +91,14 @@ export function App() {
         hash === '#rules-regulations'
       ) {
         setCurrentPage('rules');
+        setShowIntro(false);
+      } else if (
+        path === '/schedule' ||
+        path.startsWith('/schedule') ||
+        hash === '#/schedule' ||
+        hash === '#schedule'
+      ) {
+        setCurrentPage('schedule');
         setShowIntro(false);
       } else if (
         path === '/scorecard' ||
@@ -200,7 +209,23 @@ export function App() {
   }
 
   if (currentPage === 'rules' && isAdminPreview) {
-    return <RulesPage onBackToHome={handleBackToHome} onScorecardClick={handleScorecardClick} />;
+    return (
+      <RulesPage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
+  }
+
+  if (currentPage === 'schedule') {
+    return (
+      <SchedulePage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
   }
 
   return (
