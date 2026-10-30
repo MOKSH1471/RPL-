@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
       <InView
         viewOptions={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
-        className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
         {/* Interactive Staggered Reveal Links Section */}
         <div id="connect" className="mb-16 pb-12 border-b border-slate-200 scroll-mt-24">
@@ -52,15 +52,8 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
                 YouTube Live
               </FlipLink>
             </div>
-
-
           </div>
-
-
-
         </div>
-
-
 
         {/* 4-Column Footer Information */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
@@ -121,7 +114,8 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
               )}
               <li>
                 <a href="#/faq" className="hover:text-amber-600 transition-colors">
-                  Frequently Asked Questions (FAQ)                </a>
+                  Frequently Asked Questions (FAQ)
+                </a>
               </li>
               <li>
                 <a href="#register" className="hover:text-amber-600 transition-colors">
@@ -172,10 +166,13 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3 sm:gap-4">
-          <p>© 2026 Raj Premier League (RPL). All rights reserved.</p>
-          <div className="flex items-center gap-4">
+        {/* ── Bottom Bar: Clean Padding & Responsive Wrapping ── */}
+        <div className="pt-6 sm:pt-8 border-t border-slate-200/90 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3.5 sm:gap-4 text-center md:text-left px-2 sm:px-0">
+          <p className="order-2 md:order-1 text-slate-500 text-[11px] sm:text-xs">
+            © 2026 Raj Premier League (RPL). All rights reserved.
+          </p>
+
+          <div className="order-1 md:order-2 flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-5 gap-y-2 text-[11px] sm:text-xs">
             {isAdminPreview && (
               <a
                 href="#/rules"
@@ -188,7 +185,8 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
               href="#/faq"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"
             >
-              FAQ            </a>
+              FAQ
+            </a>
             <a
               href="#/privacy-policy"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"
@@ -201,9 +199,10 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
             >
               Terms &amp; Conditions
             </a>
-            <p className="flex items-center space-x-1">
+            <span className="hidden sm:inline text-slate-300">·</span>
+            <p className="flex items-center justify-center space-x-1.5 text-slate-500 shrink-0">
               <span>Crafted with passion for community sports</span>
-              <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600 inline" />
+              <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600 inline shrink-0" />
             </p>
           </div>
         </div>
