@@ -116,6 +116,7 @@ export interface TeamStanding {
 
 export function calculateStandings(matches: CricketMatch[]): TeamStanding[] {
   const standingsMap: Record<string, TeamStanding> = {};
+  const nrrData: Record<string, { runsFor: number; ballsFor: number; runsAgainst: number; ballsAgainst: number }> = {};
 
   // Register teams from matches
   for (const m of matches) {
@@ -134,6 +135,7 @@ export function calculateStandings(matches: CricketMatch[]): TeamStanding[] {
         nrr: '+0.00',
         form: [],
       };
+      nrrData[m.teamA.id] = { runsFor: 0, ballsFor: 0, runsAgainst: 0, ballsAgainst: 0 };
     }
     if (m.teamB && !standingsMap[m.teamB.id]) {
       standingsMap[m.teamB.id] = {
@@ -150,47 +152,91 @@ export function calculateStandings(matches: CricketMatch[]): TeamStanding[] {
         nrr: '+0.00',
         form: [],
       };
+      nrrData[m.teamB.id] = { runsFor: 0, ballsFor: 0, runsAgainst: 0, ballsAgainst: 0 };
     }
   }
 
-  // Tally actual match results
+  // Tally actual match results & NRR components
   for (const m of matches) {
-    if (m.status === 'completed' && m.winnerTeamId) {
-      const winner = standingsMap[m.winnerTeamId];
-      const loserId = m.winnerTeamId === m.teamA.id ? m.teamB.id : m.teamA.id;
-      const loser = standingsMap[loserId];
+    if (m.status === 'completed') {
+      const inn1 = m.innings1;
+      const inn2 = m.innings2;
 
-      if (winner) {
-        winner.played += 1;
-        winner.won += 1;
-        winner.points += 2;
-        winner.form.push('W');
+      // Accumulate NRR balls & runs if both innings occurred
+      if (inn1 && nrrData[inn1.battingTeamId] && nrrData[inn1.bowlingTeamId]) {
+        const fullBallsQuota = (m.oversPerSide || 10) * 6;
+        const bFor1 = inn1.totalWickets >= 10 ? fullBallsQuota : inn1.legalBallsBowled;
+        nrrData[inn1.battingTeamId].runsFor += inn1.totalRuns;
+        nrrData[inn1.battingTeamId].ballsFor += bFor1;
+
+        nrrData[inn1.bowlingTeamId].runsAgainst += inn1.totalRuns;
+        nrrData[inn1.bowlingTeamId].ballsAgainst += bFor1;
       }
-      if (loser) {
-        loser.played += 1;
-        loser.lost += 1;
-        loser.form.push('L');
+
+      if (inn2 && nrrData[inn2.battingTeamId] && nrrData[inn2.bowlingTeamId]) {
+        const fullBallsQuota = (m.oversPerSide || 10) * 6;
+        const bFor2 = inn2.totalWickets >= 10 ? fullBallsQuota : inn2.legalBallsBowled;
+        nrrData[inn2.battingTeamId].runsFor += inn2.totalRuns;
+        nrrData[inn2.battingTeamId].ballsFor += bFor2;
+
+        nrrData[inn2.bowlingTeamId].runsAgainst += inn2.totalRuns;
+        nrrData[inn2.bowlingTeamId].ballsAgainst += bFor2;
       }
-    } else if (m.status === 'completed' && !m.winnerTeamId) {
-      // Tie
-      const tA = standingsMap[m.teamA.id];
-      const tB = standingsMap[m.teamB.id];
-      if (tA) {
-        tA.played += 1;
-        tA.tied += 1;
-        tA.points += 1;
-        tA.form.push('D');
-      }
-      if (tB) {
-        tB.played += 1;
-        tB.tied += 1;
-        tB.points += 1;
-        tB.form.push('D');
+
+      if (m.winnerTeamId) {
+        const winner = standingsMap[m.winnerTeamId];
+        const loserId = m.winnerTeamId === m.teamA.id ? m.teamB.id : m.teamA.id;
+        const loser = standingsMap[loserId];
+
+        if (winner) {
+          winner.played += 1;
+          winner.won += 1;
+          winner.points += 2;
+          winner.form.push('W');
+        }
+        if (loser) {
+          loser.played += 1;
+          loser.lost += 1;
+          loser.form.push('L');
+        }
+      } else {
+        // Tie
+        const tA = standingsMap[m.teamA.id];
+        const tB = standingsMap[m.teamB.id];
+        if (tA) {
+          tA.played += 1;
+          tA.tied += 1;
+          tA.points += 1;
+          tA.form.push('D');
+        }
+        if (tB) {
+          tB.played += 1;
+          tB.tied += 1;
+          tB.points += 1;
+          tB.form.push('D');
+        }
       }
     }
   }
 
-  return Object.values(standingsMap).sort((a, b) => b.points - a.points);
+  // Calculate factual NRR values and limit form to last 5 matches
+  for (const [id, team] of Object.entries(standingsMap)) {
+    team.form = team.form.slice(-5);
+    const n = nrrData[id];
+    if (n && n.ballsFor > 0 && n.ballsAgainst > 0) {
+      const forRate = n.runsFor / (n.ballsFor / 6);
+      const againstRate = n.runsAgainst / (n.ballsAgainst / 6);
+      const net = forRate - againstRate;
+      team.nrr = (net >= 0 ? '+' : '') + net.toFixed(2);
+    } else {
+      team.nrr = '+0.00';
+    }
+  }
+
+  return Object.values(standingsMap).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return parseFloat(b.nrr) - parseFloat(a.nrr);
+  });
 }
 
 export interface DynamicLeaderStat {

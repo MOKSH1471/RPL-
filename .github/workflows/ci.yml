@@ -48,6 +48,16 @@ jobs:
           DB_PASSWORD: test
           DB_NAME: RPL
 
+      - name: Seed Test Players
+        run: node database/seed_test_players.js
+        env:
+          NODE_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: test
+          DB_NAME: RPL
+
       - name: Run Test Suite (Integration & Unit Tests)
         run: npm test
         env:

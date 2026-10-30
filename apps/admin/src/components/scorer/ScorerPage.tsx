@@ -228,6 +228,12 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
       const innKey = prev.currentInningsNumber === 1 ? 'innings1' : 'innings2';
       const inn = { ...prev[innKey]! };
 
+      // Protection: cannot re-select an already dismissed batsman
+      if (inn.batsmen.some((b) => b.playerId === playerId && b.isOut)) {
+        alert('Cannot select a batsman who has already been dismissed!');
+        return prev;
+      }
+
       let updatedBatsmen = [...inn.batsmen];
       const existingIdx = updatedBatsmen.findIndex((b) => b.playerId === playerId);
 
@@ -450,14 +456,22 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
             inn.activeNonStrikerId = incomingPlayer.id;
           }
         }
+      }
 
-        // Record Fall of Wickets
+      // Record Fall of Wickets for EVERY wicket (1st through 10th All-Out)
+      if (isWicket) {
         inn.fallOfWickets.push({
           wicketNumber: inn.totalWickets,
           score: inn.totalRuns,
           overDisplay: formatOvers(inn.legalBallsBowled),
           playerOutName: dismissedPlayerName || striker?.name || 'Batsman',
         });
+
+        // Clear crease if all 10 wickets are down
+        if (inn.totalWickets >= 10) {
+          inn.activeStrikerId = '';
+          inn.activeNonStrikerId = '';
+        }
       }
 
       inn.batsmen = updatedBatsmen;
@@ -487,9 +501,10 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
       inn.balls = [ballEvent, ...inn.balls];
       inn.currentOverBalls = [...inn.currentOverBalls, ballEvent];
 
-      // 5. Strike Rotation logic on Odd Runs
+      // 5. Strike Rotation logic on Odd Runs (including Run-Out with odd runs)
       const runsToRotate = runsOffBat + (['bye', 'legbye'].includes(extraType) ? extraRuns : 0);
-      if (runsToRotate % 2 !== 0 && !isWicket) {
+      const shouldRotateOnWicket = isWicket && wicketType === 'run_out' && runsToRotate % 2 !== 0;
+      if ((runsToRotate % 2 !== 0 && !isWicket) || shouldRotateOnWicket) {
         inn.batsmen = inn.batsmen.map((b) => {
           if (b.isOut) return b;
           return { ...b, isStriker: !b.isStriker };
@@ -502,6 +517,13 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
 
       // 6. Check Over Completion (6 legal balls)
       if (isLegalDelivery && inn.legalBallsBowled % 6 === 0 && inn.legalBallsBowled > 0) {
+        // Check if this completed over was a maiden (0 runs off bat, 0 wides, 0 no-balls)
+        const isMaiden = inn.currentOverBalls.every(
+          (b) => b.runsOffBat === 0 && b.extraType !== 'wide' && b.extraType !== 'noball'
+        );
+        if (isMaiden && bowlerIdx !== -1) {
+          inn.bowlers[bowlerIdx].maidens += 1;
+        }
         // Swap strike at end of over
         inn.batsmen = inn.batsmen.map((b) => {
           if (b.isOut) return b;
@@ -576,7 +598,7 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
     });
   };
 
-  // Instant 1-Click Undo Handler
+  // Instant 1-Click Undo Handler (Full State Reversal)
   const handleUndoLastBall = () => {
     if (currentInnings.balls.length === 0) return;
 
@@ -587,34 +609,89 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
       const [lastBall, ...remainingBalls] = inn.balls;
       if (!lastBall) return prev;
 
+      // 1. Revert Innings Totals
       inn.totalRuns = Math.max(0, inn.totalRuns - lastBall.totalBallRuns);
       if (lastBall.isWicket) inn.totalWickets = Math.max(0, inn.totalWickets - 1);
       if (lastBall.isLegalDelivery) inn.legalBallsBowled = Math.max(0, inn.legalBallsBowled - 1);
+      inn.isCompleted = false;
 
-      // Remove from current over bubbles
-      inn.currentOverBalls = inn.currentOverBalls.slice(0, -1);
+      // 2. Revert Extras
+      if (lastBall.isExtra) {
+        if (lastBall.extraType === 'wide') inn.extras.wides = Math.max(0, inn.extras.wides - lastBall.extraRuns);
+        if (lastBall.extraType === 'noball') inn.extras.noballs = Math.max(0, inn.extras.noballs - lastBall.extraRuns);
+        if (lastBall.extraType === 'bye') inn.extras.byes = Math.max(0, inn.extras.byes - lastBall.extraRuns);
+        if (lastBall.extraType === 'legbye') inn.extras.legbyes = Math.max(0, inn.extras.legbyes - lastBall.extraRuns);
+        inn.extras.total = Math.max(0, inn.extras.total - lastBall.extraRuns);
+      }
+
+      // 3. Pop Fall of Wickets milestone if this ball caused a wicket
+      if (lastBall.isWicket && inn.fallOfWickets && inn.fallOfWickets.length > 0) {
+        inn.fallOfWickets = inn.fallOfWickets.slice(0, -1);
+      }
+
+      // 4. Reconstruct Current Over Balls accurately
+      const targetOverNumber = Math.floor(inn.legalBallsBowled / 6);
+      const ballsThisOver: BallEvent[] = [];
+      for (const b of remainingBalls) {
+        if (b.overNumber === targetOverNumber) {
+          ballsThisOver.unshift(b);
+        } else {
+          break;
+        }
+      }
+      inn.currentOverBalls = ballsThisOver;
       inn.balls = remainingBalls;
 
-      // Revert striker
-      const strikerIdx = inn.batsmen.findIndex((b) => b.playerId === lastBall.strikerId);
+      // 5. Revert Batsmen
+      const updatedBatsmen = [...inn.batsmen];
+      const strikerIdx = updatedBatsmen.findIndex((b) => b.playerId === lastBall.strikerId);
       if (strikerIdx !== -1) {
-        const b = { ...inn.batsmen[strikerIdx] };
+        const b = { ...updatedBatsmen[strikerIdx] };
         b.runs = Math.max(0, b.runs - lastBall.runsOffBat);
         if (lastBall.extraType !== 'wide') b.balls = Math.max(0, b.balls - 1);
         if (lastBall.runsOffBat === 4) b.fours = Math.max(0, b.fours - 1);
         if (lastBall.runsOffBat === 6) b.sixes = Math.max(0, b.sixes - 1);
         b.strikeRate = b.balls > 0 ? (b.runs / b.balls) * 100 : 0;
-        if (lastBall.isWicket && lastBall.dismissedPlayerId === b.playerId) {
-          b.isOut = false;
-          b.dismissalText = undefined;
-        }
-        inn.batsmen[strikerIdx] = b;
+        updatedBatsmen[strikerIdx] = b;
       }
 
-      // Revert bowler
-      const bowlerIdx = inn.bowlers.findIndex((b) => b.playerId === lastBall.bowlerId);
+      // If non-striker or striker was out, restore them
+      if (lastBall.isWicket) {
+        const dismissedId = lastBall.dismissedPlayerId || lastBall.strikerId;
+        const disIdx = updatedBatsmen.findIndex((b) => b.playerId === dismissedId);
+        if (disIdx !== -1) {
+          updatedBatsmen[disIdx] = {
+            ...updatedBatsmen[disIdx],
+            isOut: false,
+            dismissalText: undefined,
+          };
+        }
+
+        // Remove incoming batsman who was introduced on this wicket if they have not batted
+        inn.batsmen = updatedBatsmen.filter((b) => {
+          if (b.playerId === lastBall.strikerId || b.playerId === lastBall.nonStrikerId) return true;
+          if (b.balls > 0 || b.runs > 0 || b.isOut) return true;
+          return false;
+        });
+      } else {
+        inn.batsmen = updatedBatsmen;
+      }
+
+      // 6. Restore Crease Positions (Striker, Non-Striker, Bowler)
+      inn.activeStrikerId = lastBall.strikerId;
+      inn.activeNonStrikerId = lastBall.nonStrikerId;
+      inn.activeBowlerId = lastBall.bowlerId;
+
+      inn.batsmen = inn.batsmen.map((b) => ({
+        ...b,
+        isStriker: b.playerId === lastBall.strikerId,
+      }));
+
+      // 7. Revert Bowler Stats
+      const updatedBowlers = [...inn.bowlers];
+      const bowlerIdx = updatedBowlers.findIndex((b) => b.playerId === lastBall.bowlerId);
       if (bowlerIdx !== -1) {
-        const b = { ...inn.bowlers[bowlerIdx] };
+        const b = { ...updatedBowlers[bowlerIdx] };
         if (lastBall.isLegalDelivery) b.legalBalls = Math.max(0, b.legalBalls - 1);
         const bowlerRuns =
           lastBall.runsOffBat +
@@ -624,45 +701,62 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
           b.wickets = Math.max(0, b.wickets - 1);
         }
         b.economy = b.legalBalls > 0 ? (b.runsConceded / b.legalBalls) * 6 : 0;
-        inn.bowlers[bowlerIdx] = b;
+        updatedBowlers[bowlerIdx] = b;
       }
+      inn.bowlers = updatedBowlers;
+
+      // 8. Revert match status if it was concluded by this ball
+      const revertedStatus = prev.status === 'completed' ? 'live' : prev.status;
 
       return {
         ...prev,
+        status: revertedStatus,
+        winnerTeamId: revertedStatus === 'live' ? undefined : prev.winnerTeamId,
+        resultSummary: revertedStatus === 'live' ? undefined : prev.resultSummary,
         [innKey]: inn,
       };
     });
   };
 
-  // Switch or Conclude Innings
+  // Switch or Conclude Innings (Respects Toss & 1st Innings Reality)
   const handleSwitchInnings = () => {
     if (match.currentInningsNumber === 1) {
+      const inn1BatTeam = match.innings1.battingTeamId === match.teamA.id ? match.teamA : match.teamB;
+      const inn1BowlTeam = match.innings1.bowlingTeamId === match.teamA.id ? match.teamA : match.teamB;
+      const inn2BatTeam = inn1BowlTeam;
+      const inn2BowlTeam = inn1BatTeam;
+
       if (
         !confirm(
-          `Conclude 1st Innings? ${match.teamA.name} scored ${match.innings1.totalRuns}/${match.innings1.totalWickets}. Target for ${match.teamB.name} will be ${match.innings1.totalRuns + 1}.`
+          `Conclude 1st Innings? ${inn1BatTeam.name} scored ${match.innings1.totalRuns}/${match.innings1.totalWickets}. Target for ${inn2BatTeam.name} will be ${match.innings1.totalRuns + 1}.`
         )
       ) {
         return;
       }
 
-      const teamB = match.teamB;
-      const teamA = match.teamA;
+      const p1 = inn2BatTeam.players[0] || { id: 'p1', name: 'Opening Batter 1', role: 'Batter' };
+      const p2 = inn2BatTeam.players[1] || p1;
+      const openingBowler =
+        inn2BowlTeam.players.find((p) => p.role === 'Bowler') ||
+        inn2BowlTeam.players[inn2BowlTeam.players.length - 1] ||
+        inn2BowlTeam.players[0] ||
+        { id: 'b1', name: 'Opening Bowler', role: 'Bowler' };
 
       const newInnings2: InningsState = {
         inningsNumber: 2,
-        battingTeamId: teamB.id,
-        bowlingTeamId: teamA.id,
+        battingTeamId: inn2BatTeam.id,
+        bowlingTeamId: inn2BowlTeam.id,
         totalRuns: 0,
         totalWickets: 0,
         legalBallsBowled: 0,
         extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0, total: 0 },
-        activeStrikerId: teamB.players[0].id,
-        activeNonStrikerId: teamB.players[1].id,
-        activeBowlerId: teamA.players[8].id,
+        activeStrikerId: p1.id,
+        activeNonStrikerId: p2.id,
+        activeBowlerId: openingBowler.id,
         batsmen: [
           {
-            playerId: teamB.players[0].id,
-            name: teamB.players[0].name,
+            playerId: p1.id,
+            name: p1.name,
             runs: 0,
             balls: 0,
             fours: 0,
@@ -672,8 +766,8 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
             isOut: false,
           },
           {
-            playerId: teamB.players[1].id,
-            name: teamB.players[1].name,
+            playerId: p2.id,
+            name: p2.name,
             runs: 0,
             balls: 0,
             fours: 0,
@@ -685,8 +779,8 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
         ],
         bowlers: [
           {
-            playerId: teamA.players[8].id,
-            name: teamA.players[8].name,
+            playerId: openingBowler.id,
+            name: openingBowler.name,
             legalBalls: 0,
             maidens: 0,
             runsConceded: 0,
@@ -1138,8 +1232,9 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
                 onScoreRun={(runs) =>
                   recordBallDelivery({ runsOffBat: runs, isLegalDelivery: true })
                 }
-                onQuickExtra={(type, extraRuns = 1) =>
+                onQuickExtra={(type, extraRuns = 1, runsOffBat = 0) =>
                   recordBallDelivery({
+                    runsOffBat,
                     isExtra: true,
                     extraType: type,
                     extraRuns,
@@ -1235,6 +1330,7 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
         previousBowlerId={activeBowler?.playerId}
         bowlerRecords={currentInnings.bowlers}
         isOverEndPrompt={isOverEndPrompt}
+        oversPerSide={match.oversPerSide}
         onSelectBowler={(bowlerId) => {
           setIsChangeBowlerOpen(false);
           setIsOverEndPrompt(false);
@@ -1276,6 +1372,7 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
         battingTeamPlayers={battingTeam.players}
         currentStriker={striker}
         currentNonStriker={nonStriker}
+        inningsBatsmen={currentInnings.batsmen}
         initialTarget={changeBatsmanTarget}
         onSelectBatsman={handleSelectBatsman}
       />

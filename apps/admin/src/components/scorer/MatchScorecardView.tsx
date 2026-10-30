@@ -17,6 +17,9 @@ export const MatchScorecardView: React.FC<MatchScorecardViewProps> = ({ match })
   const bowlingTeam =
     innings?.bowlingTeamId === match.teamA.id ? match.teamA : match.teamB;
 
+  const inn1BatTeam = match.innings1?.battingTeamId === match.teamB.id ? match.teamB : match.teamA;
+  const inn2BatTeam = match.innings2?.battingTeamId === match.teamA.id ? match.teamA : match.teamB;
+
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-5">
       {/* Innings Selector Tabs */}
@@ -31,7 +34,7 @@ export const MatchScorecardView: React.FC<MatchScorecardViewProps> = ({ match })
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
             }`}
           >
-            1st Innings: {match.teamA.shortName} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
+            1st Innings: {inn1BatTeam.shortName} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
           </button>
 
           {match.innings2 && (
@@ -44,7 +47,7 @@ export const MatchScorecardView: React.FC<MatchScorecardViewProps> = ({ match })
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              2nd Innings: {match.teamB.shortName} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
+              2nd Innings: {inn2BatTeam.shortName} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
             </button>
           )}
         </div>

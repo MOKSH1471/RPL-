@@ -46,12 +46,8 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
     const currentInnings = match.currentInningsNumber === 1 ? match.innings1 : match.innings2;
     if (!currentInnings) return;
 
-    const deliveries =
-      currentInnings.currentOverBalls && currentInnings.currentOverBalls.length > 0
-        ? currentInnings.currentOverBalls
-        : currentInnings.balls;
-
-    const latestBall = deliveries && deliveries.length > 0 ? deliveries[deliveries.length - 1] : null;
+    // Always inspect the newest ball recorded across the innings (balls[0] is newest)
+    const latestBall = currentInnings.balls && currentInnings.balls.length > 0 ? currentInnings.balls[0] : null;
 
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -78,6 +74,8 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
 
   const battingTeam = innings?.battingTeamId === match.teamA.id ? match.teamA : match.teamB;
   const bowlingTeam = innings?.bowlingTeamId === match.teamA.id ? match.teamA : match.teamB;
+  const inn1BatTeam = match.innings1?.battingTeamId === match.teamB.id ? match.teamB : match.teamA;
+  const inn2BatTeam = match.innings2?.battingTeamId === match.teamA.id ? match.teamA : match.teamB;
 
   // Key live metrics
   const crr = innings ? calculateRunRate(innings.totalRuns, innings.legalBallsBowled) : '0.00';
@@ -203,7 +201,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            1st Inns · {match.teamA.shortName} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
+            1st Inns · {inn1BatTeam.shortName} ({match.innings1.totalRuns}/{match.innings1.totalWickets})
           </button>
 
           {match.innings2 && (
@@ -216,7 +214,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onC
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              2nd Inns · {match.teamB.shortName} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
+              2nd Inns · {inn2BatTeam.shortName} ({match.innings2.totalRuns}/{match.innings2.totalWickets})
             </button>
           )}
         </div>

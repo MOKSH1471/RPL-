@@ -7,7 +7,9 @@ interface OverTimelineProps {
 }
 
 export const OverTimeline: React.FC<OverTimelineProps> = ({ currentOverBalls, legalBallsBowled }) => {
-  const overNumber = Math.floor(legalBallsBowled / 6) + 1;
+  const maxOvers = 10;
+  const isAllOversCompleted = legalBallsBowled >= maxOvers * 6;
+  const overNumber = Math.min(maxOvers, Math.floor(legalBallsBowled / 6) + 1);
   const runsThisOver = currentOverBalls.reduce((acc, b) => acc + b.totalBallRuns, 0);
 
   const getBallStyle = (ball: BallEvent) => {
@@ -70,7 +72,7 @@ export const OverTimeline: React.FC<OverTimelineProps> = ({ currentOverBalls, le
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs flex items-center justify-between gap-3">
       <div className="flex items-center space-x-2 shrink-0">
-        <span className="text-xs font-bold text-slate-700">Over {overNumber}:</span>
+        <span className="text-xs font-bold text-slate-700">{isAllOversCompleted ? "Innings Completed:" : `Over ${overNumber}:`}</span>
         <span className="text-xs text-slate-500 font-mono">({runsThisOver} runs)</span>
       </div>
 

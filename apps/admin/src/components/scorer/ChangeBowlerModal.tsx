@@ -12,6 +12,7 @@ interface ChangeBowlerModalProps {
   previousBowlerId?: string;
   bowlerRecords: LiveBowler[];
   isOverEndPrompt?: boolean;
+  oversPerSide?: number;
   onSelectBowler: (bowlerId: string) => void;
 }
 
@@ -23,6 +24,7 @@ export const ChangeBowlerModal: React.FC<ChangeBowlerModalProps> = ({
   previousBowlerId,
   bowlerRecords,
   isOverEndPrompt = false,
+  oversPerSide = 10,
   onSelectBowler,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('');
@@ -82,6 +84,8 @@ export const ChangeBowlerModal: React.FC<ChangeBowlerModalProps> = ({
                 const record = bowlerRecords.find((b) => b.playerId === player.id);
                 const isCurrent = player.id === currentBowlerId;
                 const isPrev = isOverEndPrompt && player.id === previousBowlerId;
+                const maxQuotaOvers = Math.ceil((oversPerSide || 10) / 5);
+                const isQuotaExceeded = record ? record.legalBalls >= maxQuotaOvers * 6 : false;
                 const isSelected = selectedId === player.id;
 
                 const oversFormatted = record ? formatOvers(record.legalBalls) : '0.0';
@@ -92,7 +96,7 @@ export const ChangeBowlerModal: React.FC<ChangeBowlerModalProps> = ({
                   <button
                     key={player.id}
                     type="button"
-                    disabled={isCurrent || isPrev}
+                    disabled={isCurrent || isPrev || isQuotaExceeded}
                     onClick={() => setSelectedId(player.id)}
                     className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-colors ${
                       isSelected

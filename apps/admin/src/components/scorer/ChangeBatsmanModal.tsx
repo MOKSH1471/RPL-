@@ -9,6 +9,7 @@ interface ChangeBatsmanModalProps {
   battingTeamPlayers: CricketPlayer[];
   currentStriker?: LiveBatsman;
   currentNonStriker?: LiveBatsman;
+  inningsBatsmen?: LiveBatsman[];
   initialTarget?: 'striker' | 'nonStriker';
   onSelectBatsman: (data: {
     target: 'striker' | 'nonStriker';
@@ -23,6 +24,7 @@ export const ChangeBatsmanModal: React.FC<ChangeBatsmanModalProps> = ({
   battingTeamPlayers,
   currentStriker,
   currentNonStriker,
+  inningsBatsmen = [],
   initialTarget = 'striker',
   onSelectBatsman,
 }) => {
@@ -141,13 +143,14 @@ export const ChangeBatsmanModal: React.FC<ChangeBatsmanModalProps> = ({
                 {battingTeamPlayers.map((player) => {
                   const isCurrent = player.id === currentOccupantId;
                   const isOther = player.id === otherOccupantId;
+                  const isDismissed = inningsBatsmen.some((b) => b.playerId === player.id && b.isOut);
                   const isSelected = player.id === selectedPlayerId;
 
                   return (
                     <button
                       key={player.id}
                       type="button"
-                      disabled={isOther}
+                      disabled={isOther || isDismissed}
                       onClick={() => setSelectedPlayerId(player.id)}
                       className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                         isSelected
@@ -174,6 +177,11 @@ export const ChangeBatsmanModal: React.FC<ChangeBatsmanModalProps> = ({
                             {isOther && (
                               <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
                                 At Other End
+                              </span>
+                            )}
+                            {isDismissed && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 font-bold">
+                                Out
                               </span>
                             )}
                           </div>

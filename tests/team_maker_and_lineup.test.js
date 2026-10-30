@@ -1,12 +1,14 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { apiRequest, startTestServer, stopTestServer } from './testHelper.js';
+import { ensureTestPlayersSeeded } from '../database/seed_test_players.js';
 
 describe('Team Maker & Lineup Management Comprehensive QA Test Suite', () => {
   let createdTeamId;
 
   before(async () => {
     await startTestServer();
+    await ensureTestPlayersSeeded();
   });
 
   after(async () => {
