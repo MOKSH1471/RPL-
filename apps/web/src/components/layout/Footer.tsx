@@ -6,9 +6,10 @@ import { MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'lucide-react
 interface FooterProps {
   onRegisterClick?: () => void;
   onCheckPassClick?: () => void;
+  isAdminPreview?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick, isAdminPreview = false }) => {
 
   return (
     <footer className="relative z-10 border-t border-slate-200 bg-white pt-10 sm:pt-16 pb-24 sm:pb-16 safe-bottom w-full max-w-full overflow-hidden">
@@ -111,10 +112,16 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
                   Tournament Process
                 </a>
               </li>
+              {isAdminPreview && (
+                <li>
+                  <a href="#/rules" className="text-amber-600 font-bold hover:text-amber-700 transition-colors flex items-center space-x-1">
+                    <span>📜 Rules &amp; Regulations</span>
+                  </a>
+                </li>
+              )}
               <li>
                 <a href="#/faq" className="hover:text-amber-600 transition-colors">
-                  Frequently Asked Questions (FAQ)
-                </a>
+                  Frequently Asked Questions (FAQ)                </a>
               </li>
               <li>
                 <a href="#register" className="hover:text-amber-600 transition-colors">
@@ -169,12 +176,19 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
         <div className="pt-6 sm:pt-8 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 font-medium gap-3 sm:gap-4">
           <p>© 2026 Raj Premier League (RPL). All rights reserved.</p>
           <div className="flex items-center gap-4">
+            {isAdminPreview && (
+              <a
+                href="#/rules"
+                className="hover:text-amber-600 transition-colors underline underline-offset-2 font-semibold"
+              >
+                Rules &amp; Regulations
+              </a>
+            )}
             <a
               href="#/faq"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"
             >
-              FAQ
-            </a>
+              FAQ            </a>
             <a
               href="#/privacy-policy"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"
