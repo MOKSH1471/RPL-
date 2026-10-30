@@ -5,7 +5,7 @@ import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
   onRegisterClick: () => void;
-  currentPage?: 'home' | 'register' | 'scorer' | 'scorecard' | 'rules' | 'privacy' | 'terms';
+  currentPage?: 'home' | 'register' | 'scorer' | 'scorecard' | 'rules' | 'schedule' | 'privacy' | 'terms';
   onNavigateHome?: () => void;
   onScorerClick?: () => void;
   onCheckPassClick?: () => void;
@@ -123,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navItems = [
     { id: 'about', label: 'About', href: '#about' },
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
-    { id: 'schedule', label: 'Schedule', href: '#schedule' },
+    { id: 'schedule', label: 'Schedule', href: '#/schedule', isRoute: true },
     { id: 'how-it-works', label: 'How It Works', href: '#how-it-works' },
     { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
@@ -138,6 +138,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       document.body.style.overflow = '';
       setMobileMenuOpen(false);
       onRulesClick();
+      return;
+    }
+    if (item.isRoute && item.id === 'schedule') {
+      document.body.style.overflow = '';
+      setMobileMenuOpen(false);
+      window.location.hash = '/schedule';
+      window.scrollTo({ top: 0, behavior: 'instant' });
       return;
     }
     handleNavClick(item.href, e);

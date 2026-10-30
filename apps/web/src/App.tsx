@@ -12,6 +12,7 @@ import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { RulesPage } from '@/components/pages/RulesPage';
+import { SchedulePage } from '@/components/pages/SchedulePage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { Footer } from '@/components/layout/Footer';
 import { CheckStatusModal } from '@/components/ui/CheckStatusModal';
@@ -19,7 +20,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'scorecard' | 'rules'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'scorecard' | 'rules' | 'schedule'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -81,6 +82,14 @@ export function App() {
         hash === '#rules-regulations'
       ) {
         setCurrentPage('rules');
+        setShowIntro(false);
+      } else if (
+        path === '/schedule' ||
+        path.startsWith('/schedule') ||
+        hash === '#/schedule' ||
+        hash === '#schedule'
+      ) {
+        setCurrentPage('schedule');
         setShowIntro(false);
       } else if (
         path === '/scorecard' ||
@@ -152,7 +161,23 @@ export function App() {
   }
 
   if (currentPage === 'rules') {
-    return <RulesPage onBackToHome={handleBackToHome} onScorecardClick={handleScorecardClick} />;
+    return (
+      <RulesPage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
+  }
+
+  if (currentPage === 'schedule') {
+    return (
+      <SchedulePage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
   }
 
   return (

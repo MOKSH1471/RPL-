@@ -5,9 +5,10 @@ import { Trophy, MessageCircle, Mail, ExternalLink, Heart, Sparkles } from 'luci
 
 interface FooterProps {
   onRegisterClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick }) => {
 
   return (
     <footer className="relative z-10 border-t border-slate-200 bg-white py-10 sm:py-16 safe-bottom w-full max-w-full overflow-hidden">
@@ -127,7 +128,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick }) => {
                 </a>
               </li>
               <li>
-                <a href="#schedule" className="hover:text-amber-600 transition-colors">
+                <a href="#/schedule" className="hover:text-amber-600 transition-colors">
                   Match Schedule
                 </a>
               </li>
