@@ -9,11 +9,7 @@ import {
   Search,
   RefreshCw,
   ArrowLeft,
-  Trophy,
-  Flame,
-  Radio,
   Clock,
-  Sparkles,
 } from 'lucide-react';
 
 interface ScorecardPageProps {
@@ -187,14 +183,14 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
   const standings = calculateStandings(matches);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-16 font-sans">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 font-sans">
       {/* ── Header Strip with Back Link & Title ── */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <button
             type="button"
             onClick={onBackToHome}
-            className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 mb-2 transition-colors cursor-pointer group"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 mb-1.5 transition-colors cursor-pointer group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span>Back to RPL Home</span>
@@ -203,13 +199,13 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
             <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] uppercase tracking-wider">
               RPL Season 9
             </span>
-            <div className="flex items-center space-x-1 text-xs font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Ball-by-Ball Live Sync</span>
+            <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Ball-by-Ball Live</span>
             </div>
           </div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-4xl text-slate-900 tracking-tight mt-1">
-            Tournament <span className="text-gradient-vibrant">Scorecard</span>
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-slate-900 tracking-tight mt-1">
+            Tournament <span className="text-amber-600">Scorecard</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
             Real-time live scores updated ball-by-ball from the Admin Scorer
@@ -224,7 +220,7 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
           <button
             type="button"
             onClick={() => loadMatches(true)}
-            className="px-3.5 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs hover:shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs hover:shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-amber-600' : 'text-slate-500'}`} />
             <span>Refresh</span>
@@ -232,55 +228,32 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
         </div>
       </div>
 
-      {/* ── Search Bar & Pill Tabs Strip ── */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200 p-4 sm:p-5 shadow-xs mb-6 space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search matches by team name, venue, or stage..."
-            className="w-full pl-10 pr-20 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-400/20 transition-all font-medium"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-400 hover:text-slate-700 font-bold"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Pill Tabs: [Matches] [Overview] [Table] [Stats] */}
-        <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-1">
+      {/* ── Sports Navigation & Filter Bar (No Horizontal Scrolling) ── */}
+      <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200/90 p-2.5 sm:p-3.5 shadow-xs mb-6 space-y-3">
+        {/* Main Tab Switcher (4-Column Grid: Fits every phone screen with zero scrolling) */}
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 bg-slate-100/80 rounded-xl">
           <button
             type="button"
             onClick={() => setActiveTab('matches')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+            className={`py-1.5 sm:py-2 px-1 rounded-lg text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer flex items-center justify-center space-x-1 ${
               activeTab === 'matches'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <span>Matches</span>
             {liveMatches.length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             )}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+            className={`py-1.5 sm:py-2 px-1 rounded-lg text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer text-center ${
               activeTab === 'overview'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Overview
@@ -289,109 +262,131 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
           <button
             type="button"
             onClick={() => setActiveTab('table')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+            className={`py-1.5 sm:py-2 px-1 rounded-lg text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer text-center truncate ${
               activeTab === 'table'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Points Table
+            <span className="hidden sm:inline">Points </span>Table
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('stats')}
-            className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+            className={`py-1.5 sm:py-2 px-1 rounded-lg text-xs sm:text-sm font-bold tracking-tight transition-all cursor-pointer text-center ${
               activeTab === 'stats'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Stats & Leaders
+            Stats
           </button>
         </div>
+
+        {/* Secondary Bar for Matches Tab: Filters + Compact Search (Clean wrapping, no scrollbars) */}
+        {activeTab === 'matches' && (
+          <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Filter Chips (flex-wrap: no horizontal scrollbar) */}
+            <div className="flex flex-wrap items-center gap-1.5 py-0.5">
+              <button
+                type="button"
+                onClick={() => setFilterStatus('all')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap ${
+                  filterStatus === 'all'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                All ({matches.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterStatus('live')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center space-x-1.5 whitespace-nowrap ${
+                  filterStatus === 'live'
+                    ? 'bg-emerald-600 text-white font-black shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Live ({liveMatches.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterStatus('upcoming')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap ${
+                  filterStatus === 'upcoming'
+                    ? 'bg-slate-800 text-white font-black shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                Upcoming
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterStatus('completed')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap ${
+                  filterStatus === 'completed'
+                    ? 'bg-slate-800 text-white font-black shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                Results
+              </button>
+            </div>
+
+            {/* Compact Search Bar */}
+            <div className="relative w-full sm:w-64 shrink-0">
+              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                <Search className="w-3.5 h-3.5" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search team or venue..."
+                className="w-full pl-8 pr-14 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 focus:bg-white focus:ring-1 focus:ring-amber-500 font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[11px] text-slate-400 hover:text-slate-700 font-bold"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Main Tab Content ── */}
       <div className="max-w-3xl mx-auto">
-        {/* TAB 1: MATCHES (Google Sports style Match Cards) */}
+        {/* TAB 1: MATCHES */}
         {activeTab === 'matches' && (
-          <div className="space-y-4">
-            {/* Filter Chips */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Current Matches ({filteredMatches.length})
-              </span>
-
-              <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-                <button
-                  type="button"
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
-                    filterStatus === 'all'
-                      ? 'bg-amber-500 text-slate-950 font-black shadow-2xs'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  All
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterStatus('live')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors flex items-center space-x-1.5 ${
-                    filterStatus === 'live'
-                      ? 'bg-emerald-600 text-white font-black shadow-2xs'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Live ({liveMatches.length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterStatus('upcoming')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
-                    filterStatus === 'upcoming'
-                      ? 'bg-sky-600 text-white font-black shadow-2xs'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Upcoming
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterStatus('completed')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
-                    filterStatus === 'completed'
-                      ? 'bg-slate-800 text-white font-black shadow-2xs'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  Results
-                </button>
-              </div>
-            </div>
-
+          <div className="space-y-3 sm:space-y-4">
             {/* Match Cards List */}
             {loading ? (
-              <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
-                <RefreshCw className="w-6 h-6 animate-spin text-amber-500 mx-auto mb-2" />
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400 text-xs sm:text-sm">
+                <RefreshCw className="w-5 h-5 animate-spin text-amber-500 mx-auto mb-2" />
                 <span>Loading real-time match data...</span>
               </div>
             ) : filteredMatches.length === 0 ? (
-              <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200 p-10 sm:p-12 text-center shadow-xs space-y-3">
-                <div className="w-14 h-14 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
-                  <Clock className="w-7 h-7" />
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 p-8 sm:p-10 text-center shadow-xs space-y-2.5">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                  <Clock className="w-6 h-6" />
                 </div>
-                <h3 className="font-display font-extrabold text-lg text-slate-900">
+                <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-900">
                   {searchQuery ? 'No Matches Found' : 'No Matches Scheduled Yet'}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
                   {searchQuery
-                    ? 'No matches match your current search query. Try searching for a different team or venue.'
+                    ? 'No matches match your search query. Try searching for a different team or venue.'
                     : 'As soon as an admin or scorer creates or scores a match in the Admin Scorer portal, it will immediately appear here with live ball-by-ball updates.'}
                 </p>
                 {searchQuery && (
@@ -405,7 +400,7 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
                 )}
               </div>
             ) : (
-              <div className="space-y-3 sm:space-y-3.5">
+              <div className="space-y-3">
                 {filteredMatches.map((match) => (
                   <MatchCard
                     key={match.id}
@@ -420,10 +415,10 @@ export const ScorecardPage: React.FC<ScorecardPageProps> = ({ onBackToHome }) =>
 
         {/* TAB 2: OVERVIEW */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {liveMatches.length > 0 && (
               <div>
-                <div className="flex items-center space-x-2 mb-2.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <div className="flex items-center space-x-2 mb-2 text-xs font-bold uppercase tracking-wider text-emerald-800">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Live Spotlight Match</span>
                 </div>
