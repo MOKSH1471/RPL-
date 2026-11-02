@@ -42,7 +42,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
       ? (data as any).spectatorDays
       : ((data as any).checkInDate && (data as any).checkOutDate
-          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : [(data as any).checkInDate, (data as any).checkOutDate])
+          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : (((data as any).checkInDate === '2026-12-25' && (data as any).checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [(data as any).checkInDate, (data as any).checkOutDate]))
           : ['2026-12-25']);
 
   const specDayCount = Math.max(1, specDatesList.length);
@@ -256,7 +256,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (isSpectator ? (hasStay ? 2700 : (specDayCount * 400)) : (data.existingRplFamily === 'Yes' ? 2700 : 3000))).toLocaleString('en-IN')}
+                  ₹{(data.totalAmount || (isSpectator ? (hasStay ? 3600 : (specDayCount * 720)) : (data.existingRplFamily === 'Yes' ? 3600 : 3900))).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

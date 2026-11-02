@@ -637,8 +637,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentGender = watch('gender');
 
   // Registration Mode & Fee calculation:
-  // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
-  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹400/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
+  // Player: Flat ₹3,600 (Returning) / ₹3,900 (New) All-Inclusive Event Fee + optional ₹500 extra T-Shirt
+  // Spectator: With Stay = ₹3,600 (3 days compulsory), Without Stay = ₹720/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
@@ -687,11 +687,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorSelectedDaysCount = (isSpectator && currentAcc === 'No')
     ? spectatorDates.length
     : 1;
-  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 400);
+  const spectatorBaseFee = currentAcc === 'Yes' ? 3600 : (spectatorSelectedDaysCount * 720);
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
 
-  // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
-  const playerBaseFee = currentExistingFamily === 'Yes' ? 2700 : 3000;
+  // First-time RPL Mumukshu / New Player: ₹3,900; Returning RPL Family: ₹3,600
+  const playerBaseFee = currentExistingFamily === 'Yes' ? 3600 : 3900;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
   // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
@@ -1558,6 +1558,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       registrationType: isSpectator ? 'spectator' : 'player',
       spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
       spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
+      spectatorDates: isSpectator ? (data.accommodationRequired === 'No' ? spectatorDates : ['2026-12-25', '2026-12-26', '2026-12-27']) : undefined,
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
@@ -2748,11 +2749,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <p className="text-amber-800 text-[11px] mt-0.5">
                           {currentExistingFamily === 'Yes' ? (
                             <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹2,700 + ₹500 = ₹3,200</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹2,700</strong> (1 tournament T-shirt included).
+                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,600</strong> (1 tournament T-shirt included).
                             </>
                           ) : (
                             <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,000 + ₹500 = ₹3,500</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,000</strong> (1 tournament T-shirt included).
+                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,900 + ₹500 = ₹4,400</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,900</strong> (1 tournament T-shirt included).
                             </>
                           )}
                         </p>
@@ -2935,8 +2936,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={isSpectator ? [
-                      { value: 'No', label: 'Without Stay (₹400/day)' },
-                      { value: 'Yes', label: 'With Stay (₹2,700)' },
+                      { value: 'No', label: 'Without Stay (₹720/day)' },
+                      { value: 'Yes', label: 'With Stay (₹3,600)' },
                     ] : [
                       { value: 'No', label: 'No, Self-Arranged' },
                       { value: 'Yes', label: 'Yes, Needed' },
@@ -2962,7 +2963,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-600" />
-                            Official Spectator Pass with Stay • ₹2,700
+                            Official Spectator Pass with Stay • ₹3,600
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900 border border-amber-300">
                             2N & 3D INCLUDED
@@ -2981,7 +2982,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹400/day)
+                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹720/day)
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
                             ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
@@ -3075,13 +3076,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Select Attending Dates <span className="text-pink-600">*</span>
                         </h4>
                         <p className="text-[11px] text-slate-600 font-medium">
-                          Choose tournament days you will attend (Single Day Pass: ₹400 / Day)
+                          Choose tournament days you will attend (Single Day Pass: ₹720 / Day)
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
-                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 400).toLocaleString('en-IN')}
+                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 720).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -3130,13 +3131,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           className={`font-black text-xs sm:text-sm ${isAllDatesSelected ? 'text-white' : 'text-emerald-800'
                             }`}
                         >
-                          ₹1,200
+                          ₹2,160
                         </span>
                         <span
                           className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'
                             }`}
                         >
-                          (3 × ₹400)
+                          (3 × ₹720)
                         </span>
                       </div>
                     </div>
@@ -3172,7 +3173,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-xs text-emerald-800">₹400</span>
+                            <span className="font-black text-xs text-emerald-800">₹720</span>
                           </div>
                         </div>
                       );
@@ -3297,9 +3298,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <p className="leading-relaxed">
                           {currentExistingFamily === 'Yes' ? (
-                            <span><strong>Returning Participant (₹2,700):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
+                            <span><strong>Returning Participant (₹3,600):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
                           ) : (
-                            <span><strong>New Player Draft (₹3,000):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
+                            <span><strong>New Player Draft (₹3,900):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
                           )}
                         </p>
                       </div>
@@ -4697,8 +4698,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                           {isSpectator ? (
                             currentAcc === 'Yes'
-                              ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
-                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹400 = ₹${(spectatorDates.length * 400).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
+                              ? `Spectator Pass with Stay: ₹3,600${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹4,100' : ''}`
+                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹720 = ₹${(spectatorDates.length * 720).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                           ) : isReturningPaidUser ? (
                             currentExtraTshirt === 'Yes'
                               ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
@@ -4729,7 +4730,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                           <div>
                             <span>
-                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹2,700' : '₹3,000'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹3,600' : '₹3,900'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
                         </div>

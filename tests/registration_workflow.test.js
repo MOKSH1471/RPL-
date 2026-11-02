@@ -29,7 +29,7 @@ test('Registration Validation: rejects payload missing mobile number with 400', 
   assert.strictEqual(res.data.error, 'Missing core registration fields.');
 });
 
-test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to base fee of ₹3,000', async () => {
+test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to base fee of ₹3,900', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -43,12 +43,12 @@ test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to b
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 300000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily: Yes) charges base fee of ₹2,700', async () => {
+test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily: Yes) charges base fee of ₹3,600', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -62,12 +62,12 @@ test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily:
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,000 for New Player (all sports included)', async () => {
+test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,900 for New Player (all sports included)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -81,12 +81,12 @@ test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,000 for 
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 300000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹3,500 (3000 + 500)', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹4,400 (3900 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -101,12 +101,12 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 350000);
+    assert.strictEqual(res.data.amount, 440000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) charges ₹3,200 (2700 + 500)', async () => {
+test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) charges ₹4,100 (3600 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -121,12 +121,12 @@ test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) c
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 320000);
+    assert.strictEqual(res.data.amount, 410000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,000', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,900', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -141,7 +141,7 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges 
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 300000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -273,7 +273,7 @@ test('Direct Registration: registration submitted without UTR/receipt should not
   }
 });
 
-test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka sport calculates flat fee of ₹2,700 for returning player', async () => {
+test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka sport calculates flat fee of ₹3,600 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -288,12 +288,12 @@ test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka sport calcul
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka and extra T-shirt calculates ₹3,200 for returning player', async () => {
+test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka and extra T-shirt calculates ₹4,100 for returning player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -308,7 +308,7 @@ test('Kaccha Pakka Cricket League: Order creation with kaccha-pakka and extra T-
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 320000);
+    assert.strictEqual(res.data.amount, 410000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -344,7 +344,7 @@ test('90s Nostalgia: Order creation preserves nostalgiaSport in general_details 
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -390,7 +390,7 @@ test('90s Nostalgia Multi-Select: Order creation preserves array of multiple nos
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -437,7 +437,7 @@ test('Direct Registration with Multi-Select Nostalgia: registers with payment_st
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay (₹400 / 40000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay (₹720 / 72000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -468,12 +468,12 @@ test('Spectator Pass: Order creation for Day Pass without stay (₹400 / 40000 p
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 40000, 'Spectator without stay must be ₹400 (40000 paise)');
+    assert.strictEqual(res.data.amount, 72000, 'Spectator without stay must be ₹720 (72000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹900 / 90000 paise)', async () => {
+test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,220 / 122000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -505,12 +505,12 @@ test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹900
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 90000, 'Spectator without stay + T-shirt must be ₹900 (90000 paise)');
+    assert.strictEqual(res.data.amount, 122000, 'Spectator without stay + T-shirt must be ₹1220 (122000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation with stay (₹2,700 / 270000 paise)', async () => {
+test('Spectator Pass: Order creation with stay (₹3,600 / 360000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -541,12 +541,12 @@ test('Spectator Pass: Order creation with stay (₹2,700 / 270000 paise)', async
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 270000, 'Spectator with stay must be ₹2700 (270000 paise)');
+    assert.strictEqual(res.data.amount, 360000, 'Spectator with stay must be ₹3600 (360000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 paise)', async () => {
+test('Spectator Pass: Order creation with stay + T-Shirt (₹4,100 / 410000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -578,12 +578,12 @@ test('Spectator Pass: Order creation with stay + T-Shirt (₹3,200 / 320000 pais
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 320000, 'Spectator with stay + T-shirt must be ₹3200 (320000 paise)');
+    assert.strictEqual(res.data.amount, 410000, 'Spectator with stay + T-shirt must be ₹4100 (410000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Direct Registration registers with payment_status=pending and ₹400 fee', async () => {
+test('Spectator Pass: Direct Registration registers with payment_status=pending and ₹720 fee', async () => {
   const res = await apiRequest('/api/register', {
     method: 'POST',
     body: JSON.stringify({

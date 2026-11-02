@@ -11,7 +11,7 @@ export const AboutSection: React.FC = () => {
   ];
 
   return (
-    <section id="about" className="py-16 md:py-24 relative z-10 w-full max-w-full overflow-hidden">
+    <section id="about" className="pt-4 pb-16 sm:pt-6 sm:pb-20 md:pt-8 md:pb-24 relative z-10 w-full max-w-full overflow-hidden">
       <InView
         viewOptions={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}

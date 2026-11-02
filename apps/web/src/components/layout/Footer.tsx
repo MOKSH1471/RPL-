@@ -1,3 +1,4 @@
+import { checkIsAdminPreview } from '@/lib/previewAuth';
 import React from 'react';
 import { InView } from '@/components/ui/in-view';
 import { FlipLink } from '@/components/ui/RevealLinks';
@@ -9,7 +10,8 @@ interface FooterProps {
   isAdminPreview?: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick, isAdminPreview = false }) => {
+export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClick, isAdminPreview: propIsAdminPreview }) => {
+  const isAdminPreview = propIsAdminPreview ?? checkIsAdminPreview();
 
   return (
     <footer className="relative z-10 border-t border-slate-200 bg-white pt-10 sm:pt-16 pb-24 sm:pb-16 safe-bottom w-full max-w-full overflow-hidden">
@@ -105,10 +107,15 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
                   Tournament Process
                 </a>
               </li>
+              <li>
+                <a href="#connect" className="hover:text-amber-600 transition-colors">
+                  Connect with RPL
+                </a>
+              </li>
               {isAdminPreview && (
                 <li>
-                  <a href="#/rules" className="text-amber-600 font-bold hover:text-amber-700 transition-colors flex items-center space-x-1">
-                    <span>📜 Rules &amp; Regulations</span>
+                  <a href="#/rules" className="hover:text-amber-600 transition-colors">
+                    Rules &amp; Regulations
                   </a>
                 </li>
               )}
@@ -126,7 +133,7 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
                 <button
                   type="button"
                   onClick={onCheckPassClick}
-                  className="hover:text-amber-600 transition-colors text-left font-medium cursor-pointer"
+                  className="text-sm text-slate-600 hover:text-amber-600 transition-colors text-left font-medium cursor-pointer p-0 bg-transparent border-0 leading-normal font-sans"
                 >
                   Check Pass
                 </button>
@@ -173,20 +180,6 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
           </p>
 
           <div className="order-1 md:order-2 flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-5 gap-y-2 text-[11px] sm:text-xs">
-            {isAdminPreview && (
-              <a
-                href="#/rules"
-                className="hover:text-amber-600 transition-colors underline underline-offset-2 font-semibold"
-              >
-                Rules &amp; Regulations
-              </a>
-            )}
-            <a
-              href="#/faq"
-              className="hover:text-amber-600 transition-colors underline underline-offset-2"
-            >
-              FAQ
-            </a>
             <a
               href="#/privacy-policy"
               className="hover:text-amber-600 transition-colors underline underline-offset-2"

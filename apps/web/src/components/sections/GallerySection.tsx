@@ -35,7 +35,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
   };
   const catInfo = getCategoryBadge(item.category);
   const isSponsor = item.category === 'sponsors';
-  const isPortrait = item.id.includes('patron') || item.image.includes('sponsor-');
+  const isTextPatron = ['sp-patron-1', 'sp-patron-2', 'sp-patron-3', 'sp-patron-4'].includes(item.id);
+  const isPortrait = !isTextPatron && (item.id.includes('patron') || item.image.includes('sponsor-'));
 
   return (
     <div
@@ -50,42 +51,73 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
     >
       {/* Image Container with Consistent 4:3 Aspect Ratio */}
       <div className={`relative aspect-[4/3] overflow-hidden ${isSponsor
-        ? (isPortrait
-          ? 'bg-slate-200'
-          : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
-            ? 'p-0 bg-transparent'
-            : 'bg-white flex items-center justify-center p-3 sm:p-4')
+        ? (isTextPatron
+          ? 'bg-transparent'
+          : isPortrait
+            ? 'bg-slate-200'
+            : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+              ? 'p-0 bg-transparent'
+              : 'bg-white flex items-center justify-center p-3 sm:p-4')
         : 'bg-slate-200'
         }`}>
-        {!loaded && (
-          <div className="absolute inset-0 bg-slate-200 animate-pulse" />
-        )}
-        <picture className="w-full h-full flex items-center justify-center">
-          {!isSponsor && item.thumbnail && (
-            <source
-              srcSet={item.thumbnail.replace(/\.jpg$/, '.webp')}
-              type="image/webp"
-            />
-          )}
-          <img
-            src={item.thumbnail || item.image}
-            alt={item.title}
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setLoaded(true)}
-            className={`w-full h-full ${isSponsor
-              ? (isPortrait
-                ? (item.id === 'sp-patron-2' || item.id === 'sp-patron-4' ? 'object-cover object-center' : 'object-cover object-top')
-                : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
-                  ? 'object-cover w-full h-full'
-                  : 'object-contain max-h-full max-w-full')
-              : 'object-cover'
-              } group-hover:scale-105 transition-transform duration-300 transform-gpu ${loaded ? 'opacity-100' : 'opacity-0'
-              }`}
-          />
-        </picture>
-        {!isSponsor && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
+        {isTextPatron ? (
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-5 text-center bg-gradient-to-br from-[#0c121e] via-[#111827] to-[#0c121e] relative overflow-hidden select-none group-hover:scale-105 transition-transform duration-300 transform-gpu border-b border-amber-400/20">
+            {/* Ambient gold glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.18),transparent_65%)] pointer-events-none" />
+
+            {/* Subtle corner accent markers */}
+            <div className="absolute top-2.5 left-2.5 w-2 h-2 border-t-2 border-l-2 border-amber-400/50 pointer-events-none" />
+            <div className="absolute bottom-2.5 left-2.5 w-2 h-2 border-b-2 border-l-2 border-amber-400/50 pointer-events-none" />
+            <div className="absolute bottom-2.5 right-2.5 w-2 h-2 border-b-2 border-r-2 border-amber-400/50 pointer-events-none" />
+
+            {/* Subtle gold star divider */}
+            <div className="flex items-center space-x-1.5 mb-2 opacity-80 pointer-events-none">
+              <div className="w-5 h-px bg-gradient-to-r from-transparent to-amber-400/60" />
+              <span className="text-[10px] text-amber-300">✦</span>
+              <div className="w-5 h-px bg-gradient-to-l from-transparent to-amber-400/60" />
+            </div>
+
+            <span className="relative font-display font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-yellow-200 text-base sm:text-lg lg:text-xl leading-snug tracking-tight px-3 drop-shadow-md">
+              {item.title}
+            </span>
+
+            <span className="text-[9px] uppercase font-bold tracking-[0.18em] text-amber-400/75 mt-1.5">
+              Patron
+            </span>
+          </div>
+        ) : (
+          <>
+            {!loaded && (
+              <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+            )}
+            <picture className="w-full h-full flex items-center justify-center">
+              {!isSponsor && item.thumbnail && (
+                <source
+                  srcSet={item.thumbnail.replace(/\.jpg$/, '.webp')}
+                  type="image/webp"
+                />
+              )}
+              <img
+                src={item.thumbnail || item.image}
+                alt={item.title}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setLoaded(true)}
+                className={`w-full h-full ${isSponsor
+                  ? (isPortrait
+                    ? (item.id === 'sp-patron-2' || item.id === 'sp-patron-4' ? 'object-cover object-center' : 'object-cover object-top')
+                    : (item.id === 'sp-doshi' || item.id === 'sp-yuvraaj')
+                      ? 'object-cover w-full h-full'
+                      : 'object-contain max-h-full max-w-full')
+                  : 'object-cover'
+                  } group-hover:scale-105 transition-transform duration-300 transform-gpu ${loaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+              />
+            </picture>
+            {!isSponsor && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20 group-hover:from-black/65 transition-colors pointer-events-none" />
+            )}
+          </>
         )}
 
         {/* Top Category & Season Badges */}
@@ -163,7 +195,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
         <div className="pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-600 group-hover:text-amber-700">
           <span className="flex items-center space-x-1">
             <Maximize2 className="w-3 h-3" />
-            <span>View full photo</span>
+            <span>{isTextPatron ? 'View details' : 'View full photo'}</span>
           </span>
           <span className="group-hover:translate-x-1 transition-transform font-mono">→</span>
         </div>
@@ -642,7 +674,7 @@ export const GallerySection: React.FC = () => {
           {[
             { id: 'sponsors', label: '🤝 Hall of Sponsors', count: galleryItems.filter((i) => i.category === 'sponsors').length },
             { id: 'winners', label: '🏆 Season Winners (S1–S8)', count: galleryItems.filter((i) => i.category === 'winners').length },
-            { id: 'videos', label: '🎬 Video Highlights', count: videoHighlights.length },
+            /* { id: 'videos', label: '🎬 Video Highlights', count: videoHighlights.length }, */
             { id: 'cricket', label: '🏏 Cricket', count: galleryItems.filter((i) => i.category === 'cricket').length },
             { id: 'football', label: '⚽ Football', count: galleryItems.filter((i) => i.category === 'football').length },
             { id: 'womens', label: "🏆 Women's League", count: galleryItems.filter((i) => i.category === 'womens').length },
@@ -670,7 +702,8 @@ export const GallerySection: React.FC = () => {
         </InView>
 
         {/* Active Grid Rendering */}
-        {activeFilter === 'videos' ? (
+        {/* Video highlights temporarily commented out until official links are available
+        activeFilter === 'videos' ? (
           <div className="space-y-6">
             <div
               className={`grid gap-6 ${
@@ -693,39 +726,39 @@ export const GallerySection: React.FC = () => {
               </span>
             </div>
           </div>
-        ) : (
-          <>
-            {/* Gallery Grid - Balanced 4-column layout for items */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-              {(activeFilter === 'all' && !showAll ? filteredItems.slice(0, 8) : filteredItems).map((item) => (
-                <GalleryCard
-                  key={item.id}
-                  item={item}
-                  idx={filteredItems.findIndex((fi) => fi.id === item.id)}
-                  onSelect={(idx) => setSelectedPhotoIndex(idx)}
-                />
-              ))}
-            </div>
+        ) :
+        */}
+        <>
+          {/* Gallery Grid - Balanced 4-column layout for items */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+            {(activeFilter === 'all' && !showAll ? filteredItems.slice(0, 8) : filteredItems).map((item) => (
+              <GalleryCard
+                key={item.id}
+                item={item}
+                idx={filteredItems.findIndex((fi) => fi.id === item.id)}
+                onSelect={(idx) => setSelectedPhotoIndex(idx)}
+              />
+            ))}
+          </div>
 
-            {/* Show More / Show Less Button for "All" tab */}
-            {activeFilter === 'all' && filteredItems.length > 8 && (
-              <div className="mt-8 sm:mt-10 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowAll((prev) => !prev)}
-                  className="inline-flex items-center space-x-2 px-6 py-3 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-slate-800 hover:text-amber-700 font-extrabold text-xs sm:text-sm border border-slate-200 hover:border-amber-300 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation"
-                >
-                  <span>
-                    {showAll
-                      ? 'Show Fewer Photos'
-                      : `View All ${filteredItems.length} Photos (${filteredItems.length - 8} more)`}
-                  </span>
-                  <span className="text-amber-600 font-bold">{showAll ? '▲' : '▼'}</span>
-                </button>
-              </div>
-            )}
-          </>
-        )}
+          {/* Show More / Show Less Button for "All" tab */}
+          {activeFilter === 'all' && filteredItems.length > 8 && (
+            <div className="mt-8 sm:mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAll((prev) => !prev)}
+                className="inline-flex items-center space-x-2 px-6 py-3 sm:px-7 sm:py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-slate-800 hover:text-amber-700 font-extrabold text-xs sm:text-sm border border-slate-200 hover:border-amber-300 shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer touch-manipulation"
+              >
+                <span>
+                  {showAll
+                    ? 'Show Fewer Photos'
+                    : `View All ${filteredItems.length} Photos (${filteredItems.length - 8} more)`}
+                </span>
+                <span className="text-amber-600 font-bold">{showAll ? '▲' : '▼'}</span>
+              </button>
+            </div>
+          )}
+        </>
       </div>
 
       {/* High-Resolution Photo Lightbox Modal (Portal to body, Light RPL Theme, 100% Uncropped) */}
@@ -775,30 +808,53 @@ export const GallerySection: React.FC = () => {
 
                   {/* Photo Display Frame - Pre-stabilized Height & Zero Jitter */}
                   <div className="relative flex-1 min-h-[260px] sm:min-h-[380px] md:min-h-[460px] max-h-[62vh] bg-slate-50/90 flex items-center justify-center p-2.5 sm:p-4 overflow-hidden">
-                    <picture className="flex items-center justify-center">
-                      {currentPhoto.category !== 'sponsors' && currentPhoto.image.endsWith('.jpg') && (
-                        <source
-                          srcSet={currentPhoto.image.replace(/\.jpg$/, '.webp')}
-                          type="image/webp"
+                    {['sp-patron-1', 'sp-patron-2', 'sp-patron-3', 'sp-patron-4'].includes(currentPhoto.id) ? (
+                      <div className="w-full max-w-xl aspect-[4/3] rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c121e] via-[#111827] to-[#0c121e] shadow-2xl flex flex-col items-center justify-center p-8 sm:p-12 text-center relative overflow-hidden border border-amber-400/40">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.22),transparent_65%)] pointer-events-none" />
+
+                        <div className="absolute top-4 left-4 w-5 h-5 border-t-2 border-l-2 border-amber-400/50 pointer-events-none" />
+                        <div className="absolute top-4 right-4 w-5 h-5 border-t-2 border-r-2 border-amber-400/50 pointer-events-none" />
+                        <div className="absolute bottom-4 left-4 w-5 h-5 border-b-2 border-l-2 border-amber-400/50 pointer-events-none" />
+                        <div className="absolute bottom-4 right-4 w-5 h-5 border-b-2 border-r-2 border-amber-400/50 pointer-events-none" />
+
+                        <div className="flex items-center space-x-2 mb-3 opacity-90">
+                          <div className="w-8 h-px bg-gradient-to-r from-transparent to-amber-400/70" />
+                          <span className="text-xs text-amber-300">✦</span>
+                          <span className="text-[11px] uppercase font-black tracking-[0.22em] text-amber-300">Esteemed Patron</span>
+                          <span className="text-xs text-amber-300">✦</span>
+                          <div className="w-8 h-px bg-gradient-to-l from-transparent to-amber-400/70" />
+                        </div>
+
+                        <span className="relative font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-yellow-200 text-2xl sm:text-3xl md:text-4xl tracking-tight leading-snug drop-shadow-md px-4">
+                          {currentPhoto.title}
+                        </span>
+                      </div>
+                    ) : (
+                      <picture className="flex items-center justify-center">
+                        {currentPhoto.category !== 'sponsors' && currentPhoto.image.endsWith('.jpg') && (
+                          <source
+                            srcSet={currentPhoto.image.replace(/\.jpg$/, '.webp')}
+                            type="image/webp"
+                          />
+                        )}
+                        <img
+                          key={currentPhoto.image}
+                          src={currentPhoto.image}
+                          alt={currentPhoto.title}
+                          decoding="async"
+                          style={{
+                            maxHeight: 'min(60vh, 580px)',
+                            maxWidth: '100%',
+                          }}
+                          className={`w-auto h-auto object-contain select-none rounded-xl shadow-md border ${currentPhoto.category === 'sponsors'
+                            ? (currentPhoto.id === 'sp-doshi' || currentPhoto.id === 'sp-yuvraaj' || currentPhoto.id.includes('patron'))
+                              ? 'border-transparent p-0'
+                              : 'bg-white p-3 sm:p-4 border-slate-200/80'
+                            : 'border-slate-200/80'
+                            }`}
                         />
-                      )}
-                      <img
-                        key={currentPhoto.image}
-                        src={currentPhoto.image}
-                        alt={currentPhoto.title}
-                        decoding="async"
-                        style={{
-                          maxHeight: 'min(60vh, 580px)',
-                          maxWidth: '100%',
-                        }}
-                        className={`w-auto h-auto object-contain select-none rounded-xl shadow-md border ${currentPhoto.category === 'sponsors'
-                          ? (currentPhoto.id === 'sp-doshi' || currentPhoto.id === 'sp-yuvraaj' || currentPhoto.id.includes('patron'))
-                            ? 'border-transparent p-0'
-                            : 'bg-white p-3 sm:p-4 border-slate-200/80'
-                          : 'border-slate-200/80'
-                          }`}
-                      />
-                    </picture>
+                      </picture>
+                    )}
 
                     {/* Previous Navigation Arrow */}
                     {filteredItems.length > 1 && (

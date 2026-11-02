@@ -85,7 +85,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     const specDaysCount = specDates.length > 0 ? specDates.length : 1;
     const isSpectatorAll3Days = isSpectator && (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' || specDaysCount >= 3);
     const passOption = isSpectator
-      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹2,700)' : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 400})`)
+      ? (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' ? 'With Stay (₹3,600)' : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 720})`)
       : 'Player League Entry';
     const spectatorTshirt = isSpectator
       ? (gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `YES (+₹500, Size ${gen.tshirtSize || 'L'})` : 'NO')
@@ -215,8 +215,8 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const specDaysCount = specDates.length > 0 ? specDates.length : 1;
     const isSpectatorAll3Days = isSpectator && (gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes' || specDaysCount >= 3);
     const passPkg = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
-      ? 'With Stay (₹2,700)'
-      : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 400})`;
+      ? 'With Stay (₹3,600)'
+      : `Day Pass (${specDaysCount} Day${specDaysCount > 1 ? 's' : ''} • ₹${specDaysCount * 720})`;
     const specNostalgia = !isSpectatorAll3Days
       ? 'Not Eligible'
       : (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
