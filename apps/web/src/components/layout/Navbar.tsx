@@ -129,9 +129,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'leagues', label: 'Leagues', href: '#leagues' },
     { id: 'schedule', label: 'Schedule', href: '#/schedule', isRoute: true },
     { id: 'gallery', label: 'Gallery', href: '#gallery' },
+    { id: 'connect', label: 'Connect with RPL', href: '#connect' },
     { id: 'rules', label: 'Rules', href: '#/rules', isRoute: true, adminOnly: true },
     { id: 'faq', label: 'FAQ', href: '#/faq', isRoute: true },
-    { id: 'connect', label: 'Connect with RPL', href: '#connect' },
   ];
 
   const navItems = allNavItems.filter((item) => !item.adminOnly || isAdminPreview);

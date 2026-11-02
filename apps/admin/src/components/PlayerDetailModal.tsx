@@ -60,7 +60,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
       : (hasStay
           ? ['2026-12-25', '2026-12-26', '2026-12-27']
           : (gen.checkInDate && gen.checkOutDate
-              ? (gen.checkInDate === gen.checkOutDate ? [gen.checkInDate] : [gen.checkInDate, gen.checkOutDate])
+              ? (gen.checkInDate === gen.checkOutDate ? [gen.checkInDate] : ((gen.checkInDate === '2026-12-25' && gen.checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [gen.checkInDate, gen.checkOutDate]))
               : ['2026-12-25']));
   const spectatorDayCount = Math.max(1, spectatorDatesList.length);
   const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);

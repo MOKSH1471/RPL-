@@ -1,3 +1,4 @@
+import { Footer } from '@/components/layout/Footer';
 import React, { useState, useMemo } from 'react';
 import {
   HelpCircle,
@@ -21,6 +22,7 @@ import {
 interface FAQPageProps {
   onBackToHome: () => void;
   onRegisterClick?: () => void;
+  onCheckPassClick?: () => void;
 }
 
 interface FAQItem {
@@ -536,7 +538,7 @@ const FAQ_DATA: FAQItem[] = [
   },
 ];
 
-export const FAQPage: React.FC<FAQPageProps> = ({ onBackToHome, onRegisterClick }) => {
+export const FAQPage: React.FC<FAQPageProps> = ({ onBackToHome, onRegisterClick, onCheckPassClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
@@ -789,6 +791,9 @@ export const FAQPage: React.FC<FAQPageProps> = ({ onBackToHome, onRegisterClick 
           </div>
         </div>
       </div>
+    
+      {/* ── Official Global Footer ── */}
+      <Footer onRegisterClick={onRegisterClick} onCheckPassClick={onCheckPassClick} />
     </div>
   );
 };

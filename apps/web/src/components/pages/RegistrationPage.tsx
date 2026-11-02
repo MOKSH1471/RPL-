@@ -1558,6 +1558,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       registrationType: isSpectator ? 'spectator' : 'player',
       spectatorOption: isSpectator ? (data.accommodationRequired === 'Yes' ? 'with-stay' : 'without-stay') : undefined,
       spectatorTshirt: isSpectator ? (data.spectatorTshirt || 'No') : undefined,
+      spectatorDates: isSpectator ? (data.accommodationRequired === 'No' ? spectatorDates : ['2026-12-25', '2026-12-26', '2026-12-27']) : undefined,
       recipientGmail: data.recipientGmail || 'rpl@rajpremierleague.com',
       ccEmail: data.ccEmail,
       fullName: data.fullName,
@@ -3081,7 +3082,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
-                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 400).toLocaleString('en-IN')}
+                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 720).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -3130,7 +3131,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           className={`font-black text-xs sm:text-sm ${isAllDatesSelected ? 'text-white' : 'text-emerald-800'
                             }`}
                         >
-                          ₹1,200
+                          ₹2,160
                         </span>
                         <span
                           className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'

@@ -205,7 +205,7 @@ export function App() {
   }
 
   if (currentPage === 'faq') {
-    return <FAQPage onBackToHome={handleBackToHome} onRegisterClick={handleRegisterClick} />;
+    return <FAQPage onBackToHome={handleBackToHome} onRegisterClick={handleRegisterClick} onCheckPassClick={() => setIsCheckStatusOpen(true)} />;
   }
 
   if (currentPage === 'rules' && isAdminPreview) {
