@@ -96,7 +96,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'What is the registration fee for players, and what does it include?',
     searchableAnswer:
-      'Returning RPL Family ₹3,600 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
+      'Returning RPL Family ₹3,600 for members who participated in prior RPL seasons. New Participants ₹3,900 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
     answer: (
       <div className="space-y-3">
         <p>The standard player registration is an all-inclusive 3-day sports &amp; stay package:</p>
@@ -112,7 +112,7 @@ const FAQ_DATA: FAQItem[] = [
             <span className="text-xs font-bold uppercase tracking-wider text-blue-800 block mb-1">
               New Participants
             </span>
-            <span className="text-2xl font-black text-slate-900">₹3,000</span>
+            <span className="text-2xl font-black text-slate-900">₹3,900</span>
             <span className="text-xs text-slate-600 block mt-1">First-time athletes joining the RPL family</span>
           </div>
         </div>
@@ -124,7 +124,7 @@ const FAQ_DATA: FAQItem[] = [
         </ul>
       </div>
     ),
-    tags: ['Pricing', 'Package', 'Player Fee', '3600', '3000'],
+    tags: ['Pricing', 'Package', 'Player Fee', '3600', '3900'],
   },
 
   // 2. Leagues & Eligibility
@@ -222,14 +222,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'Can I register exclusively for Table Tennis or Carrom?',
     searchableAnswer:
-      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹3,600 (returning RPL Family) or ₹3,000 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
+      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹3,600 (returning RPL Family) or ₹3,900 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>Yes!</strong> Table Tennis and Carrom are official RPL tournament leagues open to all participants (male, female, juniors, and veterans).
         </p>
         <p className="text-xs text-slate-600">
-          You can register solely for Table Tennis or Carrom for <strong>₹3,600</strong> (returning RPL Family) or <strong>₹3,000</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
+          You can register solely for Table Tennis or Carrom for <strong>₹3,600</strong> (returning RPL Family) or <strong>₹3,900</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
         </p>
       </div>
     ),
@@ -242,21 +242,21 @@ const FAQ_DATA: FAQItem[] = [
     category: 'football',
     question: 'If I only want to play in the Football League, do I need to attend all three days?',
     searchableAnswer:
-      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is ₹3,600 for returning RPL Family (or ₹3,000 for new players), which covers tournament entry, team jersey, meals, and facility amenities. We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
+      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is ₹3,600 for returning RPL Family (or ₹3,900 for new players), which covers tournament entry, team jersey, meals, and facility amenities. We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, full 3-day attendance is not mandatory for Football.</strong> The entire RPL Football Championship takes place on the final day, <strong>Sunday, 27 December 2026</strong>.
         </p>
         <p>
-          If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is <strong>₹3,600 for returning RPL Family</strong> (or <strong>₹3,000 for new players</strong>), which covers your tournament entry, team jersey, meals, and facility amenities.
+          If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is <strong>₹3,600 for returning RPL Family</strong> (or <strong>₹3,900 for new players</strong>), which covers your tournament entry, team jersey, meals, and facility amenities.
         </p>
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 font-medium">
           💡 <strong>Tip:</strong> We highly recommend attending all three days (25–27 Dec) so you don&apos;t miss out on the Grand Opening Ceremony, team practice matches, and the fun-filled 90s Nostalgia Games on 25–26 December!
         </div>
       </div>
     ),
-    tags: ['Football', 'Single-Day', '27 December', '3600', '3000'],
+    tags: ['Football', 'Single-Day', '27 December', '3600', '3900'],
     important: true,
   },
 

@@ -221,7 +221,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = existingFamily === 'Yes' ? 3600 : 3000;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const computedFee = isSpectator
           ? spectatorBase + extraTshirtCost
           : playerBase + extraTshirtCost;
@@ -327,7 +327,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = existingFamily === 'Yes' ? 3600 : 3000;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const newFee = isSpectator
           ? spectatorBase + extraTshirtCost
           : playerBase + extraTshirtCost;
@@ -385,7 +385,7 @@ router.post('/register', async (req, res) => {
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
-      const defaultBase = existingFamily === 'Yes' ? 3600 : 3000;
+      const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
         : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? (defaultBase + 500) : defaultBase));

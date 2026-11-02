@@ -637,7 +637,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const currentGender = watch('gender');
 
   // Registration Mode & Fee calculation:
-  // Player: Flat ₹3,600 (Returning) / ₹3,000 (New) All-Inclusive Event Fee + optional ₹500 extra T-Shirt
+  // Player: Flat ₹3,600 (Returning) / ₹3,900 (New) All-Inclusive Event Fee + optional ₹500 extra T-Shirt
   // Spectator: With Stay = ₹3,600 (3 days compulsory), Without Stay = ₹720/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
@@ -690,8 +690,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorBaseFee = currentAcc === 'Yes' ? 3600 : (spectatorSelectedDaysCount * 720);
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
 
-  // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹3,600
-  const playerBaseFee = currentExistingFamily === 'Yes' ? 3600 : 3000;
+  // First-time RPL Mumukshu / New Player: ₹3,900; Returning RPL Family: ₹3,600
+  const playerBaseFee = currentExistingFamily === 'Yes' ? 3600 : 3900;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
   // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
@@ -2753,7 +2753,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </>
                           ) : (
                             <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,000 + ₹500 = ₹3,500</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,000</strong> (1 tournament T-shirt included).
+                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,900 + ₹500 = ₹4,400</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,900</strong> (1 tournament T-shirt included).
                             </>
                           )}
                         </p>
@@ -3300,7 +3300,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           {currentExistingFamily === 'Yes' ? (
                             <span><strong>Returning Participant (₹3,600):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
                           ) : (
-                            <span><strong>New Player Draft (₹3,000):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
+                            <span><strong>New Player Draft (₹3,900):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
                           )}
                         </p>
                       </div>
@@ -4730,7 +4730,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                           <div>
                             <span>
-                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹3,600' : '₹3,000'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
+                              <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified ({currentExistingFamily === 'Yes' ? '₹3,600' : '₹3,900'}{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
                         </div>
