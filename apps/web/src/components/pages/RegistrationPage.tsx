@@ -638,7 +638,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // Registration Mode & Fee calculation:
   // Player: Flat ₹2,700 All-Inclusive Event Fee + optional ₹500 extra T-Shirt
-  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹400/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
+  // Spectator: With Stay = ₹2,700 (3 days compulsory), Without Stay = ₹720/day (Meals & 90’s Nostalgia Games). Optional T-Shirt = +₹500.
   const currentRegistrationType = watch('registrationType') || 'player';
   const isSpectator = currentRegistrationType === 'spectator';
   const currentAcc = watch('accommodationRequired');
@@ -687,7 +687,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorSelectedDaysCount = (isSpectator && currentAcc === 'No')
     ? spectatorDates.length
     : 1;
-  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 400);
+  const spectatorBaseFee = currentAcc === 'Yes' ? 2700 : (spectatorSelectedDaysCount * 720);
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
 
   // First-time RPL Mumukshu / New Player: ₹3,000; Returning RPL Family: ₹2,700
@@ -2935,7 +2935,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </label>
                   <OptionSelector
                     options={isSpectator ? [
-                      { value: 'No', label: 'Without Stay (₹400/day)' },
+                      { value: 'No', label: 'Without Stay (₹720/day)' },
                       { value: 'Yes', label: 'With Stay (₹2,700)' },
                     ] : [
                       { value: 'No', label: 'No, Self-Arranged' },
@@ -2981,7 +2981,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹400/day)
+                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹720/day)
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
                             ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
@@ -3075,7 +3075,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Select Attending Dates <span className="text-pink-600">*</span>
                         </h4>
                         <p className="text-[11px] text-slate-600 font-medium">
-                          Choose tournament days you will attend (Single Day Pass: ₹400 / Day)
+                          Choose tournament days you will attend (Single Day Pass: ₹720 / Day)
                         </p>
                       </div>
                     </div>
@@ -3136,7 +3136,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'
                             }`}
                         >
-                          (3 × ₹400)
+                          (3 × ₹720)
                         </span>
                       </div>
                     </div>
@@ -3172,7 +3172,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-xs text-emerald-800">₹400</span>
+                            <span className="font-black text-xs text-emerald-800">₹720</span>
                           </div>
                         </div>
                       );
@@ -4698,7 +4698,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           {isSpectator ? (
                             currentAcc === 'Yes'
                               ? `Spectator Pass with Stay: ₹2,700${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,200' : ''}`
-                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹400 = ₹${(spectatorDates.length * 400).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
+                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹720 = ₹${(spectatorDates.length * 720).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                           ) : isReturningPaidUser ? (
                             currentExtraTshirt === 'Yes'
                               ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)

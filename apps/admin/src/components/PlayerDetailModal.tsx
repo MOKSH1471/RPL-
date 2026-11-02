@@ -64,7 +64,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               : ['2026-12-25']));
   const spectatorDayCount = Math.max(1, spectatorDatesList.length);
   const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);
-  const spectatorDayFee = spectatorDayCount * 400;
+  const spectatorDayFee = spectatorDayCount * 720;
   const spectatorCalculatedFee = (hasStay ? 2700 : spectatorDayFee) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
