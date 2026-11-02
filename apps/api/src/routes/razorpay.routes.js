@@ -47,8 +47,8 @@ router.post('/razorpay/create-order', async (req, res) => {
     let computedFee;
 
     if (isSpectator) {
-      // Spectator Pass: With Stay = ₹2,700 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 2700 : (specDaysCount * 720);
+      // Spectator Pass: With Stay = ₹3,600 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 3600 : (specDaysCount * 720);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {
@@ -58,7 +58,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       computedFee = extraTshirtCost;
     } else {
       const existingFamily = req.body.existingRplFamily || cleanGeneral.existingRplFamily || 'No';
-      const playerBase = existingFamily === 'Yes' ? 2700 : 3000;
+      const playerBase = existingFamily === 'Yes' ? 3600 : 3000;
       computedFee = playerBase + extraTshirtCost;
     }
 
@@ -745,7 +745,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
         const finalAmount = cleanGeneralDetails.incrementalFee !== undefined && cleanGeneralDetails.incrementalFee !== null
           ? cleanGeneralDetails.incrementalFee
-          : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 2700);
+          : (cleanGeneralDetails.calculatedFee || cleanGeneralDetails.totalAmount || 3600);
 
         if (existingTx.length > 0) {
           await connection.query(
@@ -948,7 +948,7 @@ router.post('/razorpay/webhook', async (req, res) => {
           }
 
           // Prepare transaction data & insert/upsert into rpl_transactions
-          const finalAmount = Math.round(Number(payment.amount || 270000) / 100);
+          const finalAmount = Math.round(Number(payment.amount || 360000) / 100);
           let cardNoVal = `GUEST_${payerPhone ? payerPhone.slice(-6) : 'RPL'}`;
           let playerName = targetReg?.full_name || payment.notes?.full_name || 'Participant';
 

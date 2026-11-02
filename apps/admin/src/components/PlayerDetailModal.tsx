@@ -65,11 +65,11 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const spectatorDayCount = Math.max(1, spectatorDatesList.length);
   const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);
   const spectatorDayFee = spectatorDayCount * 720;
-  const spectatorCalculatedFee = (hasStay ? 2700 : spectatorDayFee) + (hasTshirt ? 500 : 0);
+  const spectatorCalculatedFee = (hasStay ? 3600 : spectatorDayFee) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
-  const playerBaseFee = isReturningFamily ? 2700 : 3000;
+  const playerBaseFee = isReturningFamily ? 3600 : 3000;
   const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
@@ -639,7 +639,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     </h3>
                     <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
                       {hasStay
-                        ? '🏨 With Stay (₹2,700)'
+                        ? '🏨 With Stay (₹3,600)'
                         : `☀️ Without Stay / Day Pass (${spectatorDayCount} ${spectatorDayCount === 1 ? 'Day' : 'Days'} • ₹${spectatorDayFee})`}
                     </span>
                   </div>

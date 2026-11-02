@@ -82,7 +82,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
               <li>
                 <strong>Player Registration Fee:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
-                  <li><strong>Returning RPL Family:</strong> <strong>₹2,700</strong> for participants who have participated in prior RPL seasons.</li>
+                  <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> for participants who have participated in prior RPL seasons.</li>
                   <li><strong>New Participants:</strong> <strong>₹3,000</strong> for first-time athletes enrolling in the open player draft.</li>
                   <li><strong>What's Included:</strong> Enrollment in all selected eligible sports, 2 nights of official tournament stay (check-in Dec 25 to check-out Dec 27, 2026), all daily meals (breakfast, lunch, dinner, late-night snacks), and one official RPL Season 9 tournament jersey.</li>
                 </ul>
@@ -91,7 +91,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
                 <strong>Spectator Pass Options:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
                   <li><strong>Without Stay (Day Pass):</strong> <strong>₹720 per day</strong>. Spectators may choose 1 day (₹720), 2 days (₹1,440), or all 3 days (₹2,160). Covers arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals and overnight accommodation are not included and must be arranged separately.</li>
-                  <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹2,700</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
+                  <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹3,600</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
                 </ul>
               </li>
               <li><strong>All Sports Included:</strong> For players, there are no extra fees for selecting multiple sports (e.g., Cricket, Football, Table Tennis, Carrom, and 90s Nostalgia Games are all covered under the single player registration fee).</li>

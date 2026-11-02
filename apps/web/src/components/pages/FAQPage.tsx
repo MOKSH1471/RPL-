@@ -96,7 +96,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'What is the registration fee for players, and what does it include?',
     searchableAnswer:
-      'Returning RPL Family ₹2,700 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
+      'Returning RPL Family ₹3,600 for members who participated in prior RPL seasons. New Participants ₹3,000 for first-time athletes. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
     answer: (
       <div className="space-y-3">
         <p>The standard player registration is an all-inclusive 3-day sports &amp; stay package:</p>
@@ -105,7 +105,7 @@ const FAQ_DATA: FAQItem[] = [
             <span className="text-xs font-bold uppercase tracking-wider text-amber-800 block mb-1">
               Returning RPL Family
             </span>
-            <span className="text-2xl font-black text-slate-900">₹2,700</span>
+            <span className="text-2xl font-black text-slate-900">₹3,600</span>
             <span className="text-xs text-slate-600 block mt-1">For members who participated in prior RPL seasons</span>
           </div>
           <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200">
@@ -124,7 +124,7 @@ const FAQ_DATA: FAQItem[] = [
         </ul>
       </div>
     ),
-    tags: ['Pricing', 'Package', 'Player Fee', '2700', '3000'],
+    tags: ['Pricing', 'Package', 'Player Fee', '3600', '3000'],
   },
 
   // 2. Leagues & Eligibility
@@ -222,18 +222,18 @@ const FAQ_DATA: FAQItem[] = [
     category: 'leagues',
     question: 'Can I register exclusively for Table Tennis or Carrom?',
     searchableAnswer:
-      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹2,700 (returning RPL Family) or ₹3,000 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
+      'Yes! Table Tennis and Carrom are full official RPL leagues open to all participants (male, female, juniors, and veterans). You can register solely for Table Tennis or Carrom for ₹3,600 (returning RPL Family) or ₹3,000 (new players), or select them in combination with Cricket and Football. Your player pass includes tournament entry, customized official jersey, meals, and full access to event amenities.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>Yes!</strong> Table Tennis and Carrom are official RPL tournament leagues open to all participants (male, female, juniors, and veterans).
         </p>
         <p className="text-xs text-slate-600">
-          You can register solely for Table Tennis or Carrom for <strong>₹2,700</strong> (returning RPL Family) or <strong>₹3,000</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
+          You can register solely for Table Tennis or Carrom for <strong>₹3,600</strong> (returning RPL Family) or <strong>₹3,000</strong> (new players), or choose them alongside Cricket and Football. Your player registration pass includes official tournament entry, customized player jersey, meals, and access to all festival amenities.
         </p>
       </div>
     ),
-    tags: ['Table Tennis', 'Carrom', 'Official Leagues', 'Single-Sport', '2700'],
+    tags: ['Table Tennis', 'Carrom', 'Official Leagues', 'Single-Sport', '3600'],
   },
 
   // 3. Single-Sport & Football Participation
@@ -242,21 +242,21 @@ const FAQ_DATA: FAQItem[] = [
     category: 'football',
     question: 'If I only want to play in the Football League, do I need to attend all three days?',
     searchableAnswer:
-      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is ₹2,700 for returning RPL Family (or ₹3,000 for new players), which covers tournament entry, team jersey, meals, and facility amenities. We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
+      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is ₹3,600 for returning RPL Family (or ₹3,000 for new players), which covers tournament entry, team jersey, meals, and facility amenities. We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, full 3-day attendance is not mandatory for Football.</strong> The entire RPL Football Championship takes place on the final day, <strong>Sunday, 27 December 2026</strong>.
         </p>
         <p>
-          If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is <strong>₹2,700 for returning RPL Family</strong> (or <strong>₹3,000 for new players</strong>), which covers your tournament entry, team jersey, meals, and facility amenities.
+          If your schedule is constrained, you can arrive on Sunday morning specifically for football. The tournament registration fee is <strong>₹3,600 for returning RPL Family</strong> (or <strong>₹3,000 for new players</strong>), which covers your tournament entry, team jersey, meals, and facility amenities.
         </p>
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 font-medium">
           💡 <strong>Tip:</strong> We highly recommend attending all three days (25–27 Dec) so you don&apos;t miss out on the Grand Opening Ceremony, team practice matches, and the fun-filled 90s Nostalgia Games on 25–26 December!
         </div>
       </div>
     ),
-    tags: ['Football', 'Single-Day', '27 December', '2700', '3000'],
+    tags: ['Football', 'Single-Day', '27 December', '3600', '3000'],
     important: true,
   },
 
@@ -329,7 +329,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'spectator',
     question: 'What spectator pass options are available, and what are the charges?',
     searchableAnswer:
-      'Single-Day Day Pass (Without Stay): ₹720 / day. Pick 1, 2, or all 3 days (1 day = ₹720, 2 days = ₹1,440, 3 days = ₹2,160). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹2,700 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
+      'Single-Day Day Pass (Without Stay): ₹720 / day. Pick 1, 2, or all 3 days (1 day = ₹720, 2 days = ₹1,440, 3 days = ₹2,160). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹3,600 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
     answer: (
       <div className="space-y-3">
         <p>We offer two spectator tiers designed for family members, devotees, and cheerleaders:</p>
@@ -350,7 +350,7 @@ const FAQ_DATA: FAQItem[] = [
             <span className="text-xs font-bold uppercase tracking-wider text-purple-800 block mb-1">
               3-Day Experience (With Stay)
             </span>
-            <span className="text-xl font-black text-slate-900">₹2,700 <span className="text-xs font-normal text-slate-500">total</span></span>
+            <span className="text-xl font-black text-slate-900">₹3,600 <span className="text-xs font-normal text-slate-500">total</span></span>
             <p className="text-xs text-slate-600 mt-1">
               Includes full 3-day stay (2 nights), <strong>all daily sattvic vegetarian meals (Breakfast, Lunch &amp; Dinner)</strong>, late-night snacks, match access, and full entry to 90s Nostalgia Games!
             </p>
@@ -361,25 +361,25 @@ const FAQ_DATA: FAQItem[] = [
         </p>
       </div>
     ),
-    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '720', '1440', '2160', '2700', 'Meals', 'Aashray App'],
+    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '720', '1440', '2160', '3600', 'Meals', 'Aashray App'],
   },
   {
     id: 'spectator-single-day-overnight',
     category: 'spectator',
     question: 'Can I get a 1-day spectator pass that includes an overnight stay and full meals?',
     searchableAnswer:
-      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹2,700). Single-day pass holders (₹720/day) must arrange their own stay and book their meals on the Aashray App.',
+      'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹3,600). Single-day pass holders (₹720/day) must arrange their own stay and book their meals on the Aashray App.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, that is not possible.</strong> Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis.
         </p>
         <p className="text-xs text-slate-700">
-          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹2,700)</strong>. Single-day pass holders (₹720/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
+          If you require overnight stay and full dining included with your pass, you must select the <strong>Full 3-Day Spectator Package with Accommodation (₹3,600)</strong>. Single-day pass holders (₹720/day) must arrange their own stay and book their daytime meals on the <strong>Aashray App</strong>.
         </p>
       </div>
     ),
-    tags: ['Stay Policy', 'Overnight Stay', 'Single Day', '2700', 'Aashray App', 'Meals'],
+    tags: ['Stay Policy', 'Overnight Stay', 'Single Day', '3600', 'Aashray App', 'Meals'],
   },
   {
     id: 'spectator-nostalgia-games',

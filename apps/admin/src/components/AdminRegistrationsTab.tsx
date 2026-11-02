@@ -437,7 +437,7 @@ export function AdminRegistrationsTab({
                                 <>
                                   <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
                                     {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
-                                      ? '🏨 Stay (₹2,700)'
+                                      ? '🏨 Stay (₹3,600)'
                                       : `☀️ Day Pass (${dayCount > 1 ? `${dayCount} Days • ` : ''}₹${dayCount * 720})`}
                                   </span>
                                   {isAll3Days && (gen.nostalgiaSport || gen.nostalgia_sport) && (
@@ -534,7 +534,7 @@ export function AdminRegistrationsTab({
                               </span>
                             )}
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
-                              ₹{(gen.totalAmount || (gen.existingRplFamily === 'Yes' ? 2700 : 3000)).toLocaleString('en-IN')}
+                              ₹{(gen.totalAmount || (gen.existingRplFamily === 'Yes' ? 3600 : 3000)).toLocaleString('en-IN')}
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
