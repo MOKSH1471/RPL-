@@ -69,8 +69,10 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
-  const playerBaseFee = isReturningFamily ? 3600 : 3900;
-  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
+  const playerBaseFee = 3600;
+  const isFootballMultiSport = !isSpectator && selectedSportsList.includes('football') && selectedSportsList.length > 1;
+  const footballJerseyFee = isFootballMultiSport ? 500 : 0;
+  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + footballJerseyFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
@@ -574,6 +576,11 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                         <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-mono">
                           {gen.tshirtSize || 'L'}
                         </span>
+                        {isFootballMultiSport && (
+                          <span className="font-bold text-[10px] text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full">
+                            +₹500 Football Jersey
+                          </span>
+                        )}
                         {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
                           <span className="font-bold text-[10px] text-orange-800 bg-orange-100 border border-orange-300 px-1.5 py-0.5 rounded-full">
                             +1 Extra

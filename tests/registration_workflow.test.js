@@ -29,7 +29,7 @@ test('Registration Validation: rejects payload missing mobile number with 400', 
   assert.strictEqual(res.data.error, 'Missing core registration fields.');
 });
 
-test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to base fee of ₹3,900', async () => {
+test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to base fee of ₹3,600', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -43,7 +43,7 @@ test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to b
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 390000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -67,26 +67,46 @@ test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily:
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,900 for New Player (all sports included)', async () => {
+test('Razorpay Fee Calculation: 3 Sports without football charges flat event fee of ₹3,600 for New Player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
       fullName: 'Multi Sport Player',
       email: 'player@example.com',
       mobile: '9822222222',
-      selectedSports: ['cricket', 'football', 'badminton'],
+      selectedSports: ['cricket', 'table-tennis', 'carrom'],
       existingRplFamily: 'No',
     }),
   });
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 390000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹4,400 (3900 + 500)', async () => {
+test('Razorpay Fee Calculation: Multi-sport with Football charges ₹4,100 (3600 + 500 football jersey)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Football Multi Player',
+      email: 'fbmulti@example.com',
+      mobile: '9822222233',
+      selectedSports: ['cricket', 'football'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 410000);
+    assert.strictEqual(res.data.amountInRupees, 4100);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹4,100 (3600 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -101,7 +121,7 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 440000);
+    assert.strictEqual(res.data.amount, 410000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -126,7 +146,7 @@ test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) c
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,900', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,600', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -141,7 +161,7 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges 
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 390000);
+    assert.strictEqual(res.data.amount, 360000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -175,7 +195,7 @@ test('Razorpay Fee Calculation: Returning player adding sports needs no extra pa
       fullName: 'Returning Player',
       email: 'player@example.com',
       mobile: '9876543210',
-      selectedSports: ['cricket', 'football'],
+      selectedSports: ['cricket', 'table-tennis'],
       isExistingPlayer: true,
       hasPreviouslyPaid: true,
       previouslyPaidSportsCount: 1,

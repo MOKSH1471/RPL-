@@ -44,6 +44,14 @@ router.post('/razorpay/create-order', async (req, res) => {
     const specDates = req.body.spectatorDates || req.body.spectatorDays || regPayload.spectatorDates || regPayload.spectatorDays || cleanGeneral.spectatorDates || cleanGeneral.spectatorDays || [];
     const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
 
+    const sportsList = Array.isArray(selectedSports) && selectedSports.length > 0
+      ? selectedSports
+      : (Array.isArray(regPayload.selectedSports) ? regPayload.selectedSports : (Array.isArray(cleanGeneral.selectedSports) ? cleanGeneral.selectedSports : []));
+    const hasFootball = !isSpectator && sportsList.includes('football');
+    const isFootballMultiSport = hasFootball && sportsList.length > 1;
+    // ₹500 football jersey fee applies ONLY if football is selected alongside other sport(s)
+    const footballJerseyFee = isFootballMultiSport ? 500 : 0;
+
     let computedFee;
 
     if (isSpectator) {
@@ -55,11 +63,15 @@ router.post('/razorpay/create-order', async (req, res) => {
         computedFee = spectatorBase + extraTshirtCost;
       }
     } else if (isExistingPlayer && hasPreviouslyPaid) {
-      computedFee = extraTshirtCost;
+      const footballFeePaidInPast = Boolean(
+        regPayload.previouslyPaidFootballJersey ||
+        cleanGeneral.previouslyPaidFootballJersey
+      );
+      const footballFeeDue = (isFootballMultiSport && !footballFeePaidInPast) ? 500 : 0;
+      computedFee = extraTshirtCost + footballFeeDue;
     } else {
-      const existingFamily = req.body.existingRplFamily || cleanGeneral.existingRplFamily || 'No';
-      const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
-      computedFee = playerBase + extraTshirtCost;
+      const playerBase = 3600;
+      computedFee = playerBase + footballJerseyFee + extraTshirtCost;
     }
 
     if (computedFee <= 0) {

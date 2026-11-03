@@ -83,7 +83,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
                 <strong>Player Registration Fee:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
                   <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> for participants who have participated in prior RPL seasons.</li>
-                  <li><strong>New Participants:</strong> <strong>₹3,900</strong> for first-time athletes enrolling in the open player draft.</li>
+                  <li><strong>New Participants:</strong> <strong>₹3,600</strong> for first-time athletes enrolling in the open player draft.</li>
                   <li><strong>What's Included:</strong> Enrollment in all selected eligible sports, 2 nights of official tournament stay (check-in Dec 25 to check-out Dec 27, 2026), all daily meals (breakfast, lunch, dinner, late-night snacks), and one official RPL Season 9 tournament jersey.</li>
                 </ul>
               </li>
@@ -94,7 +94,7 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
                   <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹3,600</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
                 </ul>
               </li>
-              <li><strong>All Sports Included:</strong> For players, there are no extra fees for selecting multiple sports (e.g., Cricket, Football, Table Tennis, Carrom, and 90s Nostalgia Games are all covered under the single player registration fee).</li>
+              <li><strong>All Sports Included:</strong> For players, selecting multiple sports is covered under the event pass. Note on Football: If you register solely for Football, your jersey is covered in the ₹3,600 pass; if you choose Football alongside other sports (e.g., Cricket + Football), an additional <strong>₹500</strong> charge applies for the separate official Football jersey.</li>
               <li><strong>Optional T-Shirt Add-on:</strong> Participants (players requesting an extra jersey or spectators wishing to purchase an official RPL Season 9 Fan T-shirt) can add an official T-shirt for an additional <strong>₹500</strong>.</li>
               <li><strong>Payment Gateway &amp; Encryption:</strong> Online payments are encrypted and processed securely via <strong>Razorpay</strong> (supporting UPI, Net Banking, Debit Cards, and Credit Cards). We adhere strictly to PCI-DSS standards and do not store sensitive payment credentials or CVVs on our servers.</li>
               <li><strong>Immediate Online Confirmation:</strong> All registrations must be completed with upfront payment via the integrated Razorpay gateway. Your official verifiable digital tournament pass and entry receipt are generated immediately upon successful transaction completion.</li>

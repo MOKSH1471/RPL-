@@ -549,6 +549,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                       ) : (
                         <>
                           SIZE {data.tshirtSize || 'L'}
+                          {(Array.isArray(data.selectedSports) && data.selectedSports.includes('football') && data.selectedSports.length > 1) ? ' (+Football Kit)' : ''}
                           {data.extraTshirt === 'Yes' ? ' (+1 Extra)' : ''}
                           {data.customJerseyName ? ` • ${data.customJerseyName}` : ''}
                           {data.preferredJerseyNumber ? ` #${data.preferredJerseyNumber}` : ''}

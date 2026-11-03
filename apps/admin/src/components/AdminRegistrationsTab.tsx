@@ -533,9 +533,20 @@ export function AdminRegistrationsTab({
                                 {player.payment_status || 'pending'}
                               </span>
                             )}
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
-                              ₹{(gen.totalAmount || (gen.existingRplFamily === 'Yes' ? 3600 : 3900)).toLocaleString('en-IN')}
-                            </span>
+                            {(() => {
+                              const regSports = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+                              const isRegSpectator = gen.registrationType === 'spectator' || regSports.includes('spectator');
+                              const isRegFootballMulti = !isRegSpectator && regSports.includes('football') && regSports.length > 1;
+                              const hasRegTshirt = gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+                              const fallbackFee = isRegSpectator
+                                ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3600 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
+                                : (3600 + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0));
+                              return (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
+                                  ₹{(gen.totalAmount || fallbackFee).toLocaleString('en-IN')}
+                                </span>
+                              );
+                            })()}
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                             {utrList.map((utr, uIdx) => {

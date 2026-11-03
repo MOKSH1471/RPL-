@@ -221,10 +221,14 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
+        const playerBase = 3600;
+        const regSports = Array.isArray(mergedGeneralDetails.selectedSports) ? mergedGeneralDetails.selectedSports : (Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []);
+        const hasFootball = !isSpectator && regSports.includes('football');
+        const isFootballMultiSport = hasFootball && regSports.length > 1;
+        const footballJerseyFee = isFootballMultiSport ? 500 : 0;
         const computedFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : playerBase + extraTshirtCost;
+          : playerBase + footballJerseyFee + extraTshirtCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -327,10 +331,14 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
+        const playerBase = 3600;
+        const regSports = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : [];
+        const hasFootball = !isSpectator && regSports.includes('football');
+        const isFootballMultiSport = hasFootball && regSports.length > 1;
+        const footballJerseyFee = isFootballMultiSport ? 500 : 0;
         const newFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : playerBase + extraTshirtCost;
+          : playerBase + footballJerseyFee + extraTshirtCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;
@@ -385,10 +393,15 @@ router.post('/register', async (req, res) => {
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
-      const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
+      const defaultBase = 3600;
+      const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
+      const hasFootball = !isSpectator && parsedSports.includes('football');
+      const isFootballMultiSport = hasFootball && parsedSports.length > 1;
+      const footballCost = isFootballMultiSport ? 500 : 0;
+      const fallbackFee = defaultBase + footballCost + (finalGeneralDetails.extraTshirt === 'Yes' ? 500 : 0);
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
         ? finalGeneralDetails.incrementalFee 
-        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || (finalGeneralDetails.extraTshirt === 'Yes' ? (defaultBase + 500) : defaultBase));
+        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || fallbackFee);
 
       await connection.query(
         `INSERT INTO ${RPL_DB}.rpl_transactions 
