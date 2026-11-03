@@ -410,6 +410,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setValue('registrationType', 'spectator', { shouldValidate: true });
       setValue('selectedSports', ['spectator' as any], { shouldValidate: true });
       setSelectedSports(['spectator' as any]);
+      setValue('accommodationRequired', 'Yes', { shouldValidate: true });
+      setValue('spectatorOption', 'with-stay', { shouldValidate: true });
+      setValue('checkInDate', '2026-12-25', { shouldValidate: true });
+      setValue('checkOutDate', '2026-12-27', { shouldValidate: true });
+      setSpectatorDates(['2026-12-25', '2026-12-26', '2026-12-27']);
     } else {
       setValue('registrationType', 'player', { shouldValidate: true });
       const sport = mapInitialSport(initialLeague, initialGender, null);
@@ -441,7 +446,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [referrerLookupError, setReferrerLookupError] = useState<string | null>(null);
 
   // Spectator single-day attendance dates state (Defaults to Day 1: 25 Dec 2026)
-  const [spectatorDates, setSpectatorDates] = useState<string[]>(['2026-12-25']);
+  const [spectatorDates, setSpectatorDates] = useState<string[]>(['2026-12-25', '2026-12-26', '2026-12-27']);
 
   const isAllDatesSelected = spectatorDates.length === 3;
 
@@ -504,9 +509,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       fullName: '',
       countryCode: '+91',
       registrationType: isInitialSpectator ? 'spectator' : 'player',
-      spectatorOption: 'without-stay',
+      spectatorOption: 'with-stay',
       spectatorTshirt: 'No',
-      spectatorDates: ['2026-12-25'],
+      spectatorDates: ['2026-12-25', '2026-12-26', '2026-12-27'],
       mobileNumber: '',
       email: '',
       centre: '',
@@ -515,7 +520,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       dateOfBirth: '',
       gender: initialGender,
       foodPreference: 'Regular',
-      accommodationRequired: 'No',
+      accommodationRequired: isInitialSpectator ? 'Yes' : 'No',
       stayingRoomNumber: '',
       checkInDate: '2026-12-25',
       checkOutDate: '2026-12-27',
@@ -656,17 +661,22 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     }
   }, [isSpectator, currentAcc, spectatorDates.length, currentNostalgiaSport, setValue]);
 
-  // Synchronize spectator single-day selections with check-in and check-out dates
+  // Ensure spectator mode defaults to full 3-day stay (25-27 Dec 2026)
   useEffect(() => {
-    if (isSpectator && currentAcc === 'No') {
-      setValue('spectatorDates', spectatorDates, { shouldValidate: true });
-      if (spectatorDates.length > 0) {
-        const sorted = [...spectatorDates].sort();
-        setValue('checkInDate', sorted[0], { shouldValidate: true });
-        setValue('checkOutDate', sorted[sorted.length - 1], { shouldValidate: true });
+    if (isSpectator) {
+      if (currentAcc !== 'Yes') {
+        setValue('accommodationRequired', 'Yes', { shouldValidate: true });
       }
+      if (watch('checkInDate') !== '2026-12-25') {
+        setValue('checkInDate', '2026-12-25', { shouldValidate: true });
+      }
+      if (watch('checkOutDate') !== '2026-12-27') {
+        setValue('checkOutDate', '2026-12-27', { shouldValidate: true });
+      }
+      setValue('spectatorOption', 'with-stay', { shouldValidate: true });
+      setValue('spectatorDates', ['2026-12-25', '2026-12-26', '2026-12-27'], { shouldValidate: true });
     }
-  }, [isSpectator, currentAcc, spectatorDates, setValue]);
+  }, [isSpectator, currentAcc, setValue]);
 
   // Spectators do not require a photo; clear any photo in state when in spectator mode
   useEffect(() => {
@@ -687,11 +697,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorSelectedDaysCount = (isSpectator && currentAcc === 'No')
     ? spectatorDates.length
     : 1;
-  const spectatorBaseFee = currentAcc === 'Yes' ? 3600 : (spectatorSelectedDaysCount * 720);
+  const spectatorBaseFee = 3000;
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
 
   // Player Registration Fee: Flat ₹3,600 for all participants (Returning RPL Family & New Players)
-  const playerBaseFee = 3600;
+  const isReturningFamily = currentExistingFamily === 'Yes';
+  const playerBaseFee = isReturningFamily ? 3600 : 3900;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
   // Football T-Shirt rule: If selected alone, jersey is included in base fee (₹0 extra).
@@ -2058,7 +2069,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
           <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-3 tracking-tight leading-tight">
             {isSpectator ? (
-              <>Official Spectator <span className="text-gradient-vibrant">Pass</span></>
+              <>Official 90’s Nostalgia <span className="text-gradient-vibrant">Pass</span></>
             ) : (
               <>Official Championship <span className="text-gradient-vibrant">Entry</span></>
             )}
@@ -2069,31 +2080,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
-          {/* Registration Mode Switcher: Player Pass vs Spectator Pass — Hidden on confirmation screen */}
+          {/* Registration Mode Switcher: Player Pass vs 90’s Nostalgia Pass — Hidden on confirmation screen */}
           {!submittedData && (
             <div className="flex flex-col items-center justify-center mb-6 w-full px-1">
-              <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-lg w-full gap-1 sm:gap-1.5">
+              <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-xl w-full gap-1 sm:gap-1.5">
                 <button
                   type="button"
                   disabled={isExistingPlayerRegistration && existingRegistrationType === 'spectator'}
                   onClick={() => {
                     if (isExistingPlayerRegistration && existingRegistrationType === 'spectator') return;
                     setValue('registrationType', 'player', { shouldValidate: true });
+                    setValue('accommodationRequired', 'No', { shouldValidate: true });
+                    setValue('checkInDate', '2026-12-25', { shouldValidate: true });
+                    setValue('checkOutDate', '2026-12-27', { shouldValidate: true });
                     if (selectedSports.includes('spectator') || selectedSports.length === 0) {
                       setValue('selectedSports', ['cricket'], { shouldValidate: true });
                       setSelectedSports(['cricket']);
                     }
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'spectator' ? 'You have registered as a Spectator and cannot switch to Player registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'spectator'
+                  className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all text-center leading-tight ${isExistingPlayerRegistration && existingRegistrationType === 'spectator'
                     ? 'opacity-40 cursor-not-allowed text-slate-400'
                     : !isSpectator
-                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 cursor-pointer'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
                       : 'text-slate-600 hover:text-slate-900 cursor-pointer'
                     }`}
                 >
-                  <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
-                  <span className="whitespace-nowrap">Player Registration</span>
+                  <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-white' : 'text-slate-400'}`} />
+                  <span>Player Registration</span>
                 </button>
 
                 <button
@@ -2104,18 +2118,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     setValue('registrationType', 'spectator', { shouldValidate: true });
                     setValue('selectedSports', ['spectator'], { shouldValidate: true });
                     setSelectedSports(['spectator']);
+                    setValue('accommodationRequired', 'Yes', { shouldValidate: true });
+                    setValue('spectatorOption', 'with-stay', { shouldValidate: true });
+                    setValue('checkInDate', '2026-12-25', { shouldValidate: true });
+                    setValue('checkOutDate', '2026-12-27', { shouldValidate: true });
+                    setSpectatorDates(['2026-12-25', '2026-12-26', '2026-12-27']);
                     setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'player' ? 'You have registered as a Player and cannot switch to Spectator registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'player'
+                  className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all text-center leading-tight ${isExistingPlayerRegistration && existingRegistrationType === 'player'
                     ? 'opacity-40 cursor-not-allowed text-slate-400'
                     : isSpectator
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
                       : 'text-slate-600 hover:text-slate-900 cursor-pointer'
                     }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="whitespace-nowrap">Spectator Registration</span>
+                  <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isSpectator ? 'text-white' : 'text-slate-400'}`} />
+                  <span>90’s Nostalgia Pass</span>
                 </button>
               </div>
 
@@ -2614,7 +2633,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           </h4>
                         </div>
                         <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                          Spectator pass does not include a free jersey. You can optionally purchase the official RPL Season 9 jersey for <strong className="text-amber-950 font-extrabold">+₹500</strong>.
+                          90’s Nostalgia pass does not include a free jersey. You can optionally purchase the official RPL Season 9 jersey for <strong className="text-amber-950 font-extrabold">+₹500</strong>.
                         </p>
                       </div>
                       <div className="shrink-0 w-full sm:w-auto">
@@ -2745,26 +2764,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       activeTextColor="text-amber-300"
                     />
 
-                    {/* Informational Note for Extra T-Shirt */}
-                    <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
-                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                      <div className="leading-relaxed">
-                        <p className="font-bold text-amber-950">
-                          Note: Extra T-shirt will cost ₹500 extra.
-                        </p>
-                        <p className="text-amber-800 text-[11px] mt-0.5">
-                          {currentExistingFamily === 'Yes' ? (
-                            <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,600</strong> (1 tournament T-shirt included).
-                            </>
-                          ) : (
-                            <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,600</strong> (1 tournament T-shirt included).
-                            </>
-                          )}
-                        </p>
+                    {/* Informational Note for Extra T-Shirt (shown only when Yes is selected) */}
+                    {currentExtraTshirt === 'Yes' && (
+                      <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                        <div className="leading-relaxed">
+                          <p className="font-bold text-amber-950">
+                            Note: Extra T-shirt will cost ₹500 extra.
+                          </p>
+                          <p className="text-amber-800 text-[11px] mt-0.5">
+                            {currentExistingFamily === 'Yes' ? (
+                              <>
+                                Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>).
+                              </>
+                            ) : (
+                              <>
+                                Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,900 + ₹500 = ₹4,400</strong>).
+                              </>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2940,25 +2961,34 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <span>{isSpectator ? 'Spectator Stay Option' : getFieldLabel('accommodation_required', 'Accommodation Required')}</span>
                     <span className="text-pink-600">*</span>
                   </label>
-                  <OptionSelector
-                    options={isSpectator ? [
-                      { value: 'No', label: 'Without Stay (₹720/day)' },
-                      { value: 'Yes', label: 'With Stay (₹3,600)' },
-                    ] : [
-                      { value: 'No', label: 'No, Self-Arranged' },
-                      { value: 'Yes', label: 'Yes, Needed' },
-                    ]}
-                    value={currentAcc}
-                    onChange={(accOption) => {
-                      setValue('accommodationRequired', accOption as any, { shouldValidate: true });
-                      if (accOption === 'Yes') {
-                        clearErrors('stayingRoomNumber');
-                      }
-                    }}
-                    layoutId="accommodation-indicator"
-                    activeColor="bg-slate-900"
-                    activeTextColor="text-white"
-                  />
+                  {isSpectator ? (
+                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-950 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Home className="w-4 h-4 text-amber-700" />
+                        <span>Stay Package</span>
+                      </span>
+                      <span className="font-mono font-black text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded text-[11px] border border-amber-300">
+                        With Stay (₹3,000)
+                      </span>
+                    </div>
+                  ) : (
+                    <OptionSelector
+                      options={[
+                        { value: 'No', label: 'No, Self-Arranged' },
+                        { value: 'Yes', label: 'Yes, Needed' },
+                      ]}
+                      value={currentAcc}
+                      onChange={(accOption) => {
+                        setValue('accommodationRequired', accOption as any, { shouldValidate: true });
+                        if (accOption === 'Yes') {
+                          clearErrors('stayingRoomNumber');
+                        }
+                      }}
+                      layoutId="accommodation-indicator"
+                      activeColor="bg-slate-900"
+                      activeTextColor="text-white"
+                    />
+                  )}
                 </div>
 
                 {/* Spectator Stay vs Day Pass Details Banner */}
@@ -2969,7 +2999,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-600" />
-                            Official Spectator Pass with Stay • ₹3,600
+                            Official 90’s Nostalgia Pass with Stay • ₹3,000
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900 border border-amber-300">
                             2N & 3D INCLUDED
@@ -2983,54 +3013,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           <p className="font-semibold text-slate-900">✓ Free participation in 90’s Nostalgia games</p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-50 border-2 border-emerald-300 shadow-sm space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹720/day)
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
-                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                            : 'bg-teal-100 text-teal-900 border-teal-300'
-                            }`}>
-                            {spectatorDates.length === 3 ? 'Games & Snacks Included' : 'Night Snacks Included'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                          <p>✓ <strong>Night Snacks:</strong> Night snacks & refreshments included.</p>
-                          {spectatorDates.length === 3 ? (
-                            <p>✓ <strong>90’s Nostalgia Games:</strong> Full participation in 90’s Nostalgia traditional games included (All 3 Days pass).</p>
-                          ) : (
-                            <p className="text-slate-500 text-[11.5px]">
-                              • <strong>90’s Nostalgia Games:</strong> Available when attending all 3 days (with stay or 3-day pass).
-                            </p>
-                          )}
-                          <p className="text-slate-500 text-[11px]">• Self-arranged stay (or visiting for event sessions).</p>
-                        </div>
-
-                        {/* Note: Full day meal bookings to be done on Aashray app */}
-                        <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-950 text-[11px] font-medium flex items-start gap-2 shadow-2xs">
-                          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                          <span>
-                            <strong>Note:</strong> Please book your meals (Breakfast, Lunch & Dinner) separately on the Aashray App.
-                          </span>
-                        </div>
-
-                        {/* Optional room number for self-arranged spectator */}
-                        <div className="pt-2 border-t border-emerald-200/80">
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                            Staying self-arranged? Enter Room / Flat No. (Optional):
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Flat 204 (Optional)"
-                            {...register('stayingRoomNumber')}
-                            className="w-full px-3.5 py-2.5 bg-white rounded-xl border border-emerald-200 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                   /* Player Conditional: In which room are you staying? (When accommodation is 'No') */
@@ -3070,130 +3053,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 )}
               </div>
 
-              {/* Conditional: For Spectator without stay -> 4 Checkboxes (All Days + 3 individual dates)
-                  For Players or Spectator with stay -> Standard Check-in / Check-out pickers & Stay info */}
-              {isSpectator && currentAcc === 'No' ? (
-                <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border-2 border-emerald-300 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/80 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-emerald-700 shrink-0" />
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wide">
-                          Select Attending Dates <span className="text-pink-600">*</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-600 font-medium">
-                          Choose tournament days you will attend (Single Day Pass: ₹720 / Day)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
-                        {spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} Selected • ₹{(spectatorDates.length * 720).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 4 Checkboxes Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                    {/* 1. All Dates Option */}
-                    <div
-                      onClick={toggleAllSpectatorDates}
-                      className={`sm:col-span-2 p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${isAllDatesSelected
-                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-600/20'
-                        : 'bg-white hover:bg-emerald-50/70 border-emerald-200 text-slate-800'
-                        }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${isAllDatesSelected
-                            ? 'bg-white text-emerald-700 border-white'
-                            : 'border-slate-300 bg-slate-50'
-                            }`}
-                        >
-                          {isAllDatesSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
-                            <span>All 3 Days (25, 26 &amp; 27 Dec 2026)</span>
-                            <span
-                              className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${isAllDatesSelected
-                                ? 'bg-white/20 text-white'
-                                : 'bg-emerald-100 text-emerald-900'
-                                }`}
-                            >
-                              Full Tournament
-                            </span>
-                          </div>
-                          <div
-                            className={`text-[11px] truncate ${isAllDatesSelected ? 'text-emerald-100' : 'text-slate-500'
-                              }`}
-                          >
-                            Attend all matches, night snacks &amp; 90’s Nostalgia Games throughout the season
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span
-                          className={`font-black text-xs sm:text-sm ${isAllDatesSelected ? 'text-white' : 'text-emerald-800'
-                            }`}
-                        >
-                          ₹2,160
-                        </span>
-                        <span
-                          className={`block text-[10px] ${isAllDatesSelected ? 'text-emerald-200' : 'text-slate-400'
-                            }`}
-                        >
-                          (3 × ₹720)
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 2, 3, 4: Individual Day Checkboxes */}
-                    {SPECTATOR_EVENT_DATES.map((dayOpt) => {
-                      const isSelected = spectatorDates.includes(dayOpt.id);
-                      return (
-                        <div
-                          key={dayOpt.id}
-                          onClick={() => toggleSpectatorDate(dayOpt.id)}
-                          className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-2.5 ${isSelected
-                            ? 'bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs'
-                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                            }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div
-                              className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${isSelected
-                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                : 'border-slate-300 bg-slate-50'
-                                }`}
-                            >
-                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                                <span>{dayOpt.label}</span>
-                                <span className="text-[10px] font-bold text-slate-500">
-                                  • {dayOpt.day}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-black text-xs text-emerald-800">₹720</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {spectatorDates.length === 0 && (
-                    <div className="p-2.5 rounded-xl bg-pink-50 border border-pink-200 text-pink-700 text-xs font-semibold flex items-center gap-2 animate-shake">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-pink-600" />
-                      <span>Please select at least one day to attend the championship.</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
+              {/* Without stay date selection commented out */}
+              {false ? null : (
                 <>
                   {/* Tournament Stay Dates (Minimal & Modern matching DOB) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -3304,9 +3165,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <p className="leading-relaxed">
                           {currentExistingFamily === 'Yes' ? (
-                            <span><strong>Returning Participant (₹3,600):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
+                            <span><strong>Returning RPL Family (₹3,600):</strong> Welcome back! ₹3,600 (All-Games Tournament Pass) • One-Time ₹300 New Player Registration Fee is Waived.</span>
                           ) : (
-                            <span><strong>New Player Draft (₹3,600):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
+                            <span><strong>New Player Draft (₹3,900):</strong> Welcome! ₹3,600 (All-Games Tournament Pass) + ₹300 (One-Time New Player Registration).</span>
                           )}
                         </p>
                       </div>
@@ -3480,7 +3341,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Note for Women's Registration:
                         </span>
                         <p className="font-semibold text-pink-900 leading-snug">
-                          18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                          18 women will be selected in main league based on last few year's performance by RPL core team. ₹500 extra will be charged for jersey if selected.
                         </p>
                       </div>
                     </div>
@@ -4360,7 +4221,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               Selection Notice:
                             </strong>
                             <p className="text-pink-900 font-semibold">
-                              18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                              18 women will be selected in main league based on last few year's performance by RPL core team. ₹500 extra will be charged for jersey if selected.
                             </p>
                           </div>
                         </div>
@@ -4444,7 +4305,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                      {isSpectator ? '90’s Nostalgia Games' : '90’s Nostalgia Games'}
+                      {isSpectator ? '90’s Nostalgia Pass' : '90’s Nostalgia Pass'}
                     </h3>
                     {isSpectator && (
                       isSpectatorAll3Days ? (
@@ -4462,7 +4323,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
                     {isSpectator
                       ? (isSpectatorAll3Days
-                        ? "Included with your 3-day Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
+                        ? "Included with your 3-day 90’s Nostalgia Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
                         : "Participation in 90’s Nostalgia games is exclusive to participants attending for all 3 days (either With Stay or 3-Day Pass).")
                       : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90’s Nostalgia games division (open for all participants)."}
                   </p>
@@ -4674,7 +4535,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                          {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
+                          {isSpectator ? 'Payment & 90’s Nostalgia Pass' : 'Payment & Registration Fee'}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
                           ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
@@ -4699,19 +4560,19 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                       <div className="min-w-0">
                         <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                          {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
+                          {isSpectator ? '90’s Nostalgia Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
                         </span>
                         <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                           {isSpectator ? (
-                            currentAcc === 'Yes'
-                              ? `Spectator Pass with Stay: ₹3,600${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹4,100' : ''}`
-                              : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹720 = ₹${(spectatorDates.length * 720).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
+                            `90’s Nostalgia Pass with Stay: ₹3,000${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹3,500' : ''}`
                           ) : isReturningPaidUser ? (
                             currentExtraTshirt === 'Yes'
                               ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
                               : `All Sports Included in Tournament Pass (Verified)`
                           ) : (
-                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                            isReturningFamily
+                              ? `RPL Family Tournament Pass (₹3,600) • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                              : `New Player Pass (₹3,600 Pass + ₹300 Reg) • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
                           )}
                         </h4>
                       </div>
@@ -4739,6 +4600,30 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹3,600{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Base Tournament Pass Line Item */}
+                      {!isReturningPaidUser && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/90 border border-amber-200 text-xs font-bold text-slate-800 shadow-2xs">
+                          <span className="flex items-center space-x-2">
+                            <ShieldCheck className="w-4 h-4 text-amber-600" />
+                            <span>All-Games Tournament Pass (All Sports, Stay & Meals Included)</span>
+                          </span>
+                          <span className="text-slate-900 font-extrabold font-mono">₹3,600</span>
+                        </div>
+                      )}
+
+                      {/* New Player One-Time Registration Fee or Returning RPL Family Waived */}
+                      {!isReturningPaidUser && (
+                        <div className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-bold ${isReturningFamily ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' : 'bg-amber-50/90 border-amber-300 text-amber-950'}`}>
+                          <span className="flex items-center space-x-2">
+                            <Sparkles className={`w-4 h-4 ${isReturningFamily ? 'text-emerald-600' : 'text-amber-600'}`} />
+                            <span>{isReturningFamily ? 'Returning RPL Family • One-Time Registration Fee' : 'New RPL Player • One-Time Registration'}</span>
+                          </span>
+                          <span className={`font-extrabold font-mono ${isReturningFamily ? 'text-emerald-800' : 'text-amber-900'}`}>
+                            {isReturningFamily ? 'Waived (₹0)' : '+₹300'}
+                          </span>
                         </div>
                       )}
 
@@ -4800,6 +4685,54 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           })}
                         </div>
                       </div>
+                    </>
+                  )}
+
+                  {/* Spectator Inclusions Breakdown Callout */}
+                  {isSpectator && (
+                    <>
+                      {/* Base Nostalgia Pass Line Item */}
+                      <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/90 border border-amber-200 text-xs font-bold text-slate-800 shadow-2xs">
+                        <span className="flex items-center space-x-2">
+                          <ShieldCheck className="w-4 h-4 text-amber-600" />
+                          <span>Official 90’s Nostalgia Pass with Stay (3-Day Stay & All Meals Included)</span>
+                        </span>
+                        <span className="text-slate-900 font-extrabold font-mono">₹3,000</span>
+                      </div>
+
+                      {/* Optional Official T-Shirt Line Item if selected */}
+                      {currentSpectatorTshirt === 'Yes' && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-xs font-bold text-amber-950">
+                          <span className="flex items-center space-x-2">
+                            <Shirt className="w-4 h-4 text-amber-700" />
+                            <span>Official RPL Season 9 T-Shirt ({currentTshirtSize || 'L'})</span>
+                          </span>
+                          <span className="text-amber-900 font-extrabold">+₹500</span>
+                        </div>
+                      )}
+
+                      {/* Nostalgia Games Breakdown List if selected */}
+                      {selectedNostalgiaSports.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-[11px] font-bold text-slate-600 block uppercase tracking-wide">
+                            Selected 90’s Nostalgia Games ({selectedNostalgiaSports.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedNostalgiaSports.map((gameName) => (
+                              <div
+                                key={gameName}
+                                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-bold bg-amber-50 border-amber-300 text-amber-900 shadow-xs"
+                              >
+                                <span>🕹️</span>
+                                <span>{gameName}</span>
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                  Included in Pass
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -4876,12 +4809,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                       ) : totalPayableFee > 0 ? (
                         <>
-                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
+                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get 90’s Nostalgia Pass' : 'Complete Registration'}</span>
                           <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                         </>
                       ) : (
                         <>
-                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
+                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get 90’s Nostalgia Pass' : 'Submit Registration')}</span>
                           <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                         </>
                       )}
@@ -5088,3 +5021,4 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     </div>
   );
 };
+

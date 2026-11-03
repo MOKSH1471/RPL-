@@ -48,12 +48,12 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             onClick={() => setIsTeamOwnerOpen(true)}
             className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-2xl bg-white hover:bg-slate-50 text-slate-900 font-extrabold text-sm sm:text-base md:text-lg border border-slate-300 shadow-xs active:scale-95 transition-all text-center touch-manipulation cursor-pointer"
           >
-            Team Owner &amp; Sponsorship
+            Team Ownership &amp; Sponsorship
           </button>
         </div>
       </div>
 
-      {/* Team Owner & Sponsorship Modal */}
+      {/* Team Ownership & Sponsorship Modal */}
       <TeamOwnerModal
         isOpen={isTeamOwnerOpen}
         onClose={() => setIsTeamOwnerOpen(false)}

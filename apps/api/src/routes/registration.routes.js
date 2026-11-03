@@ -210,7 +210,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || mergedGeneralDetails.spectatorDates || mergedGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 3600 : (specDaysCount * 720);
+        const spectatorBase = accomRequired === 'Yes' ? 3000 : (specDaysCount * 720);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete mergedGeneralDetails.nostalgiaSport;
@@ -221,7 +221,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = 3600;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(mergedGeneralDetails.selectedSports) ? mergedGeneralDetails.selectedSports : (Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []);
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
@@ -317,7 +317,7 @@ router.post('/register', async (req, res) => {
         const extraTshirtCost = extraTshirtChoice === 'Yes' ? 500 : 0;
         const specDates = cleanGeneralDetails.spectatorDates || cleanGeneralDetails.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        const spectatorBase = accomRequired === 'Yes' ? 3600 : (specDaysCount * 720);
+        const spectatorBase = accomRequired === 'Yes' ? 3000 : (specDaysCount * 720);
         const isSpectatorAll3Days = isSpectator && (accomRequired === 'Yes' || (Array.isArray(specDates) && specDates.length === 3));
         if (isSpectator && !isSpectatorAll3Days) {
           delete cleanGeneralDetails.nostalgiaSport;
@@ -331,7 +331,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = 3600;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : [];
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
@@ -393,7 +393,7 @@ router.post('/register', async (req, res) => {
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
-      const defaultBase = 3600;
+      const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
       const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
       const hasFootball = !isSpectator && parsedSports.includes('football');
       const isFootballMultiSport = hasFootball && parsedSports.length > 1;

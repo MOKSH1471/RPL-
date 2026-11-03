@@ -43,7 +43,7 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
     volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",
     'kaccha-pakka': 'Kaccha Pakka Cricket League',
-    spectator: 'Spectator Pass',
+    spectator: '90’s Nostalgia Pass',
   };
 
   return (

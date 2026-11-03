@@ -231,7 +231,7 @@ export function AdminRegistrationsTab({
               <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
-              <option value="spectator">🎟️ Spectator Pass</option>
+              <option value="spectator">🎟️ 90’s Nostalgia Pass</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -360,7 +360,7 @@ export function AdminRegistrationsTab({
                               }}
                             />
                           ) : isSpectator ? (
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center font-bold shrink-0" title="Spectator Pass (Photo Not Required)">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center font-bold shrink-0" title="90’s Nostalgia Pass (Photo Not Required)">
                               <Ticket className="w-5 h-5" />
                             </div>
                           ) : (
@@ -423,7 +423,7 @@ export function AdminRegistrationsTab({
                           <div className="flex flex-col gap-1 max-w-[160px]">
                             <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 border border-indigo-200 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1">
                               <Ticket className="w-3 h-3 text-indigo-600" />
-                              <span>Spectator Pass</span>
+                              <span>90’s Nostalgia Pass</span>
                             </span>
                             {(() => {
                               const specDates = Array.isArray(gen.spectatorDates) && gen.spectatorDates.length > 0
@@ -443,7 +443,7 @@ export function AdminRegistrationsTab({
                                   {isAll3Days && (gen.nostalgiaSport || gen.nostalgia_sport) && (
                                     <span
                                       className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
-                                      title={`90’s Nostalgia Games: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
+                                      title={`90’s Nostalgia Pass: ${Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}`}
                                     >
                                       <span>🕹️</span>
                                       <span className="truncate max-w-[90px]">{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
@@ -538,9 +538,11 @@ export function AdminRegistrationsTab({
                               const isRegSpectator = gen.registrationType === 'spectator' || regSports.includes('spectator');
                               const isRegFootballMulti = !isRegSpectator && regSports.includes('football') && regSports.length > 1;
                               const hasRegTshirt = gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+                              const isReturningFamily = gen.existingRplFamily === 'Yes';
+                              const playerBaseFee = isReturningFamily ? 3600 : 3900;
                               const fallbackFee = isRegSpectator
-                                ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3600 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
-                                : (3600 + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0));
+                                ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3000 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
+                                : (playerBaseFee + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0));
                               return (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
                                   ₹{(gen.totalAmount || fallbackFee).toLocaleString('en-IN')}

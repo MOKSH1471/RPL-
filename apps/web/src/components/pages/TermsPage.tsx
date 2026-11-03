@@ -82,16 +82,16 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
               <li>
                 <strong>Player Registration Fee:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
-                  <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> for participants who have participated in prior RPL seasons.</li>
-                  <li><strong>New Participants:</strong> <strong>₹3,600</strong> for first-time athletes enrolling in the open player draft.</li>
+                  <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> (All-Games Tournament Pass; one-time ₹300 new player registration fee waived).</li>
+                  <li><strong>New Participants:</strong> <strong>₹3,900</strong> for first-time athletes enrolling in the open player draft, broken down as <strong>₹3,600</strong> (All-Games Tournament Pass with official stay & meals) + <strong>₹300</strong> (One-time RPL player registration).</li>
                   <li><strong>What's Included:</strong> Enrollment in all selected eligible sports, 2 nights of official tournament stay (check-in Dec 25 to check-out Dec 27, 2026), all daily meals (breakfast, lunch, dinner, late-night snacks), and one official RPL Season 9 tournament jersey.</li>
                 </ul>
               </li>
               <li>
-                <strong>Spectator Pass Options:</strong>
+                <strong>90’s Nostalgia Pass:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
-                  <li><strong>Without Stay (Day Pass):</strong> <strong>₹720 per day</strong>. Spectators may choose 1 day (₹720), 2 days (₹1,440), or all 3 days (₹2,160). Covers arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals and overnight accommodation are not included and must be arranged separately.</li>
-                  <li><strong>With Stay (Full 3-Day Experience):</strong> <strong>₹3,600</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
+                  <li><strong>With Stay:</strong> <strong>₹3,000</strong> flat package. Includes all 3 days tournament access, 2 nights official accommodation (Dec 25–27), and all daily meals (breakfast, lunch, dinner, and late-night snacks).</li>
+                  {/* Without Stay (Day Pass) commented out */}
                 </ul>
               </li>
               <li><strong>All Sports Included:</strong> For players, selecting multiple sports is covered under the event pass. Note on Football: If you register solely for Football, your jersey is covered in the ₹3,600 pass; if you choose Football alongside other sports (e.g., Cricket + Football), an additional <strong>₹500</strong> charge applies for the separate official Football jersey.</li>

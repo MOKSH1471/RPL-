@@ -55,8 +55,8 @@ router.post('/razorpay/create-order', async (req, res) => {
     let computedFee;
 
     if (isSpectator) {
-      // Spectator Pass: With Stay = ₹3,600 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 3600 : (specDaysCount * 720);
+      // 90’s Nostalgia Pass: With Stay = ₹3,000 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 3000 : (specDaysCount * 720);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {
@@ -70,7 +70,8 @@ router.post('/razorpay/create-order', async (req, res) => {
       const footballFeeDue = (isFootballMultiSport && !footballFeePaidInPast) ? 500 : 0;
       computedFee = extraTshirtCost + footballFeeDue;
     } else {
-      const playerBase = 3600;
+      const existingFamily = req.body.existingRplFamily || cleanGeneral.existingRplFamily || 'No';
+      const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
       computedFee = playerBase + footballJerseyFee + extraTshirtCost;
     }
 
@@ -146,7 +147,7 @@ router.post('/razorpay/create-order', async (req, res) => {
       try {
         const prevGen = typeof existingReg.general_details === 'string' ? JSON.parse(existingReg.general_details) : (existingReg.general_details || {});
         cardNoVal = prevGen.cardNo || null;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Resolve referrerCardNo if provided or from referrerMobile
@@ -163,7 +164,7 @@ router.post('/razorpay/create-order', async (req, res) => {
             resolvedReferrerCardNo = refRows[0].cardno;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Safety guard: A player cannot have the same card number as their referrer!
@@ -297,9 +298,9 @@ router.post('/razorpay/create-order', async (req, res) => {
         order = await razorpay.orders.create(orderParams);
       } catch (createErr) {
         const isRateLimit = createErr?.statusCode === 429 ||
-                            createErr?.error?.code === 'BAD_REQUEST_ERROR' ||
-                            createErr?.error?.description?.toLowerCase()?.includes('too many requests') ||
-                            createErr?.message?.toLowerCase()?.includes('too many requests');
+          createErr?.error?.code === 'BAD_REQUEST_ERROR' ||
+          createErr?.error?.description?.toLowerCase()?.includes('too many requests') ||
+          createErr?.message?.toLowerCase()?.includes('too many requests');
 
         if (isRateLimit) {
           logger.warn(`[RAZORPAY RATE LIMIT] Rate limited by Razorpay (429). Retrying after 1000ms backoff...`);
@@ -335,10 +336,10 @@ router.post('/razorpay/create-order', async (req, res) => {
       if (existingReg) {
         try {
           prevGeneral = typeof existingReg.general_details === 'string' ? JSON.parse(existingReg.general_details) : (existingReg.general_details || {});
-        } catch (e) {}
+        } catch (e) { }
         try {
           prevSports = typeof existingReg.sport_answers === 'string' ? JSON.parse(existingReg.sport_answers) : (existingReg.sport_answers || {});
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const mergedGeneral = {
@@ -701,7 +702,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
                 resolvedReferrerCardNo = refRows[0].cardno;
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         let cardNoVal = cleanGeneralDetails.cardNo || mergedGeneralDetails?.cardNo || null;
@@ -736,7 +737,7 @@ router.post('/razorpay/verify-payment', async (req, res) => {
                 connection,
               });
             }
-          } catch (e) {}
+          } catch (e) { }
         }
         if (!cardNoVal) {
           cardNoVal = `GUEST_${mobile10 ? mobile10.slice(-6) : 'RPL'}`;
@@ -954,7 +955,7 @@ router.post('/razorpay/webhook', async (req, res) => {
               if (gd.registrationType === 'spectator' || (Array.isArray(gd.selectedSports) && gd.selectedSports.includes('spectator'))) {
                 isSpectator = true;
               }
-            } catch (e) {}
+            } catch (e) { }
           }
           if (targetReg?.sport_id === 'spectator') isSpectator = true;
           const txnCategory = isSpectator ? 'spectator' : 'sports';

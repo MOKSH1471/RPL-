@@ -254,15 +254,15 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           </button>
         </div>
 
-        {/* 9. Spectator Pass & 90’s Nostalgia Games Roster */}
+        {/* 9. 90’s Nostalgia Pass Roster */}
         <div className="p-6 rounded-3xl bg-white border border-indigo-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 bg-gradient-to-br from-white to-indigo-50/20">
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-800 flex items-center justify-center">
               <Ticket className="w-5 h-5" />
             </div>
-            <h4 className="font-extrabold text-base text-slate-900">Spectator Pass & 90’s Nostalgia Games Roster</h4>
+            <h4 className="font-extrabold text-base text-slate-900">90’s Nostalgia Pass & Roster</h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Active spectators list with stay package option (Day Pass ₹720 / Stay ₹3,600), T-Shirt add-on status, and 90’s Nostalgia Games enrolled.
+              Active spectators list with stay package (₹3,000), T-Shirt add-on status, and 90’s Nostalgia Games enrolled.
             </p>
           </div>
           <button
@@ -271,7 +271,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
             className="w-full py-2.5 rounded-2xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98"
           >
             <Download className="w-4 h-4" />
-            <span>Download Spectator Pass Roster CSV</span>
+            <span>Download 90’s Nostalgia Pass Roster CSV</span>
           </button>
         </div>
 

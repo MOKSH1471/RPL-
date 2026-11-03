@@ -6,13 +6,13 @@ after(async () => {
   await stopTestServer();
 });
 
-test('RPL Pricing Rule: New Player (existingRplFamily = "No") is charged ₹3,600 (360000 paise)', async () => {
+test('RPL Pricing Rule: New Player (existingRplFamily = "No") is charged ₹3,900 (390000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
       fullName: 'First Time Mumukshu',
       email: 'newmumukshu@example.com',
-      mobile: '9899001122',
+      mobile: '9899001121',
       selectedSports: ['cricket'],
       existingRplFamily: 'No',
     }),
@@ -21,8 +21,8 @@ test('RPL Pricing Rule: New Player (existingRplFamily = "No") is charged ₹3,60
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 360000, 'New player must be charged ₹3,600 (360000 paise)');
-    assert.strictEqual(res.data.amountInRupees, 3600);
+    assert.strictEqual(res.data.amount, 390000, 'New player must be charged ₹3,900 (390000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 3900);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -48,7 +48,7 @@ test('RPL Pricing Rule: Returning Participant (existingRplFamily = "Yes") is cha
   }
 });
 
-test('RPL Pricing Rule: New Player with Extra T-shirt is charged ₹4,100 (410000 paise)', async () => {
+test('RPL Pricing Rule: New Player with Extra T-shirt is charged ₹4,400 (440000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -64,8 +64,8 @@ test('RPL Pricing Rule: New Player with Extra T-shirt is charged ₹4,100 (41000
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 410000, 'New player with extra t-shirt must be charged ₹4,100 (410000 paise)');
-    assert.strictEqual(res.data.amountInRupees, 4100);
+    assert.strictEqual(res.data.amount, 440000, 'New player with extra t-shirt must be charged ₹4,400 (440000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 4400);
   }
 });
 
@@ -90,7 +90,7 @@ test('RPL Pricing Rule: Returning Participant with Extra T-shirt is charged ₹4
   }
 });
 
-test('RPL Pricing Rule: Standalone Football player is charged flat ₹3,600 (t-shirt included in pass)', async () => {
+test('RPL Pricing Rule: Standalone Football returning player is charged flat ₹3,600 (t-shirt included in pass)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -98,7 +98,7 @@ test('RPL Pricing Rule: Standalone Football player is charged flat ₹3,600 (t-s
       email: 'footballonly@example.com',
       mobile: '9899001166',
       selectedSports: ['football'],
-      existingRplFamily: 'No',
+      existingRplFamily: 'Yes',
     }),
   });
 
@@ -118,7 +118,7 @@ test('RPL Pricing Rule: Multi-sport with Football is charged ₹4,100 (3600 + 50
       email: 'cricketfootball@example.com',
       mobile: '9899001177',
       selectedSports: ['cricket', 'football'],
-      existingRplFamily: 'No',
+      existingRplFamily: 'Yes',
     }),
   });
 
@@ -138,7 +138,7 @@ test('RPL Pricing Rule: Multi-sport with Football + Extra T-shirt is charged ₹
       email: 'fbmultiextra@example.com',
       mobile: '9899001188',
       selectedSports: ['cricket', 'football'],
-      existingRplFamily: 'No',
+      existingRplFamily: 'Yes',
       extraTshirt: 'Yes',
     }),
   });
@@ -151,7 +151,7 @@ test('RPL Pricing Rule: Multi-sport with Football + Extra T-shirt is charged ₹
   }
 });
 
-test('RPL Direct Registration: registers with ₹3,600 for New Player and payment_status=pending', async () => {
+test('RPL Direct Registration: registers with ₹3,900 for New Player and payment_status=pending', async () => {
   const testMobile = '+91 9899009988';
   const res = await apiRequest('/api/register', {
     method: 'POST',
@@ -176,7 +176,7 @@ test('RPL Direct Registration: registers with ₹3,600 for New Player and paymen
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
 
-  // Verify in DB that fee is recorded as 3600
+  // Verify in DB that fee is recorded as 3900
   const [rows] = await db.query(
     `SELECT general_details, payment_status FROM ${RPL_DB}.rpl_registrations WHERE mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
     ['%9899009988']
@@ -184,7 +184,7 @@ test('RPL Direct Registration: registers with ₹3,600 for New Player and paymen
   assert.strictEqual(rows.length, 1);
   assert.strictEqual(rows[0].payment_status, 'pending');
   const gen = typeof rows[0].general_details === 'string' ? JSON.parse(rows[0].general_details) : rows[0].general_details;
-  assert.strictEqual(gen.totalAmount, 3600);
+  assert.strictEqual(gen.totalAmount, 3900);
   assert.strictEqual(gen.existingRplFamily, 'No');
 });
 
@@ -209,7 +209,7 @@ test('RPL Standalone League: Table Tennis alone is charged ₹3,600 for returnin
   }
 });
 
-test('RPL Standalone League: Carrom alone registers with ₹3,600 for New Player', async () => {
+test('RPL Standalone League: Carrom alone registers with ₹3,900 for New Player', async () => {
   const testMobile = '+91 9899003355';
   const res = await apiRequest('/api/register', {
     method: 'POST',
@@ -245,8 +245,10 @@ test('RPL Standalone League: Carrom alone registers with ₹3,600 for New Player
   assert.strictEqual(rows.length, 1);
   assert.strictEqual(rows[0].payment_status, 'pending');
   const gen = typeof rows[0].general_details === 'string' ? JSON.parse(rows[0].general_details) : rows[0].general_details;
-  assert.strictEqual(gen.totalAmount, 3600);
+  assert.strictEqual(gen.totalAmount, 3900);
   assert.strictEqual(gen.existingRplFamily, 'No');
   assert.deepStrictEqual(gen.selectedSports, ['carrom']);
 });
+
+
 

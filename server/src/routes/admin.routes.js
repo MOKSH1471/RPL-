@@ -73,13 +73,13 @@ router.get('/admin/stats', async (req, res) => {
 
       const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : (isSpectator ? ['spectator'] : []);
       const isReturningFamily = gen.existingRplFamily === 'Yes';
-      let calculatedFee = 3600;
+      let calculatedFee = isReturningFamily ? 3600 : 3900;
       if (isSpectator) {
         const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
         const specDates = gen.spectatorDates || gen.spectatorDays || [];
         const specDaysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : 1;
-        calculatedFee = (hasStay ? 3600 : (specDaysCount * 720)) + (hasTshirt ? 500 : 0);
+        calculatedFee = (hasStay ? 3000 : (specDaysCount * 720)) + (hasTshirt ? 500 : 0);
       } else {
         const hasFootballMultiSport = selected.includes('football') && selected.length > 1;
         if (hasFootballMultiSport) calculatedFee += 500;

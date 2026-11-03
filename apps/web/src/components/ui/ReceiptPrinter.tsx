@@ -134,8 +134,8 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
     : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
       ? (data as any).spectatorDays
       : ((data as any).checkInDate && (data as any).checkOutDate
-          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : (((data as any).checkInDate === '2026-12-25' && (data as any).checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [(data as any).checkInDate, (data as any).checkOutDate]))
-          : ['2026-12-25']);
+        ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : (((data as any).checkInDate === '2026-12-25' && (data as any).checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [(data as any).checkInDate, (data as any).checkOutDate]))
+        : ['2026-12-25']);
 
   const specDayCount = Math.max(1, specDatesList.length);
   const hasStay = data.accommodationRequired === 'Yes' || (data as any).spectatorOption === 'with-stay';
@@ -206,10 +206,10 @@ export const ReceiptPrinter: React.FC<ReceiptPrinterProps> = ({
         return 'Kaccha Pakka Cricket League';
       case 'spectator':
         return hasStay
-          ? 'Spectator Pass (Stay, Full Meals & 90’s Games)'
+          ? '90’s Nostalgia Pass (Stay, Full Meals & 90’s Games)'
           : (isSpectatorAll3Days
-              ? 'Spectator Pass (3 Days • Night Snacks & 90’s Games)'
-              : `Spectator Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • Night Snacks & Sessions)`);
+            ? '90’s Nostalgia Pass (3 Days • Night Snacks & 90’s Games)'
+            : `90’s Nostalgia Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • Night Snacks & Sessions)`);
       default:
         return s;
     }
@@ -482,7 +482,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                       RAJ PREMIER LEAGUE
                     </div>
                     <div className="text-[9px] font-bold text-amber-800 tracking-wider">
-                      SEASON 9 • {isSpectator ? 'SPECTATOR PASS' : 'TOURNAMENT PASS'}
+                      SEASON 9 • {isSpectator ? '90’s NOSTALGIA PASS' : 'TOURNAMENT PASS'}
                     </div>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-center p-1 shrink-0 shadow-xs">
@@ -563,8 +563,8 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                     <span className="font-medium text-slate-800 text-[8.5px]">
                       {isSpectator
                         ? (hasStay
-                            ? 'Stay: Dec 25-27 • Full Meals & Night Snacks'
-                            : `Day Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'}: ${formatDatesPretty(specDatesList)}) • Night Snacks Only`)
+                          ? 'Stay: Dec 25-27 • Full Meals & Night Snacks'
+                          : `Day Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'}: ${formatDatesPretty(specDatesList)}) • Night Snacks Only`)
                         : (data.accommodationRequired === 'Yes' ? 'Stay: Dec 25-27 (Compulsory)' : (data.stayingRoomNumber ? `Self (${data.stayingRoomNumber})` : 'Day Pass (Without Stay)')) + ` • ${data.foodPreference === 'Non-Spicy' ? 'Non-Spicy Meal' : 'Spicy Meal'}`
                       }
                     </span>
@@ -591,7 +591,7 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                 {/* Registered Sports */}
                 <div className="mb-2">
                   <div className="text-[8.5px] font-extrabold uppercase tracking-wider text-neutral-500 mb-1">
-                    {isSpectator ? (isSpectatorAll3Days ? 'ARENAS & 90’S NOSTALGIA GAMES' : 'ARENAS & SESSIONS') : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
+                    {isSpectator ? (isSpectatorAll3Days ? 'ARENAS & 90’S NOSTALGIA PASS' : 'ARENAS & SESSIONS') : 'CHAMPIONSHIP ARENAS (1X INCLUDED)'}
                   </div>
                   <div className="space-y-1">
                     {sportsList.map((sport, idx) => (
@@ -617,10 +617,10 @@ Status: ${hasPaymentProof ? 'PAYMENT SUCCESSFUL' : 'PAYMENT PENDING'}
                     <span>
                       {isSpectator
                         ? (hasStay
-                            ? 'Full Meals, Snacks & 90’s Games'
-                            : (isSpectatorAll3Days
-                                ? 'Night Snacks & 90’s Nostalgia Games'
-                                : `Night Snacks (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'})`))
+                          ? 'Full Meals, Snacks & 90’s Games'
+                          : (isSpectatorAll3Days
+                            ? 'Night Snacks & 90’s Nostalgia Games'
+                            : `Night Snacks (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'})`))
                         : 'Player Kit & Pass'}
                     </span>
                     <span className="font-mono">INCLUDED</span>
