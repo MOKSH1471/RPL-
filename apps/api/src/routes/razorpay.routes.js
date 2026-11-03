@@ -55,8 +55,8 @@ router.post('/razorpay/create-order', async (req, res) => {
     let computedFee;
 
     if (isSpectator) {
-      // 90’s Nostalgia Pass: With Stay = ₹3,600 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
-      const spectatorBase = accomRequired === 'Yes' ? 3600 : (specDaysCount * 720);
+      // 90’s Nostalgia Pass: With Stay = ₹3,000 (compulsory 3 days), Without Stay = ₹720 per day. T-Shirt optional = +₹500.
+      const spectatorBase = accomRequired === 'Yes' ? 3000 : (specDaysCount * 720);
       if (isExistingPlayer && hasPreviouslyPaid) {
         computedFee = extraTshirtCost;
       } else {

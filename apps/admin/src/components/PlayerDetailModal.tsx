@@ -65,7 +65,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const spectatorDayCount = Math.max(1, spectatorDatesList.length);
   const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);
   const spectatorDayFee = spectatorDayCount * 720;
-  const spectatorCalculatedFee = (hasStay ? 3600 : spectatorDayFee) + (hasTshirt ? 500 : 0);
+  const spectatorCalculatedFee = (hasStay ? 3000 : spectatorDayFee) + (hasTshirt ? 500 : 0);
 
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';

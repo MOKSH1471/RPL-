@@ -157,7 +157,7 @@ test('Spectator Pass Validation: verifies single-day (₹720), multi-day (₹1,4
     // Fee calculation
     const specDates = payload.spectatorDates || payload.spectatorDays || [];
     const daysCount = Array.isArray(specDates) && specDates.length > 0 ? specDates.length : (payload.daysCount || 1);
-    const baseFee = payload.accommodationRequired === 'Yes' ? 3600 : (daysCount * 720);
+    const baseFee = payload.accommodationRequired === 'Yes' ? 3000 : (daysCount * 720);
     const tshirtCost = (payload.spectatorTshirt === 'Yes' || payload.extraTshirt === 'Yes') ? 500 : 0;
     const totalFee = baseFee + tshirtCost;
 
@@ -234,7 +234,7 @@ test('Spectator Pass Validation: verifies single-day (₹720), multi-day (₹1,4
     accommodationRequired: 'Yes',
     spectatorTshirt: 'No',
   });
-  assert.strictEqual(stayPass.totalFee, 3600);
+  assert.strictEqual(stayPass.totalFee, 3000);
   assert.strictEqual(stayPass.isNostalgiaEligible, true, 'With stay spectator IS eligible for nostalgia games');
 
   // 6. Pass with stay, with T-shirt (₹4,100)
@@ -243,7 +243,7 @@ test('Spectator Pass Validation: verifies single-day (₹720), multi-day (₹1,4
     accommodationRequired: 'Yes',
     spectatorTshirt: 'Yes',
   });
-  assert.strictEqual(stayPassTshirt.totalFee, 4100);
+  assert.strictEqual(stayPassTshirt.totalFee, 3500);
   assert.strictEqual(stayPassTshirt.isNostalgiaEligible, true);
 });
 

@@ -530,7 +530,7 @@ test('Spectator Pass: Order creation for Day Pass without stay + T-Shirt (₹1,2
   }
 });
 
-test('Spectator Pass: Order creation with stay (₹3,600 / 360000 paise)', async () => {
+test('Spectator Pass: Order creation with stay (₹3,000 / 300000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -561,12 +561,12 @@ test('Spectator Pass: Order creation with stay (₹3,600 / 360000 paise)', async
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 360000, 'Spectator with stay must be ₹3600 (360000 paise)');
+    assert.strictEqual(res.data.amount, 300000, 'Spectator with stay must be ₹3000 (300000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Spectator Pass: Order creation with stay + T-Shirt (₹4,100 / 410000 paise)', async () => {
+test('Spectator Pass: Order creation with stay + T-Shirt (₹3,500 / 350000 paise)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -598,7 +598,7 @@ test('Spectator Pass: Order creation with stay + T-Shirt (₹4,100 / 410000 pais
   assert.strictEqual(res.status, 200);
   assert.strictEqual(res.data.success, true);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 410000, 'Spectator with stay + T-shirt must be ₹4100 (410000 paise)');
+    assert.strictEqual(res.data.amount, 350000, 'Spectator with stay + T-shirt must be ₹3500 (350000 paise)');
     assert.strictEqual(res.data.currency, 'INR');
   }
 });

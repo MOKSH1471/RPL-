@@ -265,7 +265,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                     </div>
                     <div className="text-right">
                       <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                        ₹{(data.totalAmount || (isSpectator ? (hasStay ? 3600 : (specDayCount * 720)) : playerFallback)).toLocaleString('en-IN')}
+                        ₹{(data.totalAmount || (isSpectator ? (hasStay ? 3000 : (specDayCount * 720)) : playerFallback)).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </>

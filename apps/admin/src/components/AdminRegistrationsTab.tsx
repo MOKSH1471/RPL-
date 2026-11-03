@@ -541,7 +541,7 @@ export function AdminRegistrationsTab({
                               const isReturningFamily = gen.existingRplFamily === 'Yes';
                               const playerBaseFee = isReturningFamily ? 3600 : 3900;
                               const fallbackFee = isRegSpectator
-                                ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3600 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
+                                ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3000 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
                                 : (playerBaseFee + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0));
                               return (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
