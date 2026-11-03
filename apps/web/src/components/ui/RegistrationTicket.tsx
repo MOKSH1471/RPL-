@@ -240,7 +240,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <div className="flex items-center justify-between">
               {(() => {
                 const isFootballMultiSport = !isSpectator && sportsList.includes('football') && sportsList.length > 1;
-                const playerFallback = 3600 + (isFootballMultiSport ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
+                const playerFallback = (data.existingRplFamily === 'Yes' ? 3600 : 3900) + (isFootballMultiSport ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
                 return (
                   <>
                     <div>

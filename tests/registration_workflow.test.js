@@ -43,7 +43,7 @@ test('Razorpay Fee Calculation: New Player (existingRplFamily: No) defaults to b
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 360000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -67,7 +67,7 @@ test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily:
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports without football charges flat event fee of ₹3,600 for New Player', async () => {
+test('Razorpay Fee Calculation: 3 Sports without football charges flat event fee of ₹3,900 for New Player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -81,12 +81,12 @@ test('Razorpay Fee Calculation: 3 Sports without football charges flat event fee
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 360000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: Multi-sport with Football charges ₹4,100 (3600 + 500 football jersey)', async () => {
+test('Razorpay Fee Calculation: Multi-sport with Football charges ₹4,400 (3900 + 500 football jersey)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -100,13 +100,13 @@ test('Razorpay Fee Calculation: Multi-sport with Football charges ₹4,100 (3600
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 410000);
-    assert.strictEqual(res.data.amountInRupees, 4100);
+    assert.strictEqual(res.data.amount, 440000);
+    assert.strictEqual(res.data.amountInRupees, 4400);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹4,100 (3600 + 500)', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges ₹4,400 (3900 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -121,7 +121,7 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (Yes) charges
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 410000);
+    assert.strictEqual(res.data.amount, 440000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -146,7 +146,7 @@ test('Razorpay Fee Calculation: Returning Family selecting extra T-shirt (Yes) c
   }
 });
 
-test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,600', async () => {
+test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges flat ₹3,900', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
@@ -161,7 +161,7 @@ test('Razorpay Fee Calculation: New Player selecting extra T-shirt (No) charges 
 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
-    assert.strictEqual(res.data.amount, 360000);
+    assert.strictEqual(res.data.amount, 390000);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -719,6 +719,7 @@ test('Spectator Pass: 3-Day spectator without stay preserves nostalgiaSport', as
   assert.strictEqual(lookup.status, 200);
   assert.strictEqual(lookup.data.registration.generalDetails.nostalgiaSport, 'Carrom');
 });
+
 
 
 

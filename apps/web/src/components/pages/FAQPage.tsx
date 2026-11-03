@@ -96,7 +96,7 @@ const FAQ_DATA: FAQItem[] = [
     category: 'registration',
     question: 'What is the registration fee for players, and what does it include?',
     searchableAnswer:
-      'Flat ₹3,600 for all tournament participants (both Returning RPL Family and New Participants). Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
+      'Returning RPL Family: ₹3,600 flat package (₹300 one-time registration fee waived). New / First-Time Participants: ₹3,900 flat package [broken down as ₹3,600 All-Games Tournament Pass + ₹300 One-Time New Player Registration Fee]. Includes 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre, all daily sattvic vegetarian meals, late-night tournament snacks, unlimited entry across all selected eligible leagues and 90s Nostalgia Games, and one official RPL Season 9 tournament jersey included free. Extra t-shirts ₹500.',
     answer: (
       <div className="space-y-3">
         <p>The standard player registration is an all-inclusive 3-day sports &amp; stay package:</p>
@@ -106,14 +106,14 @@ const FAQ_DATA: FAQItem[] = [
               Returning RPL Family
             </span>
             <span className="text-2xl font-black text-slate-900">₹3,600</span>
-            <span className="text-xs text-slate-600 block mt-1">For members who participated in prior RPL seasons</span>
+            <span className="text-xs text-slate-600 block mt-1">₹3,600 All-Games Pass (₹300 one-time registration fee waived)</span>
           </div>
           <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-800 block mb-1">
               New Participants
             </span>
-            <span className="text-2xl font-black text-slate-900">₹3,600</span>
-            <span className="text-xs text-slate-600 block mt-1">First-time athletes joining the RPL family</span>
+            <span className="text-2xl font-black text-slate-900">₹3,900</span>
+            <span className="text-xs text-slate-600 block mt-1">₹3,600 (All-Games Pass) + ₹300 (One-Time New Player Registration)</span>
           </div>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-xs text-slate-700">

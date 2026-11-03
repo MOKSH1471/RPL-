@@ -221,7 +221,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = 3600;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(mergedGeneralDetails.selectedSports) ? mergedGeneralDetails.selectedSports : (Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []);
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
@@ -331,7 +331,7 @@ router.post('/register', async (req, res) => {
           }
         }
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
-        const playerBase = 3600;
+        const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : [];
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
@@ -393,7 +393,7 @@ router.post('/register', async (req, res) => {
       const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
       const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
       const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
-      const defaultBase = 3600;
+      const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
       const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
       const hasFootball = !isSpectator && parsedSports.includes('football');
       const isFootballMultiSport = hasFootball && parsedSports.length > 1;

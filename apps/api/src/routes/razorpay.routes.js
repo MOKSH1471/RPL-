@@ -70,7 +70,8 @@ router.post('/razorpay/create-order', async (req, res) => {
       const footballFeeDue = (isFootballMultiSport && !footballFeePaidInPast) ? 500 : 0;
       computedFee = extraTshirtCost + footballFeeDue;
     } else {
-      const playerBase = 3600;
+      const existingFamily = req.body.existingRplFamily || cleanGeneral.existingRplFamily || 'No';
+      const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
       computedFee = playerBase + footballJerseyFee + extraTshirtCost;
     }
 

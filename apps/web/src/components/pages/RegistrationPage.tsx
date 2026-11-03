@@ -691,7 +691,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const spectatorTshirtCost = currentSpectatorTshirt === 'Yes' ? 500 : 0;
 
   // Player Registration Fee: Flat ₹3,600 for all participants (Returning RPL Family & New Players)
-  const playerBaseFee = 3600;
+  const isReturningFamily = currentExistingFamily === 'Yes';
+  const playerBaseFee = isReturningFamily ? 3600 : 3900;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
   // Football T-Shirt rule: If selected alone, jersey is included in base fee (₹0 extra).
@@ -2745,26 +2746,28 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       activeTextColor="text-amber-300"
                     />
 
-                    {/* Informational Note for Extra T-Shirt */}
-                    <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5">
-                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                      <div className="leading-relaxed">
-                        <p className="font-bold text-amber-950">
-                          Note: Extra T-shirt will cost ₹500 extra.
-                        </p>
-                        <p className="text-amber-800 text-[11px] mt-0.5">
-                          {currentExistingFamily === 'Yes' ? (
-                            <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,600</strong> (1 tournament T-shirt included).
-                            </>
-                          ) : (
-                            <>
-                              Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>). Selecting <strong>No</strong> keeps the total fee at <strong>₹3,600</strong> (1 tournament T-shirt included).
-                            </>
-                          )}
-                        </p>
+                    {/* Informational Note for Extra T-Shirt (shown only when Yes is selected) */}
+                    {currentExtraTshirt === 'Yes' && (
+                      <div className="mt-2.5 p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs flex items-start space-x-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                        <div className="leading-relaxed">
+                          <p className="font-bold text-amber-950">
+                            Note: Extra T-shirt will cost ₹500 extra.
+                          </p>
+                          <p className="text-amber-800 text-[11px] mt-0.5">
+                            {currentExistingFamily === 'Yes' ? (
+                              <>
+                                Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,600 + ₹500 = ₹4,100</strong>).
+                              </>
+                            ) : (
+                              <>
+                                Selecting <strong>Yes</strong> increases your total fee by ₹500 (<strong>₹3,900 + ₹500 = ₹4,400</strong>).
+                              </>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -3304,9 +3307,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <p className="leading-relaxed">
                           {currentExistingFamily === 'Yes' ? (
-                            <span><strong>Returning Participant (₹3,600):</strong> Welcome back! Your player profile and previous season records will be linked.</span>
+                            <span><strong>Returning RPL Family (₹3,600):</strong> Welcome back! ₹3,600 (All-Games Tournament Pass) • One-Time ₹300 New Player Registration Fee is Waived.</span>
                           ) : (
-                            <span><strong>New Player Draft (₹3,600):</strong> Welcome! First-time participants are enrolled in the Season 9 open player draft.</span>
+                            <span><strong>New Player Draft (₹3,900):</strong> Welcome! ₹3,600 (All-Games Tournament Pass) + ₹300 (One-Time New Player Registration).</span>
                           )}
                         </p>
                       </div>
@@ -3480,7 +3483,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Note for Women's Registration:
                         </span>
                         <p className="font-semibold text-pink-900 leading-snug">
-                          18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                          18 women will be selected in main league based on last few year's performance by RPL core team. ₹500 extra will be charged for jersey if selected.
                         </p>
                       </div>
                     </div>
@@ -4360,7 +4363,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               Selection Notice:
                             </strong>
                             <p className="text-pink-900 font-semibold">
-                              18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                              18 women will be selected in main league based on last few year's performance by RPL core team. ₹500 extra will be charged for jersey if selected.
                             </p>
                           </div>
                         </div>
@@ -4711,7 +4714,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
                               : `All Sports Included in Tournament Pass (Verified)`
                           ) : (
-                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                            isReturningFamily
+                              ? `RPL Family Tournament Pass (₹3,600) • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                              : `New Player Pass (₹3,600 Pass + ₹300 Reg) • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
                           )}
                         </h4>
                       </div>
@@ -4739,6 +4744,30 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹3,600{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Base Tournament Pass Line Item */}
+                      {!isReturningPaidUser && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/90 border border-amber-200 text-xs font-bold text-slate-800 shadow-2xs">
+                          <span className="flex items-center space-x-2">
+                            <ShieldCheck className="w-4 h-4 text-amber-600" />
+                            <span>All-Games Tournament Pass (All Sports, Stay & Meals Included)</span>
+                          </span>
+                          <span className="text-slate-900 font-extrabold font-mono">₹3,600</span>
+                        </div>
+                      )}
+
+                      {/* New Player One-Time Registration Fee or Returning RPL Family Waived */}
+                      {!isReturningPaidUser && (
+                        <div className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-bold ${isReturningFamily ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' : 'bg-amber-50/90 border-amber-300 text-amber-950'}`}>
+                          <span className="flex items-center space-x-2">
+                            <Sparkles className={`w-4 h-4 ${isReturningFamily ? 'text-emerald-600' : 'text-amber-600'}`} />
+                            <span>{isReturningFamily ? 'Returning RPL Family • One-Time Registration Fee' : 'New RPL Player • One-Time Registration'}</span>
+                          </span>
+                          <span className={`font-extrabold font-mono ${isReturningFamily ? 'text-emerald-800' : 'text-amber-900'}`}>
+                            {isReturningFamily ? 'Waived (₹0)' : '+₹300'}
+                          </span>
                         </div>
                       )}
 
@@ -5088,3 +5117,4 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
     </div>
   );
 };
+

@@ -82,8 +82,8 @@ export const TermsPage: React.FC<TermsPageProps> = ({ onBackToHome }) => {
               <li>
                 <strong>Player Registration Fee:</strong>
                 <ul className="list-[circle] pl-5 space-y-1 mt-1 text-slate-600">
-                  <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> for participants who have participated in prior RPL seasons.</li>
-                  <li><strong>New Participants:</strong> <strong>₹3,600</strong> for first-time athletes enrolling in the open player draft.</li>
+                  <li><strong>Returning RPL Family:</strong> <strong>₹3,600</strong> (All-Games Tournament Pass; one-time ₹300 new player registration fee waived).</li>
+                  <li><strong>New Participants:</strong> <strong>₹3,900</strong> for first-time athletes enrolling in the open player draft, broken down as <strong>₹3,600</strong> (All-Games Tournament Pass with official stay & meals) + <strong>₹300</strong> (One-time RPL player registration).</li>
                   <li><strong>What's Included:</strong> Enrollment in all selected eligible sports, 2 nights of official tournament stay (check-in Dec 25 to check-out Dec 27, 2026), all daily meals (breakfast, lunch, dinner, late-night snacks), and one official RPL Season 9 tournament jersey.</li>
                 </ul>
               </li>

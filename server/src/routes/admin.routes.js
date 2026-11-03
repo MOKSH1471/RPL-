@@ -73,7 +73,7 @@ router.get('/admin/stats', async (req, res) => {
 
       const selected = Array.isArray(gen.selectedSports) ? gen.selectedSports : (isSpectator ? ['spectator'] : []);
       const isReturningFamily = gen.existingRplFamily === 'Yes';
-      let calculatedFee = 3600;
+      let calculatedFee = isReturningFamily ? 3600 : 3900;
       if (isSpectator) {
         const hasStay = gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes';
         const hasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
