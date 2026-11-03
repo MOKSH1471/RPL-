@@ -4211,20 +4211,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           </div>
                         </div>
 
-                        {/* Committee Selection Note */}
-                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/90 border border-pink-300 shadow-xs flex items-start space-x-3 text-xs leading-relaxed">
-                          <div className="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                            📢
-                          </div>
-                          <div>
-                            <strong className="text-pink-950 block text-[11px] uppercase tracking-wider mb-0.5 font-extrabold">
-                              Selection Notice:
-                            </strong>
-                            <p className="text-pink-900 font-semibold">
-                              18 women will be selected in main league based on last few year's performance by RPL core team. ₹500 extra will be charged for jersey if selected.
-                            </p>
-                          </div>
-                        </div>
+
 
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
