@@ -130,6 +130,25 @@ test('RPL Pricing Rule: Multi-sport with Football is charged ₹4,100 (3600 + 50
   }
 });
 
+test('RPL Pricing Rule: Dedicated Main League Jersey order creation charges ₹500 (50000 paise)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      purpose: 'main_league_jersey',
+      registrationId: 'reg_test_female_001',
+      fullName: 'Promoted Female Player',
+      mobile: '9899009911',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 50000, 'Main League jersey fee must be ₹500 (50000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 500);
+  }
+});
+
 test('RPL Pricing Rule: Multi-sport with Football + Extra T-shirt is charged ₹4,600 (3600 + 500 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',

@@ -277,13 +277,19 @@ const isSportAllowedForPlayer = (
   sportId: SportType,
   gender?: string,
   age?: number | null,
-  isVerifiedMale?: boolean
+  isVerifiedMale?: boolean,
+  isMainLeagueSelected?: boolean
 ) => {
-  // RPL Cricket League and Football League are exclusively for male participants (HariBhai)
-  // (Women participate in RPL Cricket League on a selection basis from Women's Cricket League)
-  if (sportId === 'cricket' || sportId === 'football') {
+  // Football League is exclusively for male participants (HariBhai)
+  if (sportId === 'football') {
     if (gender === 'Female') {
       return false;
+    }
+  }
+  // RPL Cricket League: Open to male participants and the 18 selected female players
+  if (sportId === 'cricket') {
+    if (gender === 'Female') {
+      return Boolean(isMainLeagueSelected);
     }
   }
   // Table Tennis and Carrom are open to all categories of people: male, female, kachapaka (any age)
@@ -704,8 +710,16 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
   const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
 
+  const isMainLeagueSelectedFemale = currentGender === 'Female' && Boolean(
+    (mumukshuCardInfo as any)?.generalDetails?.selectedForMainLeague ||
+    (mumukshuCardInfo as any)?.general_details?.selectedForMainLeague ||
+    (initialPrefillData as any)?.general_details?.selectedForMainLeague ||
+    (initialPrefillData as any)?.generalDetails?.selectedForMainLeague
+  );
+
   const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
-  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + footballJerseyCost + extraTshirtCost);
+  const womanMainLeagueJerseyCost = isMainLeagueSelectedFemale ? 500 : 0;
+  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + footballJerseyCost + womanMainLeagueJerseyCost + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
   const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
@@ -721,14 +735,14 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
   // Filter available sports dynamically based on player's gender and age
   const allowedSports = useMemo(() => {
-    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge, isVerifiedMale));
-  }, [currentGender, playerAge, isVerifiedMale]);
+    return AVAILABLE_SPORTS.filter((s) => isSportAllowedForPlayer(s.id, currentGender, playerAge, isVerifiedMale, isMainLeagueSelectedFemale));
+  }, [currentGender, playerAge, isVerifiedMale, isMainLeagueSelectedFemale]);
 
   // When gender or age/DOB changes, automatically remove any disallowed sports from selectedSports
   useEffect(() => {
     if (isSpectator) return;
     setSelectedSports((prev) => {
-      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale));
+      const valid = prev.filter((s) => isSportAllowedForPlayer(s, currentGender, playerAge, isVerifiedMale, isMainLeagueSelectedFemale));
       if (valid.length > 0) {
         if (valid.length !== prev.length) {
           setValue('selectedSports', valid, { shouldValidate: true });
@@ -1551,7 +1565,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
     const effectiveTotalAmount = previousPaidAmount > 0
       ? previousPaidAmount
-      : (isSpectator ? spectatorTotalFee : (playerBaseFee + footballJerseyCost + extraTshirtCost));
+      : (isSpectator ? spectatorTotalFee : (playerBaseFee + footballJerseyCost + (isMainLeagueSelectedFemale ? 500 : 0) + extraTshirtCost));
 
     const effectivePaymentUtr = paymentUtr || previousUtrs.join(', ') || undefined;
     const effectivePaymentReceipt = paymentReceiptUrl || previousReceiptUrls.join(', ') || undefined;
@@ -3480,7 +3494,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Note for Women's Registration:
                         </span>
                         <p className="font-semibold text-pink-900 leading-snug">
-                          18 women will be selected in main league based on last few year's performance by RPL core team for mens main league.
+                          18 women will be selected in main league based on last few year&apos;s performance by RPL core team (+₹500 jersey fee for the dedicated Main League team jersey).
                         </p>
                       </div>
                     </div>

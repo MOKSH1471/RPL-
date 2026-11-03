@@ -393,6 +393,29 @@ test('Cricket Turf Rules: accepts only approved spin bowling variations for Bowl
   assert.strictEqual(validateCricketBowlingStyle('All-Rounder', null).valid, true);
 });
 
+test('Main League Women Eligibility: female player selected for Main League is allowed in cricket', () => {
+  function isSportAllowedForPlayer(sportId, gender, age, isVerifiedMale, isMainLeagueSelected) {
+    if (sportId === 'football') {
+      if (gender === 'Female') return false;
+    }
+    if (sportId === 'cricket') {
+      if (gender === 'Female') return Boolean(isMainLeagueSelected);
+    }
+    if (sportId === 'womens-sports') {
+      if (gender === 'Male' || isVerifiedMale) return false;
+      return true;
+    }
+    return true;
+  }
+
+  // Unselected female is blocked from cricket
+  assert.strictEqual(isSportAllowedForPlayer('cricket', 'Female', 25, false, false), false);
+  // Promoted female is allowed in cricket
+  assert.strictEqual(isSportAllowedForPlayer('cricket', 'Female', 25, false, true), true);
+  // Promoted female is still blocked from football
+  assert.strictEqual(isSportAllowedForPlayer('football', 'Female', 25, false, true), false);
+});
+
 test('League Types: verifies all 7 official RPL league types including spectator', () => {
   const VALID_LEAGUE_TYPES = [
     'cricket',

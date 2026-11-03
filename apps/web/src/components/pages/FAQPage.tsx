@@ -137,7 +137,7 @@ const FAQ_DATA: FAQItem[] = [
     answer: (
       <div className="space-y-2">
         <p>
-          Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League.
+          Yes. All female players can register for the Female League. Additionally, the RPL Organizing Team will select 18 female players who will also earn a spot to compete in the RPL Main League. Those 18 selected female players will receive their dedicated Main League team jersey for a <strong>₹500</strong> jersey fee (payable directly via Find/Check Pass on the website or via cash/direct admin approval).
         </p>
       </div>
     ),

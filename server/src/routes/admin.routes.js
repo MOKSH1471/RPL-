@@ -33,6 +33,7 @@ router.get('/admin/stats', async (req, res) => {
 
     let playersCount = 0;
     let spectatorsCount = 0;
+    let mainLeagueWomenCount = 0;
 
     const tshirtSizes = {
       XS: 0,
@@ -83,6 +84,11 @@ router.get('/admin/stats', async (req, res) => {
       } else {
         const hasFootballMultiSport = selected.includes('football') && selected.length > 1;
         if (hasFootballMultiSport) calculatedFee += 500;
+        const isSelectedWoman = (gen.gender === 'Female' || r.gender === 'Female') && Boolean(gen.selectedForMainLeague);
+        if (isSelectedWoman) {
+          mainLeagueWomenCount++;
+          calculatedFee += 500;
+        }
         const hasExtraTshirt = gen.extraTshirt === 'Yes';
         if (hasExtraTshirt) calculatedFee += 500;
       }
@@ -136,6 +142,7 @@ router.get('/admin/stats', async (req, res) => {
         allRegistrationsCount: regs.length,
         playersCount,
         spectatorsCount,
+        mainLeagueWomenCount,
         archivedCount,
         payment: { approved, pending, rejected, archived: archivedCount },
         financials: {
@@ -316,6 +323,120 @@ router.patch('/admin/registrations/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating player details:', error);
     res.status(500).json({ success: false, error: error.message || 'Failed to update player details.' });
+  }
+});
+
+// 4.5 Admin Endpoint: Toggle RPL Main League Promotion for Female Players (Max 18 Quota)
+router.post('/admin/registrations/:id/main-league-promotion', async (req, res) => {
+  const { id } = req.params;
+  const { selected, feePaid } = req.body;
+  const shouldSelect = Boolean(selected);
+
+  try {
+    const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+
+    const reg = existing[0];
+    let gen = {};
+    try {
+      gen = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details) : (reg.general_details || {});
+    } catch (e) {
+      gen = {};
+    }
+
+    if (gen.gender !== 'Female' && reg.gender !== 'Female') {
+      return res.status(400).json({ success: false, error: 'Main League Women selection is exclusively for female participants.' });
+    }
+
+    if (shouldSelect && !gen.selectedForMainLeague) {
+      // Check 18-player quota among active registrations
+      const [allRows] = await db.query(`SELECT general_details, is_archived FROM ${RPL_DB}.rpl_registrations WHERE is_archived = 0`);
+      let currentSelectedCount = 0;
+      for (const r of allRows) {
+        let g = {};
+        try {
+          g = typeof r.general_details === 'string' ? JSON.parse(r.general_details) : (r.general_details || {});
+        } catch (_) {}
+        if (g.selectedForMainLeague) currentSelectedCount++;
+      }
+
+      if (currentSelectedCount >= 18) {
+        return res.status(400).json({
+          success: false,
+          error: `Main League Women quota full (18/18 players already selected). Please deselect another player first.`,
+        });
+      }
+    }
+
+    gen.selectedForMainLeague = shouldSelect;
+    if (shouldSelect) {
+      gen.mainLeagueSelectedAt = gen.mainLeagueSelectedAt || new Date().toISOString();
+      if (feePaid !== undefined) {
+        gen.mainLeagueFeeStatus = feePaid ? 'approved' : 'pending';
+      } else if (!gen.mainLeagueFeeStatus) {
+        gen.mainLeagueFeeStatus = 'pending';
+      }
+
+      // Add cricket to selectedSports if not already present
+      let sports = Array.isArray(gen.selectedSports) ? [...gen.selectedSports] : ['womens-sports'];
+      if (!sports.includes('cricket')) {
+        sports.push('cricket');
+      }
+      gen.selectedSports = sports;
+    } else {
+      // Demote
+      delete gen.mainLeagueSelectedAt;
+      if (feePaid !== true) {
+        delete gen.mainLeagueFeeStatus;
+      }
+      let sports = Array.isArray(gen.selectedSports) ? [...gen.selectedSports] : [];
+      gen.selectedSports = sports.filter((s) => s !== 'cricket');
+    }
+
+    // Recalculate totalAmount
+    const baseFee = 3600;
+    const hasFootballMulti = gen.selectedSports.includes('football') && gen.selectedSports.length > 1;
+    const hasTshirt = gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+    const mainLeagueCost = gen.selectedForMainLeague ? 500 : 0;
+    gen.totalAmount = baseFee + (hasFootballMulti ? 500 : 0) + (hasTshirt ? 500 : 0) + mainLeagueCost;
+    gen.calculatedFee = gen.totalAmount;
+
+    // Record cash/direct transaction in rpl_transactions if feePaid is true
+    if (shouldSelect && feePaid === true) {
+      const mobile10 = String(reg.mobile || '').replace(/\D/g, '').slice(-10);
+      const cardNoVal = gen.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+      try {
+        await db.query(
+          `INSERT INTO ${RPL_DB}.rpl_transactions 
+           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt)
+           VALUES (?, ?, 'main_league_jersey', 500, 0, 'CASH_DIRECT_APPROVAL', 'RPL Main League Jersey Fee (Direct Approval)', 'completed', 'ADMIN_DIRECT', NOW(), NOW())
+           ON DUPLICATE KEY UPDATE status = 'completed', updatedAt = NOW()`,
+          [cardNoVal, id]
+        );
+      } catch (txErr) {
+        console.warn('Could not insert transaction log for direct approval:', txErr.message);
+      }
+    }
+
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_registrations 
+       SET general_details = ? 
+       WHERE id = ?`,
+      [JSON.stringify(gen), id]
+    );
+
+    res.json({
+      success: true,
+      message: shouldSelect
+        ? `Player successfully selected for RPL Main League (Jersey fee: ${gen.mainLeagueFeeStatus === 'approved' ? 'Paid' : 'Pending'}).`
+        : 'Player removed from RPL Main League.',
+      general_details: gen,
+    });
+  } catch (error) {
+    console.error('Error in main league promotion:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to update Main League selection.' });
   }
 });
 

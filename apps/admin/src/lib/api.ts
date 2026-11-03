@@ -235,6 +235,17 @@ export async function updatePaymentStatus(id: string, status: 'approved' | 'reje
   return data;
 }
 
+export async function toggleMainLeaguePromotion(id: string, selected: boolean, feePaid?: boolean) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/main-league-promotion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected, feePaid }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to update Main League selection (Status ${res.status})`);
+  return data;
+}
+
 export async function toggleArchiveRegistration(id: string, is_archived: boolean) {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/archive`, {
     method: 'POST',
