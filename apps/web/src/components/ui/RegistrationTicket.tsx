@@ -42,8 +42,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     : Array.isArray((data as any).spectatorDays) && (data as any).spectatorDays.length > 0
       ? (data as any).spectatorDays
       : ((data as any).checkInDate && (data as any).checkOutDate
-          ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : (((data as any).checkInDate === '2026-12-25' && (data as any).checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [(data as any).checkInDate, (data as any).checkOutDate]))
-          : ['2026-12-25']);
+        ? ((data as any).checkInDate === (data as any).checkOutDate ? [(data as any).checkInDate] : (((data as any).checkInDate === '2026-12-25' && (data as any).checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [(data as any).checkInDate, (data as any).checkOutDate]))
+        : ['2026-12-25']);
 
   const specDayCount = Math.max(1, specDatesList.length);
   const hasStay = data.accommodationRequired === 'Yes' || (data as any).spectatorOption === 'with-stay';
@@ -87,8 +87,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         return 'Kaccha Pakka Cricket League';
       case 'spectator':
         return hasStay
-          ? 'Spectator Pass (With Stay)'
-          : `Spectator Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • ${formatDatesPretty(specDatesList)})`;
+          ? '90’s Nostalgia Pass (With Stay)'
+          : `90’s Nostalgia Pass (${specDayCount} ${specDayCount === 1 ? 'Day' : 'Days'} • ${formatDatesPretty(specDatesList)})`;
       default:
         return sport;
     }
@@ -227,7 +227,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           {data.nostalgiaSport && data.nostalgiaSport !== 'None' && (
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
               <span className="text-xs text-amber-800 font-bold uppercase tracking-wider block mb-0.5">
-                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90’s Nostalgia Games' : '90’s Nostalgia Game'}
+                {Array.isArray(data.nostalgiaSport) && data.nostalgiaSport.length > 1 ? '90’s Nostalgia Pass' : '90’s Nostalgia Pass'}
               </span>
               <span className="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
                 <span>🕹️</span>
@@ -246,7 +246,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                     <div>
                       <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
                         {isSpectator
-                          ? `Official Spectator Pass (${hasStay ? 'With Stay' : `${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'}`})`
+                          ? `Official 90’s Nostalgia Pass (${hasStay ? 'With Stay' : `${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'}`})`
                           : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
                       </span>
                       <span className="text-[11px] text-amber-800 font-medium">
@@ -278,40 +278,40 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
       {/* Bottom Information & Action Buttons */}
       <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
-            {/* Official Registration Confirmation Note */}
-            <div className="p-4 rounded-2xl flex flex-col space-y-2.5 text-xs bg-emerald-50/80 border border-emerald-200 text-emerald-900">
-              <div className="flex items-start space-x-3">
-                <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
-                <p className="leading-relaxed">
-                  Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
-                </p>
-              </div>
-              <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                <span>Tournament Policy: No refund in case of no show or cancellation.</span>
-              </div>
-            </div>
+        {/* Official Registration Confirmation Note */}
+        <div className="p-4 rounded-2xl flex flex-col space-y-2.5 text-xs bg-emerald-50/80 border border-emerald-200 text-emerald-900">
+          <div className="flex items-start space-x-3">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
+            <p className="leading-relaxed">
+              Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
+            </p>
+          </div>
+          <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+          </div>
+        </div>
 
-            {/* Action Buttons: Equal Size Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 items-stretch">
-              <a
-                href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center text-center space-x-2"
-              >
-                <MessageCircle className="w-4 h-4 shrink-0" />
-                <span>Join Official WhatsApp Group</span>
-              </a>
+        {/* Action Buttons: Equal Size Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 items-stretch">
+          <a
+            href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center text-center space-x-2"
+          >
+            <MessageCircle className="w-4 h-4 shrink-0" />
+            <span>Join Official WhatsApp Group</span>
+          </a>
 
-              <button
-                type="button"
-                onClick={onReset}
-                className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs sm:text-sm transition-all border border-slate-300 flex items-center justify-center text-center space-x-2 cursor-pointer"
-              >
-                <span>Register Another Participant</span>
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs sm:text-sm transition-all border border-slate-300 flex items-center justify-center text-center space-x-2 cursor-pointer"
+          >
+            <span>Register Another Participant</span>
+          </button>
+        </div>
       </div>
     </div>
   );

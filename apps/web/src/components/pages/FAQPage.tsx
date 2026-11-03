@@ -41,7 +41,7 @@ const CATEGORIES = [
   { id: 'leagues', label: 'Leagues & Eligibility', icon: <Trophy className="w-4 h-4" /> },
   { id: 'football', label: 'Football & Single-Sport', icon: <Calendar className="w-4 h-4" /> },
   { id: 'schedule', label: 'Schedule & Stay', icon: <Clock className="w-4 h-4" /> },
-  { id: 'spectator', label: 'Spectator Passes', icon: <Ticket className="w-4 h-4" /> },
+  // { id: 'spectator', label: '90’s Nostalgia Passes', icon: <Ticket className="w-4 h-4" /> },
   { id: 'rules', label: 'Rules & Rosters', icon: <ShieldCheck className="w-4 h-4" /> },
   { id: 'contact', label: 'Official Coordinators', icon: <Phone className="w-4 h-4" /> },
 ] as const;
@@ -323,11 +323,12 @@ const FAQ_DATA: FAQItem[] = [
     tags: ['Early Arrival', 'Extended Stay', 'Pre Stay', 'Post Stay', 'Waitlist', 'Research Centre', 'WhatsApp', 'Hospitality', 'Check In', 'Check Out', '24 Dec', '28 Dec'],
   },
 
-  // 5. Spectator Packages & 90s Nostalgia Games
+  // 5. Spectator Packages & 90s Nostalgia Games (Commented out temporarily)
+  /*
   {
     id: 'spectator-packages',
     category: 'spectator',
-    question: 'What spectator pass options are available, and what are the charges?',
+    question: 'What 90’s Nostalgia pass options are available, and what are the charges?',
     searchableAnswer:
       'Single-Day Day Pass (Without Stay): ₹720 / day. Pick 1, 2, or all 3 days (1 day = ₹720, 2 days = ₹1,440, 3 days = ₹2,160). Includes arena entry, match viewing, cheering zones, and late-night snacks. Daytime meals (Breakfast, Lunch & Dinner) must be booked separately on the Aashray App. 3-Day Experience (With Stay): ₹3,600 total. Includes full 3-day stay (2 nights), all daily sattvic vegetarian meals (Breakfast, Lunch & Dinner), late-night snacks, match access, and full entry to 90s Nostalgia Games. Optional t-shirt add-on +₹500.',
     answer: (
@@ -361,12 +362,12 @@ const FAQ_DATA: FAQItem[] = [
         </p>
       </div>
     ),
-    tags: ['Spectator Pass', 'Day Pass', 'Visitor', '720', '1440', '2160', '3600', 'Meals', 'Aashray App'],
+    tags: ['90’s Nostalgia Pass', 'Day Pass', 'Visitor', '720', '1440', '2160', '3600', 'Meals', 'Aashray App'],
   },
   {
     id: 'spectator-single-day-overnight',
     category: 'spectator',
-    question: 'Can I get a 1-day spectator pass that includes an overnight stay and full meals?',
+    question: 'Can I get a 1-day 90’s Nostalgia Game pass that includes an overnight stay and full meals?',
     searchableAnswer:
       'No, that is not possible. Due to room allocation policies and dining management at the Research Centre, overnight accommodation and full meal packages cannot be booked on a single-day basis. If you require overnight stay and full dining included with your pass, you must select the Full 3-Day Spectator Package with Accommodation (₹3,600). Single-day pass holders (₹720/day) must arrange their own stay and book their meals on the Aashray App.',
     answer: (
@@ -399,6 +400,7 @@ const FAQ_DATA: FAQItem[] = [
     ),
     tags: ['90s Nostalgia', 'Spectator Entry', 'Finals', 'Lemon Spoon', 'Duckwalk', 'Skipping', 'Relay'],
   },
+  */
 
   // 6. Rules, Regulations & Match Lineups
   {
@@ -609,7 +611,7 @@ export const FAQPage: React.FC<FAQPageProps> = ({ onBackToHome, onRegisterClick,
           </h1>
 
           <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed font-medium">
-            Everything you need to know about participant eligibility, championship leagues, tournament stay packages, spectator passes, and coordinator contacts.
+            Everything you need to know about participant eligibility, championship leagues, tournament stay packages, 90’s Nostalgia passes, and coordinator contacts.
           </p>
 
           {/* Search Input Box (Full-Text Search Across Questions & Answers) */}
@@ -791,7 +793,7 @@ export const FAQPage: React.FC<FAQPageProps> = ({ onBackToHome, onRegisterClick,
           </div>
         </div>
       </div>
-    
+
       {/* ── Official Global Footer ── */}
       <Footer onRegisterClick={onRegisterClick} onCheckPassClick={onCheckPassClick} />
     </div>

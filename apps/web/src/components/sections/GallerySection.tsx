@@ -347,7 +347,7 @@ export const GallerySection: React.FC = () => {
     },
     {
       id: 'sp-patron-1',
-      title: 'Bakul Bhai Doshi',
+      title: 'Bakul Bhai Shah',
       category: 'sponsors',
       image: '/sponsors/sponsor-1.jpg',
     },

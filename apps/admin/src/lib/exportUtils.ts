@@ -50,7 +50,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Selected Sports',
     'Pass / Stay Option',
     'Spectator T-Shirt (+₹500)',
-    '90’s Nostalgia Games',
+    '90’s Nostalgia Pass',
     'Jersey Size',
     'Custom Jersey Name',
     'Preferred Jersey Number',
@@ -93,8 +93,8 @@ export function exportMasterRegistrations(registrations: any[]) {
     const nostalgiaGames = isSpectator && !isSpectatorAll3Days
       ? 'Not Eligible (Requires 3-Day Pass)'
       : (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
-          ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
-          : (gen.nostalgiaSport || gen.nostalgia_sport || '-'));
+        ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+        : (gen.nostalgiaSport || gen.nostalgia_sport || '-'));
 
     return [
       escapeCSV(r.id),
@@ -229,8 +229,8 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     const specNostalgia = !isSpectatorAll3Days
       ? 'Not Eligible'
       : (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport)
-          ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ')
-          : (gen.nostalgiaSport || gen.nostalgia_sport || 'Open'));
+        ? (gen.nostalgiaSport || gen.nostalgia_sport).join('; ')
+        : (gen.nostalgiaSport || gen.nostalgia_sport || 'Open'));
     const formattedDetails = isSpectator
       ? `Package: ${passPkg} | T-Shirt: ${gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes' ? `Opted In (${gen.tshirtSize || 'L'})` : 'No'} | 90's Nostalgia Games: ${specNostalgia}`
       : Object.entries(sportDetails)

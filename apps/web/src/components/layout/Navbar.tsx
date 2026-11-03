@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, Search, Ticket } from 'lucide-react';
+import { Menu, X, ArrowRight, Search, Ticket, Trophy, Sparkles, ChevronDown } from 'lucide-react';
 import { FlipText } from '@/components/ui/RevealLinks';
 
 interface NavbarProps {
@@ -29,6 +29,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('about');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [registerDropdownOpen, setRegisterDropdownOpen] = useState(false);
+  const registerDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (registerDropdownRef.current && !registerDropdownRef.current.contains(e.target as Node)) {
+        setRegisterDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const tickingRef = useRef(false);
   const isManualScrollingRef = useRef(false);
@@ -323,36 +335,82 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
 
-              {/* Spectator Reg CTA */}
-              <button
-                type="button"
-                onClick={() => {
-                  document.body.style.overflow = '';
-                  setMobileMenuOpen(false);
-                  onSpectatorClick?.();
-                }}
-                className="hidden lg:inline-flex items-center space-x-1.5 py-1 px-3 sm:py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300/80 font-bold text-[10px] sm:text-xs uppercase tracking-wider shadow-2xs hover:shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
-                title="Check Registration Pass or Pay Pending Dues"
+              {/* Unified Register Now Dropdown for Desktop */}
+              <div
+                className="relative hidden sm:inline-block"
+                ref={registerDropdownRef}
+                onMouseEnter={() => setRegisterDropdownOpen(true)}
+                onMouseLeave={() => setRegisterDropdownOpen(false)}
               >
-                <Ticket className="w-3.5 h-3.5 text-amber-600" />
-                <span>Spectator Registration</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setRegisterDropdownOpen(!registerDropdownOpen)}
+                  className="py-1.5 px-4 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[11px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 min-h-[34px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
+                  aria-expanded={registerDropdownOpen}
+                  aria-haspopup="true"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Register Now</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${registerDropdownOpen ? 'rotate-180 text-amber-200' : 'text-white/80'}`} />
+                </button>
 
-              {/* Primary "Register Now" CTA with Character Flip Animation */}
-              <motion.button
-                type="button"
-                initial="initial"
-                whileHover="hovered"
-                whileTap="hovered"
-                onClick={() => {
-                  document.body.style.overflow = '';
-                  setMobileMenuOpen(false);
-                  onRegisterClick();
-                }}
-                className="hidden sm:flex py-1.5 px-3 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:to-pink-400 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm hover:shadow-md active:scale-95 transition-all items-center justify-center min-h-[32px] sm:min-h-[40px] touch-manipulation cursor-pointer border border-amber-300/30 shrink-0 whitespace-nowrap"
-              >
-                <FlipText>Player Registration</FlipText>
-              </motion.button>
+                {/* Popover Dropdown with 2 Options */}
+                <AnimatePresence>
+                  {registerDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="absolute right-0 top-full pt-2 w-72 z-50 pointer-events-auto"
+                    >
+                      <div className="p-2 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-2xl shadow-slate-900/15 space-y-1.5 ring-1 ring-black/5">
+                        {/* Option 1: Player Registration */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterDropdownOpen(false);
+                            onRegisterClick();
+                          }}
+                          className="w-full p-2.5 rounded-xl hover:bg-amber-50/80 active:bg-amber-100/70 border border-transparent hover:border-amber-200/70 flex items-center gap-3 text-left transition-all cursor-pointer group"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                            <Trophy className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-extrabold text-xs text-slate-900 flex items-center justify-between">
+                              <span>Player Registration</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-amber-100 text-amber-900 border border-amber-200">Sports</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 truncate mt-0.5">Cricket, Football, TT, Carrom & more</p>
+                          </div>
+                        </button>
+
+                        {/* Option 2: 90’s Nostalgia Pass */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterDropdownOpen(false);
+                            onSpectatorClick?.();
+                          }}
+                          className="w-full p-2.5 rounded-xl hover:bg-orange-50/80 active:bg-orange-100/70 border border-transparent hover:border-orange-200/70 flex items-center gap-3 text-left transition-all cursor-pointer group"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                            <Ticket className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-extrabold text-xs text-slate-900 flex items-center justify-between">
+                              <span>90’s Nostalgia Pass</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-orange-100 text-orange-900 border border-orange-200">Pass</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 truncate mt-0.5">Full Stay Experience</p>
+                          </div>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Mobile Hamburger Toggle (3 Bars) */}
               <div className="md:hidden">
@@ -479,7 +537,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full py-2 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-extrabold text-xs uppercase tracking-wider border border-amber-300 active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[38px]"
                     >
                       <Ticket className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Spectator Registration</span>
+                      <span>90’s Nostalgia Pass</span>
                     </button>
                   </div>
                 </div>

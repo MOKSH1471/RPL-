@@ -2058,7 +2058,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
           <h1 className="font-display text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-3 tracking-tight leading-tight">
             {isSpectator ? (
-              <>Official Spectator <span className="text-gradient-vibrant">Pass</span></>
+              <>Official 90’s Nostalgia <span className="text-gradient-vibrant">Pass</span></>
             ) : (
               <>Official Championship <span className="text-gradient-vibrant">Entry</span></>
             )}
@@ -2069,10 +2069,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               : 'Complete your general details first, then select your sports from the multi-choice dropdown to customize positions.'}
           </p>
 
-          {/* Registration Mode Switcher: Player Pass vs Spectator Pass — Hidden on confirmation screen */}
+          {/* Registration Mode Switcher: Player Pass vs 90’s Nostalgia Pass — Hidden on confirmation screen */}
           {!submittedData && (
             <div className="flex flex-col items-center justify-center mb-6 w-full px-1">
-              <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-lg w-full gap-1 sm:gap-1.5">
+              <div className="grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 border border-slate-200/90 shadow-inner max-w-xl w-full gap-1 sm:gap-1.5">
                 <button
                   type="button"
                   disabled={isExistingPlayerRegistration && existingRegistrationType === 'spectator'}
@@ -2085,7 +2085,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     }
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'spectator' ? 'You have registered as a Spectator and cannot switch to Player registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'spectator'
+                  className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all text-center leading-tight ${isExistingPlayerRegistration && existingRegistrationType === 'spectator'
                     ? 'opacity-40 cursor-not-allowed text-slate-400'
                     : !isSpectator
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 cursor-pointer'
@@ -2093,7 +2093,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     }`}
                 >
                   <Trophy className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${!isSpectator ? 'text-amber-500' : 'text-slate-400'}`} />
-                  <span className="whitespace-nowrap">Player Registration</span>
+                  <span>Player Registration</span>
                 </button>
 
                 <button
@@ -2107,7 +2107,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     setValue('extraTshirt', getValues('spectatorTshirt') || 'No', { shouldValidate: true });
                   }}
                   title={isExistingPlayerRegistration && existingRegistrationType === 'player' ? 'You have registered as a Player and cannot switch to Spectator registration while modifying your entry.' : undefined}
-                  className={`py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${isExistingPlayerRegistration && existingRegistrationType === 'player'
+                  className={`py-2 sm:py-2.5 px-1.5 sm:px-3 rounded-xl font-extrabold text-[11px] sm:text-xs md:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all text-center leading-tight ${isExistingPlayerRegistration && existingRegistrationType === 'player'
                     ? 'opacity-40 cursor-not-allowed text-slate-400'
                     : isSpectator
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 cursor-pointer'
@@ -2115,7 +2115,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="whitespace-nowrap">Spectator Registration</span>
+                  <span>90’s Nostalgia Pass</span>
                 </button>
               </div>
 
@@ -2614,7 +2614,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           </h4>
                         </div>
                         <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                          Spectator pass does not include a free jersey. You can optionally purchase the official RPL Season 9 jersey for <strong className="text-amber-950 font-extrabold">+₹500</strong>.
+                          90’s Nostalgia pass does not include a free jersey. You can optionally purchase the official RPL Season 9 jersey for <strong className="text-amber-950 font-extrabold">+₹500</strong>.
                         </p>
                       </div>
                       <div className="shrink-0 w-full sm:w-auto">
@@ -2969,7 +2969,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-600" />
-                            Official Spectator Pass with Stay • ₹3,600
+                            Official 90’s Nostalgia Pass with Stay • ₹3,600
                           </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-200 text-amber-900 border border-amber-300">
                             2N & 3D INCLUDED
@@ -2988,7 +2988,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
-                            Spectator Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹720/day)
+                            90’s Nostalgia Day Pass • ₹{spectatorBaseFee.toLocaleString('en-IN')} ({spectatorDates.length} {spectatorDates.length === 1 ? 'Day' : 'Days'} • ₹720/day)
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${spectatorDates.length === 3
                             ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
@@ -4444,7 +4444,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                      {isSpectator ? '90’s Nostalgia Games' : '90’s Nostalgia Games'}
+                      {isSpectator ? '90’s Nostalgia Pass' : '90’s Nostalgia Pass'}
                     </h3>
                     {isSpectator && (
                       isSpectatorAll3Days ? (
@@ -4462,7 +4462,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
                     {isSpectator
                       ? (isSpectatorAll3Days
-                        ? "Included with your 3-day Spectator Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
+                        ? "Included with your 3-day 90’s Nostalgia Pass! Relive the golden era of classic childhood games. Select any games you'd like to participate in (all included with your pass)."
                         : "Participation in 90’s Nostalgia games is exclusive to participants attending for all 3 days (either With Stay or 3-Day Pass).")
                       : "Relive the golden era of nostalgic childhood games! Select any sport below to participate in the special 90’s Nostalgia games division (open for all participants)."}
                   </p>
@@ -4674,7 +4674,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-display text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
-                          {isSpectator ? 'Payment & Spectator Pass' : 'Payment & Registration Fee'}
+                          {isSpectator ? 'Payment & 90’s Nostalgia Pass' : 'Payment & Registration Fee'}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[10px] sm:text-xs shrink-0 ${existingPaymentStatus === 'approved' && totalPayableFee === 0
                           ? 'bg-emerald-200 text-emerald-900 border border-emerald-300'
@@ -4699,12 +4699,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                       </div>
                       <div className="min-w-0">
                         <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
-                          {isSpectator ? 'Spectator Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
+                          {isSpectator ? '90’s Nostalgia Pass Fee Summary' : (isReturningPaidUser ? 'Tournament Pass Status' : 'Registration Fee Summary')}
                         </span>
                         <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
                           {isSpectator ? (
                             currentAcc === 'Yes'
-                              ? `Spectator Pass with Stay: ₹3,600${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹4,100' : ''}`
+                              ? `90’s Nostalgia Pass with Stay: ₹3,600${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt = ₹4,100' : ''}`
                               : `Spectator Day Pass (${spectatorDates.length} ${spectatorDates.length === 1 ? 'Day' : 'Days'} × ₹720 = ₹${(spectatorDates.length * 720).toLocaleString('en-IN')})${currentSpectatorTshirt === 'Yes' ? ' + ₹500 Official T-Shirt' : ''}`
                           ) : isReturningPaidUser ? (
                             currentExtraTshirt === 'Yes'
@@ -4876,12 +4876,12 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                         <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
                       ) : totalPayableFee > 0 ? (
                         <>
-                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get Spectator Pass' : 'Complete Registration'}</span>
+                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get 90’s Nostalgia Pass' : 'Complete Registration'}</span>
                           <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                         </>
                       ) : (
                         <>
-                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get Spectator Pass' : 'Submit Registration')}</span>
+                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get 90’s Nostalgia Pass' : 'Submit Registration')}</span>
                           <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
                         </>
                       )}

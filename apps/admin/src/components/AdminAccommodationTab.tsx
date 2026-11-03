@@ -206,15 +206,15 @@ export function AdminAccommodationTab({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* ========================================================================= */}
       {/* SECTION 1: DYNAMIC ROOM ALLOTMENT SUMMARY (CLEAN LIGHT RPL THEME) */}
       {/* ========================================================================= */}
       <div className="space-y-4">
-        
+
         {/* Top Summary Header & KPI Cards */}
         <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
-          
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold shrink-0">
@@ -303,7 +303,7 @@ export function AdminAccommodationTab({
 
         {/* 3-Column Summary Table Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          
+
           {/* Summary Table Filter Toolbar */}
           <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
             <div className="flex items-center space-x-2">
@@ -380,7 +380,7 @@ export function AdminAccommodationTab({
                         onClick={() => handleQuickFilterRoom(item.roomNo)}
                         title={`Click to filter participant table for Room ${item.roomNo}`}
                       >
-                        
+
                         {/* 1. ROOM NO. */}
                         <td className="py-4 px-5 align-top">
                           <div className="space-y-1.5">
@@ -390,11 +390,10 @@ export function AdminAccommodationTab({
                               </span>
                               {item.primaryGender && (
                                 <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                    item.primaryGender === 'Female'
-                                      ? 'bg-pink-100 text-pink-700 border border-pink-200'
-                                      : 'bg-blue-100 text-blue-700 border border-blue-200'
-                                  }`}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${item.primaryGender === 'Female'
+                                    ? 'bg-pink-100 text-pink-700 border border-pink-200'
+                                    : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                    }`}
                                 >
                                   {item.primaryGender} Wing
                                 </span>
@@ -435,13 +434,12 @@ export function AdminAccommodationTab({
                             {/* Visual Bed Occupancy Progress Bar */}
                             <div className="w-full max-w-[140px] h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
                               <div
-                                className={`h-full rounded-full transition-all ${
-                                  isOverbooked
-                                    ? 'bg-rose-500'
-                                    : isFull
+                                className={`h-full rounded-full transition-all ${isOverbooked
+                                  ? 'bg-rose-500'
+                                  : isFull
                                     ? 'bg-blue-500'
                                     : 'bg-emerald-500'
-                                }`}
+                                  }`}
                                 style={{ width: `${occupancyPercentage}%` }}
                               />
                             </div>
@@ -458,19 +456,18 @@ export function AdminAccommodationTab({
 
                               {/* Status Badge */}
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  isOverbooked
-                                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                    : isFull
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isOverbooked
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                  : isFull
                                     ? 'bg-blue-100 text-blue-800 border border-blue-300'
                                     : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                }`}
+                                  }`}
                               >
                                 {isOverbooked
                                   ? '⚠️ Overbooked'
                                   : isFull
-                                  ? '🔵 Full (4/4)'
-                                  : `🟢 ${vacantCount} ${vacantCount === 1 ? 'Bed' : 'Beds'} Vacant`}
+                                    ? '🔵 Full (4/4)'
+                                    : `🟢 ${vacantCount} ${vacantCount === 1 ? 'Bed' : 'Beds'} Vacant`}
                               </span>
                             </div>
 
@@ -495,11 +492,11 @@ export function AdminAccommodationTab({
       {/* SECTION 2: PARTICIPANT ROOM ALLOCATION & MANAGEMENT TABLE */}
       {/* ========================================================================= */}
       <div className="space-y-4">
-        
+
         {/* Header & Filter Controls */}
         <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            
+
             <div className="flex items-center space-x-2.5">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
                 <Bed className="w-5 h-5" />
@@ -589,12 +586,12 @@ export function AdminAccommodationTab({
                       roomInputs[bookingId] !== undefined
                         ? roomInputs[bookingId]
                         : currentRoom === 'UNASSIGNED' || currentRoom === 'RPL_UNASSIGNED' || currentRoom === 'NA'
-                        ? ''
-                        : currentRoom;
+                          ? ''
+                          : currentRoom;
 
                     return (
                       <tr key={item.registration_id} className="hover:bg-slate-50/60 transition-colors">
-                        
+
                         {/* 1. Participant Name & Phone */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -612,11 +609,10 @@ export function AdminAccommodationTab({
                         <td className="py-3.5 px-4">
                           <span className="font-bold text-slate-800 block">{item.centre}</span>
                           <span
-                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase mt-0.5 ${
-                              item.gender === 'Female'
-                                ? 'bg-pink-100 text-pink-700'
-                                : 'bg-blue-100 text-blue-700'
-                            }`}
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase mt-0.5 ${item.gender === 'Female'
+                              ? 'bg-pink-100 text-pink-700'
+                              : 'bg-blue-100 text-blue-700'
+                              }`}
                           >
                             {item.gender}
                           </span>
@@ -628,13 +624,12 @@ export function AdminAccommodationTab({
                             <span className="font-bold block">
                               {item.check_in_date || '2026-12-24'} → {item.check_out_date || '2026-12-26'}
                             </span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-sans font-semibold inline-block ${
-                              item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator'
-                                ? 'text-indigo-800 bg-indigo-50 border border-indigo-200'
-                                : 'text-amber-700 bg-amber-50'
-                            }`}>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-sans font-semibold inline-block ${item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator'
+                              ? 'text-indigo-800 bg-indigo-50 border border-indigo-200'
+                              : 'text-amber-700 bg-amber-50'
+                              }`}>
                               {item.registrationType === 'spectator' || item.general_details?.registrationType === 'spectator'
-                                ? '🎟️ Spectator Stay (Dec 25 - Dec 27)'
+                                ? '🎟️ 90’s Nostalgia Pass Stay (Dec 25 - Dec 27)'
                                 : 'Official RPL Stay'}
                             </span>
                           </div>

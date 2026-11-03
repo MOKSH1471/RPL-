@@ -58,10 +58,10 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     : Array.isArray(gen.spectatorDays) && gen.spectatorDays.length > 0
       ? gen.spectatorDays
       : (hasStay
-          ? ['2026-12-25', '2026-12-26', '2026-12-27']
-          : (gen.checkInDate && gen.checkOutDate
-              ? (gen.checkInDate === gen.checkOutDate ? [gen.checkInDate] : ((gen.checkInDate === '2026-12-25' && gen.checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [gen.checkInDate, gen.checkOutDate]))
-              : ['2026-12-25']));
+        ? ['2026-12-25', '2026-12-26', '2026-12-27']
+        : (gen.checkInDate && gen.checkOutDate
+          ? (gen.checkInDate === gen.checkOutDate ? [gen.checkInDate] : ((gen.checkInDate === '2026-12-25' && gen.checkOutDate === '2026-12-27') ? ['2026-12-25', '2026-12-26', '2026-12-27'] : [gen.checkInDate, gen.checkOutDate]))
+          : ['2026-12-25']));
   const spectatorDayCount = Math.max(1, spectatorDatesList.length);
   const isSpectatorAll3Days = isSpectator && (hasStay || spectatorDatesList.length >= 3);
   const spectatorDayFee = spectatorDayCount * 720;
@@ -213,7 +213,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 {isSpectator && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1">
                     <Ticket className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Spectator Pass</span>
+                    <span>90’s Nostalgia Pass</span>
                   </span>
                 )}
                 {isArchived ? (
@@ -405,7 +405,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               ) : isSpectator ? (
                 <div className="p-6 rounded-xl bg-indigo-50/70 border border-dashed border-indigo-200 text-center text-xs text-indigo-700 space-y-1">
                   <Ticket className="w-5 h-5 mx-auto text-indigo-500" />
-                  <p className="font-extrabold">Spectator Registration</p>
+                  <p className="font-extrabold">90’s Nostalgia Pass</p>
                   <p className="text-[11px] text-indigo-500">ID Photo & Season Enrollment was not required</p>
                 </div>
               ) : (
@@ -636,13 +636,13 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 </div>
               ) : null}
 
-              {/* Spectator Pass Inclusions Card */}
+              {/* 90’s Nostalgia Pass Inclusions Card */}
               {isSpectator && (
                 <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200/90 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-black uppercase tracking-wider text-indigo-900 flex items-center space-x-1.5">
                       <Ticket className="w-4 h-4 text-indigo-600" />
-                      <span>Spectator Pass Inclusions & Options</span>
+                      <span>90’s Nostalgia Pass Inclusions & Options</span>
                     </h3>
                     <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
                       {hasStay
@@ -658,26 +658,26 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                         {hasStay
                           ? '✅ Full Meals & Night Snacks (All 3 Days)'
                           : `🌙 Night Snacks Included (${spectatorDayCount} ${spectatorDayCount === 1 ? 'Day' : 'Days'} • ${spectatorDatesList.map(d => {
-                              const s = String(d).trim();
-                              try {
-                                const parts = s.split('-');
-                                if (parts.length === 3) {
-                                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                  const m = months[parseInt(parts[1], 10) - 1];
-                                  return `${m} ${parseInt(parts[2], 10)}`;
-                                }
-                              } catch (e) {}
-                              return s;
-                            }).join(', ')}) • ❌ No Daytime Meals`}
+                            const s = String(d).trim();
+                            try {
+                              const parts = s.split('-');
+                              if (parts.length === 3) {
+                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                const m = months[parseInt(parts[1], 10) - 1];
+                                return `${m} ${parseInt(parts[2], 10)}`;
+                              }
+                            } catch (e) { }
+                            return s;
+                          }).join(', ')}) • ❌ No Daytime Meals`}
                       </span>
                     </div>
                     <div className="p-3 rounded-xl bg-white border border-indigo-100">
-                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">90’s Nostalgia Games</span>
+                      <span className="text-indigo-400 font-bold uppercase text-[10px] block">90’s Nostalgia Pass</span>
                       <span className={`font-extrabold mt-0.5 block ${isSpectatorAll3Days ? 'text-slate-800' : 'text-rose-600'}`}>
                         {isSpectatorAll3Days
                           ? (Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) && (gen.nostalgiaSport || gen.nostalgia_sport).length > 0
-                              ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
-                              : (gen.nostalgiaSport || gen.nostalgia_sport || '✅ 90’s Nostalgia Games Open'))
+                            ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ')
+                            : (gen.nostalgiaSport || gen.nostalgia_sport || '✅ 90’s Nostalgia Pass Open'))
                           : '❌ Not Eligible (Requires 3-Day Pass)'}
                       </span>
                     </div>
