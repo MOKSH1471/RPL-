@@ -67,14 +67,14 @@ test('Razorpay Fee Calculation: Returning Family Participant (existingRplFamily:
   }
 });
 
-test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,600 for New Player (all sports included)', async () => {
+test('Razorpay Fee Calculation: 3 Sports without football charges flat event fee of ₹3,600 for New Player', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
     body: JSON.stringify({
       fullName: 'Multi Sport Player',
       email: 'player@example.com',
       mobile: '9822222222',
-      selectedSports: ['cricket', 'football', 'badminton'],
+      selectedSports: ['cricket', 'table-tennis', 'carrom'],
       existingRplFamily: 'No',
     }),
   });
@@ -82,6 +82,26 @@ test('Razorpay Fee Calculation: 3 Sports charges flat event fee of ₹3,600 for 
   assert.strictEqual(res.status, 200);
   if (res.data.orderId) {
     assert.strictEqual(res.data.amount, 360000);
+    assert.strictEqual(res.data.currency, 'INR');
+  }
+});
+
+test('Razorpay Fee Calculation: Multi-sport with Football charges ₹4,100 (3600 + 500 football jersey)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Football Multi Player',
+      email: 'fbmulti@example.com',
+      mobile: '9822222233',
+      selectedSports: ['cricket', 'football'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 410000);
+    assert.strictEqual(res.data.amountInRupees, 4100);
     assert.strictEqual(res.data.currency, 'INR');
   }
 });
@@ -175,7 +195,7 @@ test('Razorpay Fee Calculation: Returning player adding sports needs no extra pa
       fullName: 'Returning Player',
       email: 'player@example.com',
       mobile: '9876543210',
-      selectedSports: ['cricket', 'football'],
+      selectedSports: ['cricket', 'table-tennis'],
       isExistingPlayer: true,
       hasPreviouslyPaid: true,
       previouslyPaidSportsCount: 1,

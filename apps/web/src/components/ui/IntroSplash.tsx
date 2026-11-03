@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import TextMorph from './TextMorph';
-import { Flame, ArrowRight } from 'lucide-react';
+import { Flame, ArrowRight, Calendar } from 'lucide-react';
 
 interface IntroSplashProps {
   onComplete: () => void;
@@ -20,7 +20,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
 
   useEffect(() => {
     // Allows full TextMorph cycle ("SEASON 9") before smooth transition to site
-    const timer = setTimeout(() => handleEnter(), 4200);
+    const timer = setTimeout(() => handleEnter(), 5200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -92,11 +92,19 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
               &ldquo;जीतने से ज़्यादा, जिताने वाले महान है।&rdquo;
             </p>
           </div>
+
+          {/* Official Tournament Dates Badge */}
+          <div className="relative inline-flex items-center space-x-2 px-3.5 sm:px-4 py-1.5 mt-2.5 sm:mt-3 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-400/25 to-amber-500/15 border border-amber-400/60 shadow-xs backdrop-blur-xs select-none">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-700 shrink-0" />
+            <span className="text-xs sm:text-sm font-extrabold tracking-wider text-amber-950 uppercase font-sans">
+              25 – 27 Dec 2026
+            </span>
+          </div>
         </div>
 
         <div className="w-full h-36 sm:h-44 flex items-center justify-center overflow-visible">
           <TextMorph
-            words={"ARE YOU\nREADY?\nRAJ PREMIER LEAGUE\nSEASON 9"}
+            words={"ARE YOU\nREADY?\nRAJ PREMIER LEAGUE\nSEASON 9\n25-27 DEC 2026"}
             color="#0F172A"
             loop={false}
             transition={{ duration: 0.6, delay: 0.35, ease: 'backOut' }}
@@ -124,13 +132,13 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onComplete }) => {
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
 
-        {/* Accurate Countdown Progress Bar (0% -> 100% over 4.2s) */}
+        {/* Accurate Countdown Progress Bar (0% -> 100% over 5.2s) */}
         <div className="w-full bg-slate-200/80 h-1.5 rounded-full overflow-hidden shadow-inner">
           <motion.div
             className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 h-full rounded-full"
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
-            transition={{ duration: 4.2, ease: 'linear' }}
+            transition={{ duration: 5.2, ease: 'linear' }}
           />
         </div>
       </div>

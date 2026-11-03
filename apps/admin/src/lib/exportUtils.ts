@@ -145,6 +145,8 @@ export function exportJerseyVendorSheet(registrations: any[]) {
     'Jersey Size',
     'Custom Name on Jersey (Back)',
     'Preferred Number (Back)',
+    'Dedicated Football Jersey Kit',
+    'Extra T-Shirt',
     'Payment Status',
   ];
 
@@ -164,6 +166,11 @@ export function exportJerseyVendorSheet(registrations: any[]) {
 
   const rows = activeOnly.map((r, idx) => {
     const gen = r.general_details || {};
+    const sports = gen.selectedSports || [];
+    const isFootballMulti = Array.isArray(sports) && sports.includes('football') && sports.length > 1;
+    const isFootballOnly = Array.isArray(sports) && sports.includes('football') && sports.length === 1;
+    const footballKitStr = isFootballMulti ? 'YES (+1 Football Kit)' : (isFootballOnly ? 'YES (Football Only Kit)' : 'NO');
+    const extraTshirtStr = (gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes') ? 'YES (+1 Extra)' : 'NO';
     return [
       idx + 1,
       escapeCSV(r.full_name),
@@ -172,6 +179,8 @@ export function exportJerseyVendorSheet(registrations: any[]) {
       escapeCSV(gen.tshirtSize || 'L'),
       escapeCSV(gen.customJerseyName || r.full_name.toUpperCase()),
       escapeCSV(gen.preferredJerseyNumber || '-'),
+      escapeCSV(footballKitStr),
+      escapeCSV(extraTshirtStr),
       escapeCSV((r.payment_status || 'pending').toUpperCase()),
     ].join(',');
   });

@@ -238,27 +238,39 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
 
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
-                  {isSpectator
-                    ? `Official Spectator Pass (${hasStay ? 'With Stay' : `${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'}`})`
-                    : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
-                </span>
-                <span className="text-[11px] text-amber-800 font-medium">
-                  {isSpectator
-                    ? (hasStay
-                      ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included'
-                      : (isSpectatorAll3Days
-                        ? 'Night Snacks & 90’s Nostalgia Games Included (Daytime meals not included)'
-                        : `Night Snacks Included for ${formatDatesPretty(specDatesList)} (Daytime meals not included)`))
-                    : 'All selected sports included in event pass'}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
-                  ₹{(data.totalAmount || (isSpectator ? (hasStay ? 3600 : (specDayCount * 720)) : 3600)).toLocaleString('en-IN')}
-                </span>
-              </div>
+              {(() => {
+                const isFootballMultiSport = !isSpectator && sportsList.includes('football') && sportsList.length > 1;
+                const playerFallback = 3600 + (isFootballMultiSport ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
+                return (
+                  <>
+                    <div>
+                      <span className="text-xs text-amber-700 font-bold uppercase tracking-wider block mb-0.5">
+                        {isSpectator
+                          ? `Official Spectator Pass (${hasStay ? 'With Stay' : `${specDayCount} ${specDayCount === 1 ? 'Day Pass' : 'Days Pass'}`})`
+                          : `Tournament Pass (${sportsList.length} ${sportsList.length === 1 ? 'Sport' : 'Sports'})`}
+                      </span>
+                      <span className="text-[11px] text-amber-800 font-medium">
+                        {isSpectator
+                          ? (hasStay
+                            ? 'Full Meals, Night Snacks & 90’s Nostalgia Games Included'
+                            : (isSpectatorAll3Days
+                              ? 'Night Snacks & 90’s Nostalgia Games Included (Daytime meals not included)'
+                              : `Night Snacks Included for ${formatDatesPretty(specDatesList)} (Daytime meals not included)`))
+                          : (isFootballMultiSport
+                            ? 'Includes Dedicated Football Jersey (+₹500)'
+                            : (sportsList.length === 1 && sportsList.includes('football')
+                              ? 'Official Football Jersey Included in Pass'
+                              : 'All selected sports included in event pass'))}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-extrabold text-amber-900 text-lg sm:text-xl font-display">
+                        ₹{(data.totalAmount || (isSpectator ? (hasStay ? 3600 : (specDayCount * 720)) : playerFallback)).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

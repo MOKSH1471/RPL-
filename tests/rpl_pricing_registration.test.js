@@ -90,6 +90,67 @@ test('RPL Pricing Rule: Returning Participant with Extra T-shirt is charged ₹4
   }
 });
 
+test('RPL Pricing Rule: Standalone Football player is charged flat ₹3,600 (t-shirt included in pass)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Standalone Footballer',
+      email: 'footballonly@example.com',
+      mobile: '9899001166',
+      selectedSports: ['football'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 360000, 'Standalone football must be charged ₹3,600 (360000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 3600);
+  }
+});
+
+test('RPL Pricing Rule: Multi-sport with Football is charged ₹4,100 (3600 + 500 football jersey)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Cricket and Football Player',
+      email: 'cricketfootball@example.com',
+      mobile: '9899001177',
+      selectedSports: ['cricket', 'football'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 410000, 'Cricket + Football must be charged ₹4,100 (410000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 4100);
+  }
+});
+
+test('RPL Pricing Rule: Multi-sport with Football + Extra T-shirt is charged ₹4,600 (3600 + 500 + 500)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Football Multi Extra Shirt',
+      email: 'fbmultiextra@example.com',
+      mobile: '9899001188',
+      selectedSports: ['cricket', 'football'],
+      existingRplFamily: 'No',
+      extraTshirt: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 460000, 'Cricket + Football + Extra T-shirt must be charged ₹4,600 (460000 paise)');
+    assert.strictEqual(res.data.amountInRupees, 4600);
+  }
+});
+
 test('RPL Direct Registration: registers with ₹3,600 for New Player and payment_status=pending', async () => {
   const testMobile = '+91 9899009988';
   const res = await apiRequest('/api/register', {

@@ -694,12 +694,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const playerBaseFee = 3600;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
+  // Football T-Shirt rule: If selected alone, jersey is included in base fee (₹0 extra).
+  // If selected alongside other sports (multi-sport), a ₹500 fee is added for the dedicated football jersey.
+  const hasFootball = !isSpectator && selectedSports.includes('football');
+  const isFootballMultiSport = hasFootball && selectedSports.length > 1;
+  const footballJerseyCost = isFootballMultiSport ? 500 : 0;
+
   // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
   const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
   const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
 
   const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
-  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + extraTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + footballJerseyCost + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
   const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
@@ -1545,7 +1551,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
     const effectiveTotalAmount = previousPaidAmount > 0
       ? previousPaidAmount
-      : (isSpectator ? spectatorTotalFee : (playerBaseFee + extraTshirtCost));
+      : (isSpectator ? spectatorTotalFee : (playerBaseFee + footballJerseyCost + extraTshirtCost));
 
     const effectivePaymentUtr = paymentUtr || previousUtrs.join(', ') || undefined;
     const effectivePaymentReceipt = paymentReceiptUrl || previousReceiptUrls.join(', ') || undefined;
@@ -3480,18 +3486,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   )}
 
-                  {/* Football Only Schedule Note */}
-                  {selectedSports.length === 1 && selectedSports.includes('football') && (
+                  {/* Football Multi-Sport Dedicated Jersey Callout */}
+                  {isFootballMultiSport && (
                     <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border-2 border-emerald-400/80 shadow-xs flex items-start space-x-3 text-xs leading-relaxed animate-in fade-in slide-in-from-top-2">
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-xs">
                         ⚽
                       </div>
                       <div>
                         <span className="font-extrabold uppercase tracking-wider text-emerald-950 block text-[11px] mb-0.5">
-                          Schedule Note for Football:
+                          Multi-Sport Football Jersey (+₹500):
                         </span>
                         <p className="font-semibold text-emerald-900 leading-snug">
-                          Football matches will be played on 27th December (Sunday) only, so you can come on Sunday itself or on all days also.
+                          Because Football teams wear a distinct specialized jersey separate from your main tournament jersey, a ₹500 charge is added for your official Football jersey kit.
                         </p>
                       </div>
                     </div>
@@ -4705,7 +4711,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               ? (previouslyPaidExtraTshirt ? `Tournament Pass + Extra T-Shirt (Verified & Fully Paid)` : `Tournament Pass Verified + Extra T-Shirt (₹500)`)
                               : `All Sports Included in Tournament Pass (Verified)`
                           ) : (
-                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
+                            `All-Inclusive Player Pass • ${selectedSports.length} ${selectedSports.length === 1 ? 'Sport' : 'Sports'} Selected${isFootballMultiSport ? ' (+ ₹500 Football Jersey)' : ''}${currentExtraTshirt === 'Yes' ? ' (+ Extra T-Shirt)' : ''}`
                           )}
                         </h4>
                       </div>
@@ -4733,6 +4739,17 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               <strong>All-Inclusive Tournament Pass:</strong> Your registration pass is fully verified (₹3,600{previouslyPaidExtraTshirt ? ' + ₹500 Extra T-Shirt' : ''}). All sports are included in your pass at no additional charge. {currentExtraTshirt === 'Yes' && !previouslyPaidExtraTshirt ? 'You requested an extra T-shirt, which adds ₹500.' : 'You can update your selected sports, player details, jersey specs, or accommodation dates anytime without any additional payment.'}
                             </span>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Football Tournament Dedicated Jersey Line Item if selected with other sports */}
+                      {isFootballMultiSport && (
+                        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-100/90 border border-emerald-300 text-xs font-bold text-emerald-950">
+                          <span className="flex items-center space-x-2">
+                            <Shirt className="w-4 h-4 text-emerald-700" />
+                            <span>Official Football Tournament Jersey ({currentTshirtSize}) • Separate Kit</span>
+                          </span>
+                          <span className="text-emerald-900 font-extrabold">+₹500</span>
                         </div>
                       )}
 
@@ -4769,9 +4786,15 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                               >
                                 <span>{sportObj?.emoji || '🏅'}</span>
                                 <span>{sportObj?.name || sportId}</span>
-                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
-                                  Included in Pass
-                                </span>
+                                {sportId === 'football' && isFootballMultiSport ? (
+                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-200 text-emerald-950">
+                                    +₹500 Jersey
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-amber-200 text-amber-950">
+                                    Included in Pass
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
