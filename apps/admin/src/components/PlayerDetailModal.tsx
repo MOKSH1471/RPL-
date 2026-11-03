@@ -25,7 +25,7 @@ import {
   Ticket,
   MessageSquare,
 } from 'lucide-react';
-import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
+import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration, toggleMainLeaguePromotion } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 
 
@@ -70,9 +70,17 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
   const playerBaseFee = 3600;
+  // Editable form state
+  const isFemalePlayer = gen.gender === 'Female' || player.gender === 'Female';
+  const [selectedForMainLeague, setSelectedForMainLeague] = useState(Boolean(gen.selectedForMainLeague));
+  const [mainLeagueFeeStatus, setMainLeagueFeeStatus] = useState<'pending' | 'approved'>(gen.mainLeagueFeeStatus || 'pending');
+  const [mainLeagueLoading, setMainLeagueLoading] = useState(false);
+
   const isFootballMultiSport = !isSpectator && selectedSportsList.includes('football') && selectedSportsList.length > 1;
   const footballJerseyFee = isFootballMultiSport ? 500 : 0;
-  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + footballJerseyFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
+  const isFemaleMainLeague = isFemalePlayer && selectedForMainLeague;
+  const femaleMainLeagueFee = isFemaleMainLeague ? 500 : 0;
+  const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + footballJerseyFee + femaleMainLeagueFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
 
   const rawReceipts = player.payment_receipt_url || gen.payment_receipt_url || gen.payment_receipt || '';
   const receiptList: string[] = Array.isArray(gen.paymentReceipts) && gen.paymentReceipts.length > 0
@@ -91,8 +99,24 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     return str.slice(0, 10);
   };
 
+  const handleToggleMainLeaguePromotion = async (newSelected: boolean, feePaid?: boolean) => {
+    try {
+      setMainLeagueLoading(true);
+      await toggleMainLeaguePromotion(player.id, newSelected, feePaid);
+      setSelectedForMainLeague(newSelected);
+      if (feePaid !== undefined) {
+        setMainLeagueFeeStatus(feePaid ? 'approved' : 'pending');
+      } else if (newSelected && !mainLeagueFeeStatus) {
+        setMainLeagueFeeStatus('pending');
+      }
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update Main League selection.');
+    } finally {
+      setMainLeagueLoading(false);
+    }
+  };
 
-  // Editable form state
   const [formData, setFormData] = useState({
     full_name: player.full_name || '',
     email: player.email || '',
@@ -581,6 +605,11 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                             +₹500 Football Jersey
                           </span>
                         )}
+                        {isFemaleMainLeague && (
+                          <span className="font-bold text-[10px] text-pink-800 bg-pink-100 border border-pink-300 px-1.5 py-0.5 rounded-full">
+                            +Main League Jersey ({mainLeagueFeeStatus === 'approved' ? 'Paid' : '₹500 Due'})
+                          </span>
+                        )}
                         {(gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') && (
                           <span className="font-bold text-[10px] text-orange-800 bg-orange-100 border border-orange-300 px-1.5 py-0.5 rounded-full">
                             +1 Extra
@@ -596,6 +625,71 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                         <span>🕹️</span>
                         <span>{Array.isArray(gen.nostalgiaSport || gen.nostalgia_sport) ? (gen.nostalgiaSport || gen.nostalgia_sport).join(', ') : (gen.nostalgiaSport || gen.nostalgia_sport)}</span>
                       </span>
+                    </div>
+                  )}
+
+                  {isFemalePlayer && (
+                    <div className="col-span-2 sm:col-span-4 p-4 rounded-2xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-amber-500/10 border-2 border-pink-300 shadow-sm space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-pink-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                            ⭐
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-extrabold text-pink-900 tracking-wider block">
+                              RPL Main Cricket League Promotion (18 Women Quota)
+                            </span>
+                            <h4 className="text-xs sm:text-sm font-extrabold text-slate-900">
+                              {selectedForMainLeague ? 'Selected for RPL Main League' : 'Eligible for Main League Promotion'}
+                            </h4>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={mainLeagueLoading}
+                            onClick={() => handleToggleMainLeaguePromotion(!selectedForMainLeague)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 ${
+                              selectedForMainLeague
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200'
+                                : 'bg-pink-600 text-white hover:bg-pink-700'
+                            }`}
+                          >
+                            {mainLeagueLoading ? 'Updating...' : selectedForMainLeague ? 'Remove from Main League' : '⭐ Select for Main League'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {selectedForMainLeague && (
+                        <div className="pt-2 border-t border-pink-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-slate-600 font-semibold">Main League Jersey Fee (₹500):</span>
+                            {mainLeagueFeeStatus === 'approved' ? (
+                              <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] inline-flex items-center space-x-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>PAID &amp; CONFIRMED</span>
+                              </span>
+                            ) : (
+                              <span className="font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[11px] inline-flex items-center space-x-1">
+                                <AlertCircle className="w-3 h-3 text-amber-600" />
+                                <span>PENDING (₹500 DUE)</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {mainLeagueFeeStatus !== 'approved' && (
+                            <button
+                              type="button"
+                              disabled={mainLeagueLoading}
+                              onClick={() => handleToggleMainLeaguePromotion(true, true)}
+                              className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center space-x-1"
+                            >
+                              <span>💵 Mark ₹500 as Paid (Cash / Direct Approval)</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 

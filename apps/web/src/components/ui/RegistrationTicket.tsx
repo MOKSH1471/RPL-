@@ -240,7 +240,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <div className="flex items-center justify-between">
               {(() => {
                 const isFootballMultiSport = !isSpectator && sportsList.includes('football') && sportsList.length > 1;
-                const playerFallback = 3600 + (isFootballMultiSport ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
+                const isFemaleMainLeague = (data.gender === 'Female' || (data as any).generalDetails?.gender === 'Female') && Boolean((data as any).selectedForMainLeague || (data as any).generalDetails?.selectedForMainLeague);
+                const playerFallback = 3600 + (isFootballMultiSport ? 500 : 0) + (isFemaleMainLeague ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
                 return (
                   <>
                     <div>
@@ -256,11 +257,13 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
                             : (isSpectatorAll3Days
                               ? 'Night Snacks & 90’s Nostalgia Games Included (Daytime meals not included)'
                               : `Night Snacks Included for ${formatDatesPretty(specDatesList)} (Daytime meals not included)`))
-                          : (isFootballMultiSport
-                            ? 'Includes Dedicated Football Jersey (+₹500)'
-                            : (sportsList.length === 1 && sportsList.includes('football')
-                              ? 'Official Football Jersey Included in Pass'
-                              : 'All selected sports included in event pass'))}
+                          : (isFemaleMainLeague
+                            ? '⭐ Includes Main Cricket League Team Jersey (+₹500)'
+                            : (isFootballMultiSport
+                              ? 'Includes Dedicated Football Jersey (+₹500)'
+                              : (sportsList.length === 1 && sportsList.includes('football')
+                                ? 'Official Football Jersey Included in Pass'
+                                : 'All selected sports included in event pass')))}
                       </span>
                     </div>
                     <div className="text-right">

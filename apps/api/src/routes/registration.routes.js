@@ -226,9 +226,11 @@ router.post('/register', async (req, res) => {
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
         const footballJerseyFee = isFootballMultiSport ? 500 : 0;
+        const isSelectedWoman = (cleanGeneralDetails.gender === 'Female' || mergedGeneralDetails.gender === 'Female') && Boolean(cleanGeneralDetails.selectedForMainLeague || mergedGeneralDetails.selectedForMainLeague);
+        const mainLeagueCost = isSelectedWoman ? 500 : 0;
         const computedFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : playerBase + footballJerseyFee + extraTshirtCost;
+          : playerBase + footballJerseyFee + extraTshirtCost + mainLeagueCost;
 
         const prevUtrs = String(prevRow.payment_utr || prevGeneral.payment_utr || '')
           .split(',')
@@ -336,9 +338,11 @@ router.post('/register', async (req, res) => {
         const hasFootball = !isSpectator && regSports.includes('football');
         const isFootballMultiSport = hasFootball && regSports.length > 1;
         const footballJerseyFee = isFootballMultiSport ? 500 : 0;
+        const isSelectedWoman = cleanGeneralDetails.gender === 'Female' && Boolean(cleanGeneralDetails.selectedForMainLeague);
+        const mainLeagueCost = isSelectedWoman ? 500 : 0;
         const newFee = isSpectator
           ? spectatorBase + extraTshirtCost
-          : playerBase + footballJerseyFee + extraTshirtCost;
+          : playerBase + footballJerseyFee + extraTshirtCost + mainLeagueCost;
         cleanGeneralDetails.totalAmount = newFee;
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;

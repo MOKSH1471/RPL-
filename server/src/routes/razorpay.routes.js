@@ -27,6 +27,52 @@ router.post('/razorpay/create-order', async (req, res) => {
       registrationPayload,
     } = req.body;
 
+    // Dedicated Checkout for RPL Main League Jersey Add-on (₹500)
+    if (req.body.purpose === 'main_league_jersey') {
+      const targetRegId = req.body.registrationId || registrationId;
+      if (!targetRegId) {
+        return res.status(400).json({ success: false, error: 'Registration ID required for Main League jersey payment.' });
+      }
+
+      const orderOptions = {
+        amount: 50000,
+        currency: 'INR',
+        receipt: `rcpt_ml_${String(targetRegId).slice(-8)}_${Date.now().toString().slice(-4)}`,
+        notes: {
+          registrationId: String(targetRegId),
+          purpose: 'main_league_jersey',
+          fullName: req.body.fullName || fullName || '',
+          mobile: req.body.mobile || mobile || '',
+        },
+      };
+
+      let order;
+      try {
+        order = await razorpay.orders.create(orderOptions);
+      } catch (createErr) {
+        if (process.env.NODE_ENV === 'test') {
+          order = {
+            id: `order_test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            amount: 50000,
+            currency: 'INR',
+            receipt: orderOptions.receipt,
+            status: 'created',
+          };
+        } else {
+          throw createErr;
+        }
+      }
+      return res.json({
+        success: true,
+        orderId: order.id,
+        amount: 50000,
+        amountInRupees: 500,
+        currency: 'INR',
+        keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_TivKrz1oOVPG55',
+        registrationId: targetRegId,
+      });
+    }
+
     const regPayload = registrationPayload || {};
     const cleanGeneral = regPayload.general_details || regPayload.answers || {};
     const regType = req.body.registrationType || regPayload.registrationType || cleanGeneral.registrationType || (selectedSports.includes('spectator') ? 'spectator' : 'player');
@@ -564,6 +610,59 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
       const connection = await db.getConnection();
       await connection.beginTransaction();
+
+      // Check if order was created for dedicated Main League Jersey
+      let rzpOrder = null;
+      try {
+        rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+      } catch (_) {}
+
+      if (rzpOrder && rzpOrder.notes && rzpOrder.notes.purpose === 'main_league_jersey') {
+        const targetRegId = rzpOrder.notes.registrationId;
+        const [regs] = await connection.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ? FOR UPDATE`, [targetRegId]);
+        if (regs.length > 0) {
+          const reg = regs[0];
+          let gen = {};
+          try {
+            gen = typeof reg.general_details === 'string' ? JSON.parse(reg.general_details) : (reg.general_details || {});
+          } catch (_) {}
+          gen.mainLeagueFeeStatus = 'approved';
+          gen.selectedForMainLeague = true;
+          let sports = Array.isArray(gen.selectedSports) ? [...gen.selectedSports] : ['womens-sports'];
+          if (!sports.includes('cricket')) sports.push('cricket');
+          gen.selectedSports = sports;
+          const prevUtrs = String(reg.payment_utr || gen.payment_utr || '').split(',').map(s => s.trim()).filter(Boolean);
+          const mergedUtrList = Array.from(new Set([...prevUtrs, razorpay_payment_id]));
+          gen.paymentUtrs = mergedUtrList;
+          gen.payment_utr = mergedUtrList.join(', ');
+
+          await connection.query(
+            `UPDATE ${RPL_DB}.rpl_registrations SET general_details = ?, payment_utr = ? WHERE id = ?`,
+            [JSON.stringify(gen), gen.payment_utr, targetRegId]
+          );
+
+          const mobile10 = cleanDomesticPhone(reg.mobile || '');
+          const cardNoVal = gen.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+          await connection.query(
+            `INSERT INTO ${RPL_DB}.rpl_transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+             VALUES (?, ?, 'main_league_jersey', 500, 0, ?, 'RPL Main League Jersey Fee (Razorpay)', 'completed', 'RAZORPAY_AUTO', NOW(), NOW(), ?)
+             ON DUPLICATE KEY UPDATE status = 'completed', updatedAt = NOW(), razorpay_order_id = VALUES(razorpay_order_id)`,
+            [cardNoVal, targetRegId, razorpay_payment_id, razorpay_order_id]
+          );
+        }
+
+        await connection.commit();
+        return res.json({
+          success: true,
+          verified: true,
+          message: 'Main League Jersey payment verified successfully!',
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          registrationId: targetRegId,
+          mainLeagueFeeStatus: 'approved',
+        });
+      }
 
       try {
         const full_name = regBody.full_name || regBody.fullName || '';

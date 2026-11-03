@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   Filter,
@@ -48,6 +48,15 @@ export function AdminRegistrationsTab({
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
   const rowsPerPage = 15;
 
+  const selectedWomenCount = useMemo(() => {
+    return registrations.filter((r) => {
+      const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
+      if (isArchived) return false;
+      const gen = r.general_details || {};
+      return (gen.gender === 'Female' || r.gender === 'Female') && Boolean(gen.selectedForMainLeague);
+    }).length;
+  }, [registrations]);
+
   // Debounce search input by 200ms to maintain smooth 60fps scrolling
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -90,7 +99,11 @@ export function AdminRegistrationsTab({
 
     // Sport filter
     if (sportFilter !== 'all') {
-      if (!Array.isArray(sports) || !sports.includes(sportFilter)) return false;
+      if (sportFilter === 'main-league-women') {
+        if (!gen.selectedForMainLeague) return false;
+      } else {
+        if (!Array.isArray(sports) || !sports.includes(sportFilter)) return false;
+      }
     }
 
     // Participant Type filter (Player vs Spectator)
@@ -196,6 +209,14 @@ export function AdminRegistrationsTab({
               <option value="spectator">🎟️ Spectators Only</option>
             </select>
 
+            {/* Main League 18 Women Quota Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-pink-50 border border-pink-200 rounded-xl text-xs font-bold text-pink-900 shadow-2xs">
+              <span>⭐ Main League Women:</span>
+              <span className="font-mono font-black text-pink-700 bg-pink-100 px-1.5 py-0.5 rounded">
+                {selectedWomenCount} / 18
+              </span>
+            </div>
+
             {/* Status Filter */}
             <select
               value={statusFilter}
@@ -230,6 +251,7 @@ export function AdminRegistrationsTab({
               <option value="pickleball">Pickleball</option>
               <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
+              <option value="main-league-women">⭐ Main League Women (18 Quota)</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
               <option value="spectator">🎟️ Spectator Pass</option>
             </select>
@@ -463,6 +485,14 @@ export function AdminRegistrationsTab({
                                 {s}
                               </span>
                             ))}
+                            {gen.selectedForMainLeague && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-pink-100 text-pink-900 border border-pink-300 font-extrabold text-[9px] flex items-center space-x-1" title="Selected for RPL Main League (18 Women Quota)">
+                                <span>⭐ Main League</span>
+                                <span className={gen.mainLeagueFeeStatus === 'approved' ? 'text-emerald-700 font-black' : 'text-amber-700 font-black'}>
+                                  ({gen.mainLeagueFeeStatus === 'approved' ? 'Paid' : '₹500 Due'})
+                                </span>
+                              </span>
+                            )}
                             {(gen.nostalgiaSport || gen.nostalgia_sport) && (
                               <span
                                 className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[10px] flex items-center space-x-1"
@@ -538,9 +568,11 @@ export function AdminRegistrationsTab({
                               const isRegSpectator = gen.registrationType === 'spectator' || regSports.includes('spectator');
                               const isRegFootballMulti = !isRegSpectator && regSports.includes('football') && regSports.length > 1;
                               const hasRegTshirt = gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
+                              const isSelectedWoman = (gen.gender === 'Female' || player.gender === 'Female') && Boolean(gen.selectedForMainLeague);
+                              const womanMainFee = isSelectedWoman ? 500 : 0;
                               const fallbackFee = isRegSpectator
                                 ? ((gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes') ? 3600 : ((gen.spectatorDates?.length || 1) * 720)) + (hasRegTshirt ? 500 : 0)
-                                : (3600 + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0));
+                                : (3600 + (isRegFootballMulti ? 500 : 0) + (hasRegTshirt ? 500 : 0) + womanMainFee);
                               return (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-mono font-bold text-[10px] border border-amber-200">
                                   ₹{(gen.totalAmount || fallbackFee).toLocaleString('en-IN')}

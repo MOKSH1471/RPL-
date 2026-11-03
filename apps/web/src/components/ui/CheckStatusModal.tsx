@@ -8,7 +8,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from 'lucide-react';
-import { lookupMumukshu } from '@/lib/api';
+import { lookupMumukshu, createRazorpayOrder, verifyRazorpayPayment } from '@/lib/api';
 import { ReceiptPrinter } from './ReceiptPrinter';
 
 interface UnregisteredPlayerData {
@@ -40,6 +40,67 @@ export function CheckStatusModal({
   const [matchedRecord, setMatchedRecord] = useState<any | null>(null);
   const [unregisteredData, setUnregisteredData] = useState<UnregisteredPlayerData | null>(null);
   const [serverWakingHint, setServerWakingHint] = useState(false);
+  const [payingMainLeague, setPayingMainLeague] = useState(false);
+
+  const handlePayMainLeagueFee = async (record: any) => {
+    try {
+      setPayingMainLeague(true);
+      const orderData = await createRazorpayOrder({
+        purpose: 'main_league_jersey',
+        registrationId: record.id,
+        fullName: record.fullName,
+        mobile: record.mobile,
+      });
+
+      if (!orderData || !orderData.orderId) {
+        throw new Error(orderData?.error || 'Failed to initialize payment.');
+      }
+
+      const razorpayKey = orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TivKrz1oOVPG55';
+
+      const rzp = new (window as any).Razorpay({
+        key: razorpayKey,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'Raj Premier League (RPL Season 9)',
+        description: 'Main Cricket League Team Jersey Fee',
+        order_id: orderData.orderId,
+        prefill: {
+          name: record.fullName,
+          contact: record.mobile.replace(/\D/g, '').slice(-10),
+          email: record.email || '',
+        },
+        theme: { color: '#0f172a' },
+        handler: async (response: any) => {
+          try {
+            await verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              registrationPayload: { registration_id: record.id, purpose: 'main_league_jersey' },
+            });
+            setMatchedRecord((prev: any) => {
+              if (!prev) return prev;
+              const gd = { ...(prev.generalDetails || prev.general_details || {}), mainLeagueFeeStatus: 'approved' };
+              return { ...prev, generalDetails: gd, general_details: gd };
+            });
+          } catch (vErr: any) {
+            alert('Payment received but verification pending. Please refresh in a moment.');
+          } finally {
+            setPayingMainLeague(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setPayingMainLeague(false),
+        },
+      });
+
+      rzp.open();
+    } catch (err: any) {
+      alert(err.message || 'Payment initiation failed.');
+      setPayingMainLeague(false);
+    }
+  };
 
   useEffect(() => {
     let timer: any;
@@ -267,6 +328,60 @@ export function CheckStatusModal({
                       <Sparkles className="w-4 h-4 text-amber-100" />
                       <span>Complete Registration &amp; Pay Online</span>
                     </button>
+                  </div>
+                )}
+
+                {/* Main League Selection Banner for Promoted Women */}
+                {Boolean(matchedRecord.generalDetails?.selectedForMainLeague || matchedRecord.general_details?.selectedForMainLeague) && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-pink-500/15 via-purple-500/10 to-amber-500/15 border-2 border-pink-400 shadow-sm space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-pink-500 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0 mt-0.5">
+                        ⭐
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-pink-900 block">
+                          RPL Main Cricket League Selection
+                        </span>
+                        <h4 className="font-black text-sm text-slate-900 leading-snug">
+                          Congratulations! You have been selected for the RPL Main Cricket League!
+                        </h4>
+                        <p className="text-xs text-slate-600 mt-1">
+                          You will represent the Women&apos;s Division in the official RPL Main League. Your dedicated Main League team jersey requires a ₹500 fee.
+                        </p>
+                      </div>
+                    </div>
+
+                    {(matchedRecord.generalDetails?.mainLeagueFeeStatus === 'approved' || matchedRecord.general_details?.mainLeagueFeeStatus === 'approved') ? (
+                      <div className="flex items-center space-x-2 text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-2 rounded-xl border border-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Main League Jersey Fee (₹500): Paid &amp; Confirmed!</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-pink-200/80">
+                        <div className="text-xs">
+                          <span className="text-slate-600 block">Main League Jersey Fee:</span>
+                          <span className="text-base font-black text-amber-900">₹500</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handlePayMainLeagueFee(matchedRecord)}
+                          disabled={payingMainLeague}
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-extrabold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {payingMainLeague ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Processing Payment...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                              <span>Pay ₹500 via Razorpay</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 

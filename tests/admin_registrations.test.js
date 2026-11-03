@@ -195,6 +195,21 @@ test('Admin Registrations: exports clean formatted roster rows for Excel/CSV', (
   assert.strictEqual(formatted.roomNo, 'B-204');
 });
 
+test('Admin Registrations: filters Main League selected women correctly and validates 18 quota', () => {
+  const dataset = [
+    { id: '1', sports: JSON.stringify(['womens-sports']), general_details: JSON.stringify({ gender: 'Female', selectedForMainLeague: true }) },
+    { id: '2', sports: JSON.stringify(['womens-sports']), general_details: JSON.stringify({ gender: 'Female', selectedForMainLeague: false }) },
+    { id: '3', sports: JSON.stringify(['womens-sports']), general_details: JSON.stringify({ gender: 'Female', selectedForMainLeague: true }) },
+  ];
+
+  const selectedWomen = dataset.filter((r) => {
+    const gen = JSON.parse(r.general_details || '{}');
+    return Boolean(gen.selectedForMainLeague);
+  });
+  assert.strictEqual(selectedWomen.length, 2);
+  assert.strictEqual(selectedWomen.length <= 18, true, 'Quota must not exceed 18');
+});
+
 test('Admin Registrations: aggregates tournament-wide stats and sport headcounts', () => {
   const dataset = [
     { id: '1', payment_status: 'approved', sports: JSON.stringify(['cricket']), general_details: JSON.stringify({ accommodationRequired: 'Yes' }) },

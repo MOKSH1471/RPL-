@@ -33,6 +33,7 @@ router.get('/admin/stats', async (req, res) => {
 
     let playersCount = 0;
     let spectatorsCount = 0;
+    let mainLeagueWomenCount = 0;
 
     const tshirtSizes = {
       XS: 0,
@@ -83,6 +84,11 @@ router.get('/admin/stats', async (req, res) => {
       } else {
         const hasFootballMultiSport = selected.includes('football') && selected.length > 1;
         if (hasFootballMultiSport) calculatedFee += 500;
+        const isSelectedWoman = (gen.gender === 'Female' || r.gender === 'Female') && Boolean(gen.selectedForMainLeague);
+        if (isSelectedWoman) {
+          mainLeagueWomenCount++;
+          calculatedFee += 500;
+        }
         const hasExtraTshirt = gen.extraTshirt === 'Yes';
         if (hasExtraTshirt) calculatedFee += 500;
       }
@@ -136,6 +142,7 @@ router.get('/admin/stats', async (req, res) => {
         allRegistrationsCount: regs.length,
         playersCount,
         spectatorsCount,
+        mainLeagueWomenCount,
         archivedCount,
         payment: { approved, pending, rejected, archived: archivedCount },
         financials: {

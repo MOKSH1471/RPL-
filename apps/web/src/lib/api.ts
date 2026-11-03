@@ -304,10 +304,11 @@ export async function assignRoomNumber(bookingid: string, roomno: string) {
 }
 
 export interface CreateOrderParams {
+  purpose?: string;
   fullName: string;
-  email: string;
+  email?: string;
   mobile: string;
-  selectedSports: string[];
+  selectedSports?: string[];
   extraTshirt?: string;
   spectatorTshirt?: string;
   registrationType?: string;
