@@ -239,7 +239,8 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center justify-between">
               {(() => {
-                const isFootballMultiSport = !isSpectator && sportsList.includes('football') && sportsList.length > 1;
+                const hasCricket = sportsList.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+                const isFootballMultiSport = !isSpectator && sportsList.includes('football') && hasCricket;
                 const playerFallback = (data.existingRplFamily === 'Yes' ? 3600 : 3900) + (isFootballMultiSport ? 500 : 0) + (data.extraTshirt === 'Yes' ? 500 : 0);
                 return (
                   <>

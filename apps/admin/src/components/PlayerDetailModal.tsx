@@ -70,7 +70,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const calculatedSportsCount = Math.max(1, selectedSportsList.length);
   const isReturningFamily = gen.existingRplFamily === 'Yes';
   const playerBaseFee = isReturningFamily ? 3600 : 3900;
-  const isFootballMultiSport = !isSpectator && selectedSportsList.includes('football') && selectedSportsList.length > 1;
+  const hasCricket = selectedSportsList.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+  const isFootballMultiSport = !isSpectator && selectedSportsList.includes('football') && hasCricket;
   const footballJerseyFee = isFootballMultiSport ? 500 : 0;
   const calculatedFee = player.total_amount || gen.totalAmount || (isSpectator ? spectatorCalculatedFee : (playerBaseFee + footballJerseyFee + ((gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes') ? 500 : 0)));
 

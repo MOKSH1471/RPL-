@@ -536,7 +536,8 @@ export function AdminRegistrationsTab({
                             {(() => {
                               const regSports = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
                               const isRegSpectator = gen.registrationType === 'spectator' || regSports.includes('spectator');
-                              const isRegFootballMulti = !isRegSpectator && regSports.includes('football') && regSports.length > 1;
+                              const hasRegCricket = regSports.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+        const isRegFootballMulti = !isRegSpectator && regSports.includes('football') && hasRegCricket;
                               const hasRegTshirt = gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes';
                               const isReturningFamily = gen.existingRplFamily === 'Yes';
                               const playerBaseFee = isReturningFamily ? 3600 : 3900;

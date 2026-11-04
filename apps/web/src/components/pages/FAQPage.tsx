@@ -120,7 +120,7 @@ const FAQ_DATA: FAQItem[] = [
           <li><strong>Stay:</strong> 2-night stay (25 Dec check-in to 27 Dec check-out) at Shrimad Rajchandra Aatma Tatva Research Centre.</li>
           <li><strong>Meals:</strong> All daily sattvic vegetarian meals and late-night tournament snacks.</li>
           <li><strong>Sports:</strong> Unlimited entry across all selected eligible leagues and 90s Nostalgia Games.</li>
-          <li><strong>Kit:</strong> One official RPL Season 9 tournament jersey included free! <em>(Note: If Football is selected alongside other sports, a ₹500 fee is added for the separate football jersey kit. Extra tournament t-shirts can be purchased for ₹500).</em></li>
+          <li><strong>Kit:</strong> One official RPL Season 9 tournament jersey included free! <em>(Note: If Football is selected alongside Cricket, a ₹500 fee is added for the separate football jersey kit. If Football is selected alone or alongside Table Tennis / Carrom, the jersey is included free in the pass. Extra tournament t-shirts can be purchased for ₹500).</em></li>
         </ul>
       </div>
     ),
@@ -242,14 +242,14 @@ const FAQ_DATA: FAQItem[] = [
     category: 'football',
     question: 'If I only want to play in the Football League, do I need to attend all three days?',
     searchableAnswer:
-      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. If you register only for Football, the fee is ₹3,600 with the official Football jersey fully included. If you participate in multiple sports (e.g. Cricket + Football), a ₹500 fee is added for the dedicated football jersey (₹4,100 total). We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
+      'No, full 3-day attendance is not mandatory for Football. The entire RPL Football Championship takes place on the final day, Sunday, 27 December 2026. If your schedule is constrained, you can arrive on Sunday morning specifically for football. If you register for Football alone (or alongside Table Tennis / Carrom), the fee is ₹3,600 with the official Football jersey fully included. If you participate in Football along with Cricket (e.g. Cricket + Football), a ₹500 fee is added for the dedicated football jersey kit (₹4,100 total). We highly recommend attending all three days (25-27 Dec) for the Grand Opening Ceremony, practice sessions, and 90s Nostalgia Games on 25-26 December.',
     answer: (
       <div className="space-y-2">
         <p>
           <strong>No, full 3-day attendance is not mandatory for Football.</strong> The entire RPL Football Championship takes place on the final day, <strong>Sunday, 27 December 2026</strong>.
         </p>
         <p>
-          If your schedule is constrained, you can arrive on Sunday morning specifically for football. If you register only for Football, the registration fee is <strong>₹3,600</strong>, which covers your tournament entry, official Football jersey, meals, and facility amenities. If you play Football in combination with other sports (e.g. Cricket + Football), an additional <strong>₹500</strong> charge applies for the dedicated football jersey kit (total ₹4,100).
+          If your schedule is constrained, you can arrive on Sunday morning specifically for football. If you register for Football alone or alongside Table Tennis / Carrom, the registration fee is <strong>₹3,600</strong>, which covers your tournament entry, official Football jersey, meals, and facility amenities. If you play Football in combination with Cricket (e.g. Cricket + Football), an additional <strong>₹500</strong> charge applies for the dedicated football jersey kit (total ₹4,100).
         </p>
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 font-medium">
           💡 <strong>Tip:</strong> We highly recommend attending all three days (25–27 Dec) so you don&apos;t miss out on the Grand Opening Ceremony, team practice matches, and the fun-filled 90s Nostalgia Games on 25–26 December!

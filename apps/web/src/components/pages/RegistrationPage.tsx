@@ -705,10 +705,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const playerBaseFee = isReturningFamily ? 3600 : 3900;
   const extraTshirtCost = currentExtraTshirt === 'Yes' ? 500 : 0;
 
-  // Football T-Shirt rule: If selected alone, jersey is included in base fee (₹0 extra).
-  // If selected alongside other sports (multi-sport), a ₹500 fee is added for the dedicated football jersey.
+  // Football T-Shirt rule: If selected alone or with Table Tennis / Carrom, jersey is included in base fee (₹0 extra).
+  // If selected alongside Cricket (multi-sport with cricket), a ₹500 fee is added for the dedicated football jersey kit.
   const hasFootball = !isSpectator && selectedSports.includes('football');
-  const isFootballMultiSport = hasFootball && selectedSports.length > 1;
+  const hasCricket = selectedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+  const isFootballMultiSport = hasFootball && hasCricket;
   const footballJerseyCost = isFootballMultiSport ? 500 : 0;
 
   // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
@@ -3358,7 +3359,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                           Multi-Sport Football Jersey (+₹500):
                         </span>
                         <p className="font-semibold text-emerald-900 leading-snug">
-                          Because Football teams wear a distinct specialized jersey separate from your main tournament jersey, a ₹500 charge is added for your official Football jersey kit.
+                          Because Football teams wear a distinct specialized jersey separate from your Cricket tournament jersey, a ₹500 charge is added for your official Football jersey kit.
                         </p>
                       </div>
                     </div>

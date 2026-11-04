@@ -223,8 +223,9 @@ router.post('/register', async (req, res) => {
         const existingFamily = mergedGeneralDetails.existingRplFamily || cleanGeneralDetails.existingRplFamily || 'No';
         const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(mergedGeneralDetails.selectedSports) ? mergedGeneralDetails.selectedSports : (Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []);
+        const hasCricket = regSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
         const hasFootball = !isSpectator && regSports.includes('football');
-        const isFootballMultiSport = hasFootball && regSports.length > 1;
+        const isFootballMultiSport = hasFootball && hasCricket;
         const footballJerseyFee = isFootballMultiSport ? 500 : 0;
         const computedFee = isSpectator
           ? spectatorBase + extraTshirtCost
@@ -333,8 +334,9 @@ router.post('/register', async (req, res) => {
         const existingFamily = cleanGeneralDetails.existingRplFamily || 'No';
         const playerBase = existingFamily === 'Yes' ? 3600 : 3900;
         const regSports = Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : [];
+        const hasCricket = regSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
         const hasFootball = !isSpectator && regSports.includes('football');
-        const isFootballMultiSport = hasFootball && regSports.length > 1;
+        const isFootballMultiSport = hasFootball && hasCricket;
         const footballJerseyFee = isFootballMultiSport ? 500 : 0;
         const newFee = isSpectator
           ? spectatorBase + extraTshirtCost
@@ -395,8 +397,9 @@ router.post('/register', async (req, res) => {
       const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
       const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
       const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
+      const hasCricket = parsedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
       const hasFootball = !isSpectator && parsedSports.includes('football');
-      const isFootballMultiSport = hasFootball && parsedSports.length > 1;
+      const isFootballMultiSport = hasFootball && hasCricket;
       const footballCost = isFootballMultiSport ? 500 : 0;
       const fallbackFee = defaultBase + footballCost + (finalGeneralDetails.extraTshirt === 'Yes' ? 500 : 0);
       const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 

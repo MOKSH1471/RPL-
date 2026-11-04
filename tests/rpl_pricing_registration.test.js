@@ -130,6 +130,47 @@ test('RPL Pricing Rule: Multi-sport with Football is charged ₹4,100 (3600 + 50
   }
 });
 
+
+test('RPL Pricing Rule: Football + Table Tennis (no cricket) does NOT charge ₹500 jersey fee (flat ₹3,600 for returning)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Football and TT Player',
+      email: 'footballtt@example.com',
+      mobile: '9899004411',
+      selectedSports: ['football', 'table-tennis'],
+      existingRplFamily: 'Yes',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 360000, 'Football + Table Tennis without cricket must be charged flat ₹3,600');
+    assert.strictEqual(res.data.amountInRupees, 3600);
+  }
+});
+
+test('RPL Pricing Rule: Football + Carrom (no cricket) does NOT charge ₹500 jersey fee (₹3,900 for new player)', async () => {
+  const res = await apiRequest('/api/razorpay/create-order', {
+    method: 'POST',
+    body: JSON.stringify({
+      fullName: 'Football and Carrom New Player',
+      email: 'footballcarrom@example.com',
+      mobile: '9899004422',
+      selectedSports: ['football', 'carrom'],
+      existingRplFamily: 'No',
+    }),
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.data.success, true);
+  if (res.data.orderId) {
+    assert.strictEqual(res.data.amount, 390000, 'Football + Carrom for new player must be charged flat ₹3,900');
+    assert.strictEqual(res.data.amountInRupees, 3900);
+  }
+});
+
 test('RPL Pricing Rule: Multi-sport with Football + Extra T-shirt is charged ₹4,600 (3600 + 500 + 500)', async () => {
   const res = await apiRequest('/api/razorpay/create-order', {
     method: 'POST',
