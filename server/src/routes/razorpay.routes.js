@@ -48,8 +48,9 @@ router.post('/razorpay/create-order', async (req, res) => {
       ? selectedSports
       : (Array.isArray(regPayload.selectedSports) ? regPayload.selectedSports : (Array.isArray(cleanGeneral.selectedSports) ? cleanGeneral.selectedSports : []));
     const hasFootball = !isSpectator && sportsList.includes('football');
-    const isFootballMultiSport = hasFootball && sportsList.length > 1;
-    // ₹500 football jersey fee applies ONLY if football is selected alongside other sport(s)
+    const hasCricket = sportsList.some(s => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+    // ₹500 football jersey fee applies ONLY if football is selected alongside cricket league(s)
+    const isFootballMultiSport = hasFootball && hasCricket;
     const footballJerseyFee = isFootballMultiSport ? 500 : 0;
 
     let computedFee;

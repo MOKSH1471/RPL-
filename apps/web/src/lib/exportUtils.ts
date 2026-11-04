@@ -173,9 +173,10 @@ export function exportJerseyVendorSheet(registrations: any[]) {
   const rows = activeOnly.map((r, idx) => {
     const gen = r.general_details || {};
     const sports = gen.selectedSports || [];
-    const isFootballMulti = Array.isArray(sports) && sports.includes('football') && sports.length > 1;
-    const isFootballOnly = Array.isArray(sports) && sports.includes('football') && sports.length === 1;
-    const footballKitStr = isFootballMulti ? 'YES (+1 Football Kit)' : (isFootballOnly ? 'YES (Football Only Kit)' : 'NO');
+    const hasCricket = Array.isArray(sports) && sports.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+    const isFootballMulti = Array.isArray(sports) && sports.includes('football') && hasCricket;
+    const isFootballOnly = Array.isArray(sports) && sports.includes('football') && !hasCricket;
+    const footballKitStr = isFootballMulti ? 'YES (+1 Football Kit)' : (isFootballOnly ? 'YES (Football Kit)' : 'NO');
     const extraTshirtStr = (gen.extraTshirt === 'Yes' || gen.spectatorTshirt === 'Yes') ? 'YES (+1 Extra)' : 'NO';
     return [
       idx + 1,
