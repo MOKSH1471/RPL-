@@ -164,8 +164,8 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
         setSuccessMsg(`User '${editingUser.username}' updated successfully.`);
       } else {
         // Create new user
-        if (!formPassword || formPassword.length < 4) {
-          throw new Error('Initial password must be at least 4 characters long.');
+        if (!formPassword || formPassword.trim().length < 8) {
+          throw new Error('Initial password must be at least 8 characters long.');
         }
         await createAdminUser({
           name: formName.trim(),
@@ -219,6 +219,10 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetTargetUser || !resetPasswordVal.trim()) return;
+    if (resetPasswordVal.trim().length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
     setResetSubmitting(true);
     setError(null);
     try {
@@ -508,7 +512,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
                       type={showPassword ? 'text' : 'password'}
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}
-                      placeholder="Minimum 4 characters"
+                      placeholder="Minimum 8 characters"
                       className="w-full px-3 py-2 pr-10 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono outline-hidden"
                       required
                     />
@@ -649,7 +653,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
                   type="text"
                   value={resetPasswordVal}
                   onChange={(e) => setResetPasswordVal(e.target.value)}
-                  placeholder="New password (min 4 chars)"
+                  placeholder="New password (min 8 chars)"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-amber-500 font-mono outline-hidden"
                   required
                 />
@@ -679,3 +683,4 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
     </div>
   );
 };
+

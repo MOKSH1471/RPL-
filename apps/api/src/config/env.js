@@ -18,6 +18,10 @@ export function validateEnvironment() {
   
   const missing = REQUIRED_ENV_VARS.filter(key => !process.env[key]);
 
+  if (!process.env.JWT_SECRET && !process.env.ADMIN_API_SECRET) {
+    missing.push('JWT_SECRET (or ADMIN_API_SECRET)');
+  }
+
   if (missing.length > 0) {
     const message = `[ENV WARNING] Missing critical environment variables: ${missing.join(', ')}`;
     if (isTest) {

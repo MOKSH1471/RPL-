@@ -66,3 +66,9 @@ export const registrationRateLimiter = createRateLimiter({
   max: 30,
   message: 'Registration rate limit exceeded. Please try again in a minute.',
 });
+
+export const authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15-minute window
+  max: 20, // 20 login attempts per 15 minutes per IP
+  message: 'Too many authentication attempts from this IP. Please wait 15 minutes before trying again.',
+});

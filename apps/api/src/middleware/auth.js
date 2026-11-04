@@ -2,6 +2,21 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/jwt.js';
 import db, { RPL_DB } from '../config/db.js';
 
+// In-memory cache for user verification (TTL = 30 seconds) to avoid DB WAN lag during high-frequency live scoring
+const userCache = new Map();
+const CACHE_TTL_MS = 30 * 1000;
+
+/**
+ * Invalidate user verification cache (called when an admin edits, resets password, or deactivates a user)
+ */
+export function invalidateAuthCache(userId) {
+  if (userId) {
+    userCache.delete(userId);
+  } else {
+    userCache.clear();
+  }
+}
+
 /**
  * Verify JWT authentication token from Authorization header.
  * Also supports fallback via X-Admin-Secret header for server-to-server / CI test calls.
@@ -41,7 +56,21 @@ export async function verifyAuth(req, res, next) {
       });
     }
 
-    // Optional quick validation against DB to verify user is still active
+    // Fast in-memory cache lookup to eliminate redundant DB queries during live matches
+    const now = Date.now();
+    const cached = userCache.get(decoded.id);
+
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+      if (!cached.user.is_active) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account not found or has been deactivated.',
+        });
+      }
+      req.user = cached.user;
+      return next();
+    }
+
     try {
       const [rows] = await db.query(
         `SELECT id, username, name, role, permissions, is_active FROM ${RPL_DB}.rpl_admin_users WHERE id = ? LIMIT 1`,
@@ -49,6 +78,7 @@ export async function verifyAuth(req, res, next) {
       );
 
       if (!rows || rows.length === 0 || !rows[0].is_active) {
+        userCache.delete(decoded.id);
         return res.status(401).json({
           success: false,
           message: 'Account not found or has been deactivated.',
@@ -63,16 +93,20 @@ export async function verifyAuth(req, res, next) {
         permissions = [];
       }
 
-      req.user = {
+      const verifiedUser = {
         id: user.id,
         username: user.username,
         name: user.name,
         role: user.role,
         permissions: Array.isArray(permissions) ? permissions : [],
+        is_active: Boolean(user.is_active),
       };
+
+      userCache.set(decoded.id, { user: verifiedUser, timestamp: now });
+      req.user = verifiedUser;
     } catch (dbErr) {
-      // If DB check fails, fallback to decoded JWT payload safely
-      req.user = {
+      // If DB check fails, fallback to cached user or decoded JWT payload safely
+      req.user = cached?.user || {
         id: decoded.id,
         username: decoded.username,
         name: decoded.name,
@@ -160,3 +194,4 @@ export function requireAnyPermission(permissionKeys = []) {
     next();
   };
 }
+

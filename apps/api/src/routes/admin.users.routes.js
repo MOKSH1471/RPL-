@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db, { RPL_DB } from '../config/db.js';
-import { verifyAuth, requireSuperAdmin } from '../middleware/auth.js';
+import { verifyAuth, requireSuperAdmin, invalidateAuthCache } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -49,6 +49,14 @@ router.post('/admin/users', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Username, password, and full name are required.',
+      });
+    }
+
+    const cleanPassword = String(password).trim();
+    if (cleanPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long.',
       });
     }
 
@@ -138,6 +146,25 @@ router.patch('/admin/users/:id', async (req, res) => {
       });
     }
 
+    // Guard: Prevent demoting or deactivating the last active Super Admin
+    if (existing[0].role === 'SUPER_ADMIN') {
+      const isDemoting = role !== undefined && role !== 'SUPER_ADMIN';
+      const isDeactivating = is_active !== undefined && !Boolean(is_active);
+
+      if (isDemoting || isDeactivating) {
+        const [superCount] = await db.query(
+          `SELECT COUNT(*) as count FROM ${RPL_DB}.rpl_admin_users WHERE role = 'SUPER_ADMIN' AND is_active = TRUE AND id != ?`,
+          [targetId]
+        );
+        if ((superCount[0]?.count || 0) < 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'Cannot demote or deactivate the only remaining active Super Admin account.',
+          });
+        }
+      }
+    }
+
     const updates = [];
     const values = [];
 
@@ -172,6 +199,9 @@ router.patch('/admin/users/:id', async (req, res) => {
       values
     );
 
+    // Invalidate cached user session state immediately
+    invalidateAuthCache(targetId);
+
     res.json({
       success: true,
       message: 'Admin user updated successfully.',
@@ -188,10 +218,11 @@ router.post('/admin/users/:id/password', async (req, res) => {
     const targetId = parseInt(req.params.id, 10);
     const { newPassword } = req.body;
 
-    if (!newPassword || String(newPassword).length < 4) {
+    const cleanPassword = String(newPassword || '').trim();
+    if (!cleanPassword || cleanPassword.length < 8) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 4 characters long.',
+        message: 'Password must be at least 8 characters long.',
       });
     }
 
@@ -204,12 +235,15 @@ router.post('/admin/users/:id/password', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Admin user not found.' });
     }
 
-    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+    const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
     await db.query(
       `UPDATE ${RPL_DB}.rpl_admin_users SET password_hash = ? WHERE id = ?`,
       [passwordHash, targetId]
     );
+
+    // Invalidate cached user session state immediately
+    invalidateAuthCache(targetId);
 
     res.json({
       success: true,
@@ -258,6 +292,9 @@ router.delete('/admin/users/:id', async (req, res) => {
     }
 
     await db.query(`DELETE FROM ${RPL_DB}.rpl_admin_users WHERE id = ?`, [targetId]);
+
+    // Invalidate cached user session state immediately
+    invalidateAuthCache(targetId);
 
     res.json({
       success: true,

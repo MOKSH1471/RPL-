@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Plus,
   Play,
+  AlertCircle,
 } from 'lucide-react';
 import {
   CricketMatch,
@@ -47,12 +48,18 @@ import { MatchSchedulingWizard } from './MatchSchedulingWizard';
 
 interface ScorerPageProps {
   onBackToHome: () => void;
+  isScorecardAdmin?: boolean;
+  initialView?: 'scoring' | 'hub' | 'wizard';
 }
 
-export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
+export const ScorerPage: React.FC<ScorerPageProps> = ({
+  onBackToHome,
+  isScorecardAdmin = false,
+  initialView = 'hub',
+}) => {
   const [match, setMatch] = useState<CricketMatch>(() => loadSavedMatch());
   const [matchesList, setMatchesList] = useState<CricketMatch[]>(() => loadMatchesList());
-  const [viewMode, setViewMode] = useState<'scoring' | 'hub' | 'wizard'>('scoring');
+  const [viewMode, setViewMode] = useState<'scoring' | 'hub' | 'wizard'>(initialView);
   const [activeTab, setActiveTab] = useState<'scorer' | 'scorecard' | 'log'>('scorer');
 
   // Modals state
@@ -62,6 +69,25 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
   const [changeBatsmanTarget, setChangeBatsmanTarget] = useState<'striker' | 'nonStriker'>('striker');
   const [isOverEndPrompt, setIsOverEndPrompt] = useState(false);
   const [isNewMatchModalOpen, setIsNewMatchModalOpen] = useState(false);
+  const [syncAuthError, setSyncAuthError] = useState<string | null>(null);
+
+  // Listen to background sync authentication status
+  useEffect(() => {
+    const handleAuthError = (e: any) => {
+      setSyncAuthError(e.detail?.message || 'Scorer session expired. Please re-authenticate to sync to cloud.');
+    };
+    const handleSyncSuccess = () => {
+      setSyncAuthError(null);
+    };
+
+    window.addEventListener('rpl_sync_auth_error', handleAuthError);
+    window.addEventListener('rpl_sync_success', handleSyncSuccess);
+
+    return () => {
+      window.removeEventListener('rpl_sync_auth_error', handleAuthError);
+      window.removeEventListener('rpl_sync_success', handleSyncSuccess);
+    };
+  }, []);
 
   // Initial load from Database / Vite store (replaces hardcoded demo cache when online)
   useEffect(() => {
@@ -889,14 +915,27 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Admin Portal</span>
-            </button>
+            {viewMode !== 'hub' ? (
+              <button
+                type="button"
+                onClick={() => setViewMode('hub')}
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
+                title="Return to Matches Hub"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Matches Hub</span>
+              </button>
+            ) : !isScorecardAdmin ? (
+              <button
+                type="button"
+                onClick={onBackToHome}
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
+                title="Return to Admin Dashboard"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Admin Dashboard</span>
+              </button>
+            ) : null}
             <div className="h-4 w-px bg-slate-200" />
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-sm tracking-tight text-slate-900">
@@ -960,6 +999,23 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({ onBackToHome }) => {
           </div>
         </div>
       </header>
+
+      {/* Cloud Sync Warning Banner */}
+      {syncAuthError && (
+        <div className="bg-amber-500 text-slate-950 px-4 py-2.5 text-xs font-bold flex items-center justify-between border-b border-amber-600 shadow-sm animate-in fade-in">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-slate-950" />
+            <span>{syncAuthError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-3 py-1 rounded-lg bg-slate-950 text-white text-[11px] font-bold hover:bg-slate-800 transition-colors ml-4 shrink-0"
+          >
+            Re-login
+          </button>
+        </div>
+      )}
 
       {/* Main Content Container */}
       <main className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 space-y-3">

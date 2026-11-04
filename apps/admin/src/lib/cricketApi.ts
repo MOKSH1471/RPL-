@@ -93,7 +93,24 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
 
     if (res.ok) {
       const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rpl_sync_success'));
+      }
       if (data) return data;
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('rpl_sync_auth_error', {
+            detail: {
+              status: res.status,
+              message: 'Scorer session expired or unauthorized. Scores are preserved locally, but cloud sync is paused until you re-authenticate.',
+            },
+          })
+        );
+      }
+      return null;
     }
 
     // Create if PUT did not find/update record
@@ -105,7 +122,25 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
       },
       body: JSON.stringify(match),
     });
-    if (createRes.ok) return await createRes.json();
+    if (createRes.ok) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rpl_sync_success'));
+      }
+      return await createRes.json();
+    }
+
+    if (createRes.status === 401 || createRes.status === 403) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('rpl_sync_auth_error', {
+            detail: {
+              status: createRes.status,
+              message: 'Scorer session expired or unauthorized. Scores are preserved locally, but cloud sync is paused until you re-authenticate.',
+            },
+          })
+        );
+      }
+    }
     return null;
   } catch (err) {
     // Non-blocking catch to ensure offline scoring continues smoothly

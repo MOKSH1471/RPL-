@@ -434,7 +434,11 @@ export function AdminPortal({ onBackToHome, currentUser, onLogout }: AdminPortal
 
         {activeTab === 'scorer' && (
           <div className="rounded-3xl min-h-[85vh]">
-            <ScorerPage onBackToHome={() => setActiveTab('dashboard')} />
+            <ScorerPage
+              onBackToHome={() => setActiveTab('dashboard')}
+              isScorecardAdmin={isScorerOnly}
+              initialView="hub"
+            />
           </div>
         )}
 

@@ -7,6 +7,9 @@ import { verifyAuth } from '../middleware/auth.js';
 
 const router = Router();
 
+// Constant pre-computed bcrypt hash to eliminate timing-based user enumeration
+const DUMMY_HASH = '$2b$10$7EqJtq98hPqEX7fNZaFWoO.8/hR9Keqj1pS1p5g3j1l0Vq3a2b1c2';
+
 // POST /api/auth/login - Authenticate admin or scorer
 router.post('/auth/login', async (req, res) => {
   try {
@@ -28,6 +31,8 @@ router.post('/auth/login', async (req, res) => {
     );
 
     if (!rows || rows.length === 0) {
+      // Execute dummy bcrypt comparison so request takes equal time
+      await bcrypt.compare(String(password), DUMMY_HASH).catch(() => {});
       return res.status(401).json({
         success: false,
         message: 'Invalid username or password.',
@@ -104,3 +109,4 @@ router.get('/auth/me', verifyAuth, async (req, res) => {
 });
 
 export default router;
+

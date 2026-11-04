@@ -23,3 +23,4 @@ WHERE NOT EXISTS (SELECT 1 FROM `rpl_admin_users` WHERE `username` = 'admin');
 INSERT INTO `rpl_admin_users` (`username`, `name`, `password_hash`, `role`, `permissions`, `is_active`, `created_by`)
 SELECT 'scorer', 'Pitch Match Scorer', '$2b$10$Xib4iYNS/17fTEfNdpGA6uSQM0Jv76BLybBp4NrJ8pvZGfGpeH8Gi', 'SCORECARD_ADMIN', JSON_ARRAY('scorer'), TRUE, 'system'
 WHERE NOT EXISTS (SELECT 1 FROM `rpl_admin_users` WHERE `username` = 'scorer');
+

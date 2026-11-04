@@ -10,7 +10,7 @@ import {
   updateMatch,
   deleteMatch,
 } from '../services/cricket.service.js';
-import { verifyAuth, requireAnyPermission } from '../middleware/auth.js';
+import { verifyAuth, requireAnyPermission, requireSuperAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -100,8 +100,8 @@ router.put('/cricket/matches/:id', verifyAuth, requireAnyPermission(['scorer', '
   }
 });
 
-// DELETE a match (Protected)
-router.delete('/cricket/matches/:id', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
+// DELETE a match (Super Admin only - prevents ground scorers from accidentally deleting tournament records)
+router.delete('/cricket/matches/:id', verifyAuth, requireSuperAdmin, async (req, res, next) => {
   try {
     const result = await deleteMatch(req.params.id);
     res.json(result);
