@@ -13,8 +13,15 @@ import {
   CreditCard,
   Activity,
   Shield,
+  LogOut,
+  UserCheck,
 } from 'lucide-react';
-import { fetchAdminStats, fetchAdminRegistrations, fetchAdminAccommodation } from '@/lib/api';
+import {
+  fetchAdminStats,
+  fetchAdminRegistrations,
+  fetchAdminAccommodation,
+  AdminUser,
+} from '@/lib/api';
 import { AdminDashboardTab } from './AdminDashboardTab';
 import { AdminRegistrationsTab } from './AdminRegistrationsTab';
 import { AdminAccommodationTab } from './AdminAccommodationTab';
@@ -23,38 +30,73 @@ import { AdminExportTab } from './AdminExportTab';
 import { AdminTeamMakerTab } from './AdminTeamMakerTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { ScorerPage } from './scorer/ScorerPage';
+import { AdminUsersModal } from './AdminUsersModal';
 
 export type AdminRole = 'admin' | 'scorer';
 
 interface AdminPortalProps {
   onBackToHome: () => void;
-  userRole?: AdminRole;
+  currentUser?: AdminUser | null;
+  onLogout?: () => void;
 }
 
-export function AdminPortal({ onBackToHome, userRole = 'admin' }: AdminPortalProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer'>(
-    userRole === 'scorer' ? 'scorer' : 'dashboard'
-  );
+export function AdminPortal({ onBackToHome, currentUser, onLogout }: AdminPortalProps) {
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const isScorerOnly =
+    currentUser?.role === 'SCORECARD_ADMIN' ||
+    (!isSuperAdmin && currentUser?.permissions?.length === 1 && currentUser?.permissions?.[0] === 'scorer');
+
+  const canViewDashboard = isSuperAdmin || currentUser?.permissions?.includes('dashboard');
+  const canViewRegistrations = isSuperAdmin || currentUser?.permissions?.includes('registrations');
+  const canViewAccommodation = isSuperAdmin || currentUser?.permissions?.includes('accommodation');
+  const canViewTransactions = isSuperAdmin || currentUser?.permissions?.includes('transactions');
+  const canViewExports = isSuperAdmin || currentUser?.permissions?.includes('exports');
+  const canViewTeams = isSuperAdmin || currentUser?.permissions?.includes('teams');
+  const canViewScorer = isSuperAdmin || currentUser?.permissions?.includes('scorer');
+
+  // Compute initial active tab
+  const getInitialTab = (): 'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' => {
+    if (isScorerOnly) return 'scorer';
+    if (canViewDashboard) return 'dashboard';
+    if (canViewRegistrations) return 'registrations';
+    if (canViewAccommodation) return 'accommodation';
+    if (canViewTransactions) return 'transactions';
+    if (canViewExports) return 'exports';
+    if (canViewTeams) return 'teams';
+    if (canViewScorer) return 'scorer';
+    return 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer'>(getInitialTab);
   const [stats, setStats] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
 
   const loadData = async (isInitial = false) => {
     setLoading(true);
     const startTime = Date.now();
     try {
-      const [statsRes, regsRes, accRes] = await Promise.all([
-        fetchAdminStats().catch(() => ({ stats: null })),
-        fetchAdminRegistrations().catch(() => ({ data: [] })),
-        fetchAdminAccommodation().catch(() => ({ data: [] })),
-      ]);
+      const promises: Promise<any>[] = [];
+      if (canViewDashboard) {
+        promises.push(fetchAdminStats().then((res) => ({ type: 'stats', data: res?.stats })).catch(() => ({ type: 'stats', data: null })));
+      }
+      if (canViewRegistrations || canViewExports || canViewTeams) {
+        promises.push(fetchAdminRegistrations().then((res) => ({ type: 'regs', data: res?.data })).catch(() => ({ type: 'regs', data: [] })));
+      }
+      if (canViewAccommodation || canViewExports) {
+        promises.push(fetchAdminAccommodation().then((res) => ({ type: 'acc', data: res?.data })).catch(() => ({ type: 'acc', data: [] })));
+      }
 
-      if (statsRes && statsRes.stats) setStats(statsRes.stats);
-      if (regsRes && regsRes.data) setRegistrations(regsRes.data);
-      if (accRes && accRes.data) setAccommodationList(accRes.data);
+      const results = await Promise.all(promises);
+      results.forEach((r) => {
+        if (r.type === 'stats' && r.data) setStats(r.data);
+        if (r.type === 'regs' && r.data) setRegistrations(r.data);
+        if (r.type === 'acc' && r.data) setAccommodationList(r.data);
+      });
     } catch (err) {
       console.error('Error loading admin portal data:', err);
     } finally {
@@ -160,6 +202,19 @@ export function AdminPortal({ onBackToHome, userRole = 'admin' }: AdminPortalPro
                   <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider border border-amber-300 whitespace-nowrap shrink-0">
                     Admin Portal
                   </span>
+                  {currentUser && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider border whitespace-nowrap shrink-0 ${
+                        isSuperAdmin
+                          ? 'bg-amber-100 text-amber-950 border-amber-400'
+                          : isScorerOnly
+                          ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
+                          : 'bg-indigo-100 text-indigo-950 border-indigo-400'
+                      }`}
+                    >
+                      {isSuperAdmin ? '👑 Super Admin' : isScorerOnly ? '🏏 Scorecard Admin' : `🛡️ ${currentUser.role}`}
+                    </span>
+                  )}
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold mt-0.5 whitespace-nowrap truncate">
                   <span className="sm:hidden">Admin Console</span>
@@ -169,124 +224,169 @@ export function AdminPortal({ onBackToHome, userRole = 'admin' }: AdminPortalPro
             </div>
           </div>
 
-          {/* Quick Refresh & Stats Counter */}
-          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+          {/* Quick Refresh, Manage Roles & Controls */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => setIsUsersModalOpen(true)}
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-2xs cursor-pointer shrink-0"
+                title="Manage Admin Accounts, Passwords & Roles"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden sm:inline">Manage Roles</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => loadData(false)}
               disabled={loading}
-              className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50 shrink-0"
               title="Refresh Data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh Data</span>
             </button>
 
-            <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-bold transition-all flex items-center space-x-1.5 border border-slate-200 cursor-pointer shrink-0"
+                title="Sign out of Console"
+              >
+                <LogOut className="w-3.5 h-3.5 text-slate-500" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            )}
+
+            <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Live DB Connected</span>
+              <span>Live DB</span>
             </div>
           </div>
 
         </div>
 
         {/* Tab Navigation Ribbon */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-100 flex items-center space-x-2 overflow-x-auto mobile-hide-scrollbar py-2">
+        {!isScorerOnly && (
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-100 flex items-center space-x-2 overflow-x-auto mobile-hide-scrollbar py-2">
+            {canViewDashboard && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'dashboard'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Overview Dashboard</span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'dashboard'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Overview Dashboard</span>
-          </button>
+            {canViewRegistrations && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('registrations')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'registrations'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Master Registrations</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 font-mono text-[10px]">
+                  {registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived).length}
+                </span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('registrations')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'registrations'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Master Registrations</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 font-mono text-[10px]">
-              {registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived).length}
-            </span>
-          </button>
+            {canViewAccommodation && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('accommodation')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'accommodation'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Bed className="w-4 h-4" />
+                <span>Room Allotment</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-800 font-mono text-[10px]">
+                  {accommodationList.length}
+                </span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('accommodation')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'accommodation'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <Bed className="w-4 h-4" />
-            <span>Room Allotment</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-800 font-mono text-[10px]">
-              {accommodationList.length}
-            </span>
-          </button>
+            {canViewTransactions && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('transactions')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'transactions'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Payments &amp; Audit</span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('transactions')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'transactions'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <CreditCard className="w-4 h-4" />
-            <span>Payments & Audit</span>
-          </button>
+            {canViewExports && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('exports')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'exports'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>1-Click Exports</span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('exports')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'exports'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>1-Click Exports</span>
-          </button>
+            {canViewTeams && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('teams')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'teams'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Shield className="w-4 h-4 text-amber-500" />
+                <span>Team Maker</span>
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('teams')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'teams'
-                ? 'bg-slate-900 text-amber-300 shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            <Shield className="w-4 h-4 text-amber-500" />
-            <span>Team Maker</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('scorer')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${activeTab === 'scorer'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
-                : 'text-slate-700 hover:bg-amber-50 hover:text-amber-900'
-              }`}
-          >
-            <Activity className="w-4 h-4 text-emerald-600" />
-            <span>Live Scorer</span>
-            <span className="px-1.5 py-0.5 rounded-full bg-slate-900 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold">
-              Live
-            </span>
-          </button>
-
-        </div>
+            {canViewScorer && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('scorer')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'scorer'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+                    : 'text-slate-700 hover:bg-amber-50 hover:text-amber-900'
+                }`}
+              >
+                <Activity className="w-4 h-4 text-emerald-600" />
+                <span>Live Scorer</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-slate-900 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold">
+                  Live
+                </span>
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Main Admin Content Container */}
@@ -352,6 +452,15 @@ export function AdminPortal({ onBackToHome, userRole = 'admin' }: AdminPortalPro
             const updated = res.data?.find((p: any) => p.id === selectedPlayer.id);
             if (updated) setSelectedPlayer(updated);
           }}
+        />
+      )}
+
+      {/* Super Admin Users & Roles Management Modal */}
+      {isSuperAdmin && currentUser && (
+        <AdminUsersModal
+          isOpen={isUsersModalOpen}
+          onClose={() => setIsUsersModalOpen(false)}
+          currentUser={currentUser}
         />
       )}
 

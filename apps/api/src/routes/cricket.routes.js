@@ -10,10 +10,11 @@ import {
   updateMatch,
   deleteMatch,
 } from '../services/cricket.service.js';
+import { verifyAuth, requireAnyPermission } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET all cricket teams with squads
+// GET all cricket teams with squads (Public for match cards & standings)
 router.get('/cricket/teams', async (req, res, next) => {
   try {
     const teams = await getAllTeams();
@@ -23,8 +24,8 @@ router.get('/cricket/teams', async (req, res, next) => {
   }
 });
 
-// POST create or save a team
-router.post('/cricket/teams', async (req, res, next) => {
+// POST create or save a team (Protected)
+router.post('/cricket/teams', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
   try {
     const team = await createTeam(req.body);
     res.status(201).json(team);
@@ -33,8 +34,8 @@ router.post('/cricket/teams', async (req, res, next) => {
   }
 });
 
-// PUT update a team
-router.put('/cricket/teams/:id', async (req, res, next) => {
+// PUT update a team (Protected)
+router.put('/cricket/teams/:id', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
   try {
     const team = await updateTeam(req.params.id, req.body);
     res.json(team);
@@ -43,8 +44,8 @@ router.put('/cricket/teams/:id', async (req, res, next) => {
   }
 });
 
-// DELETE a team
-router.delete('/cricket/teams/:id', async (req, res, next) => {
+// DELETE a team (Protected)
+router.delete('/cricket/teams/:id', verifyAuth, requireAnyPermission(['teams']), async (req, res, next) => {
   try {
     const result = await deleteTeam(req.params.id);
     res.json(result);
@@ -53,7 +54,7 @@ router.delete('/cricket/teams/:id', async (req, res, next) => {
   }
 });
 
-// GET all cricket matches
+// GET all cricket matches (Public for live scorecards)
 router.get('/cricket/matches', async (req, res, next) => {
   try {
     const matches = await getAllMatches();
@@ -63,7 +64,7 @@ router.get('/cricket/matches', async (req, res, next) => {
   }
 });
 
-// GET single cricket match by id
+// GET single cricket match by id (Public)
 router.get('/cricket/matches/:id', async (req, res, next) => {
   try {
     const match = await getMatchById(req.params.id);
@@ -76,8 +77,8 @@ router.get('/cricket/matches/:id', async (req, res, next) => {
   }
 });
 
-// POST create a new match
-router.post('/cricket/matches', async (req, res, next) => {
+// POST create a new match (Protected)
+router.post('/cricket/matches', verifyAuth, requireAnyPermission(['scorer', 'teams']), async (req, res, next) => {
   try {
     const created = await createMatch(req.body);
     res.status(201).json(created);
@@ -86,8 +87,8 @@ router.post('/cricket/matches', async (req, res, next) => {
   }
 });
 
-// PUT update match (scores, live balls, status)
-router.put('/cricket/matches/:id', async (req, res, next) => {
+// PUT update match (scores, live balls, status) (Protected)
+router.put('/cricket/matches/:id', verifyAuth, requireAnyPermission(['scorer', 'teams']), async (req, res, next) => {
   try {
     let updated = await updateMatch(req.params.id, req.body);
     if (!updated) {
@@ -99,8 +100,8 @@ router.put('/cricket/matches/:id', async (req, res, next) => {
   }
 });
 
-// DELETE a match
-router.delete('/cricket/matches/:id', async (req, res, next) => {
+// DELETE a match (Protected)
+router.delete('/cricket/matches/:id', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
   try {
     const result = await deleteMatch(req.params.id);
     res.json(result);

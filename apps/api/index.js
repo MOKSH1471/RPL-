@@ -26,6 +26,8 @@ import registrationRoutes from './src/routes/registration.routes.js';
 import razorpayRoutes from './src/routes/razorpay.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import cricketRoutes from './src/routes/cricket.routes.js';
+import authRoutes from './src/routes/auth.routes.js';
+import adminUsersRoutes from './src/routes/admin.users.routes.js';
 import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter } from './src/middleware/rateLimiter.js';
 import { notFoundHandler, globalErrorHandler } from './src/middleware/errorHandler.js';
 import { securityHeadersMiddleware, corsOptions } from './src/middleware/security.js';
@@ -60,6 +62,8 @@ app.use('/api/register', registrationRateLimiter);
 app.use('/api/razorpay', paymentRateLimiter);
 
 // 3. Core API Routes (Mounted under /api)
+app.use('/api', authRoutes);
+app.use('/api', adminUsersRoutes);
 app.use('/api', sportsRoutes);
 app.use('/api', lookupRoutes);
 app.use('/api', uploadRoutes);

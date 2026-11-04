@@ -1,4 +1,5 @@
 import { CricketMatch, CricketTeam } from '@/types/cricket';
+import { getAuthHeaders } from './api';
 
 const isLocalhost =
   typeof window !== 'undefined' &&
@@ -31,7 +32,10 @@ export async function saveCricketTeamToDb(team: CricketTeam): Promise<CricketTea
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/teams`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(team),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -49,6 +53,7 @@ export async function deleteCricketTeamFromDb(teamId: string): Promise<boolean> 
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/teams/${teamId}`, {
       method: 'DELETE',
+      headers: { ...getAuthHeaders() },
     });
     return res.ok;
   } catch (err) {
@@ -79,7 +84,10 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/matches/${match.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(match),
     });
 
@@ -91,7 +99,10 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
     // Create if PUT did not find/update record
     const createRes = await fetch(`${API_BASE_URL}/cricket/matches`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(match),
     });
     if (createRes.ok) return await createRes.json();
@@ -110,6 +121,7 @@ export async function deleteMatchFromDb(matchId: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/matches/${matchId}`, {
       method: 'DELETE',
+      headers: { ...getAuthHeaders() },
     });
     return res.ok;
   } catch (err) {
