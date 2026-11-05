@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -40,6 +41,7 @@ import pool from './src/config/db.js';
 // Security & Parsing Middleware
 app.use(securityHeadersMiddleware);
 app.use(cors(corsOptions()));
+app.use(cookieParser());
 app.use(express.json({
   limit: '10mb',
   verify: (req, res, buf) => {

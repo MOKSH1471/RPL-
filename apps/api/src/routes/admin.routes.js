@@ -2,12 +2,12 @@ import { Router } from 'express';
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
 import { sanitizeDate } from '../utils/helpers.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
-import { verifyAuth, requireAnyPermission, requireSuperAdmin } from '../middleware/auth.js';
+import { verifyAuth, requireAnyPermission, requireSuperAdmin, requirePasswordChanged } from '../middleware/auth.js';
 
 const router = Router();
 
 // Secure all /admin endpoints with authentication
-router.use('/admin', verifyAuth);
+router.use('/admin', verifyAuth, requirePasswordChanged);
 
 // 1. Admin Endpoint: Aggregated Stats & Analytics
 router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res) => {

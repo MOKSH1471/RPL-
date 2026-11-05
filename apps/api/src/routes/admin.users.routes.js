@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db, { RPL_DB } from '../config/db.js';
 import { verifyAuth, requireSuperAdmin, invalidateAuthCache } from '../middleware/auth.js';
+import { validatePasswordStrength } from '../utils/passwordPolicy.js';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.use('/admin/users', verifyAuth, requireSuperAdmin);
 router.get('/admin/users', async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, username, name, role, permissions, is_active, created_by, created_at, last_login
+      `SELECT id, username, name, role, permissions, is_active, must_change_password, token_version, created_by, created_at, last_login
        FROM ${RPL_DB}.rpl_admin_users
        ORDER BY id ASC`
     );
@@ -27,6 +28,7 @@ router.get('/admin/users', async (req, res) => {
       return {
         ...u,
         permissions: Array.isArray(permissions) ? permissions : [],
+        must_change_password: Boolean(u.must_change_password),
       };
     });
 
@@ -37,6 +39,26 @@ router.get('/admin/users', async (req, res) => {
   } catch (error) {
     console.error('Error fetching admin users:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch admin users.', error: error.message });
+  }
+});
+
+// 1b. GET /api/admin/users/login-logs - Fetch recent audit login activity logs
+router.get('/admin/users/login-logs', async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, user_id, username, status, ip_address, user_agent, attempted_at
+       FROM ${RPL_DB}.rpl_admin_login_logs
+       ORDER BY id DESC
+       LIMIT 50`
+    );
+
+    res.json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error('Error fetching admin login logs:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch login logs.', error: error.message });
   }
 });
 
@@ -53,10 +75,11 @@ router.post('/admin/users', async (req, res) => {
     }
 
     const cleanPassword = String(password).trim();
-    if (cleanPassword.length < 8) {
+    const policyResult = validatePasswordStrength(cleanPassword);
+    if (!policyResult.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters long.',
+        message: policyResult.message,
       });
     }
 
@@ -90,11 +113,11 @@ router.post('/admin/users', async (req, res) => {
     }
 
     // Hash password with bcrypt
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
     const [result] = await db.query(
-      `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, created_by)
-       VALUES (?, ?, ?, ?, ?, TRUE, ?)`,
+      `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, must_change_password, token_version, created_by)
+       VALUES (?, ?, ?, ?, ?, TRUE, TRUE, 1, ?)`,
       [
         cleanUsername,
         String(name).trim(),
@@ -115,6 +138,7 @@ router.post('/admin/users', async (req, res) => {
         role: assignedRole,
         permissions: permsArray,
         is_active: true,
+        must_change_password: true,
       },
     });
   } catch (error) {
@@ -146,6 +170,14 @@ router.patch('/admin/users/:id', async (req, res) => {
       });
     }
 
+    // Guard: Prevent self-demotion or self-permission modification
+    if (req.user?.id === targetId && (role !== undefined || permissions !== undefined)) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot modify your own role or permissions. Another Super Admin must perform this action.',
+      });
+    }
+
     // Guard: Prevent demoting or deactivating the last active Super Admin
     if (existing[0].role === 'SUPER_ADMIN') {
       const isDemoting = role !== undefined && role !== 'SUPER_ADMIN';
@@ -173,20 +205,29 @@ router.patch('/admin/users/:id', async (req, res) => {
       values.push(String(name).trim());
     }
 
+    let shouldRevokeTokens = false;
+
     if (role !== undefined) {
       updates.push('role = ?');
       values.push(String(role).trim());
+      shouldRevokeTokens = true;
     }
 
     if (permissions !== undefined) {
       const permsArray = Array.isArray(permissions) ? permissions : [];
       updates.push('permissions = ?');
       values.push(JSON.stringify(permsArray));
+      shouldRevokeTokens = true;
     }
 
     if (is_active !== undefined) {
       updates.push('is_active = ?');
       values.push(Boolean(is_active));
+      shouldRevokeTokens = true;
+    }
+
+    if (shouldRevokeTokens) {
+      updates.push('token_version = token_version + 1');
     }
 
     if (updates.length === 0) {
@@ -219,10 +260,11 @@ router.post('/admin/users/:id/password', async (req, res) => {
     const { newPassword } = req.body;
 
     const cleanPassword = String(newPassword || '').trim();
-    if (!cleanPassword || cleanPassword.length < 8) {
+    const policyResult = validatePasswordStrength(cleanPassword);
+    if (!policyResult.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters long.',
+        message: policyResult.message,
       });
     }
 
@@ -237,8 +279,11 @@ router.post('/admin/users/:id/password', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
+    // Update password, require user to change it upon first use, and bump token_version to kill active sessions
     await db.query(
-      `UPDATE ${RPL_DB}.rpl_admin_users SET password_hash = ? WHERE id = ?`,
+      `UPDATE ${RPL_DB}.rpl_admin_users 
+       SET password_hash = ?, must_change_password = TRUE, token_version = token_version + 1 
+       WHERE id = ?`,
       [passwordHash, targetId]
     );
 

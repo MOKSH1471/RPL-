@@ -2,12 +2,13 @@ import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/jwt.js';
 import db, { RPL_DB } from '../config/db.js';
 
-// In-memory cache for user verification (TTL = 30 seconds) to avoid DB WAN lag during high-frequency live scoring
+// Fast in-memory cache for user verification (TTL = 5 seconds)
+// Short TTL guarantees rapid synchronization across multi-process clusters while avoiding redundant DB WAN lag
 const userCache = new Map();
-const CACHE_TTL_MS = 30 * 1000;
+const CACHE_TTL_MS = 5 * 1000;
 
 /**
- * Invalidate user verification cache (called when an admin edits, resets password, or deactivates a user)
+ * Invalidate user verification cache (called when an admin edits, resets password, logs out, or deactivates a user)
  */
 export function invalidateAuthCache(userId) {
   if (userId) {
@@ -18,12 +19,11 @@ export function invalidateAuthCache(userId) {
 }
 
 /**
- * Verify JWT authentication token from Authorization header.
- * Also supports fallback via X-Admin-Secret header for server-to-server / CI test calls.
+ * Verify JWT authentication token from HttpOnly cookie or Authorization header.
+ * Also supports fallback via X-Admin-Secret header for internal / CI test calls.
  */
 export async function verifyAuth(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
     const adminSecret = req.headers['x-admin-secret'];
 
     // 1. Fallback for internal / CI scripts using ADMIN_API_SECRET
@@ -34,18 +34,27 @@ export async function verifyAuth(req, res, next) {
         name: 'System Admin',
         role: 'SUPER_ADMIN',
         permissions: ['dashboard', 'registrations', 'accommodation', 'transactions', 'exports', 'teams', 'scorer', 'users'],
+        must_change_password: false,
+        token_version: 1,
       };
       return next();
     }
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 2. Extract token: Prefer HttpOnly cookie, fallback to Authorization Bearer header
+    let token = null;
+    if (req.cookies && req.cookies.rpl_admin_token) {
+      token = req.cookies.rpl_admin_token;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required. Please provide a valid Bearer token.',
+        message: 'Authentication required. Please provide a valid session token.',
       });
     }
 
-    const token = authHeader.split(' ')[1];
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
@@ -56,7 +65,7 @@ export async function verifyAuth(req, res, next) {
       });
     }
 
-    // Fast in-memory cache lookup to eliminate redundant DB queries during live matches
+    // 3. Fast in-memory cache lookup with token_version validation
     const now = Date.now();
     const cached = userCache.get(decoded.id);
 
@@ -67,13 +76,28 @@ export async function verifyAuth(req, res, next) {
           message: 'Account not found or has been deactivated.',
         });
       }
+      if (
+        decoded.token_version !== undefined &&
+        cached.user.token_version !== undefined &&
+        decoded.token_version !== cached.user.token_version
+      ) {
+        userCache.delete(decoded.id);
+        return res.status(401).json({
+          success: false,
+          code: 'SESSION_REVOKED',
+          message: 'Session has been invalidated. Please log in again.',
+        });
+      }
       req.user = cached.user;
       return next();
     }
 
+    // 4. Query fresh user state from MySQL
     try {
       const [rows] = await db.query(
-        `SELECT id, username, name, role, permissions, is_active FROM ${RPL_DB}.rpl_admin_users WHERE id = ? LIMIT 1`,
+        `SELECT id, username, name, role, permissions, is_active, must_change_password, token_version 
+         FROM ${RPL_DB}.rpl_admin_users 
+         WHERE id = ? LIMIT 1`,
         [decoded.id]
       );
 
@@ -86,6 +110,21 @@ export async function verifyAuth(req, res, next) {
       }
 
       const user = rows[0];
+
+      // Validate token_version for instant revocation across password resets or logouts
+      if (
+        decoded.token_version !== undefined &&
+        user.token_version !== undefined &&
+        decoded.token_version !== user.token_version
+      ) {
+        userCache.delete(decoded.id);
+        return res.status(401).json({
+          success: false,
+          code: 'SESSION_REVOKED',
+          message: 'Session has been invalidated. Please log in again.',
+        });
+      }
+
       let permissions = [];
       try {
         permissions = typeof user.permissions === 'string' ? JSON.parse(user.permissions || '[]') : (user.permissions || []);
@@ -100,18 +139,22 @@ export async function verifyAuth(req, res, next) {
         role: user.role,
         permissions: Array.isArray(permissions) ? permissions : [],
         is_active: Boolean(user.is_active),
+        must_change_password: Boolean(user.must_change_password),
+        token_version: user.token_version || 1,
       };
 
       userCache.set(decoded.id, { user: verifiedUser, timestamp: now });
       req.user = verifiedUser;
     } catch (dbErr) {
-      // If DB check fails, fallback to cached user or decoded JWT payload safely
+      // Fallback safely to cached user or decoded payload
       req.user = cached?.user || {
         id: decoded.id,
         username: decoded.username,
         name: decoded.name,
         role: decoded.role,
         permissions: Array.isArray(decoded.permissions) ? decoded.permissions : [],
+        must_change_password: Boolean(decoded.must_change_password),
+        token_version: decoded.token_version || 1,
       };
     }
 
@@ -123,6 +166,32 @@ export async function verifyAuth(req, res, next) {
       error: error.message,
     });
   }
+}
+
+/**
+ * Middleware: Enforces that default credentials must be changed before accessing protected resources
+ */
+export function requirePasswordChanged(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required.' });
+  }
+
+  const path = (req.originalUrl || req.path).toLowerCase();
+  const isAllowedWhenPasswordPending =
+    path.includes('/password') ||
+    path.includes('/change-password') ||
+    path.includes('/logout') ||
+    path.includes('/auth/me');
+
+  if (req.user.must_change_password && !isAllowedWhenPasswordPending) {
+    return res.status(403).json({
+      success: false,
+      code: 'PASSWORD_CHANGE_REQUIRED',
+      message: 'You must change your default password before accessing administrative features.',
+    });
+  }
+
+  next();
 }
 
 /**
@@ -194,4 +263,3 @@ export function requireAnyPermission(permissionKeys = []) {
     next();
   };
 }
-

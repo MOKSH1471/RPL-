@@ -201,6 +201,8 @@ export interface AdminUser {
   role: string;
   permissions: string[];
   is_active: boolean;
+  must_change_password?: boolean;
+  token_version?: number;
   created_by?: string;
   created_at?: string;
   last_login?: string;
@@ -253,6 +255,7 @@ export async function loginAdmin(username: string, password: string): Promise<{ 
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ username, password }),
   });
 
@@ -273,6 +276,7 @@ export async function fetchCurrentUser(): Promise<AdminUser | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: { ...getAuthHeaders() },
+      credentials: 'include',
     });
     if (!res.ok) {
       if (res.status === 401) {
@@ -290,6 +294,39 @@ export async function fetchCurrentUser(): Promise<AdminUser | null> {
     console.warn('Session verification error:', err);
     return getSavedAdminUser();
   }
+}
+
+
+export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<AdminUser> {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    credentials: 'include',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to change password');
+  }
+
+  if (data.token) setAuthToken(data.token);
+  if (data.user) saveAdminUser(data.user);
+  return data.user;
+}
+
+export async function logoutAdmin(): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: { ...getAuthHeaders() },
+      credentials: 'include',
+    });
+  } catch {}
+  removeAuthToken();
 }
 
 // ==========================================
@@ -361,6 +398,25 @@ export async function deleteAdminUser(id: number): Promise<void> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || 'Failed to delete admin user');
+}
+
+export interface AdminLoginLog {
+  id: number;
+  user_id: number | null;
+  username: string;
+  status: 'SUCCESS' | 'FAILED' | 'LOCKED' | 'NOT_FOUND' | 'DEACTIVATED';
+  ip_address: string | null;
+  user_agent: string | null;
+  attempted_at: string;
+}
+
+export async function fetchLoginLogs(): Promise<AdminLoginLog[]> {
+  const res = await fetch(`${API_BASE_URL}/admin/users/login-logs`, {
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch login audit logs');
+  return data.data || [];
 }
 
 // ==========================================

@@ -186,36 +186,38 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
             </button>
           </form>
 
-          {/* Quick Demo Fill Pills for Testing */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <p className="text-[11px] text-slate-500 font-semibold mb-2.5 text-center">
-              Quick Sign-In Accounts:
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin')}
-                className="py-2 px-3 rounded-xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200/80 text-left transition-colors flex items-center space-x-2 cursor-pointer shadow-2xs"
-              >
-                <span className="text-base">👑</span>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">Super Admin</div>
-                  <div className="text-[10px] text-amber-700 font-mono">admin</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('scorer')}
-                className="py-2 px-3 rounded-xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/80 text-left transition-colors flex items-center space-x-2 cursor-pointer shadow-2xs"
-              >
-                <span className="text-base">🏏</span>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 truncate">Scorecard Admin</div>
-                  <div className="text-[10px] text-emerald-700 font-mono">scorer</div>
-                </div>
-              </button>
+          {/* Quick Demo Fill Pills for Testing (Dev Only) */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <p className="text-[11px] text-slate-500 font-semibold mb-2.5 text-center">
+                Quick Sign-In Accounts (Dev Only):
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('admin')}
+                  className="py-2 px-3 rounded-xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200/80 text-left transition-colors flex items-center space-x-2 cursor-pointer shadow-2xs"
+                >
+                  <span className="text-base">👑</span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 truncate">Super Admin</div>
+                    <div className="text-[10px] text-amber-700 font-mono">admin</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('scorer')}
+                  className="py-2 px-3 rounded-xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/80 text-left transition-colors flex items-center space-x-2 cursor-pointer shadow-2xs"
+                >
+                  <span className="text-base">🏏</span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-900 truncate">Scorecard Admin</div>
+                    <div className="text-[10px] text-emerald-700 font-mono">scorer</div>
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

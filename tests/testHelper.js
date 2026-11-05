@@ -13,6 +13,10 @@ if (isAwsProd && process.env.ALLOW_PROD_TESTS !== '1') {
   process.exit(1);
 }
 
+if (!process.env.ADMIN_API_SECRET) {
+  process.env.ADMIN_API_SECRET = 'test_admin_secret_ci_key_2026';
+}
+
 import http from 'http';
 import app from '../apps/api/index.js';
 import db, { RPL_DB } from '../apps/api/src/config/db.js';
@@ -31,12 +35,6 @@ export async function archiveTestRegistrations() {
         AND (
           email LIKE '%@example.com'
           OR email LIKE '%@test.com'
-          OR full_name LIKE '%Test%'
-          OR full_name LIKE '%Draft%'
-          OR full_name LIKE '%Player%'
-          OR full_name LIKE '%Champion%'
-          OR full_name LIKE '%Guest%'
-          OR full_name LIKE '%Veteran%'
         )
     `);
   } catch {}
@@ -70,12 +68,24 @@ export async function stopTestServer() {
 export async function apiRequest(endpoint, options = {}) {
   const base = await startTestServer();
   const url = endpoint.startsWith('http') ? endpoint : `${base}${endpoint}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+
+  // If calling an admin route without any auth header explicitly specified, inject CI admin secret
+  if (
+    endpoint.startsWith('/api/admin') &&
+    !('x-admin-secret' in (options.headers || {})) &&
+    !('Authorization' in (options.headers || {}))
+  ) {
+    headers['x-admin-secret'] = process.env.ADMIN_API_SECRET;
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers,
   });
   let data;
   try {

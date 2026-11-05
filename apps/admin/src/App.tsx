@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AdminPortal } from './components/AdminPortal';
 import { AdminLogin } from './components/auth/AdminLogin';
-import { AdminUser, fetchCurrentUser, removeAuthToken } from './lib/api';
+import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
+import { AdminUser, fetchCurrentUser, logoutAdmin } from './lib/api';
 import { Trophy } from 'lucide-react';
 
 export function App() {
@@ -29,10 +30,41 @@ export function App() {
     window.open(userSiteUrl, '_blank');
   };
 
-  const handleLogout = () => {
-    removeAuthToken();
+  const handleLogout = async () => {
+    await logoutAdmin();
     setCurrentUser(null);
   };
+
+  // Security Hardening: Automatic session logout after 30 minutes of idle inactivity
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        console.warn('Admin session timed out after 30 minutes of inactivity.');
+        handleLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, resetTimer, { passive: true });
+    });
+
+    // Start timer on initial mount / login
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, resetTimer);
+      });
+    };
+  }, [currentUser]);
 
   if (checkingAuth) {
     return (
@@ -54,6 +86,17 @@ export function App() {
       <AdminLogin
         onLoginSuccess={(user) => setCurrentUser(user)}
         onBackToHome={handleOpenUserSite}
+      />
+    );
+  }
+
+  // Force default credentials change before granting access to administrative features
+  if (currentUser.must_change_password) {
+    return (
+      <ForcePasswordChangeModal
+        user={currentUser}
+        onSuccess={(updatedUser) => setCurrentUser(updatedUser)}
+        onLogout={handleLogout}
       />
     );
   }
