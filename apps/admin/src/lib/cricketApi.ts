@@ -100,6 +100,11 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
     }
 
     if (res.status === 401 || res.status === 403) {
+      const errJson = await res.json().catch(() => null);
+      if (errJson?.code === 'MATCH_COMPLETED_LOCKED') {
+        // Concluded match is locked against writes; skip dispatching session auth error
+        return null;
+      }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('rpl_sync_auth_error', {

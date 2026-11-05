@@ -24,6 +24,7 @@ import {
   loadSavedMatch,
   saveMatchToStorage,
   resetMatchInStorage,
+  resetExistingMatch,
   formatOvers,
   loadMatchesList,
   saveMatchesList,
@@ -61,6 +62,13 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
   const [matchesList, setMatchesList] = useState<CricketMatch[]>(() => loadMatchesList());
   const [viewMode, setViewMode] = useState<'scoring' | 'hub' | 'wizard'>(initialView);
   const [activeTab, setActiveTab] = useState<'scorer' | 'scorecard' | 'log'>('scorer');
+
+  // Prevent scorecard admins from accessing the fixture wizard directly
+  useEffect(() => {
+    if (isScorecardAdmin && viewMode === 'wizard') {
+      setViewMode('hub');
+    }
+  }, [isScorecardAdmin, viewMode]);
 
   // Modals state
   const [isWicketModalOpen, setIsWicketModalOpen] = useState(false);
@@ -113,7 +121,10 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
   // Auto persist whenever match updates (syncs to LocalStorage AND MySQL Database)
   useEffect(() => {
     saveMatchToStorage(match);
-    syncMatchToDb(match);
+    // Scorecard admins viewing completed matches should not attempt to write to DB
+    if (!(isScorecardAdmin && match.status === 'completed')) {
+      syncMatchToDb(match);
+    }
     setMatchesList((prev) => {
       const idx = prev.findIndex((m) => m.id === match.id);
       if (idx >= 0) {
@@ -879,10 +890,24 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
   };
 
   const handleResetSingleMatch = (matchId: string) => {
-    if (window.confirm('Reset this match to fresh 0-0 state?')) {
-      const fresh = resetMatchInStorage();
-      setMatch(fresh);
-      setMatchesList((prev) => prev.map((m) => (m.id === matchId ? fresh : m)));
+    const target = matchesList.find((m) => m.id === matchId) || (match.id === matchId ? match : null);
+    if (!target) return;
+    if (target.status === 'completed') {
+      alert('Completed matches cannot be reset.');
+      return;
+    }
+    if (window.confirm(`Reset "${target.teamA.name} vs ${target.teamB.name}" score to 0-0?`)) {
+      const fresh = resetExistingMatch(target);
+      if (match.id === matchId) {
+        setMatch(fresh);
+        saveMatchToStorage(fresh);
+      }
+      setMatchesList((prev) => {
+        const updated = prev.map((m) => (m.id === matchId ? fresh : m));
+        saveMatchesList(updated);
+        return updated;
+      });
+      syncMatchToDb(fresh);
     }
   };
 
@@ -973,18 +998,20 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
               <span className="hidden sm:inline">Matches Hub</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setViewMode('wizard')}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-black flex items-center space-x-1.5 transition-colors cursor-pointer ${
-                viewMode === 'wizard'
-                  ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
-                  : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Schedule Match</span>
-            </button>
+            {!isScorecardAdmin && (
+              <button
+                type="button"
+                onClick={() => setViewMode('wizard')}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-black flex items-center space-x-1.5 transition-colors cursor-pointer ${
+                  viewMode === 'wizard'
+                    ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                    : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Schedule Match</span>
+              </button>
+            )}
 
             {viewMode === 'scoring' && (
               <button
@@ -1048,13 +1075,21 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
           <MatchHub
             matches={matchesList}
             activeMatchId={match.id}
+            isScorecardAdmin={isScorecardAdmin}
             onSelectMatch={(selected) => {
               const matchToLoad =
                 selected.status === 'upcoming'
                   ? { ...selected, status: 'live' as const }
                   : selected;
               setMatch(matchToLoad);
-              syncMatchToDb(matchToLoad);
+              if (selected.status === 'upcoming') {
+                syncMatchToDb(matchToLoad);
+              }
+              if (selected.status === 'completed') {
+                setActiveTab('scorecard');
+              } else {
+                setActiveTab('scorer');
+              }
               setViewMode('scoring');
             }}
             onOpenScheduleWizard={() => setViewMode('wizard')}
@@ -1073,7 +1108,7 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
               onOpenNewMatchModal={() => setIsNewMatchModalOpen(true)}
               onSwitchInnings={handleSwitchInnings}
               onManualEndMatch={handleManualEndMatch}
-              onCancelMatch={handleCancelMatch}
+              onCancelMatch={isScorecardAdmin ? undefined : handleCancelMatch}
             />
 
             {/* Match Completed Victory / Result Announcement Banner */}
@@ -1114,36 +1149,40 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
                     <span>View Scorecard</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm('Reopen match scoring in live mode?')) {
-                        setMatch((prev) => ({ ...prev, status: 'live' }));
-                      }
-                    }}
-                    className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors cursor-pointer"
-                    title="Resume live scoring if concluded prematurely"
-                  >
-                    <span>Reopen Match</span>
-                  </button>
+                  {!isScorecardAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('Reopen match scoring in live mode?')) {
+                          setMatch((prev) => ({ ...prev, status: 'live' }));
+                        }
+                      }}
+                      className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors cursor-pointer"
+                      title="Resume live scoring if concluded prematurely"
+                    >
+                      <span>Reopen Match</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
             {/* View Switcher: Scorer Keypad vs Scorecard vs Ball Log */}
         <div className="flex rounded-xl bg-white border border-slate-200 p-1 text-xs font-bold text-slate-600 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('scorer')}
-            className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-colors cursor-pointer ${
-              activeTab === 'scorer'
-                ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                : 'hover:text-slate-900 hover:bg-slate-50'
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Live Scorer</span>
-          </button>
+          {!(match.status === 'completed' && isScorecardAdmin) && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('scorer')}
+              className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-colors cursor-pointer ${
+                activeTab === 'scorer'
+                  ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
+                  : 'hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>Live Scorer</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -1437,21 +1476,42 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
       <NewMatchModal
         isOpen={isNewMatchModalOpen}
         onClose={() => setIsNewMatchModalOpen(false)}
+        currentMatch={match}
+        isScorecardAdmin={isScorecardAdmin}
         onStartNewMatch={(newM) => {
+          if (match.status === 'completed') return;
           setIsNewMatchModalOpen(false);
           setMatch(newM);
+          setMatchesList((prev) => {
+            const updated = prev.map((m) => (m.id === newM.id ? newM : m));
+            saveMatchesList(updated);
+            return updated;
+          });
+          syncMatchToDb(newM);
           saveMatchToStorage(newM);
         }}
         onResetMatch={() => {
+          if (match.status === 'completed') return;
           setIsNewMatchModalOpen(false);
-          const fresh = resetMatchInStorage();
+          const fresh = resetExistingMatch(match);
           setMatch(fresh);
+          saveMatchToStorage(fresh);
+          setMatchesList((prev) => {
+            const updated = prev.map((m) => (m.id === fresh.id ? fresh : m));
+            saveMatchesList(updated);
+            return updated;
+          });
+          syncMatchToDb(fresh);
         }}
-        onDeleteMatch={() => {
-          setIsNewMatchModalOpen(false);
-          handleDeleteMatch(match.id);
-          setViewMode('hub');
-        }}
+        onDeleteMatch={
+          isScorecardAdmin || match.status === 'completed'
+            ? undefined
+            : () => {
+                setIsNewMatchModalOpen(false);
+                handleDeleteMatch(match.id);
+                setViewMode('hub');
+              }
+        }
       />
     </div>
   );

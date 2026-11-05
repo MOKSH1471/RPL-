@@ -25,7 +25,7 @@ router.get('/cricket/teams', async (req, res, next) => {
 });
 
 // POST create or save a team (Protected)
-router.post('/cricket/teams', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
+router.post('/cricket/teams', verifyAuth, requireAnyPermission(['teams']), async (req, res, next) => {
   try {
     const team = await createTeam(req.body);
     res.status(201).json(team);
@@ -35,7 +35,7 @@ router.post('/cricket/teams', verifyAuth, requireAnyPermission(['teams', 'scorer
 });
 
 // PUT update a team (Protected)
-router.put('/cricket/teams/:id', verifyAuth, requireAnyPermission(['teams', 'scorer']), async (req, res, next) => {
+router.put('/cricket/teams/:id', verifyAuth, requireAnyPermission(['teams']), async (req, res, next) => {
   try {
     const team = await updateTeam(req.params.id, req.body);
     res.json(team);
@@ -77,8 +77,8 @@ router.get('/cricket/matches/:id', async (req, res, next) => {
   }
 });
 
-// POST create a new match (Protected)
-router.post('/cricket/matches', verifyAuth, requireAnyPermission(['scorer', 'teams']), async (req, res, next) => {
+// POST create a new match (Protected: teams permission or super admin only)
+router.post('/cricket/matches', verifyAuth, requireAnyPermission(['teams']), async (req, res, next) => {
   try {
     const created = await createMatch(req.body);
     res.status(201).json(created);
@@ -90,8 +90,26 @@ router.post('/cricket/matches', verifyAuth, requireAnyPermission(['scorer', 'tea
 // PUT update match (scores, live balls, status) (Protected)
 router.put('/cricket/matches/:id', verifyAuth, requireAnyPermission(['scorer', 'teams']), async (req, res, next) => {
   try {
+    // Prevent scorecard admins from modifying concluded / completed matches
+    const existing = await getMatchById(req.params.id);
+    if (existing && existing.status === 'completed') {
+      const isElevated = req.user?.role === 'SUPER_ADMIN' || (req.user?.permissions || []).includes('teams');
+      if (!isElevated) {
+        return res.status(403).json({
+          code: 'MATCH_COMPLETED_LOCKED',
+          error: 'This match is completed and locked. Scorecard Admins cannot modify completed matches.',
+        });
+      }
+    }
+
     let updated = await updateMatch(req.params.id, req.body);
     if (!updated) {
+      const isElevated = req.user?.role === 'SUPER_ADMIN' || (req.user?.permissions || []).includes('teams');
+      if (!isElevated) {
+        return res.status(403).json({
+          error: 'Match does not exist. Scorecard Admins cannot schedule new fixtures.',
+        });
+      }
       updated = await createMatch({ ...req.body, id: req.params.id });
     }
     res.json(updated);
