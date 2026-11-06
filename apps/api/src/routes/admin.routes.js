@@ -2,11 +2,15 @@ import { Router } from 'express';
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
 import { sanitizeDate } from '../utils/helpers.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
+import { verifyAuth, requireAnyPermission, requireSuperAdmin, requirePasswordChanged } from '../middleware/auth.js';
 
 const router = Router();
 
+// Secure all /admin endpoints with authentication
+router.use('/admin', verifyAuth, requirePasswordChanged);
+
 // 1. Admin Endpoint: Aggregated Stats & Analytics
-router.get('/admin/stats', async (req, res) => {
+router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res) => {
   try {
     const [regs] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations`);
 
@@ -21,11 +25,8 @@ router.get('/admin/stats', async (req, res) => {
     const sportsCount = {
       cricket: 0,
       football: 0,
-      badminton: 0,
       'table-tennis': 0,
       carrom: 0,
-      pickleball: 0,
-      volleyball: 0,
       'womens-sports': 0,
       'kaccha-pakka': 0,
       spectator: 0,
@@ -57,11 +58,12 @@ router.get('/admin/stats', async (req, res) => {
         gen = {};
       }
 
-      const isArchived = Boolean(r.is_archived || gen.isArchived);
+      const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
+      const isArchived = Boolean(r.is_archived || gen.isArchived || isTestEmail);
 
       if (isArchived) {
         archivedCount++;
-        return; // Exclude archived players from active tallies
+        return; // Exclude archived players and test entries from active tallies
       }
 
       const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
@@ -157,7 +159,7 @@ router.get('/admin/stats', async (req, res) => {
 });
 
 // 2. Admin Endpoint: List submissions with multi-filtering
-router.get('/admin/registrations', async (req, res) => {
+router.get('/admin/registrations', requireAnyPermission(['registrations']), async (req, res) => {
   const { payment_status, search, sport } = req.query;
   try {
     let query = `SELECT * FROM ${RPL_DB}.rpl_registrations`;
@@ -252,7 +254,7 @@ router.get('/admin/registrations', async (req, res) => {
 });
 
 // 3. Admin Endpoint: Update Registration (Full Player Edit & Payment Status)
-router.patch('/admin/registrations/:id', async (req, res) => {
+router.patch('/admin/registrations/:id', requireAnyPermission(['registrations']), async (req, res) => {
   const { id } = req.params;
   const {
     full_name,
@@ -321,7 +323,7 @@ router.patch('/admin/registrations/:id', async (req, res) => {
 });
 
 // 4. Admin Endpoint: Update Payment Status (Quick 1-Click Action)
-router.post('/admin/registrations/:id/payment', async (req, res) => {
+router.post('/admin/registrations/:id/payment', requireAnyPermission(['registrations', 'transactions']), async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -347,7 +349,7 @@ router.post('/admin/registrations/:id/payment', async (req, res) => {
 });
 
 // 5. Admin Endpoint: Archive / Unarchive Registration
-router.post('/admin/registrations/:id/archive', async (req, res) => {
+router.post('/admin/registrations/:id/archive', requireAnyPermission(['registrations']), async (req, res) => {
   const { id } = req.params;
   const shouldArchive = req.body.is_archived !== undefined ? Boolean(req.body.is_archived) : true;
 
@@ -526,7 +528,7 @@ router.post('/admin/registrations/:id/archive', async (req, res) => {
 });
 
 // Fallback DELETE route (redirected to safe archive)
-router.delete('/admin/registrations/:id', async (req, res) => {
+router.delete('/admin/registrations/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const [existing] = await db.query(`SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [id]);
@@ -560,7 +562,7 @@ router.delete('/admin/registrations/:id', async (req, res) => {
 });
 
 // 6. Admin Endpoint: Accommodation Stay List & Room Bookings
-router.get('/admin/accommodation', async (req, res) => {
+router.get('/admin/accommodation', requireAnyPermission(['accommodation']), async (req, res) => {
   try {
     const [regs] = await db.query(`
       SELECT r.id, r.full_name, r.mobile, r.email, r.payment_status, r.check_in_date, r.check_out_date, r.general_details, r.is_archived
@@ -636,7 +638,7 @@ router.get('/admin/accommodation', async (req, res) => {
 });
 
 // 7. Admin Endpoint: Manual Room Number Assignment
-router.post('/admin/accommodation/assign', async (req, res) => {
+router.post('/admin/accommodation/assign', requireAnyPermission(['accommodation']), async (req, res) => {
   const { bookingid, roomno } = req.body;
 
   if (!bookingid || !roomno) {
@@ -666,7 +668,7 @@ router.post('/admin/accommodation/assign', async (req, res) => {
 });
 
 // 8. Admin Endpoint: Razorpay Transactions & Payment Reconciliation
-router.get('/admin/transactions', async (req, res) => {
+router.get('/admin/transactions', requireAnyPermission(['transactions']), async (req, res) => {
   try {
     const { status, search, limit = 100, offset = 0 } = req.query;
 
@@ -675,6 +677,7 @@ router.get('/admin/transactions', async (req, res) => {
         t.id,
         t.cardno,
         t.bookingid,
+        t.category,
         t.amount,
         t.discount,
         t.upi_ref,
@@ -687,6 +690,7 @@ router.get('/admin/transactions', async (req, res) => {
         r.full_name AS player_name,
         r.mobile AS player_mobile,
         r.email AS player_email,
+        r.is_archived,
         r.payment_status AS registration_payment_status
       FROM ${RPL_DB}.rpl_transactions t
       LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
@@ -694,9 +698,20 @@ router.get('/admin/transactions', async (req, res) => {
     `;
     const params = [];
 
-    if (status && status !== 'all') {
-      query += ` AND t.status = ?`;
-      params.push(status);
+    if (status === 'archived') {
+      query += ` AND (r.is_archived = 1 OR r.email LIKE '%@example.com' OR r.email LIKE '%@test.com' OR JSON_EXTRACT(r.general_details, '$.isArchived') = true)`;
+    } else {
+      // Exclude archived and test entries by default
+      query += ` AND (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))`;
+
+      if (status && status !== 'all') {
+        if (status === 'failed') {
+          query += ` AND (t.status = 'failed' OR t.status = 'cancelled')`;
+        } else {
+          query += ` AND t.status = ?`;
+          params.push(status);
+        }
+      }
     }
 
     if (search && search.trim()) {
@@ -710,14 +725,16 @@ router.get('/admin/transactions', async (req, res) => {
 
     const [transactions] = await db.query(query, params);
 
-    // Summary stats for fast reconciliation badges
+    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions)
     const [summaryRows] = await db.query(`
       SELECT 
-        status, 
+        t.status, 
         COUNT(*) as count, 
-        COALESCE(SUM(amount), 0) as total_amount 
-      FROM ${RPL_DB}.rpl_transactions 
-      GROUP BY status
+        COALESCE(SUM(t.amount), 0) as total_amount 
+      FROM ${RPL_DB}.rpl_transactions t
+      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))
+      GROUP BY t.status
     `);
 
     const summary = {
@@ -735,8 +752,9 @@ router.get('/admin/transactions', async (req, res) => {
         summary.total_completed_amount = Number(row.total_amount);
       } else if (row.status === 'pending') {
         summary.pending = { count: Number(row.count), amount: Number(row.total_amount) };
-      } else if (row.status === 'failed') {
-        summary.failed = { count: Number(row.count), amount: Number(row.total_amount) };
+      } else if (row.status === 'failed' || row.status === 'cancelled') {
+        summary.failed.count += Number(row.count);
+        summary.failed.amount += Number(row.total_amount);
       }
     });
 

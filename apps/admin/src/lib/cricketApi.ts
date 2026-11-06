@@ -1,4 +1,5 @@
 import { CricketMatch, CricketTeam } from '@/types/cricket';
+import { getAuthHeaders } from './api';
 
 const isLocalhost =
   typeof window !== 'undefined' &&
@@ -31,7 +32,10 @@ export async function saveCricketTeamToDb(team: CricketTeam): Promise<CricketTea
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/teams`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(team),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -49,6 +53,7 @@ export async function deleteCricketTeamFromDb(teamId: string): Promise<boolean> 
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/teams/${teamId}`, {
       method: 'DELETE',
+      headers: { ...getAuthHeaders() },
     });
     return res.ok;
   } catch (err) {
@@ -79,22 +84,68 @@ export async function syncMatchToDb(match: CricketMatch): Promise<CricketMatch |
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/matches/${match.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(match),
     });
 
     if (res.ok) {
       const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rpl_sync_success'));
+      }
       if (data) return data;
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      const errJson = await res.json().catch(() => null);
+      if (errJson?.code === 'MATCH_COMPLETED_LOCKED') {
+        // Concluded match is locked against writes; skip dispatching session auth error
+        return null;
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('rpl_sync_auth_error', {
+            detail: {
+              status: res.status,
+              message: 'Scorer session expired or unauthorized. Scores are preserved locally, but cloud sync is paused until you re-authenticate.',
+            },
+          })
+        );
+      }
+      return null;
     }
 
     // Create if PUT did not find/update record
     const createRes = await fetch(`${API_BASE_URL}/cricket/matches`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
       body: JSON.stringify(match),
     });
-    if (createRes.ok) return await createRes.json();
+    if (createRes.ok) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rpl_sync_success'));
+      }
+      return await createRes.json();
+    }
+
+    if (createRes.status === 401 || createRes.status === 403) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('rpl_sync_auth_error', {
+            detail: {
+              status: createRes.status,
+              message: 'Scorer session expired or unauthorized. Scores are preserved locally, but cloud sync is paused until you re-authenticate.',
+            },
+          })
+        );
+      }
+    }
     return null;
   } catch (err) {
     // Non-blocking catch to ensure offline scoring continues smoothly
@@ -110,6 +161,7 @@ export async function deleteMatchFromDb(matchId: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/cricket/matches/${matchId}`, {
       method: 'DELETE',
+      headers: { ...getAuthHeaders() },
     });
     return res.ok;
   } catch (err) {

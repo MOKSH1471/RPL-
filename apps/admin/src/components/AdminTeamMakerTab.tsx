@@ -50,51 +50,10 @@ const COLOR_PRESETS = [
 
 const AVAILABLE_SPORTS = [
   { id: 'cricket', name: 'Cricket', icon: '🏏' },
-  { id: 'badminton', name: 'Badminton', icon: '🏸' },
-  { id: 'volleyball', name: 'Volleyball', icon: '🏐' },
-  { id: 'pickleball', name: 'Pickleball', icon: '🏓' },
-  { id: 'table_tennis', name: 'Table Tennis', icon: '🏓' },
   { id: 'football', name: 'Football', icon: '⚽' },
+  { id: 'table_tennis', name: 'Table Tennis', icon: '🏓' },
+  { id: 'carrom', name: 'Carrom', icon: '🎯' },
 ];
-
-const DEFAULT_TEST_PLAYERS: CricketPlayer[] = Array.from({ length: 10 }, (_, i) => {
-  const num = i + 1;
-  const roles = [
-    'Batter',
-    'Bowler',
-    'All-rounder',
-    'Wicketkeeper',
-    'Batter',
-    'All-rounder',
-    'Bowler',
-    'Batter',
-    'All-rounder',
-    'Bowler',
-  ];
-  const cities = [
-    'Mumbai',
-    'Surat',
-    'Ahmedabad',
-    'Pune',
-    'Vadodara',
-    'Delhi',
-    'Bengaluru',
-    'Rajkot',
-    'Bhavnagar',
-    'Jaipur',
-  ];
-  return {
-    id: `test-player-${num}`,
-    registrationId: `test-player-${num}`,
-    name: `Player ${num}`,
-    mobile: `99000000${num.toString().padStart(2, '0')}`,
-    centre: cities[i],
-    role: roles[i],
-    battingStyle: num % 2 === 0 ? 'Left Hand Bat' : 'Right Hand Bat',
-    bowlingStyle: num % 2 === 0 ? 'Left Arm Spin' : 'Right Arm Medium Fast',
-    avatarUrl: undefined,
-  };
-});
 
 export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }: AdminTeamMakerTabProps) {
   const [selectedSport, setSelectedSport] = useState<string>('cricket');
@@ -147,7 +106,8 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
 
     const fromRegs = registrations
       .filter((r) => {
-        const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
+        const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
+        const isArchived = Boolean(r.is_archived || r.general_details?.isArchived || isTestEmail);
         if (isArchived) return false;
 
         const gen = r.general_details || {};
@@ -194,20 +154,11 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
           battingStyle: answers.batting_style || answers.battingStyle || 'Right Hand Bat',
           bowlingStyle: answers.bowling_style || answers.bowlingStyle || 'Right Arm Medium',
           avatarUrl: r.player_photo_url || null,
+          paymentStatus: (r.payment_status || 'pending').toLowerCase(),
         } as CricketPlayer;
       });
 
-    // Merge in test players (Player 1 to Player 10) for testing across all sports
-    const existingIds = new Set(fromRegs.map((p) => p.id));
-    const merged = [...fromRegs];
-
-    DEFAULT_TEST_PLAYERS.forEach((testPlayer) => {
-      if (!existingIds.has(testPlayer.id)) {
-        merged.push(testPlayer);
-      }
-    });
-
-    return merged;
+    return fromRegs;
   }, [registrations, selectedSport]);
 
   // 3. Map of Player ID -> Assigned Team ID
@@ -291,6 +242,10 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
 
   // Assign Player to Team
   const handleAssignPlayer = (player: CricketPlayer, teamId: string) => {
+    if (player.paymentStatus && player.paymentStatus !== 'approved') {
+      alert(`Cannot add ${player.name} to a team because payment is still pending.`);
+      return;
+    }
     setTeams((prev) =>
       prev.map((team) => {
         // If player was already in this team, ignore
@@ -386,7 +341,10 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
     }
 
     const unassigned = registeredPlayers.filter(
-      (p) => !playerAssignmentMap.has(p.id) && (!p.registrationId || !playerAssignmentMap.has(p.registrationId))
+      (p) =>
+        p.paymentStatus === 'approved' &&
+        !playerAssignmentMap.has(p.id) &&
+        (!p.registrationId || !playerAssignmentMap.has(p.registrationId))
     );
 
     if (unassigned.length === 0) {
@@ -664,6 +622,7 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
               filteredPlayerPool.map((player) => {
                 const assigned = playerAssignmentMap.get(player.id) || (player.registrationId ? playerAssignmentMap.get(player.registrationId) : null);
                 const isDropdownOpen = activeAssignPlayerId === player.id;
+                const isPaymentPending = player.paymentStatus !== 'approved';
 
                 return (
                   <div
@@ -671,6 +630,8 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
                     className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                       assigned
                         ? 'bg-slate-50/70 border-slate-200/60'
+                        : isPaymentPending
+                        ? 'bg-slate-50/40 border-slate-200/80 shadow-2xs'
                         : 'bg-white border-slate-200 hover:border-amber-400 shadow-2xs hover:shadow-xs'
                     }`}
                   >
@@ -698,11 +659,16 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
                       </div>
 
                       <div className="min-w-0">
-                        <div className="flex items-center space-x-1.5">
+                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                           <h4 className="text-xs font-bold text-slate-900 truncate">{player.name}</h4>
                           <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-600 font-mono text-[9px] shrink-0">
                             {player.role || 'Player'}
                           </span>
+                          {isPaymentPending && (
+                            <span className="px-1.5 py-0.2 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[9px] shrink-0">
+                              Payment Pending
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-medium mt-0.5">
                           {player.centre && (
@@ -735,6 +701,18 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
                             title="Remove from team"
                           >
                             <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : isPaymentPending ? (
+                        <div title="Payment pending verification — cannot draft into squad until payment is approved">
+                          <button
+                            type="button"
+                            disabled
+                            className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-[10px] flex items-center space-x-1 cursor-not-allowed select-none opacity-60"
+                          >
+                            <UserPlus className="w-3 h-3 text-slate-400" />
+                            <span>Add to Team</span>
+                            <ChevronDown className="w-2.5 h-2.5 ml-0.5 opacity-30" />
                           </button>
                         </div>
                       ) : (

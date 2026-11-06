@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,7 +27,9 @@ import registrationRoutes from './src/routes/registration.routes.js';
 import razorpayRoutes from './src/routes/razorpay.routes.js';
 import adminRoutes from './src/routes/admin.routes.js';
 import cricketRoutes from './src/routes/cricket.routes.js';
-import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter } from './src/middleware/rateLimiter.js';
+import authRoutes from './src/routes/auth.routes.js';
+import adminUsersRoutes from './src/routes/admin.users.routes.js';
+import { lookupRateLimiter, paymentRateLimiter, registrationRateLimiter, authRateLimiter } from './src/middleware/rateLimiter.js';
 import { notFoundHandler, globalErrorHandler } from './src/middleware/errorHandler.js';
 import { securityHeadersMiddleware, corsOptions } from './src/middleware/security.js';
 
@@ -38,6 +41,7 @@ import pool from './src/config/db.js';
 // Security & Parsing Middleware
 app.use(securityHeadersMiddleware);
 app.use(cors(corsOptions()));
+app.use(cookieParser());
 app.use(express.json({
   limit: '10mb',
   verify: (req, res, buf) => {
@@ -58,8 +62,11 @@ app.use(['/api/player-lookup', '/mumukshu-lookup', '/card/lookup'], lookupRateLi
 app.use(['/api/referrer-lookup', '/referrer-lookup', '/reference-lookup'], lookupRateLimiter);
 app.use('/api/register', registrationRateLimiter);
 app.use('/api/razorpay', paymentRateLimiter);
+app.use('/api/auth/login', authRateLimiter);
 
 // 3. Core API Routes (Mounted under /api)
+app.use('/api', authRoutes);
+app.use('/api', adminUsersRoutes);
 app.use('/api', sportsRoutes);
 app.use('/api', lookupRoutes);
 app.use('/api', uploadRoutes);

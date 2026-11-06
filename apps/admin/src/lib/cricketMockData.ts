@@ -356,3 +356,92 @@ export function resetMatchInStorage(): CricketMatch {
   saveMatchToStorage(fresh);
   return fresh;
 }
+
+/**
+ * Resets an existing match to fresh 0-0 state while preserving its official
+ * team rosters, match number, venue, overs, and tournament details.
+ */
+export function resetExistingMatch(match: CricketMatch): CricketMatch {
+  const battingTeam =
+    match.tossDecision === 'bat'
+      ? match.tossWinnerId === match.teamB.id
+        ? match.teamB
+        : match.teamA
+      : match.tossWinnerId === match.teamB.id
+      ? match.teamA
+      : match.teamB;
+
+  const bowlingTeam = battingTeam.id === match.teamA.id ? match.teamB : match.teamA;
+
+  const striker = battingTeam.players?.[0] || { id: 'p1', name: 'Striker 1' };
+  const nonStriker = battingTeam.players?.[1] || { id: 'p2', name: 'Non-Striker' };
+  const openerBowler =
+    bowlingTeam.players?.[bowlingTeam.players.length > 8 ? 8 : 0] ||
+    bowlingTeam.players?.[0] || { id: 'b1', name: 'Opening Bowler' };
+
+  const freshInnings1: InningsState = {
+    inningsNumber: 1,
+    battingTeamId: battingTeam.id,
+    bowlingTeamId: bowlingTeam.id,
+    totalRuns: 0,
+    totalWickets: 0,
+    legalBallsBowled: 0,
+    extras: { wides: 0, noballs: 0, byes: 0, legbyes: 0, total: 0 },
+    activeStrikerId: striker.id,
+    activeNonStrikerId: nonStriker.id,
+    activeBowlerId: openerBowler.id,
+    batsmen: [
+      {
+        playerId: striker.id,
+        name: striker.name,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        strikeRate: 0,
+        isStriker: true,
+        isOut: false,
+      },
+      {
+        playerId: nonStriker.id,
+        name: nonStriker.name,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        strikeRate: 0,
+        isStriker: false,
+        isOut: false,
+      },
+    ],
+    bowlers: [
+      {
+        playerId: openerBowler.id,
+        name: openerBowler.name,
+        legalBalls: 0,
+        maidens: 0,
+        runsConceded: 0,
+        wickets: 0,
+        economy: 0,
+        wides: 0,
+        noballs: 0,
+      },
+    ],
+    balls: [],
+    currentOverBalls: [],
+    fallOfWickets: [],
+    isCompleted: false,
+  };
+
+  return {
+    ...match,
+    status: 'live',
+    currentInningsNumber: 1,
+    innings1: freshInnings1,
+    innings2: undefined,
+    resultSummary: undefined,
+    winnerTeamId: undefined,
+    target: undefined,
+    playerOfTheMatchId: undefined,
+  };
+}

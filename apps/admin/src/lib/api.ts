@@ -191,11 +191,242 @@ export async function lookupReferrer(mobile: string): Promise<PlayerLookupRespon
 }
 
 // ==========================================
+// AUTH & SESSION UTILITIES
+// ==========================================
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  name: string;
+  role: string;
+  permissions: string[];
+  is_active: boolean;
+  must_change_password?: boolean;
+  token_version?: number;
+  created_by?: string;
+  created_at?: string;
+  last_login?: string;
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('rpl_admin_token');
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('rpl_admin_token', token);
+  }
+}
+
+export function removeAuthToken(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('rpl_admin_token');
+    localStorage.removeItem('rpl_admin_user');
+  }
+}
+
+export function getSavedAdminUser(): AdminUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('rpl_admin_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAdminUser(user: AdminUser): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('rpl_admin_user', JSON.stringify(user));
+  }
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ==========================================
+// AUTHENTICATION API METHODS
+// ==========================================
+
+export async function loginAdmin(username: string, password: string): Promise<{ success: boolean; token: string; user: AdminUser }> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || `Login failed (Status ${res.status})`);
+  }
+
+  setAuthToken(data.token);
+  saveAdminUser(data.user);
+  return data;
+}
+
+export async function fetchCurrentUser(): Promise<AdminUser | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { ...getAuthHeaders() },
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        removeAuthToken();
+      }
+      return null;
+    }
+    const data = await res.json();
+    if (data.user) {
+      saveAdminUser(data.user);
+      return data.user;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Session verification error:', err);
+    return getSavedAdminUser();
+  }
+}
+
+
+export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<AdminUser> {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    credentials: 'include',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to change password');
+  }
+
+  if (data.token) setAuthToken(data.token);
+  if (data.user) saveAdminUser(data.user);
+  return data.user;
+}
+
+export async function logoutAdmin(): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: { ...getAuthHeaders() },
+      credentials: 'include',
+    });
+  } catch {}
+  removeAuthToken();
+}
+
+// ==========================================
+// ADMIN USER MANAGEMENT (SUPER ADMIN)
+// ==========================================
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const res = await fetch(`${API_BASE_URL}/admin/users`, {
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch admin users');
+  return data.data || [];
+}
+
+export async function createAdminUser(payload: {
+  username: string;
+  name: string;
+  password: string;
+  role: string;
+  permissions: string[];
+}): Promise<AdminUser> {
+  const res = await fetch(`${API_BASE_URL}/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to create admin user');
+  return data.data;
+}
+
+export async function updateAdminUser(
+  id: number,
+  updates: { name?: string; role?: string; permissions?: string[]; is_active?: boolean }
+): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to update admin user');
+}
+
+export async function resetAdminUserPassword(id: number, newPassword: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/admin/users/${id}/password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ newPassword }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+}
+
+export async function deleteAdminUser(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to delete admin user');
+}
+
+export interface AdminLoginLog {
+  id: number;
+  user_id: number | null;
+  username: string;
+  status: 'SUCCESS' | 'FAILED' | 'LOCKED' | 'NOT_FOUND' | 'DEACTIVATED';
+  ip_address: string | null;
+  user_agent: string | null;
+  attempted_at: string;
+}
+
+export async function fetchLoginLogs(): Promise<AdminLoginLog[]> {
+  const res = await fetch(`${API_BASE_URL}/admin/users/login-logs`, {
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch login audit logs');
+  return data.data || [];
+}
+
+// ==========================================
 // ADMIN API CLIENT METHODS
 // ==========================================
 
 export async function fetchAdminStats() {
-  const res = await fetch(`${API_BASE_URL}/admin/stats`);
+  const res = await fetch(`${API_BASE_URL}/admin/stats`, {
+    headers: { ...getAuthHeaders() },
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Failed to load admin statistics (Status ${res.status})`);
   return data;
@@ -207,7 +438,9 @@ export async function fetchAdminRegistrations(params?: { payment_status?: string
   if (params?.search) query.append('search', params.search);
   if (params?.sport) query.append('sport', params.sport);
 
-  const res = await fetch(`${API_BASE_URL}/admin/registrations?${query.toString()}`);
+  const res = await fetch(`${API_BASE_URL}/admin/registrations?${query.toString()}`, {
+    headers: { ...getAuthHeaders() },
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Failed to load registrations (Status ${res.status})`);
   return data;
@@ -216,7 +449,10 @@ export async function fetchAdminRegistrations(params?: { payment_status?: string
 export async function updateRegistration(id: string, updates: Record<string, any>) {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     body: JSON.stringify(updates),
   });
   const data = await res.json().catch(() => ({}));
@@ -227,7 +463,10 @@ export async function updateRegistration(id: string, updates: Record<string, any
 export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending') {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/payment`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     body: JSON.stringify({ status }),
   });
   const data = await res.json().catch(() => ({}));
@@ -238,7 +477,10 @@ export async function updatePaymentStatus(id: string, status: 'approved' | 'reje
 export async function toggleArchiveRegistration(id: string, is_archived: boolean) {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/archive`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     body: JSON.stringify({ is_archived }),
   });
   const data = await res.json().catch(() => ({}));
@@ -251,7 +493,9 @@ export async function deleteRegistration(id: string) {
 }
 
 export async function fetchAdminAccommodation() {
-  const res = await fetch(`${API_BASE_URL}/admin/accommodation`);
+  const res = await fetch(`${API_BASE_URL}/admin/accommodation`, {
+    headers: { ...getAuthHeaders() },
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Failed to load accommodation stays (Status ${res.status})`);
   return data;
@@ -260,7 +504,10 @@ export async function fetchAdminAccommodation() {
 export async function assignRoomNumber(bookingid: string, roomno: string) {
   const res = await fetch(`${API_BASE_URL}/admin/accommodation/assign`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
     body: JSON.stringify({ bookingid, roomno }),
   });
   const data = await res.json().catch(() => ({}));
@@ -318,7 +565,9 @@ export async function fetchAdminTransactions(params?: { status?: string; search?
   const query = new URLSearchParams();
   if (params?.status) query.set('status', params.status);
   if (params?.search) query.set('search', params.search);
-  const res = await fetch(`${API_BASE_URL}/admin/transactions?${query.toString()}`);
+  const res = await fetch(`${API_BASE_URL}/admin/transactions?${query.toString()}`, {
+    headers: { ...getAuthHeaders() },
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Failed to fetch transaction records');
   return data;
