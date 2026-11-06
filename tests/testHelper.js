@@ -74,9 +74,9 @@ export async function apiRequest(endpoint, options = {}) {
     ...(options.headers || {}),
   };
 
-  // If calling an admin route without any auth header explicitly specified, inject CI admin secret
+  // If calling an admin or cricket management route without any auth header explicitly specified, inject CI admin secret
   if (
-    endpoint.startsWith('/api/admin') &&
+    (endpoint.startsWith('/api/admin') || endpoint.startsWith('/api/cricket')) &&
     !('x-admin-secret' in (options.headers || {})) &&
     !('Authorization' in (options.headers || {}))
   ) {
