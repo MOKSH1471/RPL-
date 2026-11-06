@@ -27,6 +27,16 @@ before(async () => {
          is_active = TRUE
      WHERE username = 'scorer'`
   );
+  await db.query(
+    `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, must_change_password, token_version, failed_login_attempts, locked_until, created_by)
+     VALUES ('shraddha.maniar', 'Shraddha Maniar', '$2b$10$FJZOgeZqPhRrKD9gwunS5OEA2XLFxHxusSgiUQ1w4JxSWJCI37xJu', 'SUPER_ADMIN', JSON_ARRAY('dashboard', 'registrations', 'accommodation', 'transactions', 'exports', 'teams', 'scorer', 'users'), TRUE, TRUE, 1, 0, NULL, 'system')
+     ON DUPLICATE KEY UPDATE 
+       password_hash = '$2b$10$FJZOgeZqPhRrKD9gwunS5OEA2XLFxHxusSgiUQ1w4JxSWJCI37xJu',
+       must_change_password = TRUE,
+       failed_login_attempts = 0,
+       locked_until = NULL,
+       is_active = TRUE`
+  );
 });
 
 after(async () => {
