@@ -224,11 +224,8 @@ export function AdminRegistrationsTab({
               <option value="all">All Sports</option>
               <option value="cricket">Underarm Turf Cricket</option>
               <option value="football">Turf Football</option>
-              <option value="badminton">Badminton</option>
               <option value="table-tennis">Table Tennis</option>
               <option value="carrom">Carrom League</option>
-              <option value="pickleball">Pickleball</option>
-              <option value="volleyball">Volleyball</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
               <option value="spectator">🎟️ 90’s Nostalgia Pass</option>

@@ -343,18 +343,18 @@ export const GallerySection: React.FC = () => {
       image: '/sponsors/sia-palace.jpg',
     },
     {
-      id: 'sp-aartiben',
-      title: 'Aartiben Satsang Group Ghatkopar',
-      caption: 'Food & Water Sponsor',
-      category: 'sponsors',
-      image: '/sponsors/sponsor-1.jpg',
-    },
-    {
       id: 'sp-yuvraaj',
       title: 'Yuvraj Caterers',
       caption: 'Hospitality Partner',
       category: 'sponsors',
       image: '/sponsors/yuvraaj-hospitality-v2.jpg',
+    },
+    {
+      id: 'sp-aartiben',
+      title: 'Aartiben Satsang Group Ghatkopar',
+      caption: 'Food & Water Sponsor',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-1.jpg',
     },
     {
       id: 'sp-roopaben',

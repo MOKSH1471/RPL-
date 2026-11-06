@@ -77,12 +77,7 @@ const FAQ_DATA: FAQItem[] = [
         <p>
           <strong>No, registration does not automatically guarantee final entry.</strong> All applications are reviewed by the RPL Organizing Committee to balance team compositions, scheduling windows, and arena capacities.
         </p>
-        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
-          <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <div className="leading-relaxed">
-            <strong>Check Pass Online:</strong> You can check your registration status and download your pass anytime directly on this website by clicking the <strong className="text-amber-800 underline">Check Pass</strong> button in the navigation bar or hero section.
-          </div>
-        </div>
+
         <p className="text-xs text-slate-600">
           Once draft selections and team rosters are officially structured, confirmed participants will also receive an official confirmation via WhatsApp with their team assignment and jersey allocation.
         </p>

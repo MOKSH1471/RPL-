@@ -36,11 +36,8 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
   const sportLabels: Record<string, string> = {
     cricket: 'Underarm Turf Cricket',
     football: 'Turf Football',
-    badminton: 'Badminton',
     'table-tennis': 'Table Tennis',
     carrom: 'Carrom League',
-    pickleball: 'Pickleball',
-    volleyball: 'Volleyball / Throwball',
     'womens-sports': "Women's League",
     'kaccha-pakka': 'Kaccha Pakka Cricket League',
     spectator: '90’s Nostalgia Pass',

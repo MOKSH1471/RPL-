@@ -4,10 +4,9 @@ import { loginAdmin, AdminUser } from '@/lib/api';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: AdminUser, token: string) => void;
-  onBackToHome?: () => void;
 }
 
-export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToHome }) => {
+export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -76,17 +75,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
             </span>
           </div>
         </div>
-
-        {onBackToHome && (
-          <button
-            type="button"
-            onClick={onBackToHome}
-            className="text-xs text-slate-700 hover:text-amber-700 font-bold transition-all flex items-center space-x-1.5 py-2 px-3.5 rounded-xl bg-white/90 hover:bg-white border border-slate-200 shadow-2xs cursor-pointer"
-          >
-            <span>Public Site</span>
-            <ArrowRight className="w-3.5 h-3.5 text-amber-600" />
-          </button>
-        )}
       </header>
 
       {/* Center Auth Card */}

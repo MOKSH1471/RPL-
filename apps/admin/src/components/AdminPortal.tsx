@@ -7,7 +7,6 @@ import {
   Bed,
   FileSpreadsheet,
   RefreshCw,
-  ArrowLeft,
   Sparkles,
   ShieldCheck,
   CreditCard,
@@ -35,12 +34,11 @@ import { AdminUsersModal } from './AdminUsersModal';
 export type AdminRole = 'admin' | 'scorer';
 
 interface AdminPortalProps {
-  onBackToHome: () => void;
   currentUser?: AdminUser | null;
   onLogout?: () => void;
 }
 
-export function AdminPortal({ onBackToHome, currentUser, onLogout }: AdminPortalProps) {
+export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const isScorerOnly =
     currentUser?.role === 'SCORECARD_ADMIN' ||
@@ -181,15 +179,6 @@ export function AdminPortal({ onBackToHome, currentUser, onLogout }: AdminPortal
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
-              title="Return to Public Website"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
             <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20 shrink-0">
                 <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />

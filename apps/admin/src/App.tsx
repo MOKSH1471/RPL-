@@ -25,11 +25,6 @@ export function App() {
     verifySession();
   }, []);
 
-  const handleOpenUserSite = () => {
-    const userSiteUrl = import.meta.env.VITE_USER_SITE_URL || '/';
-    window.open(userSiteUrl, '_blank');
-  };
-
   const handleLogout = async () => {
     await logoutAdmin();
     setCurrentUser(null);
@@ -85,7 +80,6 @@ export function App() {
     return (
       <AdminLogin
         onLoginSuccess={(user) => setCurrentUser(user)}
-        onBackToHome={handleOpenUserSite}
       />
     );
   }
@@ -105,7 +99,6 @@ export function App() {
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <AdminPortal
         currentUser={currentUser}
-        onBackToHome={handleOpenUserSite}
         onLogout={handleLogout}
       />
     </main>

@@ -25,11 +25,8 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
     const sportsCount = {
       cricket: 0,
       football: 0,
-      badminton: 0,
       'table-tennis': 0,
       carrom: 0,
-      pickleball: 0,
-      volleyball: 0,
       'womens-sports': 0,
       'kaccha-pakka': 0,
       spectator: 0,
@@ -61,11 +58,12 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
         gen = {};
       }
 
-      const isArchived = Boolean(r.is_archived || gen.isArchived);
+      const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
+      const isArchived = Boolean(r.is_archived || gen.isArchived || isTestEmail);
 
       if (isArchived) {
         archivedCount++;
-        return; // Exclude archived players from active tallies
+        return; // Exclude archived players and test entries from active tallies
       }
 
       const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
@@ -679,6 +677,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
         t.id,
         t.cardno,
         t.bookingid,
+        t.category,
         t.amount,
         t.discount,
         t.upi_ref,
@@ -691,6 +690,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
         r.full_name AS player_name,
         r.mobile AS player_mobile,
         r.email AS player_email,
+        r.is_archived,
         r.payment_status AS registration_payment_status
       FROM ${RPL_DB}.rpl_transactions t
       LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
@@ -698,9 +698,20 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
     `;
     const params = [];
 
-    if (status && status !== 'all') {
-      query += ` AND t.status = ?`;
-      params.push(status);
+    if (status === 'archived') {
+      query += ` AND (r.is_archived = 1 OR r.email LIKE '%@example.com' OR r.email LIKE '%@test.com' OR JSON_EXTRACT(r.general_details, '$.isArchived') = true)`;
+    } else {
+      // Exclude archived and test entries by default
+      query += ` AND (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))`;
+
+      if (status && status !== 'all') {
+        if (status === 'failed') {
+          query += ` AND (t.status = 'failed' OR t.status = 'cancelled')`;
+        } else {
+          query += ` AND t.status = ?`;
+          params.push(status);
+        }
+      }
     }
 
     if (search && search.trim()) {
@@ -714,14 +725,16 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
 
     const [transactions] = await db.query(query, params);
 
-    // Summary stats for fast reconciliation badges
+    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions)
     const [summaryRows] = await db.query(`
       SELECT 
-        status, 
+        t.status, 
         COUNT(*) as count, 
-        COALESCE(SUM(amount), 0) as total_amount 
-      FROM ${RPL_DB}.rpl_transactions 
-      GROUP BY status
+        COALESCE(SUM(t.amount), 0) as total_amount 
+      FROM ${RPL_DB}.rpl_transactions t
+      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))
+      GROUP BY t.status
     `);
 
     const summary = {
@@ -739,8 +752,9 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
         summary.total_completed_amount = Number(row.total_amount);
       } else if (row.status === 'pending') {
         summary.pending = { count: Number(row.count), amount: Number(row.total_amount) };
-      } else if (row.status === 'failed') {
-        summary.failed = { count: Number(row.count), amount: Number(row.total_amount) };
+      } else if (row.status === 'failed' || row.status === 'cancelled') {
+        summary.failed.count += Number(row.count);
+        summary.failed.amount += Number(row.total_amount);
       }
     });
 

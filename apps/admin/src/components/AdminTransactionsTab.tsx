@@ -18,7 +18,7 @@ export function AdminTransactionsTab() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending' | 'failed' | 'archived'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'sports' | 'spectator'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -119,7 +119,7 @@ export function AdminTransactionsTab() {
       <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Filter Pills */}
         <div className="flex items-center space-x-1.5 w-full md:w-auto overflow-x-auto">
-          {(['all', 'completed', 'pending', 'failed'] as const).map((st) => (
+          {(['all', 'completed', 'pending', 'failed', 'archived'] as const).map((st) => (
             <button
               key={st}
               type="button"
@@ -130,7 +130,7 @@ export function AdminTransactionsTab() {
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {st}
+              {st === 'archived' ? '📦 Archived Records' : st}
             </button>
           ))}
 
@@ -209,7 +209,7 @@ export function AdminTransactionsTab() {
                   .map((tx) => {
                   const isCompleted = tx.status === 'completed';
                   const isPending = tx.status === 'pending';
-                  const isFailed = tx.status === 'failed';
+                  const isFailed = tx.status === 'failed' || tx.status === 'cancelled';
 
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
@@ -225,6 +225,11 @@ export function AdminTransactionsTab() {
                           ) : (
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300">
                               Sports
+                            </span>
+                          )}
+                          {Boolean(tx.is_archived) && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-slate-100 text-slate-600 border border-slate-300">
+                              Archived
                             </span>
                           )}
                         </div>
@@ -279,7 +284,7 @@ export function AdminTransactionsTab() {
                         {isFailed && (
                           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
                             <XCircle className="w-3 h-3" />
-                            <span>FAILED</span>
+                            <span>{tx.status === 'cancelled' ? 'CANCELLED' : 'FAILED'}</span>
                           </span>
                         )}
                       </td>

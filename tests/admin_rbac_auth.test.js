@@ -299,3 +299,70 @@ test('Security Hardening: GET /api/admin/users/login-logs returns login audit tr
   assert.ok('status' in latestLog);
   assert.ok('attempted_at' in latestLog);
 });
+test('Cricket RBAC & Integrity: Scorecard Admin cannot create fixtures or alter completed matches', async () => {
+  // Re-login as scorer
+  const scorerLogin = await apiRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: 'scorer', password: 'Scorer@RPL2026!StrongPitch' }),
+  });
+  assert.strictEqual(scorerLogin.status, 200);
+  const activeScorerToken = scorerLogin.data.token;
+
+  // 1. Scorer attempting to create a new team must be blocked with 403 (teams permission required)
+  const teamRes = await apiRequest('/api/cricket/teams', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${activeScorerToken}` },
+    body: JSON.stringify({ name: 'Unauthorized Scorer Team', shortName: 'UST' }),
+  });
+  assert.strictEqual(teamRes.status, 403);
+  assert.ok(teamRes.data.message.includes('teams'));
+
+  // 2. Scorer attempting to schedule a new match fixture must be blocked with 403
+  const matchCreateRes = await apiRequest('/api/cricket/matches', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${activeScorerToken}` },
+    body: JSON.stringify({ teamA: { name: 'A' }, teamB: { name: 'B' }, totalOvers: 10 }),
+  });
+  assert.strictEqual(matchCreateRes.status, 403);
+
+  // 3. Super Admin creates a test completed match
+  const adminLogin = await apiRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: 'admin', password: 'Admin@RPL2026!StrongPass#9' }),
+  });
+  const activeAdminToken = adminLogin.data.token;
+
+  const testMatchId = 'test-completed-match-' + Date.now();
+  await db.query(
+    `INSERT INTO ${RPL_DB}.rpl_cricket_matches (id, match_number, team_a_id, team_b_id, status)
+     VALUES (?, 999, 'team-alpha', 'team-beta', 'completed')`,
+    [testMatchId]
+  );
+
+  // 4. Scorer attempting to update a completed match must be blocked with 403 MATCH_COMPLETED_LOCKED
+  const completedUpdateRes = await apiRequest(`/api/cricket/matches/${testMatchId}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${activeScorerToken}` },
+    body: JSON.stringify({ status: 'live' }),
+  });
+  assert.strictEqual(completedUpdateRes.status, 403);
+  assert.strictEqual(completedUpdateRes.data.code, 'MATCH_COMPLETED_LOCKED');
+
+  // Cleanup test match
+  await db.query(`DELETE FROM ${RPL_DB}.rpl_cricket_matches WHERE id = ?`, [testMatchId]);
+});
+
+test('Super Admin Verification: New admin account authenticates with full permissions and change password flag', async () => {
+  const loginRes = await apiRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: 'shraddha.maniar', password: 'Shraddha@RPL2026!' }),
+  });
+
+  assert.strictEqual(loginRes.status, 200);
+  assert.strictEqual(loginRes.data.success, true);
+  assert.strictEqual(loginRes.data.user.username, 'shraddha.maniar');
+  assert.strictEqual(loginRes.data.user.role, 'SUPER_ADMIN');
+  assert.strictEqual(loginRes.data.user.must_change_password, true);
+  assert.ok(Array.isArray(loginRes.data.user.permissions));
+  assert.strictEqual(loginRes.data.user.permissions.length, 8);
+});

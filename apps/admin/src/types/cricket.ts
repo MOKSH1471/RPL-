@@ -20,6 +20,7 @@ export interface CricketPlayer {
   mobile?: string;
   centre?: string;
   sportId?: string;
+  paymentStatus?: string;
 }
 
 export interface CricketTeam {
