@@ -35,7 +35,18 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
   };
   const catInfo = getCategoryBadge(item.category);
   const isSponsor = item.category === 'sponsors';
-  const isTextPatron = ['sp-patron-1', 'sp-patron-2', 'sp-patron-3', 'sp-patron-4'].includes(item.id);
+  const textPatronIds = [
+    'sp-bakul-shah',
+    'sp-aartiben',
+    'sp-roopaben',
+    'sp-darshanaben',
+    'sp-pragnaben',
+    'sp-patron-1',
+    'sp-patron-2',
+    'sp-patron-3',
+    'sp-patron-4',
+  ];
+  const isTextPatron = textPatronIds.includes(item.id);
   const isPortrait = !isTextPatron && (item.id.includes('patron') || item.image.includes('sponsor-'));
 
   return (
@@ -82,7 +93,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
             </span>
 
             <span className="text-[9px] uppercase font-bold tracking-[0.18em] text-amber-400/75 mt-1.5">
-              Patron
+              {item.caption || 'Patron'}
             </span>
           </div>
         ) : (
@@ -186,9 +197,10 @@ const GalleryCard: React.FC<GalleryCardProps> = ({ item, idx, onSelect }) => {
           )}
 
           {item.caption && (
-            <p className="text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2">
-              {item.caption}
-            </p>
+            <div className={isSponsor ? "mt-1.5 inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-50/90 text-amber-900 border border-amber-200/90 text-[11px] font-extrabold shadow-2xs" : "text-slate-600 text-[11px] sm:text-xs font-medium leading-relaxed line-clamp-2"}>
+              {isSponsor && <span className="text-amber-600 text-xs shrink-0">🤝</span>}
+              <span className="tracking-tight">{item.caption}</span>
+            </div>
           )}
         </div>
 
@@ -310,64 +322,74 @@ export const GallerySection: React.FC = () => {
   const galleryItems: GalleryItem[] = [
     // ── Hall of Sponsors ──
     {
-      id: 'sp-doshi',
-      title: 'Doshi Decor',
-      category: 'sponsors',
-      image: '/sponsors/doshi-decor-v2.jpg',
-    },
-    {
-      id: 'sp-enrich',
-      title: 'Enrich',
-      category: 'sponsors',
-      image: '/sponsors/enrich.jpg',
-    },
-    {
-      id: 'sp-seamak',
-      title: 'SeaMak Group',
-      category: 'sponsors',
-      image: '/sponsors/seamak.png',
-    },
-    {
-      id: 'sp-sia',
-      title: 'Mastiff Grand The Sia Palace',
-      category: 'sponsors',
-      image: '/sponsors/sia-palace.jpg',
-    },
-    {
-      id: 'sp-traket',
-      title: 'TRAKET Multiventures Pvt. Ltd.',
-      category: 'sponsors',
-      image: '/sponsors/traket.jpg',
-    },
-    {
-      id: 'sp-yuvraaj',
-      title: 'Yuvraaj Hospitality',
-      category: 'sponsors',
-      image: '/sponsors/yuvraaj-hospitality-v2.jpg',
-    },
-    {
-      id: 'sp-patron-1',
+      id: 'sp-bakul-shah',
       title: 'Bakul Bhai Shah',
+      caption: 'Title Sponsor',
       category: 'sponsors',
       image: '/sponsors/sponsor-1.jpg',
     },
     {
-      id: 'sp-patron-2',
-      title: 'Elesh Bhai Davey',
+      id: 'sp-doshi',
+      title: 'Doshi Decor',
+      caption: 'T-Shirt Sponsor',
       category: 'sponsors',
-      image: '/sponsors/sponsor-2-v2.jpg',
+      image: '/sponsors/doshi-decor-v2.jpg',
     },
     {
-      id: 'sp-patron-3',
-      title: 'Darshana Ben Doshi',
+      id: 'sp-sia',
+      title: 'Sia Palace',
+      caption: 'Co-Sponsor',
+      category: 'sponsors',
+      image: '/sponsors/sia-palace.jpg',
+    },
+    {
+      id: 'sp-aartiben',
+      title: 'Aartiben Satsang Group Ghatkopar',
+      caption: 'Food & Water Sponsor',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-1.jpg',
+    },
+    {
+      id: 'sp-yuvraaj',
+      title: 'Yuvraj Caterers',
+      caption: 'Hospitality Partner',
+      category: 'sponsors',
+      image: '/sponsors/yuvraaj-hospitality-v2.jpg',
+    },
+    {
+      id: 'sp-roopaben',
+      title: 'Roopaben Gupta',
+      caption: 'Beverage Sponsorship',
+      category: 'sponsors',
+      image: '/sponsors/roopa-ben-gupta-v2.jpg',
+    },
+    {
+      id: 'sp-darshanaben',
+      title: 'Darshanaben Doshi',
+      caption: 'Water Sponsorship',
       category: 'sponsors',
       image: '/sponsors/sponsor-3.jpg',
     },
     {
-      id: 'sp-patron-4',
-      title: 'Roopa Ben Gupta',
+      id: 'sp-traket',
+      title: 'Traket Multiventures Pvt. Ltd.',
+      caption: '6s & 4s Sponsorship',
       category: 'sponsors',
-      image: '/sponsors/roopa-ben-gupta-v2.jpg',
+      image: '/sponsors/traket.jpg',
+    },
+    {
+      id: 'sp-seamak',
+      title: 'Seamak',
+      caption: 'Wickets Sponsorship',
+      category: 'sponsors',
+      image: '/sponsors/seamak.png',
+    },
+    {
+      id: 'sp-pragnaben',
+      title: 'Pragnaben Maniar',
+      caption: 'Medical Kit Sponsorship',
+      category: 'sponsors',
+      image: '/sponsors/sponsor-3.jpg',
     },
 
     // ── All Seasons Winners (Season 1 to Season 8) ──
@@ -808,7 +830,7 @@ export const GallerySection: React.FC = () => {
 
                   {/* Photo Display Frame - Pre-stabilized Height & Zero Jitter */}
                   <div className="relative flex-1 min-h-[260px] sm:min-h-[380px] md:min-h-[460px] max-h-[62vh] bg-slate-50/90 flex items-center justify-center p-2.5 sm:p-4 overflow-hidden">
-                    {['sp-patron-1', 'sp-patron-2', 'sp-patron-3', 'sp-patron-4'].includes(currentPhoto.id) ? (
+                    {['sp-bakul-shah', 'sp-aartiben', 'sp-roopaben', 'sp-darshanaben', 'sp-pragnaben', 'sp-patron-1', 'sp-patron-2', 'sp-patron-3', 'sp-patron-4'].includes(currentPhoto.id) ? (
                       <div className="w-full max-w-xl aspect-[4/3] rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c121e] via-[#111827] to-[#0c121e] shadow-2xl flex flex-col items-center justify-center p-8 sm:p-12 text-center relative overflow-hidden border border-amber-400/40">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.22),transparent_65%)] pointer-events-none" />
 
@@ -820,7 +842,9 @@ export const GallerySection: React.FC = () => {
                         <div className="flex items-center space-x-2 mb-3 opacity-90">
                           <div className="w-8 h-px bg-gradient-to-r from-transparent to-amber-400/70" />
                           <span className="text-xs text-amber-300">✦</span>
-                          <span className="text-[11px] uppercase font-black tracking-[0.22em] text-amber-300">Esteemed Patron</span>
+                          <span className="text-[11px] uppercase font-black tracking-[0.22em] text-amber-300">
+                            {currentPhoto.caption || 'Esteemed Patron'}
+                          </span>
                           <span className="text-xs text-amber-300">✦</span>
                           <div className="w-8 h-px bg-gradient-to-l from-transparent to-amber-400/70" />
                         </div>
@@ -902,9 +926,18 @@ export const GallerySection: React.FC = () => {
                           )}
                         </div>
                         {currentPhoto.caption && (
-                          <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
-                            {currentPhoto.caption}
-                          </p>
+                          <div className="mt-1">
+                            {currentPhoto.category === 'sponsors' ? (
+                              <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-extrabold shadow-2xs">
+                                <span>🤝</span>
+                                <span>{currentPhoto.caption}</span>
+                              </span>
+                            ) : (
+                              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed line-clamp-2 mt-0.5">
+                                {currentPhoto.caption}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="shrink-0 hidden sm:flex items-center space-x-2">
