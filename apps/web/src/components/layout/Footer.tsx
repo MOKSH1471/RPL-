@@ -125,6 +125,11 @@ export const Footer: React.FC<FooterProps> = ({ onRegisterClick, onCheckPassClic
                 </a>
               </li>
               <li>
+                <a href="#/feedback" className="hover:text-amber-600 transition-colors">
+                  Season 9 Feedback
+                </a>
+              </li>
+              <li>
                 <a href="#register" className="hover:text-amber-600 transition-colors">
                   Player Registration
                 </a>

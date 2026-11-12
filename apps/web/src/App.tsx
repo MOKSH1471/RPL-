@@ -8,12 +8,14 @@ import { LeaguesSection } from '@/components/sections/LeaguesSection';
 import { ScheduleSection } from '@/components/sections/ScheduleSection';
 import { GallerySection } from '@/components/sections/GallerySection';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
+import { FeedbackSection } from '@/components/sections/FeedbackSection';
 import { RegistrationPage } from '@/components/pages/RegistrationPage';
 import { PrivacyPolicyPage } from '@/components/pages/PrivacyPolicyPage';
 import { TermsPage } from '@/components/pages/TermsPage';
 import { FAQPage } from '@/components/pages/FAQPage';
 import { RulesPage } from '@/components/pages/RulesPage';
 import { SchedulePage } from '@/components/pages/SchedulePage';
+import { FeedbackPage } from '@/components/pages/FeedbackPage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { PostAuctionLockedPage } from '@/components/ui/PostAuctionLockedPage';
 import { checkIsAdminPreview, lockAdminPreview } from '@/lib/previewAuth';
@@ -24,7 +26,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules' | 'schedule'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules' | 'schedule' | 'feedback'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -99,6 +101,14 @@ export function App() {
         hash === '#schedule'
       ) {
         setCurrentPage('schedule');
+        setShowIntro(false);
+      } else if (
+        path === '/feedback' ||
+        path.startsWith('/feedback') ||
+        hash === '#/feedback' ||
+        hash === '#feedback'
+      ) {
+        setCurrentPage('feedback');
         setShowIntro(false);
       } else if (
         path === '/scorecard' ||
@@ -185,6 +195,12 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleFeedbackClick = () => {
+    setCurrentPage('feedback');
+    window.location.hash = '/feedback';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleBackToHome = () => {
     setSelectedLeague('cricket');
     setRegistrationPrefill(null);
@@ -221,6 +237,16 @@ export function App() {
   if (currentPage === 'schedule') {
     return (
       <SchedulePage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
+  }
+
+  if (currentPage === 'feedback') {
+    return (
+      <FeedbackPage
         onBackToHome={handleBackToHome}
         onRegisterClick={handleRegisterClick}
         onCheckPassClick={() => setIsCheckStatusOpen(true)}
@@ -292,6 +318,7 @@ export function App() {
               <ScheduleSection onRegisterClick={handleRegisterClick} />
               <GallerySection />
               <HowItWorksSection />
+              <FeedbackSection onOpenFeedback={handleFeedbackClick} />
             </>
           )}
         </main>
