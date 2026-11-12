@@ -13,3 +13,4 @@ if (!secret) {
 
 export const JWT_SECRET = secret;
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+export const JWT_REMEMBER_EXPIRES_IN = process.env.JWT_REMEMBER_EXPIRES_IN || '30d';

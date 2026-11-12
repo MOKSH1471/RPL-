@@ -223,6 +223,21 @@ export function removeAuthToken(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('rpl_admin_token');
     localStorage.removeItem('rpl_admin_user');
+    localStorage.removeItem('rpl_admin_remember');
+  }
+}
+
+export function isRememberMeEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('rpl_admin_remember') === 'true';
+}
+
+export function setRememberMe(enabled: boolean): void {
+  if (typeof window === 'undefined') return;
+  if (enabled) {
+    localStorage.setItem('rpl_admin_remember', 'true');
+  } else {
+    localStorage.removeItem('rpl_admin_remember');
   }
 }
 
@@ -251,12 +266,16 @@ export function getAuthHeaders(): Record<string, string> {
 // AUTHENTICATION API METHODS
 // ==========================================
 
-export async function loginAdmin(username: string, password: string): Promise<{ success: boolean; token: string; user: AdminUser }> {
+export async function loginAdmin(
+  username: string,
+  password: string,
+  rememberMe: boolean = true
+): Promise<{ success: boolean; token: string; user: AdminUser; rememberMe?: boolean }> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, rememberMe }),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -266,6 +285,7 @@ export async function loginAdmin(username: string, password: string): Promise<{ 
 
   setAuthToken(data.token);
   saveAdminUser(data.user);
+  setRememberMe(rememberMe);
   return data;
 }
 
@@ -298,6 +318,7 @@ export async function fetchCurrentUser(): Promise<AdminUser | null> {
 
 
 export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<AdminUser> {
+  const rememberMe = isRememberMeEnabled();
   const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
     method: 'POST',
     headers: {
@@ -305,7 +326,7 @@ export async function changeAdminPassword(currentPassword: string, newPassword: 
       ...getAuthHeaders(),
     },
     credentials: 'include',
-    body: JSON.stringify({ currentPassword, newPassword }),
+    body: JSON.stringify({ currentPassword, newPassword, rememberMe }),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -315,6 +336,9 @@ export async function changeAdminPassword(currentPassword: string, newPassword: 
 
   if (data.token) setAuthToken(data.token);
   if (data.user) saveAdminUser(data.user);
+  if (typeof data.rememberMe === 'boolean') {
+    setRememberMe(data.rememberMe);
+  }
   return data.user;
 }
 

@@ -9,6 +9,7 @@ interface AdminLoginProps {
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      const response = await loginAdmin(username.trim(), password.trim());
+      const response = await loginAdmin(username.trim(), password.trim(), rememberMe);
       if (response.success && response.user) {
         onLoginSuccess(response.user, response.token);
       } else {
@@ -153,6 +154,24 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+
+            {/* Keep Me Signed In (Remember Me) */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center space-x-2.5 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded text-amber-500 border-slate-300 focus:ring-amber-400 focus:ring-offset-0 cursor-pointer accent-amber-500"
+                />
+                <span className="text-xs font-semibold text-slate-600 group-hover:text-slate-900 transition-colors">
+                  Keep me signed in on this device
+                </span>
+              </label>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                30 Days
+              </span>
             </div>
 
             <button
