@@ -2,65 +2,63 @@ import { test, after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { apiRequest, stopTestServer, db, RPL_DB } from './testHelper.js';
 
+const TEST_SUPER_ADMIN = 'test_super_admin';
+const TEST_SCORER = 'test_scorer';
+const TEST_NEW_ADMIN = 'test_new_super_admin';
+const DEFAULT_SUPER_PASSWORD = 'admin@rpl2026';
+const DEFAULT_SCORER_PASSWORD = 'scorer@rpl2026';
+const NEW_SUPER_PASSWORD = 'Shraddha@RPL2026!';
+
 let adminToken = '';
 let scorerToken = '';
 
 before(async () => {
-  // Ensure default seed state before running tests
+  // Ensure isolated test users exist and have clean default state without mutating real users
   await db.query(
-    `UPDATE ${RPL_DB}.rpl_admin_users 
-     SET password_hash = '$2b$10$GdZ05z/omJ7lsm2w0wCypeUNJHPyTt6SCdUBvjLO6RfiPNNqs/Az6',
-         must_change_password = TRUE,
-         token_version = 1,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         is_active = TRUE
-     WHERE username = 'admin'`
-  );
-  await db.query(
-    `UPDATE ${RPL_DB}.rpl_admin_users 
-     SET password_hash = '$2b$10$Xib4iYNS/17fTEfNdpGA6uSQM0Jv76BLybBp4NrJ8pvZGfGpeH8Gi',
-         must_change_password = TRUE,
-         token_version = 1,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         is_active = TRUE
-     WHERE username = 'scorer'`
+    `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, must_change_password, token_version, failed_login_attempts, locked_until, created_by)
+     VALUES (?, 'Test Super Admin', '$2b$10$GdZ05z/omJ7lsm2w0wCypeUNJHPyTt6SCdUBvjLO6RfiPNNqs/Az6', 'SUPER_ADMIN', JSON_ARRAY('dashboard', 'registrations', 'accommodation', 'transactions', 'exports', 'teams', 'scorer', 'users'), TRUE, TRUE, 1, 0, NULL, 'test-suite')
+     ON DUPLICATE KEY UPDATE 
+       password_hash = '$2b$10$GdZ05z/omJ7lsm2w0wCypeUNJHPyTt6SCdUBvjLO6RfiPNNqs/Az6',
+       must_change_password = TRUE,
+       token_version = 1,
+       failed_login_attempts = 0,
+       locked_until = NULL,
+       is_active = TRUE`,
+    [TEST_SUPER_ADMIN]
   );
   await db.query(
     `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, must_change_password, token_version, failed_login_attempts, locked_until, created_by)
-     VALUES ('shraddha.maniar', 'Shraddha Maniar', '$2b$10$FJZOgeZqPhRrKD9gwunS5OEA2XLFxHxusSgiUQ1w4JxSWJCI37xJu', 'SUPER_ADMIN', JSON_ARRAY('dashboard', 'registrations', 'accommodation', 'transactions', 'exports', 'teams', 'scorer', 'users'), TRUE, TRUE, 1, 0, NULL, 'system')
+     VALUES (?, 'Test Scorer', '$2b$10$Xib4iYNS/17fTEfNdpGA6uSQM0Jv76BLybBp4NrJ8pvZGfGpeH8Gi', 'SCORECARD_ADMIN', JSON_ARRAY('scorer'), TRUE, TRUE, 1, 0, NULL, 'test-suite')
+     ON DUPLICATE KEY UPDATE 
+       password_hash = '$2b$10$Xib4iYNS/17fTEfNdpGA6uSQM0Jv76BLybBp4NrJ8pvZGfGpeH8Gi',
+       must_change_password = TRUE,
+       token_version = 1,
+       failed_login_attempts = 0,
+       locked_until = NULL,
+       is_active = TRUE`,
+    [TEST_SCORER]
+  );
+  await db.query(
+    `INSERT INTO ${RPL_DB}.rpl_admin_users (username, name, password_hash, role, permissions, is_active, must_change_password, token_version, failed_login_attempts, locked_until, created_by)
+     VALUES (?, 'Test New Super Admin', '$2b$10$FJZOgeZqPhRrKD9gwunS5OEA2XLFxHxusSgiUQ1w4JxSWJCI37xJu', 'SUPER_ADMIN', JSON_ARRAY('dashboard', 'registrations', 'accommodation', 'transactions', 'exports', 'teams', 'scorer', 'users'), TRUE, TRUE, 1, 0, NULL, 'test-suite')
      ON DUPLICATE KEY UPDATE 
        password_hash = '$2b$10$FJZOgeZqPhRrKD9gwunS5OEA2XLFxHxusSgiUQ1w4JxSWJCI37xJu',
        must_change_password = TRUE,
+       token_version = 1,
        failed_login_attempts = 0,
        locked_until = NULL,
-       is_active = TRUE`
+       is_active = TRUE`,
+    [TEST_NEW_ADMIN]
   );
 });
 
 after(async () => {
-  // Reset admin and scorer to default seed states
+  // Clean up isolated test users, leaving real admin accounts completely untouched
   try {
     await db.query(
-      `UPDATE ${RPL_DB}.rpl_admin_users 
-       SET password_hash = '$2b$10$GdZ05z/omJ7lsm2w0wCypeUNJHPyTt6SCdUBvjLO6RfiPNNqs/Az6',
-           must_change_password = TRUE,
-           token_version = 1,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         is_active = TRUE
-       WHERE username = 'admin'`
-    );
-    await db.query(
-      `UPDATE ${RPL_DB}.rpl_admin_users 
-       SET password_hash = '$2b$10$Xib4iYNS/17fTEfNdpGA6uSQM0Jv76BLybBp4NrJ8pvZGfGpeH8Gi',
-           must_change_password = TRUE,
-           token_version = 1,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         is_active = TRUE
-       WHERE username = 'scorer'`
+      `DELETE FROM ${RPL_DB}.rpl_admin_users 
+       WHERE username IN (?, ?, ?)`,
+      [TEST_SUPER_ADMIN, TEST_SCORER, TEST_NEW_ADMIN]
     );
   } catch {}
   await stopTestServer();
@@ -69,7 +67,7 @@ after(async () => {
 test('RBAC Auth: POST /api/auth/login rejects invalid credentials with 401', async () => {
   const { status, data } = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'admin', password: 'wrongpassword' }),
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: 'wrongpassword' }),
   });
   assert.strictEqual(status, 401);
   assert.strictEqual(data.success, false);
@@ -79,17 +77,20 @@ test('RBAC Auth: POST /api/auth/login rejects invalid credentials with 401', asy
 test('RBAC Auth: POST /api/auth/login returns JWT, user profile, and must_change_password=true for default seed account', async () => {
   const { status, data, headers } = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'admin', password: 'admin@rpl2026' }),
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: DEFAULT_SUPER_PASSWORD }),
   });
   assert.strictEqual(status, 200);
   assert.strictEqual(data.success, true);
   assert.ok(data.token, 'Must return JWT token');
-  assert.strictEqual(data.user.username, 'admin');
+  assert.strictEqual(data.user.username, TEST_SUPER_ADMIN);
   assert.strictEqual(data.user.role, 'SUPER_ADMIN');
   assert.strictEqual(data.user.must_change_password, true);
+  assert.strictEqual(data.rememberMe, false, 'Default login must have rememberMe=false');
+  assert.strictEqual(data.expiresIn, '24h', 'Default login must have 24h expiresIn');
 
   const cookieHeader = headers.get('set-cookie');
   assert.ok(cookieHeader && cookieHeader.includes('rpl_admin_token'), 'Must set HttpOnly session cookie');
+  assert.ok(cookieHeader && cookieHeader.includes('Max-Age=86400'), 'Default session must have 24h Max-Age');
   adminToken = data.token;
 });
 
@@ -116,7 +117,7 @@ test('RBAC Password Policy: rejects weak passwords (length, numbers, symbols, co
   const res1 = await apiRequest('/api/auth/change-password', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'x-admin-secret': '' },
-    body: JSON.stringify({ currentPassword: 'admin@rpl2026', newPassword: 'short' }),
+    body: JSON.stringify({ currentPassword: DEFAULT_SUPER_PASSWORD, newPassword: 'short' }),
   });
   assert.strictEqual(res1.status, 400);
   assert.ok(res1.data.message.includes('8 characters'));
@@ -125,7 +126,7 @@ test('RBAC Password Policy: rejects weak passwords (length, numbers, symbols, co
   const res2 = await apiRequest('/api/auth/change-password', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'x-admin-secret': '' },
-    body: JSON.stringify({ currentPassword: 'admin@rpl2026', newPassword: 'alllowercasenonumber!' }),
+    body: JSON.stringify({ currentPassword: DEFAULT_SUPER_PASSWORD, newPassword: 'alllowercasenonumber!' }),
   });
   assert.strictEqual(res2.status, 400);
 
@@ -133,22 +134,27 @@ test('RBAC Password Policy: rejects weak passwords (length, numbers, symbols, co
   const res3 = await apiRequest('/api/auth/change-password', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'x-admin-secret': '' },
-    body: JSON.stringify({ currentPassword: 'admin@rpl2026', newPassword: 'password123' }),
+    body: JSON.stringify({ currentPassword: DEFAULT_SUPER_PASSWORD, newPassword: 'password123' }),
   });
   assert.strictEqual(res3.status, 400);
 });
 
 test('RBAC Password Policy: accepts strong password, clears must_change_password, and enables access', async () => {
   const strongNewPassword = 'Admin@RPL2026!StrongPass#9';
-  const { status, data } = await apiRequest('/api/auth/change-password', {
+  const { status, data, headers } = await apiRequest('/api/auth/change-password', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}`, 'x-admin-secret': '' },
-    body: JSON.stringify({ currentPassword: 'admin@rpl2026', newPassword: strongNewPassword }),
+    body: JSON.stringify({ currentPassword: DEFAULT_SUPER_PASSWORD, newPassword: strongNewPassword, rememberMe: true }),
   });
   assert.strictEqual(status, 200);
   assert.strictEqual(data.success, true);
   assert.strictEqual(data.user.must_change_password, false);
+  assert.strictEqual(data.rememberMe, true, 'Password change with rememberMe=true must preserve flag');
+  assert.strictEqual(data.expiresIn, '30d', 'Password change with rememberMe=true must have 30d expiresIn');
   assert.ok(data.token, 'Must return updated token with new token_version');
+
+  const cookieHeader = headers.get('set-cookie');
+  assert.ok(cookieHeader && cookieHeader.includes('Max-Age=2592000'), 'Must set 30-day Max-Age cookie on password change');
   adminToken = data.token;
 
   // Now /api/admin/stats must succeed
@@ -160,20 +166,35 @@ test('RBAC Password Policy: accepts strong password, clears must_change_password
   assert.ok('stats' in statsRes.data);
 });
 
+test('RBAC Auth: POST /api/auth/login supports rememberMe parameter with 30-day cookie maxAge', async () => {
+  const { status, data, headers } = await apiRequest('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: 'Admin@RPL2026!StrongPass#9', rememberMe: true }),
+  });
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+  assert.strictEqual(data.rememberMe, true);
+  assert.strictEqual(data.expiresIn, '30d');
+  assert.ok(data.token);
+
+  const cookieHeader = headers.get('set-cookie');
+  assert.ok(cookieHeader && cookieHeader.includes('Max-Age=2592000'), 'Must set 30-day Max-Age cookie');
+});
+
 test('RBAC Role Guard: Scorecard Admin is restricted strictly to scoring and denied access to admin tabs', async () => {
-  // Login as scorer
+  // Login as test scorer
   const loginRes = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'scorer', password: 'scorer@rpl2026' }),
+    body: JSON.stringify({ username: TEST_SCORER, password: DEFAULT_SCORER_PASSWORD }),
   });
   assert.strictEqual(loginRes.status, 200);
   scorerToken = loginRes.data.token;
 
-  // Change scorer password to satisfy must_change_password
+  // Change test scorer password to satisfy must_change_password
   const changeRes = await apiRequest('/api/auth/change-password', {
     method: 'POST',
     headers: { Authorization: `Bearer ${scorerToken}`, 'x-admin-secret': '' },
-    body: JSON.stringify({ currentPassword: 'scorer@rpl2026', newPassword: 'Scorer@RPL2026!StrongPitch' }),
+    body: JSON.stringify({ currentPassword: DEFAULT_SCORER_PASSWORD, newPassword: 'Scorer@RPL2026!StrongPitch' }),
   });
   scorerToken = changeRes.data.token;
 
@@ -209,18 +230,19 @@ test('RBAC Token Revocation: POST /api/auth/logout immediately invalidates activ
 });
 
 test('Security Hardening: Account lockout activates after 5 consecutive failed logins', async () => {
-  // Ensure scorer attempts are reset
+  // Ensure test scorer attempts are reset
   await db.query(
     `UPDATE ${RPL_DB}.rpl_admin_users 
      SET failed_login_attempts = 0, locked_until = NULL 
-     WHERE username = 'scorer'`
+     WHERE username = ?`,
+    [TEST_SCORER]
   );
 
   // Attempt 1 through 4: Should return 401 with remaining attempts warning
   for (let i = 1; i <= 4; i++) {
     const res = await apiRequest('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username: 'scorer', password: 'incorrect_password' }),
+      body: JSON.stringify({ username: TEST_SCORER, password: 'incorrect_password' }),
     });
     assert.strictEqual(res.status, 401);
     assert.ok(res.data.message.includes('remaining before temporary lockout'));
@@ -229,7 +251,7 @@ test('Security Hardening: Account lockout activates after 5 consecutive failed l
   // 5th attempt: triggers 15-minute lockout (status 429)
   const lockRes = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'scorer', password: 'incorrect_password' }),
+    body: JSON.stringify({ username: TEST_SCORER, password: 'incorrect_password' }),
   });
   assert.strictEqual(lockRes.status, 429);
   assert.ok(lockRes.data.message.includes('Account locked due to 5 consecutive failed login attempts'));
@@ -237,24 +259,25 @@ test('Security Hardening: Account lockout activates after 5 consecutive failed l
   // Subsequent login attempt while locked must immediately return 429
   const lockedAttempt = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'scorer', password: 'Scorer@RPL2026!StrongPitch' }),
+    body: JSON.stringify({ username: TEST_SCORER, password: 'Scorer@RPL2026!StrongPitch' }),
   });
   assert.strictEqual(lockedAttempt.status, 429);
   assert.ok(lockedAttempt.data.message.includes('temporarily locked'));
 
-  // Unlock scorer account for subsequent tests
+  // Unlock test scorer account for subsequent tests
   await db.query(
     `UPDATE ${RPL_DB}.rpl_admin_users 
      SET failed_login_attempts = 0, locked_until = NULL 
-     WHERE username = 'scorer'`
+     WHERE username = ?`,
+    [TEST_SCORER]
   );
 });
 
 test('Security Hardening: Self-demotion and self-permission modification is blocked', async () => {
-  // Re-login as admin
+  // Re-login as test super admin
   const loginRes = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'admin', password: 'Admin@RPL2026!StrongPass#9' }),
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: 'Admin@RPL2026!StrongPass#9' }),
   });
   assert.strictEqual(loginRes.status, 200);
   const activeAdminToken = loginRes.data.token;
@@ -291,7 +314,7 @@ test('Security Hardening: Self-demotion and self-permission modification is bloc
 test('Security Hardening: GET /api/admin/users/login-logs returns login audit trail', async () => {
   const loginRes = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'admin', password: 'Admin@RPL2026!StrongPass#9' }),
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: 'Admin@RPL2026!StrongPass#9' }),
   });
   const activeAdminToken = loginRes.data.token;
 
@@ -309,11 +332,12 @@ test('Security Hardening: GET /api/admin/users/login-logs returns login audit tr
   assert.ok('status' in latestLog);
   assert.ok('attempted_at' in latestLog);
 });
+
 test('Cricket RBAC & Integrity: Scorecard Admin cannot create fixtures or alter completed matches', async () => {
-  // Re-login as scorer
+  // Re-login as test scorer
   const scorerLogin = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'scorer', password: 'Scorer@RPL2026!StrongPitch' }),
+    body: JSON.stringify({ username: TEST_SCORER, password: 'Scorer@RPL2026!StrongPitch' }),
   });
   assert.strictEqual(scorerLogin.status, 200);
   const activeScorerToken = scorerLogin.data.token;
@@ -338,7 +362,7 @@ test('Cricket RBAC & Integrity: Scorecard Admin cannot create fixtures or alter 
   // 3. Super Admin creates a test completed match
   const adminLogin = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'admin', password: 'Admin@RPL2026!StrongPass#9' }),
+    body: JSON.stringify({ username: TEST_SUPER_ADMIN, password: 'Admin@RPL2026!StrongPass#9' }),
   });
   const activeAdminToken = adminLogin.data.token;
 
@@ -365,12 +389,12 @@ test('Cricket RBAC & Integrity: Scorecard Admin cannot create fixtures or alter 
 test('Super Admin Verification: New admin account authenticates with full permissions and change password flag', async () => {
   const loginRes = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username: 'shraddha.maniar', password: 'Shraddha@RPL2026!' }),
+    body: JSON.stringify({ username: TEST_NEW_ADMIN, password: NEW_SUPER_PASSWORD }),
   });
 
   assert.strictEqual(loginRes.status, 200);
   assert.strictEqual(loginRes.data.success, true);
-  assert.strictEqual(loginRes.data.user.username, 'shraddha.maniar');
+  assert.strictEqual(loginRes.data.user.username, TEST_NEW_ADMIN);
   assert.strictEqual(loginRes.data.user.role, 'SUPER_ADMIN');
   assert.strictEqual(loginRes.data.user.must_change_password, true);
   assert.ok(Array.isArray(loginRes.data.user.permissions));
