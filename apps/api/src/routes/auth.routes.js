@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db, { RPL_DB } from '../config/db.js';
-import { JWT_SECRET, JWT_EXPIRES_IN } from '../config/jwt.js';
+import { JWT_SECRET, JWT_EXPIRES_IN, JWT_REMEMBER_EXPIRES_IN } from '../config/jwt.js';
 import { verifyAuth, invalidateAuthCache } from '../middleware/auth.js';
 import { validatePasswordStrength } from '../utils/passwordPolicy.js';
 
@@ -14,7 +14,7 @@ const DUMMY_HASH = '$2b$10$7EqJtq98hPqEX7fNZaFWoO.8/hR9Keqj1pS1p5g3j1l0Vq3a2b1c2
 // 1. POST /api/auth/login - Authenticate admin or scorer
 router.post('/auth/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rememberMe = false } = req.body;
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || null;
     const userAgent = (req.headers['user-agent'] || '').slice(0, 255);
 
@@ -149,14 +149,18 @@ router.post('/auth/login', async (req, res) => {
       token_version: user.token_version || 1,
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isRemember = Boolean(rememberMe);
+    const tokenExpiresIn = isRemember ? JWT_REMEMBER_EXPIRES_IN : JWT_EXPIRES_IN;
+    const cookieMaxAge = isRemember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: tokenExpiresIn });
 
     // Set secure HttpOnly cookie (protects from XSS exfiltration)
     res.cookie('rpl_admin_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: cookieMaxAge,
       path: '/',
     });
 
@@ -164,6 +168,8 @@ router.post('/auth/login', async (req, res) => {
       success: true,
       message: 'Login successful.',
       token,
+      rememberMe: isRemember,
+      expiresIn: tokenExpiresIn,
       user: {
         id: user.id,
         username: user.username,
@@ -194,7 +200,7 @@ router.get('/auth/me', verifyAuth, async (req, res) => {
 // 3. POST /api/auth/change-password - Change password for current logged-in user
 router.post('/auth/change-password', verifyAuth, async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword, rememberMe = false } = req.body;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
@@ -261,13 +267,17 @@ router.post('/auth/change-password', verifyAuth, async (req, res) => {
       token_version: nextTokenVersion,
     };
 
-    const newToken = jwt.sign(updatedPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const isRemember = Boolean(rememberMe);
+    const tokenExpiresIn = isRemember ? JWT_REMEMBER_EXPIRES_IN : JWT_EXPIRES_IN;
+    const cookieMaxAge = isRemember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+    const newToken = jwt.sign(updatedPayload, JWT_SECRET, { expiresIn: tokenExpiresIn });
 
     res.cookie('rpl_admin_token', newToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: cookieMaxAge,
       path: '/',
     });
 
@@ -275,6 +285,8 @@ router.post('/auth/change-password', verifyAuth, async (req, res) => {
       success: true,
       message: 'Password changed successfully.',
       token: newToken,
+      rememberMe: isRemember,
+      expiresIn: tokenExpiresIn,
       user: {
         ...req.user,
         must_change_password: false,

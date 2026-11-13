@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AdminPortal } from './components/AdminPortal';
 import { AdminLogin } from './components/auth/AdminLogin';
 import { ForcePasswordChangeModal } from './components/auth/ForcePasswordChangeModal';
-import { AdminUser, fetchCurrentUser, logoutAdmin } from './lib/api';
+import { AdminUser, fetchCurrentUser, logoutAdmin, isRememberMeEnabled } from './lib/api';
 import { Trophy } from 'lucide-react';
 
 export function App() {
@@ -31,8 +31,10 @@ export function App() {
   };
 
   // Security Hardening: Automatic session logout after 30 minutes of idle inactivity
+  // Note: If the user checked "Keep me signed in on this device" (rememberMe), bypass this idle logout
   useEffect(() => {
     if (!currentUser) return;
+    if (isRememberMeEnabled()) return;
 
     const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
     let timeoutId: ReturnType<typeof setTimeout>;
