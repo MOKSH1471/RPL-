@@ -452,7 +452,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   const missingTournament = attemptedSubmit && !isMatrixComplete(activeTournamentRows, tournamentExp);
   const missingOpening = attemptedSubmit && !isMatrixComplete(OPENING_CEREMONY_ROWS, openingCeremony);
   const missingHospitality = attemptedSubmit && !isMatrixComplete(HOSPITALITY_ROWS, hospitality);
-  const missingLeagueText = attemptedSubmit && !leagueFeedback.trim();
+  const missingLeagueText = false;
   const missingJersey = attemptedSubmit && !isMatrixComplete(JERSEY_CAPS_ROWS, jerseyCaps);
   const missingClosing = attemptedSubmit && closingCeremony === null;
   const missingOverall = attemptedSubmit && overallExp === null;
@@ -473,8 +473,6 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
       ? 'fb-opening'
       : !isMatrixComplete(HOSPITALITY_ROWS, hospitality)
       ? 'fb-hospitality'
-      : !leagueFeedback.trim()
-      ? 'fb-league-text'
       : !isMatrixComplete(JERSEY_CAPS_ROWS, jerseyCaps)
       ? 'fb-jersey'
       : closingCeremony === null
@@ -629,14 +627,14 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <div className="space-y-2 max-w-lg mx-auto">
-              <span className="inline-block px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider">
-                UI Preview Complete
+              <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold uppercase tracking-wider">
+                Feedback Submitted Successfully
               </span>
               <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900">
                 Thank You, {name}!
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Your RPL Season 9 feedback form passed all UI checks. Once connected to a backend or Google Sheet endpoint, responses will be saved automatically.
+                Your feedback for Raj Premier League Season 9 has been recorded. The organizing committee truly appreciates your valuable inputs!
               </p>
             </div>
 
@@ -728,15 +726,19 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
                     <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
                       <UserCheck className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
                           Verified Participant
                         </span>
                       </div>
-                      <h4 className="font-display font-extrabold text-base text-slate-900 mt-0.5">
-                        {name}
-                      </h4>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Participant Name"
+                        className="mt-0.5 font-display font-extrabold text-base text-slate-900 bg-transparent border-b border-emerald-300 focus:border-emerald-600 focus:outline-hidden py-0.5 w-full"
+                      />
                     </div>
                   </div>
 
@@ -825,21 +827,13 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
             {/* 5. League-Specific Feedback */}
             <div
               id="fb-league-text"
-              className={`bg-white rounded-3xl border shadow-xs p-5 sm:p-6 transition-colors ${
-                missingLeagueText ? 'border-rose-400 ring-2 ring-rose-500/15' : 'border-slate-200'
-              }`}
+              className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 sm:p-6 transition-colors"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <label htmlFor="feedback-league-input" className="font-display font-extrabold text-base sm:text-lg text-slate-900 leading-snug">
                   Any Feedback related to RPL Cricket / Women&apos;s Cricket / Kaccha Pakka / Football / Table Tennis / Carrom League{' '}
-                  <span className="text-rose-500">*</span>
+                  <span className="text-xs font-semibold text-slate-400 font-sans ml-1">(Optional)</span>
                 </label>
-                {missingLeagueText && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 shrink-0">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Required</span>
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mb-3">
                 Tell us what worked well or what we can improve in match formats, rules, or scheduling.
@@ -849,7 +843,7 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
                 rows={4}
                 value={leagueFeedback}
                 onChange={(e) => setLeagueFeedback(e.target.value)}
-                placeholder="Share your league feedback here..."
+                placeholder="Share your league feedback, highlights, or suggestions here (Optional)..."
                 className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-all font-medium resize-y"
               />
             </div>

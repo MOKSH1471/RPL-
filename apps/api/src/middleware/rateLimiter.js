@@ -72,3 +72,9 @@ export const authRateLimiter = createRateLimiter({
   max: 20, // 20 login attempts per 15 minutes per IP
   message: 'Too many authentication attempts from this IP. Please wait 15 minutes before trying again.',
 });
+
+export const feedbackRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15-minute window
+  max: 15, // max 15 feedback submissions per 15 minutes per IP
+  message: 'Feedback submission rate limit exceeded. Please wait a few minutes before submitting again.',
+});

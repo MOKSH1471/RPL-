@@ -46,14 +46,14 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
     currentUser?.role === 'SCORECARD_ADMIN' ||
     (!isSuperAdmin && currentUser?.permissions?.length === 1 && currentUser?.permissions?.[0] === 'scorer');
 
-  const canViewDashboard = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('dashboard');
-  const canViewRegistrations = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('registrations');
-  const canViewAccommodation = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('accommodation');
-  const canViewTransactions = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('transactions');
-  const canViewExports = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('exports');
-  const canViewTeams = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('teams');
-  const canViewScorer = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('scorer');
-  const canViewFeedback = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('dashboard') || currentUser?.permissions?.includes('registrations');
+  const canViewDashboard = isSuperAdmin || currentUser?.permissions?.includes('dashboard');
+  const canViewRegistrations = isSuperAdmin || currentUser?.permissions?.includes('registrations');
+  const canViewAccommodation = isSuperAdmin || currentUser?.permissions?.includes('accommodation');
+  const canViewTransactions = isSuperAdmin || currentUser?.permissions?.includes('transactions');
+  const canViewExports = isSuperAdmin || currentUser?.permissions?.includes('exports');
+  const canViewTeams = isSuperAdmin || currentUser?.permissions?.includes('teams');
+  const canViewScorer = isSuperAdmin || currentUser?.permissions?.includes('scorer');
+  const canViewFeedback = isSuperAdmin || currentUser?.permissions?.includes('dashboard') || currentUser?.permissions?.includes('registrations');
 
   // Compute initial active tab
   const getInitialTab = (): 'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' | 'feedback' => {

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import db, { RPL_DB } from '../config/db.js';
 import logger from '../config/logger.js';
 import { verifyAuth, requireAnyPermission } from '../middleware/auth.js';
+import { feedbackRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const router = Router();
  * Public Endpoint: Submit Feedback
  * Accepts feedback for either Form 1 ('rpl_event') or Form 2 ('auction_day')
  */
-router.post('/feedback', async (req, res, next) => {
+router.post('/feedback', feedbackRateLimiter, async (req, res, next) => {
   try {
     const {
       form_type,
@@ -39,7 +40,7 @@ router.post('/feedback', async (req, res, next) => {
       });
     }
 
-    const cleanName = String(full_name || '').trim();
+    const cleanName = String(full_name || '').trim().slice(0, 100);
     if (!cleanName) {
       return res.status(400).json({
         success: false,
@@ -47,12 +48,53 @@ router.post('/feedback', async (req, res, next) => {
       });
     }
 
+    // 1. Enforce registered player rule for Main Tournament Event
+    if (form_type === 'rpl_event') {
+      const [regRows] = await db.query(
+        `SELECT id, full_name FROM ${RPL_DB}.rpl_registrations 
+         WHERE mobile = ? OR mobile LIKE ? OR REPLACE(REPLACE(mobile, ' ', ''), '+', '') LIKE ? LIMIT 1`,
+        [cleanMobile, `%${cleanMobile}%`, `%${cleanMobile}`]
+      );
+      if (!regRows || regRows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          code: 'REGISTRATION_REQUIRED',
+          error: 'Only registered RPL Season 9 players can submit tournament feedback.',
+        });
+      }
+    }
+
+    // 2. Prevent duplicate submissions for the same form type
+    const [existingRows] = await db.query(
+      `SELECT id FROM ${RPL_DB}.rpl_feedbacks WHERE form_type = ? AND mobile = ? LIMIT 1`,
+      [form_type, cleanMobile]
+    );
+    if (existingRows && existingRows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        code: 'ALREADY_SUBMITTED',
+        error: 'Feedback has already been recorded for this mobile number. Thank you!',
+      });
+    }
+
+    // 3. Range check overall rating (must be 1-5)
+    let cleanOverall = null;
+    if (overall_rating !== undefined && overall_rating !== null && overall_rating !== '') {
+      const parsed = Number(overall_rating);
+      if (isNaN(parsed) || parsed < 1 || parsed > 5) {
+        return res.status(400).json({
+          success: false,
+          error: 'Overall rating must be between 1 and 5 stars.',
+        });
+      }
+      cleanOverall = Math.round(parsed);
+    }
+
     const id = randomUUID();
     const ratingsJson = JSON.stringify(ratings || {});
     const metadataJson = metadata ? JSON.stringify(metadata) : null;
-    const cleanOverall = Number(overall_rating) || null;
-    const cleanFeedback = String(feedback_text || '').trim() || null;
-    const cleanWow = String(wow_moment || '').trim() || null;
+    const cleanFeedback = String(feedback_text || '').trim().slice(0, 3000) || null;
+    const cleanWow = String(wow_moment || '').trim().slice(0, 2000) || null;
 
     await db.query(
       `INSERT INTO ${RPL_DB}.rpl_feedbacks 

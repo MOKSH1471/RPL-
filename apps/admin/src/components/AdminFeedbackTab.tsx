@@ -29,6 +29,8 @@ export function AdminFeedbackTab() {
   const [formFilter, setFormFilter] = useState<'all' | 'rpl_event' | 'auction_day'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [stats, setStats] = useState<FetchFeedbacksResponse['stats']>({
     rpl_event: 0,
     rpl_event_avg: 0,
@@ -37,6 +39,7 @@ export function AdminFeedbackTab() {
     total_submissions: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
 
   const loadFeedbacks = async () => {
@@ -45,10 +48,12 @@ export function AdminFeedbackTab() {
       const res = await fetchAdminFeedbacks({
         form_type: formFilter,
         search: searchTerm,
-        limit: 100,
+        page,
+        limit: 50,
       });
       if (res && res.data) {
         setFeedbacks(res.data);
+        setTotalRecords(res.total || 0);
         if (res.stats) setStats(res.stats);
       }
     } catch (err) {
@@ -59,8 +64,12 @@ export function AdminFeedbackTab() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [formFilter, searchTerm]);
+
+  useEffect(() => {
     loadFeedbacks();
-  }, [formFilter]);
+  }, [formFilter, page]);
 
   // Client-side search filter fallback
   const filteredFeedbacks = useMemo(() => {
@@ -76,47 +85,69 @@ export function AdminFeedbackTab() {
     });
   }, [feedbacks, formFilter, searchTerm]);
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (filteredFeedbacks.length === 0) return;
+  // Sanitize cell to prevent CSV Formula Injection in Excel
+  const sanitizeCsvCell = (val: any) => {
+    let str = String(val ?? '');
+    if (/^[=\+\-@]/.test(str)) {
+      str = "'" + str;
+    }
+    return `"${str.replace(/"/g, '""')}"`;
+  };
 
-    const headers = [
-      'Submission ID',
-      'Form Type',
-      'Date & Time',
-      'Participant Name',
-      'Mobile Number',
-      'Overall Rating (1-5)',
-      'Feedback & Suggestions',
-      'Memorable Moment',
-      'Raw Ratings JSON',
-    ];
+  // Export to CSV (fetches full list without truncation)
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetchAdminFeedbacks({
+        form_type: formFilter,
+        search: searchTerm,
+        limit: 2000,
+      });
+      const exportItems = res?.data || filteredFeedbacks;
+      if (exportItems.length === 0) return;
 
-    const rows = filteredFeedbacks.map((f) => [
-      `"${f.id}"`,
-      `"${f.form_type === 'rpl_event' ? 'Season 9 Main Event' : 'Auction Day'}"`,
-      `"${new Date(f.created_at).toLocaleString('en-IN')}"`,
-      `"${f.full_name || ''}"`,
-      `"${f.mobile || ''}"`,
-      `"${f.overall_rating || ''}"`,
-      `"${(f.feedback_text || '').replace(/"/g, '""')}"`,
-      `"${(f.wow_moment || '').replace(/"/g, '""')}"`,
-      `"${JSON.stringify(f.ratings || {}).replace(/"/g, '""')}"`,
-    ]);
+      const headers = [
+        'Submission ID',
+        'Form Type',
+        'Date & Time',
+        'Participant Name',
+        'Mobile Number',
+        'Overall Rating (1-5)',
+        'Feedback & Suggestions',
+        'Memorable Moment',
+        'Raw Ratings JSON',
+      ];
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute(
-      'download',
-      `RPL_Feedback_Export_${formFilter}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const rows = exportItems.map((f) => [
+        sanitizeCsvCell(f.id),
+        sanitizeCsvCell(f.form_type === 'rpl_event' ? 'Season 9 Main Event' : 'Auction Day'),
+        sanitizeCsvCell(new Date(f.created_at).toLocaleString('en-IN')),
+        sanitizeCsvCell(f.full_name || ''),
+        sanitizeCsvCell(f.mobile || ''),
+        sanitizeCsvCell(f.overall_rating || ''),
+        sanitizeCsvCell(f.feedback_text || ''),
+        sanitizeCsvCell(f.wow_moment || ''),
+        sanitizeCsvCell(JSON.stringify(f.ratings || {})),
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `RPL_Feedback_Export_${formFilter}_${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export feedback CSV:', err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -153,11 +184,11 @@ export function AdminFeedbackTab() {
           <button
             type="button"
             onClick={handleExportCSV}
-            disabled={filteredFeedbacks.length === 0}
+            disabled={filteredFeedbacks.length === 0 || isExporting}
             className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export to Excel / CSV</span>
+            <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-bounce' : ''}`} />
+            <span>{isExporting ? 'Exporting Full CSV...' : 'Export to Excel / CSV'}</span>
           </button>
         </div>
       </div>
@@ -394,6 +425,40 @@ export function AdminFeedbackTab() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* ── Pagination & Response Counter ── */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <div>
+            Showing <strong className="text-slate-800">{filteredFeedbacks.length}</strong> of{' '}
+            <strong className="text-slate-800">{totalRecords}</strong> submissions
+            {totalRecords > 50 && (
+              <span className="ml-1 text-[11px] text-slate-400">
+                (Page {page} of {Math.max(1, Math.ceil(totalRecords / 50))})
+              </span>
+            )}
+          </div>
+          {totalRecords > 50 && (
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all shadow-2xs"
+              >
+                Previous
+              </button>
+              <span className="font-bold text-slate-700 px-2">Page {page}</span>
+              <button
+                type="button"
+                disabled={page * 50 >= totalRecords || loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all shadow-2xs"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

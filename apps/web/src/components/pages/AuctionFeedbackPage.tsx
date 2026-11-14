@@ -183,7 +183,7 @@ export const AuctionFeedbackPage: React.FC<AuctionFeedbackPageProps> = ({
   const missingName = attemptedSubmit && !name.trim();
   const missingRatings = attemptedSubmit && !isAllRatingsComplete;
   const missingOverall = attemptedSubmit && overallRating === null;
-  const missingFeedback = attemptedSubmit && !feedbackText.trim();
+  const missingFeedback = false;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,12 +203,6 @@ export const AuctionFeedbackPage: React.FC<AuctionFeedbackPageProps> = ({
 
     if (overallRating === null) {
       const el = document.getElementById('fb-auction-overall');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-
-    if (!feedbackText.trim()) {
-      const el = document.getElementById('fb-auction-suggestions');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
@@ -601,9 +595,7 @@ export const AuctionFeedbackPage: React.FC<AuctionFeedbackPageProps> = ({
             {/* 4. Any Feedback or Suggestion */}
             <div
               id="fb-auction-suggestions"
-              className={`bg-white rounded-3xl border shadow-xs p-5 sm:p-6 transition-colors ${
-                missingFeedback ? 'border-rose-400 ring-2 ring-rose-500/15' : 'border-slate-200'
-              }`}
+              className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 sm:p-6 transition-colors"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <label
@@ -612,14 +604,8 @@ export const AuctionFeedbackPage: React.FC<AuctionFeedbackPageProps> = ({
                 >
                   <MessageSquareHeart className="w-5 h-5 text-purple-600" />
                   <span>Any Feedback or Suggestions for Auction Day</span>
-                  <span className="text-rose-500">*</span>
+                  <span className="text-xs font-semibold text-slate-400 font-sans ml-1">(Optional)</span>
                 </label>
-                {missingFeedback && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 shrink-0">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Required</span>
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 mb-3">
                 Tell us what went well, what could be improved in the bidding format, timing, or refreshments for future seasons.
@@ -629,7 +615,7 @@ export const AuctionFeedbackPage: React.FC<AuctionFeedbackPageProps> = ({
                 rows={4}
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Share your suggestions and thoughts on the auction ceremony..."
+                placeholder="Share your suggestions and thoughts on the auction ceremony (Optional)..."
                 className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20 transition-all font-medium resize-y"
               />
             </div>
