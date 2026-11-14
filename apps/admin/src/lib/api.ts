@@ -573,3 +573,51 @@ export async function fetchAdminTransactions(params?: { status?: string; search?
   return data;
 }
 
+export interface FeedbackItem {
+  id: string;
+  form_type: 'rpl_event' | 'auction_day';
+  mobile: string;
+  full_name: string;
+  ratings: Record<string, any>;
+  overall_rating: number | null;
+  feedback_text: string | null;
+  wow_moment: string | null;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+export interface FetchFeedbacksResponse {
+  success: boolean;
+  total: number;
+  stats: {
+    rpl_event: number;
+    rpl_event_avg: number;
+    auction_day: number;
+    auction_day_avg: number;
+    total_submissions: number;
+  };
+  data: FeedbackItem[];
+}
+
+export async function fetchAdminFeedbacks(params?: {
+  form_type?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<FetchFeedbacksResponse> {
+  const query = new URLSearchParams();
+  if (params?.form_type && params.form_type !== 'all') query.append('form_type', params.form_type);
+  if (params?.search) query.append('search', params.search);
+  if (params?.page) query.append('page', String(params.page));
+  if (params?.limit) query.append('limit', String(params.limit));
+
+  const res = await fetch(`${API_BASE_URL}/admin/feedbacks?${query.toString()}`, {
+    headers: { ...getAuthHeaders() },
+    credentials: 'include',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch feedback records');
+  return data;
+}
+
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft,
   Star,
@@ -16,8 +16,13 @@ import {
   MessageSquareHeart,
   AlertCircle,
   RotateCcw,
+  Phone,
+  Loader2,
+  UserCheck,
+  ShieldCheck,
 } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
+import { lookupPlayer, submitFeedback } from '@/lib/api';
 
 interface FeedbackPageProps {
   onBackToHome: () => void;
@@ -25,26 +30,44 @@ interface FeedbackPageProps {
   onCheckPassClick?: () => void;
 }
 
-type StarValue = 1 | 2 | 3 | 4 | 5 | 'na' | null;
+type StarValue = 1 | 2 | 3 | 4 | 5 | null;
 type ScaleValue = 1 | 2 | 3 | 4 | 5 | null;
 
 interface MatrixRowConfig {
   id: string;
   label: string;
-  allowNA?: boolean;
+  sportKey?: string;
 }
 
-const TOURNAMENT_EXPERIENCE_ROWS: MatrixRowConfig[] = [
-  { id: 'rpl_cricket', label: 'RPL Cricket League Experience', allowNA: true },
-  { id: 'womens_cricket', label: "Women's Cricket League Experience", allowNA: true },
-  { id: 'kaccha_pakka', label: 'Kaccha Pakka Cricket League Experience', allowNA: true },
-  { id: 'football', label: 'Football League Experience', allowNA: true },
-  { id: 'table_tennis', label: 'Table Tennis League Experience', allowNA: true },
-  { id: 'carrom', label: 'Carrom League Experience', allowNA: true },
+const ALL_TOURNAMENT_ROWS: MatrixRowConfig[] = [
+  { id: 'rpl_cricket', label: 'RPL Cricket League Experience', sportKey: 'cricket' },
+  { id: 'womens_cricket', label: "Women's Cricket League Experience", sportKey: 'womens-sports' },
+  { id: 'kaccha_pakka', label: 'Kaccha Pakka Cricket League Experience', sportKey: 'kaccha-pakka' },
+  { id: 'football', label: 'Football League Experience', sportKey: 'football' },
+  { id: 'table_tennis', label: 'Table Tennis League Experience', sportKey: 'table-tennis' },
+  { id: 'carrom', label: 'Carrom League Experience', sportKey: 'carrom' },
   { id: 'officiating', label: 'Match Officiating / Umpiring & Referees' },
   { id: 'ground_conditions', label: 'Ground & Arena Conditions' },
   { id: 'schedule_management', label: 'Schedule Management' },
 ];
+
+// Helper to normalize and map database sport keys to row IDs
+const SPORT_ALIAS_MAP: Record<string, string> = {
+  cricket: 'rpl_cricket',
+  rpl_cricket: 'rpl_cricket',
+  'womens-sports': 'womens_cricket',
+  'womens_sports': 'womens_cricket',
+  'womens-cricket': 'womens_cricket',
+  womens_cricket: 'womens_cricket',
+  'kaccha-pakka': 'kaccha_pakka',
+  kaccha_pakka: 'kaccha_pakka',
+  kacchapakka: 'kaccha_pakka',
+  football: 'football',
+  'table-tennis': 'table_tennis',
+  'table_tennis': 'table_tennis',
+  tt: 'table_tennis',
+  carrom: 'carrom',
+};
 
 const OPENING_CEREMONY_ROWS: MatrixRowConfig[] = [
   { id: 'hosting', label: 'Hosting' },
@@ -187,27 +210,8 @@ const StarMatrixCard: React.FC<StarMatrixCardProps> = ({
                   })}
                 </div>
 
-                {row.allowNA && (
-                  <button
-                    type="button"
-                    onClick={() => onChange(row.id, val === 'na' ? null : 'na')}
-                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition-all cursor-pointer ${
-                      val === 'na'
-                        ? 'bg-slate-800 text-white border-slate-800 shadow-2xs'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-                    }`}
-                    title="Select if you did not participate in this league"
-                  >
-                    Didn't Play
-                  </button>
-                )}
-
                 <span className="text-[11px] font-semibold text-slate-500 min-w-[92px] text-right hidden md:inline-block">
-                  {val === 'na'
-                    ? 'N/A'
-                    : numericVal > 0
-                    ? STAR_LABELS[numericVal]
-                    : 'Not rated'}
+                  {numericVal > 0 ? STAR_LABELS[numericVal] : 'Not rated'}
                 </span>
               </div>
             </div>
@@ -297,6 +301,14 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
+  // Player Verification states
+  const [mobile, setMobile] = useState('');
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [userSports, setUserSports] = useState<string[]>([]);
+  const [userSportsLabels, setUserSportsLabels] = useState<string[]>([]);
+
   // Form states
   const [name, setName] = useState('');
   const [tournamentExp, setTournamentExp] = useState<Record<string, StarValue>>({});
@@ -308,6 +320,114 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   const [overallExp, setOverallExp] = useState<ScaleValue>(null);
   const [teamFeedback, setTeamFeedback] = useState('');
   const [wowMoment, setWowMoment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Handle typing mobile number: purely digits, 10-digit limit
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setMobile(rawDigits);
+    setLookupError(null);
+
+    if (rawDigits.length < 10) {
+      setIsVerified(false);
+      setName('');
+      setUserSports([]);
+      setUserSportsLabels([]);
+    }
+  };
+
+  // Dynamic automatic check as soon as 10 digits are entered
+  useEffect(() => {
+    if (mobile.length !== 10) return;
+
+    let isCancelled = false;
+    setIsLookingUp(true);
+    setLookupError(null);
+
+    lookupPlayer(mobile)
+      .then((res) => {
+        if (isCancelled) return;
+        setIsLookingUp(false);
+
+        if (res && res.found && res.registration) {
+          const reg = res.registration;
+          const participantName = reg.fullName || res.data?.fullName || '';
+          setName(participantName);
+          setIsVerified(true);
+
+          // Extract participated sports from registration
+          const genSports = Array.isArray(reg.generalDetails?.selectedSports)
+            ? reg.generalDetails.selectedSports
+            : [];
+          const rawSports: string[] = Array.isArray(reg.selectedSports) && reg.selectedSports.length > 0
+            ? reg.selectedSports
+            : genSports.length > 0
+            ? genSports
+            : Object.keys(reg.sportAnswers || {});
+
+          const sportsSet = new Set<string>();
+          const labelsList: string[] = [];
+
+          rawSports.forEach((sportKey) => {
+            const normalized = String(sportKey).toLowerCase().trim();
+            const rowId = SPORT_ALIAS_MAP[normalized];
+            if (rowId) {
+              sportsSet.add(rowId);
+              const matchedRow = ALL_TOURNAMENT_ROWS.find((r) => r.id === rowId);
+              if (matchedRow && !labelsList.includes(matchedRow.label)) {
+                labelsList.push(matchedRow.label.replace(' Experience', ''));
+              }
+            }
+          });
+
+          // Fallback if no specific sport key matched: show all tournament leagues so participant is not locked out
+          if (sportsSet.size === 0) {
+            ALL_TOURNAMENT_ROWS.forEach((r) => {
+              if (r.sportKey) sportsSet.add(r.id);
+            });
+            labelsList.push('Tournament Participant');
+          }
+
+          setUserSports(Array.from(sportsSet));
+          setUserSportsLabels(labelsList);
+        } else if (res && res.found && res.data) {
+          setIsVerified(false);
+          setName('');
+          setUserSports([]);
+          setUserSportsLabels([]);
+          setLookupError(
+            `Found member record for ${res.data.fullName}, but no Season 9 registration was found for this mobile number.`
+          );
+        } else {
+          setIsVerified(false);
+          setName('');
+          setUserSports([]);
+          setUserSportsLabels([]);
+          setLookupError(
+            'Mobile number not found in Season 9 registrations. Please verify your 10-digit registered number.'
+          );
+        }
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        setIsLookingUp(false);
+        setLookupError('Could not verify mobile number right now. Please check your connection.');
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [mobile]);
+
+  // Filter tournament rows: ONLY participated sports + general operations
+  const activeTournamentRows = React.useMemo(() => {
+    if (!isVerified) return [];
+    return ALL_TOURNAMENT_ROWS.filter((row) => {
+      if (!row.sportKey) return true; // Operations rows (Officiating, Ground, Schedule)
+      return userSports.includes(row.id);
+    });
+  }, [isVerified, userSports]);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -328,8 +448,8 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   const isMatrixComplete = (rows: MatrixRowConfig[], values: Record<string, StarValue>) =>
     rows.every((r) => values[r.id] !== undefined && values[r.id] !== null);
 
-  const missingName = attemptedSubmit && !name.trim();
-  const missingTournament = attemptedSubmit && !isMatrixComplete(TOURNAMENT_EXPERIENCE_ROWS, tournamentExp);
+  const missingMobile = attemptedSubmit && (!isVerified || mobile.length !== 10);
+  const missingTournament = attemptedSubmit && !isMatrixComplete(activeTournamentRows, tournamentExp);
   const missingOpening = attemptedSubmit && !isMatrixComplete(OPENING_CEREMONY_ROWS, openingCeremony);
   const missingHospitality = attemptedSubmit && !isMatrixComplete(HOSPITALITY_ROWS, hospitality);
   const missingLeagueText = attemptedSubmit && !leagueFeedback.trim();
@@ -341,9 +461,13 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
     e.preventDefault();
     setAttemptedSubmit(true);
 
-    const firstInvalidId = !name.trim()
-      ? 'fb-name'
-      : !isMatrixComplete(TOURNAMENT_EXPERIENCE_ROWS, tournamentExp)
+    if (!isVerified) {
+      const el = document.getElementById('fb-mobile');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const firstInvalidId = !isMatrixComplete(activeTournamentRows, tournamentExp)
       ? 'fb-tournament'
       : !isMatrixComplete(OPENING_CEREMONY_ROWS, openingCeremony)
       ? 'fb-opening'
@@ -367,12 +491,48 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
       return;
     }
 
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    submitFeedback({
+      form_type: 'rpl_event',
+      mobile,
+      full_name: name,
+      ratings: {
+        tournament: tournamentExp,
+        opening_ceremony: openingCeremony,
+        hospitality: hospitality,
+        jersey_caps: jerseyCaps,
+      },
+      overall_rating: overallExp,
+      feedback_text: [leagueFeedback, teamFeedback ? `[RPL Team Note]: ${teamFeedback}` : '']
+        .filter(Boolean)
+        .join('\n\n'),
+      wow_moment: wowMoment,
+      metadata: {
+        sports: userSports,
+        closing_ceremony: closingCeremony,
+      },
+    })
+      .then(() => {
+        setIsSubmitting(false);
+        setSubmitted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch((err) => {
+        setIsSubmitting(false);
+        setSubmitError(err.message || 'Failed to submit feedback. Please try again.');
+      });
   };
 
   const handleReset = () => {
+    setMobile('');
     setName('');
+    setIsVerified(false);
+    setIsLookingUp(false);
+    setLookupError(null);
+    setUserSports([]);
+    setUserSportsLabels([]);
     setTournamentExp({});
     setOpeningCeremony({});
     setHospitality({});
@@ -502,48 +662,135 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
         ) : (
           /* ── Feedback Form Questions ── */
           <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            {/* 1. Name */}
+            {/* 1. Mobile Number & Dynamic Player Lookup */}
             <div
-              id="fb-name"
-              className={`bg-white rounded-3xl border shadow-xs p-5 sm:p-6 transition-colors ${
-                missingName ? 'border-rose-400 ring-2 ring-rose-500/15' : 'border-slate-200'
+              id="fb-mobile"
+              className={`bg-white rounded-3xl border shadow-xs p-5 sm:p-6 transition-all ${
+                missingMobile
+                  ? 'border-rose-400 ring-2 ring-rose-500/15'
+                  : isVerified
+                  ? 'border-emerald-300 ring-2 ring-emerald-500/10'
+                  : 'border-slate-200'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-2.5">
-                <label htmlFor="feedback-name-input" className="font-display font-extrabold text-base sm:text-lg text-slate-900">
-                  Name <span className="text-rose-500">*</span>
+                <label htmlFor="feedback-mobile-input" className="font-display font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-amber-600" />
+                  <span>Registered Mobile Number</span>
+                  <span className="text-rose-500">*</span>
                 </label>
-                {missingName && (
+                {missingMobile && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Please enter your name</span>
+                    <span>Valid 10-digit registered mobile required</span>
                   </span>
                 )}
               </div>
-              <input
-                id="feedback-name-input"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
-              />
+
+              <div className="relative">
+                <input
+                  id="feedback-mobile-input"
+                  type="tel"
+                  inputMode="numeric"
+                  value={mobile}
+                  onChange={handleMobileChange}
+                  placeholder="Enter your 10-digit mobile number (e.g. 9876543210)"
+                  maxLength={10}
+                  className="w-full pl-4 pr-11 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm sm:text-base text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-all font-semibold tracking-wider"
+                />
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                  {isLookingUp ? (
+                    <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
+                  ) : isVerified ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Status & Auto-filled details */}
+              {isLookingUp && (
+                <p className="mt-2.5 text-xs text-amber-600 font-medium flex items-center gap-1.5 animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Checking database for Season 9 registration...</span>
+                </p>
+              )}
+
+              {lookupError && (
+                <div className="mt-3 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-medium flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{lookupError}</span>
+                </div>
+              )}
+
+              {isVerified && (
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50/60 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-4 sm:p-5 rounded-b-3xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                      <UserCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                          Verified Participant
+                        </span>
+                      </div>
+                      <h4 className="font-display font-extrabold text-base text-slate-900 mt-0.5">
+                        {name}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {userSportsLabels.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                      <span className="text-[11px] font-bold text-slate-500 mr-1 hidden sm:inline">
+                        Participated in:
+                      </span>
+                      {userSportsLabels.map((lbl) => (
+                        <span
+                          key={lbl}
+                          className="px-2.5 py-1 rounded-xl bg-white border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs"
+                        >
+                          {lbl}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* 2. Tournament Experience */}
-            <StarMatrixCard
-              id="fb-tournament"
-              title="Tournament Experience"
-              subtitle="Rate each Season 9 league and tournament operations (tap “Didn't Play” for leagues you weren't part of)"
-              icon={<Trophy className="w-5 h-5 text-amber-700" />}
-              accentBg="bg-amber-100 border border-amber-200"
-              rows={TOURNAMENT_EXPERIENCE_ROWS}
-              values={tournamentExp}
-              onChange={(rowId, val) =>
-                setTournamentExp((prev) => ({ ...prev, [rowId]: val }))
-              }
-              hasError={missingTournament}
-            />
+            {!isVerified ? (
+              /* Locked Placeholder when mobile not verified */
+              <div className="rounded-3xl border-2 border-dashed border-slate-200 p-8 text-center bg-white/60 space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1">
+                  <h3 className="font-display font-extrabold text-base sm:text-lg text-slate-800">
+                    Enter Your Mobile Number to Continue
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                    Once verified, questions for the specific leagues you participated in will automatically unlock.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Active Feedback Form Questions unlocked once verified */
+              <>
+                {/* 2. Tournament Experience */}
+                <StarMatrixCard
+                  id="fb-tournament"
+                  title="Tournament Experience"
+                  subtitle="Rate each Season 9 league you participated in and tournament operations"
+                  icon={<Trophy className="w-5 h-5 text-amber-700" />}
+                  accentBg="bg-amber-100 border border-amber-200"
+                  rows={activeTournamentRows}
+                  values={tournamentExp}
+                  onChange={(rowId, val) =>
+                    setTournamentExp((prev) => ({ ...prev, [rowId]: val }))
+                  }
+                  hasError={missingTournament}
+                />
 
             {/* 3. Opening Ceremony */}
             <StarMatrixCard
@@ -686,26 +933,46 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
               />
             </div>
 
+            {submitError && (
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
             {/* Submit & Clear Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <button
                 type="submit"
-                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-600 hover:via-orange-600 hover:to-pink-600 text-white font-extrabold text-sm sm:text-base shadow-lg hover:shadow-xl active:scale-95 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-600 hover:via-orange-600 hover:to-pink-600 disabled:opacity-60 text-white font-extrabold text-sm sm:text-base shadow-lg hover:shadow-xl active:scale-95 transition-all inline-flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
-                <span>Submit Feedback</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Submitting to Database...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Submit Feedback</span>
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
                 onClick={handleReset}
+                disabled={isSubmitting}
                 className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer py-2 px-3"
               >
                 Clear form
               </button>
             </div>
-          </form>
+          </>
         )}
+      </form>
+    )}
       </main>
 
       <Footer

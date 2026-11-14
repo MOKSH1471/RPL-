@@ -14,6 +14,7 @@ import {
   Shield,
   LogOut,
   UserCheck,
+  MessageSquareHeart,
 } from 'lucide-react';
 import {
   fetchAdminStats,
@@ -27,6 +28,7 @@ import { AdminAccommodationTab } from './AdminAccommodationTab';
 import { AdminTransactionsTab } from './AdminTransactionsTab';
 import { AdminExportTab } from './AdminExportTab';
 import { AdminTeamMakerTab } from './AdminTeamMakerTab';
+import { AdminFeedbackTab } from './AdminFeedbackTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { ScorerPage } from './scorer/ScorerPage';
 import { AdminUsersModal } from './AdminUsersModal';
@@ -44,16 +46,17 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
     currentUser?.role === 'SCORECARD_ADMIN' ||
     (!isSuperAdmin && currentUser?.permissions?.length === 1 && currentUser?.permissions?.[0] === 'scorer');
 
-  const canViewDashboard = isSuperAdmin || currentUser?.permissions?.includes('dashboard');
-  const canViewRegistrations = isSuperAdmin || currentUser?.permissions?.includes('registrations');
-  const canViewAccommodation = isSuperAdmin || currentUser?.permissions?.includes('accommodation');
-  const canViewTransactions = isSuperAdmin || currentUser?.permissions?.includes('transactions');
-  const canViewExports = isSuperAdmin || currentUser?.permissions?.includes('exports');
-  const canViewTeams = isSuperAdmin || currentUser?.permissions?.includes('teams');
-  const canViewScorer = isSuperAdmin || currentUser?.permissions?.includes('scorer');
+  const canViewDashboard = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('dashboard');
+  const canViewRegistrations = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('registrations');
+  const canViewAccommodation = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('accommodation');
+  const canViewTransactions = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('transactions');
+  const canViewExports = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('exports');
+  const canViewTeams = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('teams');
+  const canViewScorer = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('scorer');
+  const canViewFeedback = !currentUser || isSuperAdmin || currentUser?.permissions?.includes('dashboard') || currentUser?.permissions?.includes('registrations');
 
   // Compute initial active tab
-  const getInitialTab = (): 'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' => {
+  const getInitialTab = (): 'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' | 'feedback' => {
     if (isScorerOnly) return 'scorer';
     if (canViewDashboard) return 'dashboard';
     if (canViewRegistrations) return 'registrations';
@@ -61,11 +64,12 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
     if (canViewTransactions) return 'transactions';
     if (canViewExports) return 'exports';
     if (canViewTeams) return 'teams';
+    if (canViewFeedback) return 'feedback';
     if (canViewScorer) return 'scorer';
     return 'dashboard';
   };
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer'>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' | 'feedback'>(getInitialTab);
   const [stats, setStats] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
@@ -357,6 +361,21 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
               </button>
             )}
 
+            {canViewFeedback && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('feedback')}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
+                  activeTab === 'feedback'
+                    ? 'bg-slate-900 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <MessageSquareHeart className="w-4 h-4 text-amber-500" />
+                <span>Feedback Center</span>
+              </button>
+            )}
+
             {canViewScorer && (
               <button
                 type="button"
@@ -419,6 +438,10 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
             loading={loading}
             onRefresh={loadData}
           />
+        )}
+
+        {activeTab === 'feedback' && canViewFeedback && (
+          <AdminFeedbackTab />
         )}
 
         {activeTab === 'scorer' && (

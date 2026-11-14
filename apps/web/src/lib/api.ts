@@ -167,6 +167,7 @@ export interface ExistingRegistrationData {
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   previouslyPaidExtraTshirt?: boolean;
+  selectedSports?: string[];
   generalDetails: Record<string, any>;
   sportAnswers: Record<string, any>;
   cardNo?: string;
@@ -360,4 +361,27 @@ export async function reportRazorpayPaymentFailure(orderId: string, error: any) 
     });
   } catch {}
 }
+
+export interface FeedbackSubmissionPayload {
+  form_type: 'rpl_event' | 'auction_day';
+  mobile: string;
+  full_name: string;
+  ratings: Record<string, any>;
+  overall_rating?: number | null;
+  feedback_text?: string | null;
+  wow_moment?: string | null;
+  metadata?: Record<string, any>;
+}
+
+export async function submitFeedback(payload: FeedbackSubmissionPayload) {
+  const res = await fetch(`${API_BASE_URL}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to submit feedback');
+  return data;
+}
+
 
