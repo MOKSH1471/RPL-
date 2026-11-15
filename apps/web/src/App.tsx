@@ -103,6 +103,10 @@ export function App() {
         setCurrentPage('schedule');
         setShowIntro(false);
       } else if (
+        path === '/feedback' ||
+        path.startsWith('/feedback') ||
+        hash === '#/feedback' ||
+        hash === '#feedback' ||
         path === '/rpl-feedback' ||
         path.startsWith('/rpl-feedback') ||
         hash === '#/rpl-feedback' ||

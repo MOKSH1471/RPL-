@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  ArrowLeft,
   Star,
   Calendar,
   MapPin,
@@ -20,12 +19,13 @@ import {
   Loader2,
   UserCheck,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
-import { lookupPlayer, submitFeedback } from '@/lib/api';
+import { lookupPlayer, submitFeedback, fetchExistingFeedback } from '@/lib/api';
 
 interface FeedbackPageProps {
-  onBackToHome: () => void;
+  onBackToHome?: () => void;
   onRegisterClick?: () => void;
   onCheckPassClick?: () => void;
 }
@@ -293,7 +293,6 @@ const LinearScaleCard: React.FC<LinearScaleCardProps> = ({
 };
 
 export const FeedbackPage: React.FC<FeedbackPageProps> = ({
-  onBackToHome,
   onRegisterClick,
   onCheckPassClick,
 }) => {
@@ -323,6 +322,84 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Edit Mode & Draft states
+  const [isExistingSubmission, setIsExistingSubmission] = useState(false);
+  const [existingSubmissionDate, setExistingSubmissionDate] = useState<string | null>(null);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const [hasDraftContent, setHasDraftContent] = useState(false);
+
+  // 1. Restore draft from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const rawDraft = localStorage.getItem('rpl_feedback_draft_v1');
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft);
+        if (draft.mobile && String(draft.mobile).length === 10) setMobile(draft.mobile);
+        if (draft.tournamentExp) setTournamentExp(draft.tournamentExp);
+        if (draft.openingCeremony) setOpeningCeremony(draft.openingCeremony);
+        if (draft.hospitality) setHospitality(draft.hospitality);
+        if (draft.leagueFeedback) setLeagueFeedback(draft.leagueFeedback);
+        if (draft.jerseyCaps) setJerseyCaps(draft.jerseyCaps);
+        if (draft.closingCeremony !== undefined) setClosingCeremony(draft.closingCeremony);
+        if (draft.overallExp !== undefined) setOverallExp(draft.overallExp);
+        if (draft.teamFeedback) setTeamFeedback(draft.teamFeedback);
+        if (draft.wowMoment) setWowMoment(draft.wowMoment);
+        setHasDraftContent(true);
+      }
+    } catch {}
+  }, []);
+
+  // 2. Auto-save in-progress draft whenever any field changes
+  useEffect(() => {
+    if (submitted) return;
+    try {
+      const hasAny = Boolean(
+        mobile.length > 0 ||
+        Object.keys(tournamentExp).length > 0 ||
+        Object.keys(openingCeremony).length > 0 ||
+        Object.keys(hospitality).length > 0 ||
+        Object.keys(jerseyCaps).length > 0 ||
+        leagueFeedback.trim() ||
+        teamFeedback.trim() ||
+        wowMoment.trim() ||
+        overallExp !== null ||
+        closingCeremony !== null
+      );
+      setHasDraftContent(hasAny);
+
+      if (hasAny) {
+        localStorage.setItem(
+          'rpl_feedback_draft_v1',
+          JSON.stringify({
+            mobile,
+            tournamentExp,
+            openingCeremony,
+            hospitality,
+            leagueFeedback,
+            jerseyCaps,
+            closingCeremony,
+            overallExp,
+            teamFeedback,
+            wowMoment,
+            savedAt: Date.now(),
+          })
+        );
+      }
+    } catch {}
+  }, [
+    mobile,
+    tournamentExp,
+    openingCeremony,
+    hospitality,
+    leagueFeedback,
+    jerseyCaps,
+    closingCeremony,
+    overallExp,
+    teamFeedback,
+    wowMoment,
+    submitted,
+  ]);
+
   // Handle typing mobile number: purely digits, 10-digit limit
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -334,6 +411,8 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
       setName('');
       setUserSports([]);
       setUserSportsLabels([]);
+      setIsExistingSubmission(false);
+      setExistingSubmissionDate(null);
     }
   };
 
@@ -391,6 +470,44 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
 
           setUserSports(Array.from(sportsSet));
           setUserSportsLabels(labelsList);
+
+          // Check if previous feedback exists for this mobile number to enable edit mode
+          fetchExistingFeedback(mobile, 'rpl_event')
+            .then((fbRes) => {
+              if (isCancelled) return;
+              if (fbRes && fbRes.exists && fbRes.feedback) {
+                const fb = fbRes.feedback;
+                setIsExistingSubmission(true);
+                setExistingSubmissionDate(fb.created_at || null);
+
+                if (fb.ratings) {
+                  if (fb.ratings.tournament && Object.keys(fb.ratings.tournament).length > 0) {
+                    setTournamentExp((prev) => ({ ...fb.ratings.tournament, ...prev }));
+                  }
+                  if (fb.ratings.opening_ceremony && Object.keys(fb.ratings.opening_ceremony).length > 0) {
+                    setOpeningCeremony((prev) => ({ ...fb.ratings.opening_ceremony, ...prev }));
+                  }
+                  if (fb.ratings.hospitality && Object.keys(fb.ratings.hospitality).length > 0) {
+                    setHospitality((prev) => ({ ...fb.ratings.hospitality, ...prev }));
+                  }
+                  if (fb.ratings.jersey_caps && Object.keys(fb.ratings.jersey_caps).length > 0) {
+                    setJerseyCaps((prev) => ({ ...fb.ratings.jersey_caps, ...prev }));
+                  }
+                }
+                if (fb.overall_rating) setOverallExp(fb.overall_rating);
+                if (fb.metadata && fb.metadata.closing_ceremony) setClosingCeremony(fb.metadata.closing_ceremony);
+                if (fb.wow_moment) setWowMoment((prev) => prev || fb.wow_moment || '');
+                if (fb.feedback_text) {
+                  const parts = fb.feedback_text.split('\n\n[RPL Team Note]: ');
+                  setLeagueFeedback((prev) => prev || parts[0] || '');
+                  if (parts[1]) setTeamFeedback((prev) => prev || parts[1] || '');
+                }
+              } else {
+                setIsExistingSubmission(false);
+                setExistingSubmissionDate(null);
+              }
+            })
+            .catch(() => {});
         } else if (res && res.found && res.data) {
           setIsVerified(false);
           setName('');
@@ -511,10 +628,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
         sports: userSports,
         closing_ceremony: closingCeremony,
       },
+      allow_update: isExistingSubmission,
     })
-      .then(() => {
+      .then((res) => {
         setIsSubmitting(false);
+        setIsUpdated(Boolean(res?.is_update));
         setSubmitted(true);
+        try {
+          localStorage.removeItem('rpl_feedback_draft_v1');
+        } catch {}
         window.scrollTo({ top: 0, behavior: 'smooth' });
       })
       .catch((err) => {
@@ -524,6 +646,9 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
   };
 
   const handleReset = () => {
+    try {
+      localStorage.removeItem('rpl_feedback_draft_v1');
+    } catch {}
     setMobile('');
     setName('');
     setIsVerified(false);
@@ -540,6 +665,10 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
     setOverallExp(null);
     setTeamFeedback('');
     setWowMoment('');
+    setIsExistingSubmission(false);
+    setExistingSubmissionDate(null);
+    setIsUpdated(false);
+    setHasDraftContent(false);
     setAttemptedSubmit(false);
     setSubmitted(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -550,26 +679,15 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
       {/* ── Sticky Navigation Header ── */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-2xs">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-amber-600 transition-colors cursor-pointer group"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back to Home</span>
-            </button>
-            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <div className="hidden sm:flex items-center gap-2">
-              <img
-                src="/rpl-logo.png"
-                alt="RPL Logo"
-                className="h-6 w-auto object-contain drop-shadow-2xs"
-              />
-              <span className="text-xs font-black uppercase tracking-wider text-slate-900 font-display">
-                Season 9 Feedback
-              </span>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/rpl-logo.png"
+              alt="RPL Logo"
+              className="h-7 w-auto object-contain drop-shadow-2xs"
+            />
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 font-display">
+              Season 9 Feedback
+            </span>
           </div>
 
           <button
@@ -628,32 +746,26 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
             </div>
             <div className="space-y-2 max-w-lg mx-auto">
               <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold uppercase tracking-wider">
-                Feedback Submitted Successfully
+                {isUpdated ? 'Feedback Updated Successfully' : 'Feedback Submitted Successfully'}
               </span>
               <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900">
-                Thank You, {name}!
+                {isUpdated ? `Feedback Updated, ${name}!` : `Thank You, ${name}!`}
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Your feedback for Raj Premier League Season 9 has been recorded. The organizing committee truly appreciates your valuable inputs!
+                {isUpdated
+                  ? 'Your updated feedback for Raj Premier League Season 9 has been recorded successfully.'
+                  : 'Your feedback for Raj Premier League Season 9 has been recorded. The organizing committee truly appreciates your valuable inputs!'}
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center pt-2">
               <button
                 type="button"
                 onClick={handleReset}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-sm shadow-md inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Submit Another Response</span>
-              </button>
-              <button
-                type="button"
-                onClick={onBackToHome}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-sm shadow-md inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Return to RPL Home</span>
               </button>
             </div>
           </div>
@@ -732,13 +844,9 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
                           Verified Participant
                         </span>
                       </div>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Participant Name"
-                        className="mt-0.5 font-display font-extrabold text-base text-slate-900 bg-transparent border-b border-emerald-300 focus:border-emerald-600 focus:outline-hidden py-0.5 w-full"
-                      />
+                      <p className="mt-0.5 font-display font-extrabold text-base sm:text-lg text-slate-900 truncate">
+                        {name}
+                      </p>
                     </div>
                   </div>
 
@@ -760,6 +868,28 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Edit Mode Banner when existing submission was loaded */}
+            {isVerified && isExistingSubmission && (
+              <div className="rounded-3xl bg-gradient-to-br from-amber-50 via-white to-orange-50 border border-amber-300 p-5 shadow-xs flex items-start gap-3.5 text-amber-950">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-extrabold text-amber-950 text-sm">
+                      Previous Feedback Found
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">
+                      Edit Mode
+                    </span>
+                  </div>
+                  <p className="text-amber-800 leading-relaxed font-medium">
+                    You previously submitted feedback for RPL Season 9{existingSubmissionDate ? ` on ${new Date(existingSubmissionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}. Your earlier ratings and comments are pre-filled below. You can update any answers and submit your changes.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {!isVerified ? (
               /* Locked Placeholder when mobile not verified */
@@ -944,24 +1074,36 @@ export const FeedbackPage: React.FC<FeedbackPageProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Submitting to Database...</span>
+                    <span>{isExistingSubmission ? 'Updating...' : 'Submitting to Database...'}</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
-                    <span>Submit Feedback</span>
+                    {isExistingSubmission ? (
+                      <RefreshCw className="w-4 h-4" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    <span>{isExistingSubmission ? 'Update Feedback' : 'Submit Feedback'}</span>
                   </>
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={handleReset}
-                disabled={isSubmitting}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer py-2 px-3"
-              >
-                Clear form
-              </button>
+              <div className="flex items-center gap-3">
+                {hasDraftContent && !isExistingSubmission && (
+                  <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Draft auto-saved</span>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isSubmitting}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer py-2 px-3"
+                >
+                  Clear form
+                </button>
+              </div>
             </div>
           </>
         )}

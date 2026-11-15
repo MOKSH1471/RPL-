@@ -8,6 +8,55 @@ import { feedbackRateLimiter } from '../middleware/rateLimiter.js';
 const router = Router();
 
 /**
+ * Public Endpoint: Check Existing Feedback
+ * Queries if a mobile number has already submitted feedback for the given form_type.
+ * If so, returns their existing submission so they can review or update it.
+ */
+router.get('/feedback/check', async (req, res, next) => {
+  try {
+    const { mobile, form_type = 'rpl_event' } = req.query;
+    const cleanMobile = String(mobile || '').replace(/\D/g, '').slice(-10);
+
+    if (cleanMobile.length !== 10) {
+      return res.status(400).json({ success: false, error: 'Valid 10-digit mobile number is required.' });
+    }
+
+    const [rows] = await db.query(
+      `SELECT id, form_type, mobile, full_name, ratings, overall_rating, feedback_text, wow_moment, metadata, created_at 
+       FROM ${RPL_DB}.rpl_feedbacks 
+       WHERE form_type = ? AND mobile = ? 
+       ORDER BY created_at DESC LIMIT 1`,
+      [form_type, cleanMobile]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const item = rows[0];
+    return res.json({
+      success: true,
+      exists: true,
+      feedback: {
+        id: item.id,
+        form_type: item.form_type,
+        mobile: item.mobile,
+        full_name: item.full_name,
+        ratings: typeof item.ratings === 'string' ? JSON.parse(item.ratings || '{}') : (item.ratings || {}),
+        overall_rating: item.overall_rating,
+        feedback_text: item.feedback_text,
+        wow_moment: item.wow_moment,
+        metadata: typeof item.metadata === 'string' ? JSON.parse(item.metadata || '{}') : (item.metadata || {}),
+        created_at: item.created_at,
+      },
+    });
+  } catch (error) {
+    logger.error('[FEEDBACK CHECK ERROR]:', error);
+    next(error);
+  }
+});
+
+/**
  * Public Endpoint: Submit Feedback
  * Accepts feedback for either Form 1 ('rpl_event') or Form 2 ('auction_day')
  */
@@ -22,6 +71,7 @@ router.post('/feedback', feedbackRateLimiter, async (req, res, next) => {
       feedback_text,
       wow_moment,
       metadata,
+      allow_update = false,
     } = req.body;
 
     // Basic validation
@@ -64,16 +114,19 @@ router.post('/feedback', feedbackRateLimiter, async (req, res, next) => {
       }
     }
 
-    // 2. Prevent duplicate submissions for the same form type
+    // 2. Check for existing submission for this form type & mobile
     const [existingRows] = await db.query(
       `SELECT id FROM ${RPL_DB}.rpl_feedbacks WHERE form_type = ? AND mobile = ? LIMIT 1`,
       [form_type, cleanMobile]
     );
-    if (existingRows && existingRows.length > 0) {
+    const existing = existingRows && existingRows[0];
+
+    if (existing && !allow_update) {
       return res.status(409).json({
         success: false,
         code: 'ALREADY_SUBMITTED',
-        error: 'Feedback has already been recorded for this mobile number. Thank you!',
+        can_update: true,
+        error: 'Feedback has already been recorded for this mobile number. You can review or update your feedback below.',
       });
     }
 
@@ -90,12 +143,38 @@ router.post('/feedback', feedbackRateLimiter, async (req, res, next) => {
       cleanOverall = Math.round(parsed);
     }
 
-    const id = randomUUID();
     const ratingsJson = JSON.stringify(ratings || {});
     const metadataJson = metadata ? JSON.stringify(metadata) : null;
     const cleanFeedback = String(feedback_text || '').trim().slice(0, 3000) || null;
     const cleanWow = String(wow_moment || '').trim().slice(0, 2000) || null;
 
+    if (existing && allow_update) {
+      await db.query(
+        `UPDATE ${RPL_DB}.rpl_feedbacks 
+         SET full_name = ?, ratings = ?, overall_rating = ?, feedback_text = ?, wow_moment = ?, metadata = ?
+         WHERE id = ?`,
+        [
+          cleanName,
+          ratingsJson,
+          cleanOverall,
+          cleanFeedback,
+          cleanWow,
+          metadataJson,
+          existing.id,
+        ]
+      );
+
+      logger.info(`[FEEDBACK] Updated ${form_type} feedback from "${cleanName}" (${cleanMobile}) [id: ${existing.id}]`);
+
+      return res.status(200).json({
+        success: true,
+        id: existing.id,
+        is_update: true,
+        message: 'Feedback updated successfully.',
+      });
+    }
+
+    const id = randomUUID();
     await db.query(
       `INSERT INTO ${RPL_DB}.rpl_feedbacks 
         (id, form_type, mobile, full_name, ratings, overall_rating, feedback_text, wow_moment, metadata) 
@@ -118,7 +197,8 @@ router.post('/feedback', feedbackRateLimiter, async (req, res, next) => {
     return res.status(201).json({
       success: true,
       id,
-      message: 'Feedback submitted successfully',
+      is_update: false,
+      message: 'Feedback submitted successfully.',
     });
   } catch (error) {
     logger.error('[FEEDBACK ERROR] Failed to submit feedback:', error);

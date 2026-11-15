@@ -371,6 +371,21 @@ export interface FeedbackSubmissionPayload {
   feedback_text?: string | null;
   wow_moment?: string | null;
   metadata?: Record<string, any>;
+  allow_update?: boolean;
+}
+
+export async function fetchExistingFeedback(mobile: string, formType: 'rpl_event' | 'auction_day' = 'rpl_event') {
+  try {
+    const cleanMobile = String(mobile).replace(/\D/g, '').slice(-10);
+    if (cleanMobile.length !== 10) return { exists: false };
+    const res = await fetch(
+      `${API_BASE_URL}/feedback/check?mobile=${encodeURIComponent(cleanMobile)}&form_type=${encodeURIComponent(formType)}`
+    );
+    if (!res.ok) return { exists: false };
+    return await res.json();
+  } catch {
+    return { exists: false };
+  }
 }
 
 export async function submitFeedback(payload: FeedbackSubmissionPayload) {
