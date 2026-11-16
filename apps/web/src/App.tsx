@@ -14,6 +14,8 @@ import { TermsPage } from '@/components/pages/TermsPage';
 import { FAQPage } from '@/components/pages/FAQPage';
 import { RulesPage } from '@/components/pages/RulesPage';
 import { SchedulePage } from '@/components/pages/SchedulePage';
+import { FeedbackPage } from '@/components/pages/FeedbackPage';
+import { AuctionFeedbackPage } from '@/components/pages/AuctionFeedbackPage';
 import { ScorecardPage } from '@/components/scorecard/ScorecardPage';
 import { PostAuctionLockedPage } from '@/components/ui/PostAuctionLockedPage';
 import { checkIsAdminPreview, lockAdminPreview } from '@/lib/previewAuth';
@@ -24,7 +26,7 @@ import { LeagueType } from '@/types';
 import { warmUpBackend } from '@/lib/api';
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules' | 'schedule'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'register' | 'privacy' | 'terms' | 'faq' | 'scorecard' | 'rules' | 'schedule' | 'feedback' | 'auction-feedback'>('home');
   const [selectedLeague, setSelectedLeague] = useState<LeagueType>('cricket');
   const [showIntro, setShowIntro] = useState(true);
   const [isCheckStatusOpen, setIsCheckStatusOpen] = useState(false);
@@ -101,6 +103,26 @@ export function App() {
         setCurrentPage('schedule');
         setShowIntro(false);
       } else if (
+        path === '/feedback' ||
+        path.startsWith('/feedback') ||
+        hash === '#/feedback' ||
+        hash === '#feedback' ||
+        path === '/rpl-feedback' ||
+        path.startsWith('/rpl-feedback') ||
+        hash === '#/rpl-feedback' ||
+        hash === '#rpl-feedback'
+      ) {
+        setCurrentPage('feedback');
+        setShowIntro(false);
+      } else if (
+        path === '/auction-feedback' ||
+        path.startsWith('/auction-feedback') ||
+        hash === '#/auction-feedback' ||
+        hash === '#auction-feedback'
+      ) {
+        setCurrentPage('auction-feedback');
+        setShowIntro(false);
+      } else if (
         path === '/scorecard' ||
         path.startsWith('/scorecard') ||
         hash === '#/scorecard' ||
@@ -108,7 +130,10 @@ export function App() {
         path === '/matches' ||
         path.startsWith('/matches') ||
         hash === '#/matches' ||
-        hash === '#matches'
+        hash === '#matches' ||
+        path.startsWith('/match') ||
+        hash.startsWith('#/match') ||
+        hash.includes('/match/')
       ) {
         setCurrentPage('scorecard');
         setShowIntro(false);
@@ -221,6 +246,26 @@ export function App() {
   if (currentPage === 'schedule') {
     return (
       <SchedulePage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
+  }
+
+  if (currentPage === 'feedback') {
+    return (
+      <FeedbackPage
+        onBackToHome={handleBackToHome}
+        onRegisterClick={handleRegisterClick}
+        onCheckPassClick={() => setIsCheckStatusOpen(true)}
+      />
+    );
+  }
+
+  if (currentPage === 'auction-feedback') {
+    return (
+      <AuctionFeedbackPage
         onBackToHome={handleBackToHome}
         onRegisterClick={handleRegisterClick}
         onCheckPassClick={() => setIsCheckStatusOpen(true)}

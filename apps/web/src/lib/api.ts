@@ -167,6 +167,7 @@ export interface ExistingRegistrationData {
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   previouslyPaidExtraTshirt?: boolean;
+  selectedSports?: string[];
   generalDetails: Record<string, any>;
   sportAnswers: Record<string, any>;
   cardNo?: string;
@@ -360,4 +361,52 @@ export async function reportRazorpayPaymentFailure(orderId: string, error: any) 
     });
   } catch {}
 }
+
+export interface FeedbackSubmissionPayload {
+  form_type: 'rpl_event' | 'auction_day';
+  mobile: string;
+  full_name: string;
+  ratings: Record<string, any>;
+  overall_rating?: number | null;
+  feedback_text?: string | null;
+  wow_moment?: string | null;
+  metadata?: Record<string, any>;
+  allow_update?: boolean;
+}
+
+export async function fetchFeedbackPublicStatus(formType: 'rpl_event' | 'auction_day' = 'rpl_event') {
+  try {
+    const res = await fetch(`${API_BASE_URL}/feedback/status?form_type=${encodeURIComponent(formType)}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchExistingFeedback(mobile: string, formType: 'rpl_event' | 'auction_day' = 'rpl_event') {
+  try {
+    const cleanMobile = String(mobile).replace(/\D/g, '').slice(-10);
+    if (cleanMobile.length !== 10) return { exists: false };
+    const res = await fetch(
+      `${API_BASE_URL}/feedback/check?mobile=${encodeURIComponent(cleanMobile)}&form_type=${encodeURIComponent(formType)}`
+    );
+    if (!res.ok) return { exists: false };
+    return await res.json();
+  } catch {
+    return { exists: false };
+  }
+}
+
+export async function submitFeedback(payload: FeedbackSubmissionPayload) {
+  const res = await fetch(`${API_BASE_URL}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to submit feedback');
+  return data;
+}
+
 

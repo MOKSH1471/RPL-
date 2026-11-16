@@ -192,7 +192,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   const cleanPhone = (player.mobile || '').replace(/\D/g, '');
   const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
   const waMessage = encodeURIComponent(
-    `Jai Jinendra ${player.full_name},\nRegarding your Raj Premier League Season 9 registration (ID: ${player.id.slice(0, 8)})...`
+    `Jai Sadgurudev Vandan! ${player.full_name},\nRegarding your Raj Premier League Season 9 registration (ID: ${player.id.slice(0, 8)})...`
   );
   const waUrl = `https://wa.me/${waPhone}?text=${waMessage}`;
 

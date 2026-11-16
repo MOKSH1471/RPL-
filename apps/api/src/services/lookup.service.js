@@ -11,10 +11,13 @@ export async function lookupPlayer(input) {
     return { found: false, message: 'Search term too short' };
   }
 
-  // 1. Check existing RPL registration
+  // 1. Check existing RPL registration (resilient to spaces, +91 prefixes, and formatting)
   const [regRows] = await db.query(
-    `SELECT id, full_name, email, mobile, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date, DATE_FORMAT(check_out_date, '%Y-%m-%d') as check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, submitted_at FROM ${RPL_DB}.rpl_registrations WHERE mobile = ? OR mobile LIKE ? ORDER BY submitted_at DESC LIMIT 1`,
-    [cleanMobile, `%${cleanMobile}`]
+    `SELECT id, full_name, email, mobile, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date, DATE_FORMAT(check_out_date, '%Y-%m-%d') as check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers, submitted_at 
+     FROM ${RPL_DB}.rpl_registrations 
+     WHERE mobile = ? OR mobile LIKE ? OR TRIM(mobile) LIKE ? OR REPLACE(REPLACE(mobile, ' ', ''), '+', '') LIKE ? 
+     ORDER BY submitted_at DESC LIMIT 1`,
+    [cleanMobile, `%${cleanMobile}%`, `%${cleanMobile}`, `%${cleanMobile}`]
   );
 
   if (regRows.length > 0) {

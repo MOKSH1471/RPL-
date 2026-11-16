@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { fetchAdminTransactions } from '@/lib/api';
+import { formatDateTimeIST } from '@/lib/dateUtils';
 
 export function AdminTransactionsTab() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -296,12 +297,7 @@ export function AdminTransactionsTab() {
                       </td>
 
                       <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                        {tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }) : '—'}
+                        {formatDateTimeIST(tx.createdAt)}
                       </td>
                     </tr>
                   );

@@ -26,6 +26,7 @@ import {
   resetAdminUserPassword,
   deleteAdminUser,
 } from '@/lib/api';
+import { formatFullDateTimeIST } from '@/lib/dateUtils';
 
 interface AdminUsersModalProps {
   isOpen: boolean;
@@ -569,10 +570,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
                       return (
                         <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
                           <td className="py-3 px-4 font-mono text-[11px] text-slate-600 whitespace-nowrap">
-                            {new Date(log.attempted_at).toLocaleString('en-IN', {
-                              dateStyle: 'short',
-                              timeStyle: 'medium',
-                            })}
+                            {formatFullDateTimeIST(log.attempted_at)}
                           </td>
                           <td className="py-3 px-3 font-mono font-bold text-slate-900">
                             @{log.username}
