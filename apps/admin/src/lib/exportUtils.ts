@@ -2,6 +2,7 @@
  * Export Utilities for RPL Season 9 Admin Portal
  * Generates formatted CSV / Excel-compatible sheets for downloads.
  */
+import { formatDateTimeIST } from './dateUtils';
 
 function downloadCSV(csvContent: string, fileName: string) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -126,7 +127,7 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(r.player_photo_url || ''),
       escapeCSV(r.payment_receipt_url || ''),
       escapeCSV(gen.comments || gen.additionalNotes || gen.additional_notes || ''),
-      escapeCSV(r.submitted_at || ''),
+      escapeCSV(r.submitted_at ? formatDateTimeIST(r.submitted_at) : ''),
       escapeCSV(r.archived_at || gen.archivedAt || '-'),
     ].join(',');
   });
@@ -318,8 +319,8 @@ export function exportTransactionsLedger(transactions: any[]) {
     escapeCSV(t.status?.toUpperCase()),
     escapeCSV(t.description),
     escapeCSV(t.updatedBy),
-    escapeCSV(t.createdAt ? new Date(t.createdAt).toLocaleString('en-IN') : ''),
-    escapeCSV(t.updatedAt ? new Date(t.updatedAt).toLocaleString('en-IN') : ''),
+    escapeCSV(t.createdAt ? formatDateTimeIST(t.createdAt) : ''),
+    escapeCSV(t.updatedAt ? formatDateTimeIST(t.updatedAt) : ''),
   ].join(','));
 
   const csvContent = [headers.join(','), ...rows].join('\n');

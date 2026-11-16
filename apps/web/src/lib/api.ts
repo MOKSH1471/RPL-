@@ -374,6 +374,16 @@ export interface FeedbackSubmissionPayload {
   allow_update?: boolean;
 }
 
+export async function fetchFeedbackPublicStatus(formType: 'rpl_event' | 'auction_day' = 'rpl_event') {
+  try {
+    const res = await fetch(`${API_BASE_URL}/feedback/status?form_type=${encodeURIComponent(formType)}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchExistingFeedback(mobile: string, formType: 'rpl_event' | 'auction_day' = 'rpl_event') {
   try {
     const cleanMobile = String(mobile).replace(/\D/g, '').slice(-10);

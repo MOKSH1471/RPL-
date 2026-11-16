@@ -595,8 +595,49 @@ export interface FetchFeedbacksResponse {
     auction_day: number;
     auction_day_avg: number;
     total_submissions: number;
+    approved_players?: number;
+    unique_submitters?: number;
+    turnout_percent?: number;
+    rating_distribution?: Record<number, number>;
   };
   data: FeedbackItem[];
+}
+
+export interface NonRespondentItem {
+  id: string;
+  full_name: string;
+  mobile: string;
+  sport_id?: string;
+  submitted_at?: string;
+}
+
+export interface FetchNonRespondentsResponse {
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  data: NonRespondentItem[];
+}
+
+export async function fetchNonRespondents(params?: {
+  form_type?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<FetchNonRespondentsResponse> {
+  const query = new URLSearchParams();
+  if (params?.form_type && params.form_type !== 'all') query.append('form_type', params.form_type);
+  if (params?.search) query.append('search', params.search);
+  if (params?.page) query.append('page', String(params.page));
+  if (params?.limit) query.append('limit', String(params.limit));
+
+  const res = await fetch(`${API_BASE_URL}/admin/feedback/non-respondents?${query.toString()}`, {
+    headers: { ...getAuthHeaders() },
+    credentials: 'include',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch non-respondents');
+  return data;
 }
 
 export async function fetchAdminFeedbacks(params?: {
@@ -617,6 +658,59 @@ export async function fetchAdminFeedbacks(params?: {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Failed to fetch feedback records');
+  return data;
+}
+
+export interface FormWindowSetting {
+  is_closed: boolean;
+  status: 'open' | 'closed' | 'scheduled';
+  expires_at: string | null;
+  close_message: string;
+}
+
+export interface FeedbackSettingsResponse {
+  success: boolean;
+  settings: {
+    rpl_event: FormWindowSetting;
+    auction_day: FormWindowSetting;
+    rpl_event_close_message?: string;
+    auction_day_close_message?: string;
+    close_message?: string;
+  };
+}
+
+export interface UpdateFeedbackSettingsPayload {
+  rpl_event_status?: 'open' | 'closed' | 'scheduled';
+  rpl_event_expires_at?: string | null;
+  rpl_event_close_message?: string;
+  auction_day_status?: 'open' | 'closed' | 'scheduled';
+  auction_day_expires_at?: string | null;
+  auction_day_close_message?: string;
+  close_message?: string;
+}
+
+export async function fetchFeedbackSettings(): Promise<FeedbackSettingsResponse> {
+  const res = await fetch(`${API_BASE_URL}/admin/feedback/settings`, {
+    headers: { ...getAuthHeaders() },
+    credentials: 'include',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch feedback settings');
+  return data;
+}
+
+export async function updateFeedbackSettings(payload: UpdateFeedbackSettingsPayload): Promise<FeedbackSettingsResponse> {
+  const res = await fetch(`${API_BASE_URL}/admin/feedback/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to update feedback settings');
   return data;
 }
 

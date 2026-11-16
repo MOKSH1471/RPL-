@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@rpl/web",
+    "dev:all": "node scripts/dev-all.js",
     "dev:web": "npm run dev --workspace=@rpl/web",
     "dev:admin": "npm run dev --workspace=@rpl/admin",
-    "dev:api": "node server/index.js",
+    "dev:api": "node --watch server/index.js",
     "build": "npm run build --workspace=@rpl/web",
     "build:web": "npm run build --workspace=@rpl/web",
     "build:admin": "npm run build --workspace=@rpl/admin",
