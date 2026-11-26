@@ -7,6 +7,7 @@ import { processAccommodationBooking } from '../services/roomBookingService.js';
 import { ensureGuestCard } from '../services/guestCardService.js';
 import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
 import logger from '../config/logger.js';
+import { getRegistrationSettings } from '../services/registrationSettingsService.js';
 
 const router = Router();
 
@@ -139,6 +140,34 @@ router.post('/razorpay/create-order', async (req, res) => {
 
     if (!targetRegId) {
       targetRegId = uuidv4();
+    }
+
+    // Waitlist & Registration Mode Guardrail: block Razorpay orders for waitlisted or closed player registrations
+    if (existingReg && String(existingReg.payment_status || '').toLowerCase() === 'waitlist') {
+      return res.status(403).json({
+        success: false,
+        code: 'WAITLIST_ONLY',
+        error: 'Your registration is currently on the waitlist. Payment will unlock once the Organizing Committee promotes your slot.',
+        registrationId: targetRegId,
+      });
+    }
+
+    if (!existingReg && !isSpectator) {
+      const regSettings = await getRegistrationSettings();
+      if (regSettings.player_registration_mode === 'waitlist') {
+        return res.status(403).json({
+          success: false,
+          code: 'WAITLIST_ONLY',
+          error: regSettings.waitlist_banner_message,
+        });
+      }
+      if (regSettings.player_registration_mode === 'closed') {
+        return res.status(403).json({
+          success: false,
+          code: 'REGISTRATION_CLOSED',
+          error: regSettings.closed_message,
+        });
+      }
     }
 
     // Resolve Card Number (Aashray standard card or guest card)

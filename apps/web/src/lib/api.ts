@@ -230,6 +230,20 @@ export async function lookupReferrer(mobile: string): Promise<PlayerLookupRespon
 // ADMIN API CLIENT METHODS
 // ==========================================
 
+export interface RegistrationStatusResponse {
+  success: boolean;
+  player_registration_mode: 'open' | 'waitlist' | 'closed';
+  waitlist_banner_message: string;
+  closed_message: string;
+}
+
+export async function fetchRegistrationStatus(): Promise<RegistrationStatusResponse> {
+  const res = await fetch(`${API_BASE_URL}/registration/status`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch registration status');
+  return data;
+}
+
 export async function fetchAdminStats() {
   const res = await fetch(`${API_BASE_URL}/admin/stats`);
   const data = await res.json().catch(() => ({}));

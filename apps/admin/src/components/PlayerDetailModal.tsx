@@ -227,7 +227,9 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                       : player.payment_status === 'rejected'
                         ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                        : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : player.payment_status === 'waitlist'
+                          ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                          : 'bg-amber-100 text-amber-800 border border-amber-300'
                       }`}
                   >
                     {player.payment_status || 'pending'}
@@ -331,7 +333,17 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   <XCircle className="w-3.5 h-3.5" />
                   <span>Reject</span>
                 </button>
-                {player.payment_status !== 'pending' && (
+                {player.payment_status === 'waitlist' && (
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => handleQuickPaymentStatus('pending')}
+                    className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-extrabold flex items-center space-x-1 transition-all shadow-xs"
+                  >
+                    <span>Promote &amp; Unlock Payment</span>
+                  </button>
+                )}
+                {player.payment_status !== 'pending' && player.payment_status !== 'waitlist' && (
                   <button
                     type="button"
                     disabled={actionLoading}
@@ -344,15 +356,30 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               </div>
             </div>
 
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>WhatsApp Player</span>
-            </a>
+            <div className="flex items-center gap-2">
+              {player.payment_status === 'pending' && (
+                <a
+                  href={`https://wa.me/${String(player.mobile || '').replace(/\D/g, '').length === 10 ? '91' + String(player.mobile || '').replace(/\D/g, '') : String(player.mobile || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                    `Jai Sadgurudev Vandan! 🙏\n\nHi ${player.full_name}, your slot for RPL Season 9 is now open! Please click the link below to complete your payment and confirm your pass:\nhttps://rpl-s9.vercel.app/#/register?mobile=${String(player.mobile || '').replace(/\D/g, '').slice(-10)}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Send Payment Link</span>
+                </a>
+              )}
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp Player</span>
+              </a>
+            </div>
           </div>
 
           {/* Proof Documents Section: Photo & Payment Receipt */}
@@ -841,6 +868,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
                   >
                     <option value="pending">Pending</option>
+                    <option value="waitlist">Waitlist</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
                   </select>

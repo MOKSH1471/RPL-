@@ -19,8 +19,21 @@ import {
   Archive,
   Download,
   Ticket,
+  Sliders,
+  ArrowUpCircle,
+  X,
+  Loader2,
+  Check,
+  Send,
 } from 'lucide-react';
-import { updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
+import {
+  updatePaymentStatus,
+  toggleArchiveRegistration,
+  promoteFromWaitlist,
+  fetchRegistrationSettings,
+  updateRegistrationSettings,
+  RegistrationSettings,
+} from '@/lib/api';
 import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 
@@ -46,7 +59,38 @@ export function AdminRegistrationsTab({
   const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
+  const [showModeModal, setShowModeModal] = useState(false);
+  const [regSettings, setRegSettings] = useState<RegistrationSettings>({
+    player_registration_mode: 'open',
+    waitlist_banner_message: '',
+    closed_message: '',
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [modeToast, setModeToast] = useState<string | null>(null);
   const rowsPerPage = 15;
+
+  const loadRegSettings = async () => {
+    try {
+      const res = await fetchRegistrationSettings();
+      if (res && res.settings) {
+        setRegSettings(res.settings);
+      }
+    } catch (err) {
+      console.warn('Failed to load registration settings:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    loadRegSettings();
+  }, []);
+
+  const waitlistCount = React.useMemo(() => {
+    return registrations.filter((r) => {
+      const gen = r.general_details || {};
+      const isArchived = Boolean(r.is_archived || gen.isArchived);
+      return !isArchived && String(r.payment_status || '').toLowerCase() === 'waitlist';
+    }).length;
+  }, [registrations]);
 
   // Debounce search input by 200ms to maintain smooth 60fps scrolling
   React.useEffect(() => {
@@ -131,6 +175,39 @@ export function AdminRegistrationsTab({
     }
   };
 
+  const handlePromotePlayer = async (player: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Promote "${player.full_name}" from Waitlist?\n\n• Status will change to Pending\n• Razorpay payment will unlock for them\n• You can then send them their payment link on WhatsApp.`)) {
+      return;
+    }
+    try {
+      await promoteFromWaitlist(player.id);
+      setModeToast(`${player.full_name} promoted! Click the amber Send Link icon to WhatsApp them.`);
+      setTimeout(() => setModeToast(null), 5000);
+      onRefresh();
+    } catch (err: any) {
+      alert('Failed to promote player: ' + err.message);
+    }
+  };
+
+  const handleSaveRegSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await updateRegistrationSettings(regSettings);
+      if (res && res.settings) {
+        setRegSettings(res.settings);
+      }
+      setShowModeModal(false);
+      setModeToast(`Registration mode updated to "${regSettings.player_registration_mode.toUpperCase()}"!`);
+      setTimeout(() => setModeToast(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update registration mode');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleToggleArchive = async (player: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const isCurrentlyArchived = Boolean(player.is_archived || player.general_details?.isArchived);
@@ -150,7 +227,80 @@ export function AdminRegistrationsTab({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 relative">
+
+      {modeToast && (
+        <div className="fixed top-5 right-5 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-700/60 flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{modeToast}</span>
+        </div>
+      )}
+
+      {/* Registration Mode & Waitlist Control Header */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+            Player Registration Mode:
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+              regSettings.player_registration_mode === 'waitlist'
+                ? 'bg-orange-100 text-orange-900 border-orange-300'
+                : regSettings.player_registration_mode === 'closed'
+                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                regSettings.player_registration_mode === 'waitlist'
+                  ? 'bg-orange-500'
+                  : regSettings.player_registration_mode === 'closed'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500'
+              }`}
+            />
+            {regSettings.player_registration_mode === 'waitlist'
+              ? 'Players Waitlist Active'
+              : regSettings.player_registration_mode === 'closed'
+              ? 'Players Closed'
+              : 'Open (Normal)'}
+          </span>
+          <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+            🎟️ Spectators: Open
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter(statusFilter === 'waitlist' ? 'all' : 'waitlist');
+              setCurrentPage(1);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer border ${
+              statusFilter === 'waitlist'
+                ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
+                : 'bg-orange-50 text-orange-900 border-orange-200 hover:bg-orange-100'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Waitlist ({waitlistCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              loadRegSettings();
+              setShowModeModal(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+          >
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+            <span>Registration Mode</span>
+          </button>
+        </div>
+      </div>
 
       {/* Search & Multi-Filter Controls */}
       <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
@@ -207,6 +357,7 @@ export function AdminRegistrationsTab({
             >
               <option value="all">All Payments</option>
               <option value="pending">Pending Review</option>
+              <option value="waitlist">⏳ Waitlist</option>
               <option value="approved">Approved / Verified</option>
               <option value="rejected">Rejected</option>
               <option value="archived">📦 Archived Records</option>
@@ -524,7 +675,9 @@ export function AdminRegistrationsTab({
                                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                   : player.payment_status === 'rejected'
                                     ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : player.payment_status === 'waitlist'
+                                      ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-300'
                                   }`}
                               >
                                 {player.payment_status || 'pending'}
@@ -599,6 +752,34 @@ export function AdminRegistrationsTab({
                           >
                             <MessageCircle className="w-4 h-4" />
                           </a>
+
+                          {/* Promote from Waitlist Button */}
+                          {!isArchived && player.payment_status === 'waitlist' && (
+                            <button
+                              type="button"
+                              onClick={(e) => handlePromotePlayer(player, e)}
+                              className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-50 transition-colors"
+                              title="Promote from Waitlist (Unlock Payment)"
+                            >
+                              <ArrowUpCircle className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Send WhatsApp Payment Link (for Pending / Promoted players) */}
+                          {!isArchived && (!player.payment_status || player.payment_status === 'pending') && (
+                            <a
+                              href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
+                                `Jai Sadgurudev Vandan! 🙏\n\nHi ${player.full_name}, your slot for RPL Season 9 is open! Please click the link below to complete your payment and confirm your pass:\nhttps://rpl-s9.vercel.app/#/register?mobile=${String(player.mobile || '').replace(/\D/g, '').slice(-10)}`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                              title="Send Payment Link via WhatsApp"
+                            >
+                              <Send className="w-4 h-4" />
+                            </a>
+                          )}
 
                           {/* Quick Approve / Reject (Only for active players) */}
                           {!isArchived && player.payment_status !== 'approved' && (
@@ -723,6 +904,91 @@ export function AdminRegistrationsTab({
             cardNo: receiptModalPlayer.general_details?.cardNo,
           }}
         />
+      )}
+
+      {/* Registration Mode Settings Modal */}
+      {showModeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          onClick={() => setShowModeModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">Player Registration Mode</h3>
+                  <p className="text-xs text-slate-500">Control live Player registration &amp; Waitlist banner (Spectators stay open)</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModeModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRegSettings} className="p-5 space-y-4">
+              <div className="grid grid-cols-3 gap-2">
+                {(['open', 'waitlist', 'closed'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setRegSettings({ ...regSettings, player_registration_mode: m })}
+                    className={`py-2.5 px-3 rounded-2xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                      regSettings.player_registration_mode === m
+                        ? m === 'waitlist'
+                          ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                          : m === 'closed'
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                          : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Waitlist Banner Message (shown on #/register):
+                </label>
+                <textarea
+                  rows={3}
+                  value={regSettings.waitlist_banner_message}
+                  onChange={(e) => setRegSettings({ ...regSettings, waitlist_banner_message: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowModeModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {savingSettings ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  <span>Apply Mode Live</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

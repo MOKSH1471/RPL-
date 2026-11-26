@@ -110,6 +110,11 @@ export function CheckStatusModal({
     ((matchedRecord.paymentStatus || '').toLowerCase() === 'approved' ||
       (matchedRecord.payment_status || '').toLowerCase() === 'approved');
 
+  const isWaitlist =
+    matchedRecord &&
+    ((matchedRecord.paymentStatus || '').toLowerCase() === 'waitlist' ||
+      (matchedRecord.payment_status || '').toLowerCase() === 'waitlist');
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
@@ -223,6 +228,11 @@ export function CheckStatusModal({
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>VERIFIED &amp; APPROVED</span>
                       </span>
+                    ) : isWaitlist ? (
+                      <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                        <span>ON PLAYER WAITLIST</span>
+                      </span>
                     ) : (
                       <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
                         <AlertCircle className="w-3.5 h-3.5" />
@@ -232,8 +242,23 @@ export function CheckStatusModal({
                   </div>
                 </div>
 
-                {/* Case 1: Incomplete / Unpaid -> Prompt to Register & Pay */}
-                {!isApproved && (
+                {/* Case 1a: Waitlisted -> Inform user to wait for WhatsApp promotion */}
+                {isWaitlist && (
+                  <div className="p-6 rounded-2xl bg-amber-50/70 border border-amber-300 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center mx-auto shadow-2xs">
+                      <AlertCircle className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-black text-slate-900 text-base">You Are on the Player Waitlist</h4>
+                      <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                        Your registration details are saved. No payment is required right now — if a player slot opens up, the Organizing Committee will notify you on WhatsApp to complete payment.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case 1b: Incomplete / Unpaid -> Prompt to Register & Pay */}
+                {!isApproved && !isWaitlist && (
                   <div className="p-6 rounded-2xl bg-amber-50/60 border border-amber-200/90 text-center space-y-3.5">
                     <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-2xs">
                       <AlertCircle className="w-6 h-6 text-amber-600" />

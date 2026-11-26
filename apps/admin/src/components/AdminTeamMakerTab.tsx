@@ -108,7 +108,8 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
       .filter((r) => {
         const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
         const isArchived = Boolean(r.is_archived || r.general_details?.isArchived || isTestEmail);
-        if (isArchived) return false;
+        const isWaitlist = String(r.payment_status || '').toLowerCase() === 'waitlist';
+        if (isArchived || isWaitlist) return false;
 
         const gen = r.general_details || {};
         const sports = gen.selectedSports || [];

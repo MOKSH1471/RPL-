@@ -155,7 +155,8 @@ export function exportJerseyVendorSheet(registrations: any[]) {
   // Also exclude spectators who did NOT purchase a T-Shirt
   const activeOnly = registrations.filter((r) => {
     const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
-    if (isArchived) return false;
+    const isWaitlist = String(r.payment_status || '').toLowerCase() === 'waitlist';
+    if (isArchived || isWaitlist) return false;
     const gen = r.general_details || {};
     const sports = gen.selectedSports || [];
     const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || r.sport_id === 'spectator';
@@ -205,7 +206,8 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
 
   const filtered = registrations.filter((r) => {
     const isArchived = Boolean(r.is_archived || r.general_details?.isArchived);
-    if (isArchived) return false;
+    const isWaitlist = String(r.payment_status || '').toLowerCase() === 'waitlist';
+    if (isArchived || isWaitlist) return false;
     const sports = r.general_details?.selectedSports || [];
     const isSpectator = r.general_details?.registrationType === 'spectator' || (Array.isArray(sports) && sports.includes('spectator')) || r.sport_id === 'spectator';
     if (sportKey === 'spectator') {
@@ -346,7 +348,9 @@ export function exportKitDistributionSheet(registrations: any[]) {
     'Receiver Signature / Volunteer Notes',
   ];
 
-  const activeOnly = registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived);
+  const activeOnly = registrations.filter(
+    (r) => !r.is_archived && !r.general_details?.isArchived && String(r.payment_status || '').toLowerCase() !== 'waitlist'
+  );
 
   // Sort approved first, then alphabetically by name
   activeOnly.sort((a, b) => {

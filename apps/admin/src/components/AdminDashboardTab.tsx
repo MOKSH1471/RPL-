@@ -113,13 +113,18 @@ export function AdminDashboardTab({ stats, loading }: AdminDashboardTabProps) {
             <span className="text-3xl font-black text-slate-900 tracking-tight">{activeRegistrations ?? totalRegistrations}</span>
             <span className="text-xs font-semibold text-slate-400">entries</span>
           </div>
-          <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-500">
             <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
               🏃 {stats.playersCount || 0} Players
             </span>
             <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
               🎟️ {stats.spectatorsCount || 0} Spectators
             </span>
+            {(payment?.waitlist || 0) > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-800 border border-orange-200">
+                ⏳ {payment.waitlist} Waitlist
+              </span>
+            )}
           </div>
         </div>
 
