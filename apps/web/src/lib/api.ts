@@ -167,6 +167,7 @@ export interface ExistingRegistrationData {
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   previouslyPaidExtraTshirt?: boolean;
+  previouslyPaidFootballJersey?: boolean;
   selectedSports?: string[];
   generalDetails: Record<string, any>;
   sportAnswers: Record<string, any>;
@@ -336,6 +337,7 @@ export interface CreateOrderParams {
   previouslyPaidSportsCount?: number;
   hasPreviouslyPaid?: boolean;
   previouslyPaidExtraTshirt?: boolean;
+  previouslyPaidFootballJersey?: boolean;
   registrationId?: string;
   registrationPayload?: Record<string, any>;
 }

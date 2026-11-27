@@ -51,7 +51,7 @@ test('POST /api/admin/accommodation/assign returns 404 when booking does not exi
   assert.equal(data.error, 'Booking not found.');
 });
 
-test('GET /api/admin/transactions returns reconciliation summary and transaction list', async () => {
+test('GET /api/admin/transactions returns reconciliation summary and only matched non-orphan transactions', async () => {
   const { status, data } = await apiRequest('/api/admin/transactions');
   assert.ok([200, 500].includes(status), `Expected 200 or 500, got ${status}`);
   if (status === 200) {
@@ -59,5 +59,32 @@ test('GET /api/admin/transactions returns reconciliation summary and transaction
     assert.ok(Array.isArray(data.transactions), 'transactions must be an array');
     assert.ok(data.summary, 'summary object must be present');
     assert.ok('total_count' in data.summary);
+    for (const tx of data.transactions) {
+      assert.ok(tx.player_name, `Transaction ${tx.id} must link to a registered player (no orphans)`);
+    }
+  }
+});
+
+test('GET /api/admin/accommodation only returns accommodationRequired === Yes and RPL-period active bookings', async () => {
+  const { status, data } = await apiRequest('/api/admin/accommodation');
+  assert.ok([200, 500].includes(status), `Expected 200 or 500, got ${status}`);
+  if (status === 200) {
+    assert.equal(data.success, true);
+    assert.ok(Array.isArray(data.data), 'data must be an array');
+    for (const entry of data.data) {
+      assert.equal(entry.accommodationRequired, 'Yes', `Entry ${entry.full_name} must have accommodationRequired === Yes`);
+      for (const b of entry.bookings || []) {
+        const checkinStr = String(b.checkin || '').slice(0, 10);
+        assert.ok(
+          checkinStr >= '2026-12-24' && checkinStr <= '2026-12-28',
+          `Booking ${b.bookingid} checkin (${checkinStr}) must fall within RPL dates`
+        );
+        const st = String(b.status || '').toLowerCase();
+        assert.ok(
+          !['admin cancelled', 'cancelled', 'checkedout'].includes(st),
+          `Booking ${b.bookingid} must not have inactive status (${st})`
+        );
+      }
+    }
   }
 });

@@ -290,7 +290,13 @@ router.post('/register', async (req, res) => {
         const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
         const prevHadExtraTshirt = prevGeneral.extraTshirt === 'Yes';
         const newlyAddedExtraTshirt = !prevHadExtraTshirt && extraTshirtChoice === 'Yes';
-        const incrementalFee = isAlreadyPaid ? (newlyAddedExtraTshirt ? 500 : 0) : computedFee;
+        const prevSelectedSports = Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : [];
+        const prevHadCricket = prevSelectedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+        const prevHadFootball = !isSpectator && prevSelectedSports.includes('football');
+        const newlyAddedFootballMultiSport = isFootballMultiSport && !(prevHadCricket && prevHadFootball);
+        const incrementalFee = isAlreadyPaid
+          ? ((newlyAddedExtraTshirt ? 500 : 0) + (newlyAddedFootballMultiSport ? 500 : 0))
+          : computedFee;
 
         mergedGeneralDetails.totalAmount = computedFee;
         mergedGeneralDetails.calculatedFee = computedFee;
@@ -458,31 +464,33 @@ router.post('/register', async (req, res) => {
           ? finalGeneralDetails.incrementalFee 
           : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || fallbackFee);
 
-        await connection.query(
-          `INSERT INTO ${RPL_DB}.rpl_transactions 
-           (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
-           ON DUPLICATE KEY UPDATE 
-             category = VALUES(category),
-             amount = VALUES(amount),
-             upi_ref = VALUES(upi_ref),
-             description = VALUES(description),
-             status = VALUES(status),
-             updatedAt = NOW(),
-             razorpay_order_id = COALESCE(VALUES(razorpay_order_id), razorpay_order_id)`,
-          [
-            cardNoVal,
-            id,
-            txnCategory,
-            finalFeeVal,
-            0,
-            finalGeneralDetails.payment_utr || 'NA',
-            `RPL Season 9 Registration (${sportsList})`,
-            txnStatus,
-            'RPL_APP',
-            req.body.razorpay_order_id || null,
-          ]
-        );
+        if (Number(finalFeeVal) > 0) {
+          await connection.query(
+            `INSERT INTO ${RPL_DB}.rpl_transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+             ON DUPLICATE KEY UPDATE 
+               category = VALUES(category),
+               amount = VALUES(amount),
+               upi_ref = VALUES(upi_ref),
+               description = VALUES(description),
+               status = VALUES(status),
+               updatedAt = NOW(),
+               razorpay_order_id = COALESCE(VALUES(razorpay_order_id), razorpay_order_id)`,
+            [
+              cardNoVal,
+              id,
+              txnCategory,
+              finalFeeVal,
+              0,
+              finalGeneralDetails.payment_utr || 'NA',
+              `RPL Season 9 Registration (${sportsList})`,
+              txnStatus,
+              'RPL_APP',
+              req.body.razorpay_order_id || null,
+            ]
+          );
+        }
 
         // Process Room & Meal Booking within the transaction
         const hasStay = isSpectator

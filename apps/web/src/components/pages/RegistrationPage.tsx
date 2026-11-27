@@ -371,6 +371,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [previousUtrs, setPreviousUtrs] = useState<string[]>([]);
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
   const [previouslyPaidExtraTshirt, setPreviouslyPaidExtraTshirt] = useState<boolean>(false);
+  const [previouslyPaidFootballJersey, setPreviouslyPaidFootballJersey] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
@@ -756,12 +757,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const isFootballMultiSport = hasFootball && hasCricket;
   const footballJerseyCost = isFootballMultiSport ? 500 : 0;
 
-  // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
+  // If returning player already paid for an extra T-shirt or Football jersey previously, do not charge ₹500 again
   const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
   const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+  const footballJerseyDue = (isFootballMultiSport && (!isReturningPaidUser || !previouslyPaidFootballJersey)) ? 500 : 0;
 
   const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
-  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + footballJerseyCost + extraTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? (extraTshirtDue + footballJerseyDue) : (playerBaseFee + footballJerseyCost + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
   const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
@@ -1043,6 +1045,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               (isPaid && (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes' || gen.spectator_tshirt === 'Yes'))
             );
             setPreviouslyPaidExtraTshirt(prevPaidTshirt);
+            const prevHadCricket = Array.isArray(savedSports) && savedSports.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+            const prevHadFootball = Array.isArray(savedSports) && savedSports.includes('football');
+            setPreviouslyPaidFootballJersey(Boolean(reg.previouslyPaidFootballJersey || (isPaid && prevHadCricket && prevHadFootball)));
 
             // Restore sport answers
             if (sports.cricket) {
@@ -1900,6 +1905,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
           previouslyPaidExtraTshirt,
+          previouslyPaidFootballJersey,
           registrationId: existingRegistrationId || undefined,
           registrationPayload,
         });
