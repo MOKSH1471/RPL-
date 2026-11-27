@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
 import { ReceiptPrinter, ReceiptPrinterProps } from './ReceiptPrinter';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface ReceiptPrinterModalProps extends ReceiptPrinterProps {
   isOpen: boolean;
@@ -15,11 +16,15 @@ export const ReceiptPrinterModal: React.FC<ReceiptPrinterModalProps> = ({
   title = 'RPL Season 9 Official Receipt & Pass',
   ...printerProps
 }) => {
+  useEscapeKey(isOpen, onClose);
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto"
+        onClick={onClose}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.94, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

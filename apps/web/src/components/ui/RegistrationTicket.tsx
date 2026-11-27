@@ -106,14 +106,14 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
         >
           <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs shadow-2xs">
             <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-            <span>PLAYER WAITLIST • ENTRY RECORDED</span>
+            <span>{isSpectator ? 'SPECTATOR WAITLIST • ENTRY RECORDED' : 'PLAYER WAITLIST • ENTRY RECORDED'}</span>
           </div>
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">
             You&apos;re on the RPL Season 9 Waitlist!
           </h2>
           <p className="text-slate-700 text-xs sm:text-sm font-medium max-w-lg mx-auto leading-relaxed">
             Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your full registration details have been saved.{' '}
-            <strong className="text-amber-900">No payment is required right now</strong> — if a player slot opens up, the Organizing Committee will message you on{' '}
+            <strong className="text-amber-900">No payment is required right now</strong> — if a slot opens up, the Organizing Committee will message you on{' '}
             <strong className="text-emerald-700">WhatsApp</strong> with a direct link to unlock your payment.
           </p>
           <div className="inline-block px-4 py-2 rounded-2xl bg-white border border-amber-200 text-xs font-mono text-slate-600 shadow-2xs">
@@ -311,7 +311,7 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
               <p className="leading-relaxed">
-                Your waitlist entry has been recorded. No payment is required now — you will receive your payment link and official WhatsApp group invite if a player slot opens up.
+                Your waitlist entry has been recorded. No payment is required now — you will receive your payment link and official WhatsApp group invite if a slot opens up.
               </p>
             </div>
             <div className="pt-2 border-t border-amber-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">

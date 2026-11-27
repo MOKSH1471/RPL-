@@ -174,6 +174,7 @@ router.post('/register', async (req, res) => {
     // Fetch live registration mode settings (open | waitlist | closed)
     const regSettings = await getRegistrationSettings();
     const playerMode = regSettings.player_registration_mode || 'open';
+    const spectatorMode = regSettings.spectator_registration_mode || 'open';
 
     // C. Atomic Transaction for Multi-Table Writes (Aashray Standard)
     const connection = await db.getConnection();
@@ -211,12 +212,22 @@ router.post('/register', async (req, res) => {
 
         const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
         const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
-        const allSelectedSports = Array.from(new Set([
+        const incomingIsSpectator =
+          cleanGeneralDetails.registrationType === 'spectator' ||
+          (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) ||
+          req.body.sport_id === 'spectator';
+        let allSelectedSports = Array.from(new Set([
           ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
           ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
           ...Object.keys(mergedSportAnswers),
         ]));
+        if (incomingIsSpectator) {
+          allSelectedSports = ['spectator'];
+        } else {
+          allSelectedSports = allSelectedSports.filter((s) => s !== 'spectator');
+        }
         mergedGeneralDetails.selectedSports = allSelectedSports;
+        mergedGeneralDetails.registrationType = incomingIsSpectator ? 'spectator' : 'player';
         const computedSportsCount = Math.max(1, allSelectedSports.length);
         const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
         const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
@@ -333,18 +344,20 @@ router.post('/register', async (req, res) => {
         id = uuidv4();
         const regType = cleanGeneralDetails.registrationType || (cleanGeneralDetails.selectedSports?.includes('spectator') ? 'spectator' : 'player');
         const isSpectator = regType === 'spectator';
+        const activeMode = isSpectator ? spectatorMode : playerMode;
+        const activeClosedMsg = isSpectator ? regSettings.spectator_closed_message : regSettings.closed_message;
 
-        if (!isSpectator && playerMode === 'closed') {
+        if (activeMode === 'closed') {
           await connection.rollback();
           return res.status(403).json({
             success: false,
             code: 'REGISTRATION_CLOSED',
-            error: regSettings.closed_message,
+            error: activeClosedMsg,
           });
         }
 
-        const isNewWaitlistPlayer = !isSpectator && playerMode === 'waitlist';
-        finalPaymentStatus = isNewWaitlistPlayer ? 'waitlist' : 'pending';
+        const isNewWaitlistEntry = activeMode === 'waitlist';
+        finalPaymentStatus = isNewWaitlistEntry ? 'waitlist' : 'pending';
 
         const accomRequired = cleanGeneralDetails.accommodationRequired || 'No';
         const extraTshirtChoice = isSpectator
@@ -380,7 +393,7 @@ router.post('/register', async (req, res) => {
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;
 
-        if (isNewWaitlistPlayer) {
+        if (isNewWaitlistEntry) {
           cleanGeneralDetails.waitlistedAt = new Date().toISOString();
         } else if (!cleanGeneralDetails.cardNo) {
           // Auto-create an Aashray guest card within the transaction (skip for waitlist until promoted & paid)

@@ -50,6 +50,7 @@ import {
   formatDateIST,
   parseDbDate,
 } from '@/lib/dateUtils';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 type FilterType = 'all' | 'rpl_event' | 'auction_day' | 'critical' | 'non_respondents';
 
@@ -160,6 +161,9 @@ export function AdminFeedbackTab() {
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEscapeKey(Boolean(selectedFeedback), () => setSelectedFeedback(null));
+  useEscapeKey(showSettingsModal, () => setShowSettingsModal(false));
 
   const isCriticalFeedback = (item: FeedbackItem): boolean => {
     if (item.overall_rating && item.overall_rating <= 2) return true;
@@ -1064,13 +1068,13 @@ export function AdminFeedbackTab() {
       )}
 
       {/* ── Form Selector Tabs & Search Filter ── */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         {/* Form Selector (Segmented buttons) */}
-        <div className="inline-flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/80 flex-wrap gap-1">
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/80 flex-wrap lg:flex-nowrap gap-1">
           <button
             type="button"
             onClick={() => setFormFilter('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${formFilter === 'all'
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${formFilter === 'all'
               ? 'bg-white text-slate-900 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -1080,7 +1084,7 @@ export function AdminFeedbackTab() {
           <button
             type="button"
             onClick={() => setFormFilter('rpl_event')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${formFilter === 'rpl_event'
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${formFilter === 'rpl_event'
               ? 'bg-amber-500 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -1091,7 +1095,7 @@ export function AdminFeedbackTab() {
           <button
             type="button"
             onClick={() => setFormFilter('auction_day')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${formFilter === 'auction_day'
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${formFilter === 'auction_day'
               ? 'bg-purple-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -1102,7 +1106,7 @@ export function AdminFeedbackTab() {
           <button
             type="button"
             onClick={() => setFormFilter('critical')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${formFilter === 'critical'
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${formFilter === 'critical'
               ? 'bg-rose-600 text-white shadow-xs'
               : 'text-rose-700 hover:bg-rose-50'
               }`}
@@ -1113,7 +1117,7 @@ export function AdminFeedbackTab() {
           <button
             type="button"
             onClick={() => setFormFilter('non_respondents')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${formFilter === 'non_respondents'
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap cursor-pointer ${formFilter === 'non_respondents'
               ? 'bg-slate-900 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -1126,7 +1130,7 @@ export function AdminFeedbackTab() {
         </div>
 
         {/* Search Input */}
-        <div className="relative max-w-sm w-full">
+        <div className="relative w-full lg:w-64 shrink-0">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"

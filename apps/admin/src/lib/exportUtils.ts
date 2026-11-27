@@ -3,6 +3,7 @@
  * Generates formatted CSV / Excel-compatible sheets for downloads.
  */
 import { formatDateTimeIST } from './dateUtils';
+import { normalizeCentreName } from './centreUtils';
 
 function downloadCSV(csvContent: string, fileName: string) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -104,7 +105,7 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
       escapeCSV(r.email),
-      escapeCSV(gen.centre || ''),
+      escapeCSV(normalizeCentreName(gen.centre, '')),
       escapeCSV(gen.gender || ''),
       escapeCSV(gen.dateOfBirth || ''),
       escapeCSV(sports || (isSpectator ? 'spectator' : '')),
@@ -178,7 +179,7 @@ export function exportJerseyVendorSheet(registrations: any[]) {
       idx + 1,
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
-      escapeCSV(gen.centre || ''),
+      escapeCSV(normalizeCentreName(gen.centre, '')),
       escapeCSV(gen.tshirtSize || 'L'),
       escapeCSV(gen.customJerseyName || r.full_name.toUpperCase()),
       escapeCSV(gen.preferredJerseyNumber || '-'),
@@ -245,7 +246,7 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
       idx + 1,
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
-      escapeCSV(gen.centre || ''),
+      escapeCSV(normalizeCentreName(gen.centre, '')),
       escapeCSV(gen.gender || ''),
       escapeCSV((r.payment_status || 'pending').toUpperCase()),
       escapeCSV(formattedDetails || 'Standard Entry'),
@@ -280,7 +281,7 @@ export function exportAccommodationGateList(accommodationList: any[]) {
       idx + 1,
       escapeCSV(item.full_name),
       escapeCSV(item.mobile),
-      escapeCSV(item.centre),
+      escapeCSV(normalizeCentreName(item.centre, '')),
       escapeCSV(item.gender),
       escapeCSV(item.check_in_date || '2026-12-24'),
       escapeCSV(item.check_out_date || '2026-12-26'),
@@ -369,7 +370,7 @@ export function exportKitDistributionSheet(registrations: any[]) {
       escapeCSV(r.id),
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
-      escapeCSV(gen.centre || ''),
+      escapeCSV(normalizeCentreName(gen.centre, '')),
       escapeCSV((r.payment_status || 'pending').toUpperCase()),
       escapeCSV(gen.tshirtSize || 'L'),
       escapeCSV(gen.customJerseyName || r.full_name?.toUpperCase() || ''),

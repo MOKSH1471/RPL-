@@ -28,6 +28,7 @@ import {
 import { CricketMatch, CricketTeam, CricketPlayer } from '@/types/cricket';
 import { DEFAULT_TEAMS, createConfiguredMatch } from '@/lib/cricketMockData';
 import { fetchCricketTeamsFromDb } from '@/lib/cricketApi';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface MatchSchedulingWizardProps {
   onCancel: () => void;
@@ -70,6 +71,17 @@ export const MatchSchedulingWizard: React.FC<MatchSchedulingWizardProps> = ({
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl'>('bat');
   const [isFlippingCoin, setIsFlippingCoin] = useState(false);
   const [coinResultSide, setCoinResultSide] = useState<'heads' | 'tails' | null>(null);
+
+  // Close inner Edit Lineup modal on Escape if open
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditingTeamId(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Step 3 & 4: Lineups and Openers
   const teamA = teams.find((t) => t.id === selectedTeamAId) || teams[0];

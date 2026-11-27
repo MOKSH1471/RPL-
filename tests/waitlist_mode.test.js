@@ -65,7 +65,9 @@ describe('Players Waitlist Mode & Promotion Workflow', () => {
     assert.equal(status, 200);
     assert.equal(data.success, true);
     assert.ok(['open', 'waitlist', 'closed'].includes(data.player_registration_mode));
+    assert.ok(['open', 'waitlist', 'closed'].includes(data.spectator_registration_mode));
     assert.ok(typeof data.waitlist_banner_message === 'string');
+    assert.ok(typeof data.spectator_waitlist_banner_message === 'string');
   });
 
   test('Waitlist mode saves new Player as waitlist without creating transactions', async () => {
@@ -161,5 +163,47 @@ describe('Players Waitlist Mode & Promotion Workflow', () => {
     assert.equal(regRes.status, 200);
     assert.equal(regRes.data.success, true);
     assert.equal(regRes.data.payment_status, 'pending');
+  });
+
+  test('Spectator registration enters waitlist when spectator_registration_mode is set to waitlist', async () => {
+    if (!isDbAvailable) return;
+
+    const setRes = await apiRequest('/api/admin/registration/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ spectator_registration_mode: 'waitlist' }),
+    });
+    assert.equal(setRes.status, 200);
+    assert.equal(setRes.data.settings.spectator_registration_mode, 'waitlist');
+
+    const regRes = await apiRequest('/api/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        sport_id: 'spectator',
+        full_name: 'Test Spectator Waitlist',
+        email: 'spectator.wl@example.com',
+        mobile: '+91 9999911144',
+        general_details: {
+          registrationType: 'spectator',
+          selectedSports: ['spectator'],
+          centre: 'Mumbai',
+          gender: 'Female',
+          accommodationRequired: 'No',
+          spectatorDates: ['2026-12-25'],
+        },
+        sport_answers: {},
+      }),
+    });
+
+    assert.equal(regRes.status, 200);
+    assert.equal(regRes.data.success, true);
+    assert.equal(regRes.data.payment_status, 'waitlist');
+
+    const [txRows] = await db.query(
+      `SELECT id FROM ${RPL_DB}.rpl_transactions WHERE bookingid = ?`,
+      [regRes.data.registration_id]
+    );
+    assert.equal(txRows.length, 0, 'Waitlist spectator must NOT create rpl_transactions');
+
+    await db.query(`DELETE FROM ${RPL_DB}.rpl_registrations WHERE id = ?`, [regRes.data.registration_id]);
   });
 });

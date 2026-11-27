@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { lookupMumukshu } from '@/lib/api';
 import { ReceiptPrinter } from './ReceiptPrinter';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface UnregisteredPlayerData {
   mobile: string;
@@ -40,6 +41,8 @@ export function CheckStatusModal({
   const [matchedRecord, setMatchedRecord] = useState<any | null>(null);
   const [unregisteredData, setUnregisteredData] = useState<UnregisteredPlayerData | null>(null);
   const [serverWakingHint, setServerWakingHint] = useState(false);
+
+  useEscapeKey(isOpen, onClose);
 
   useEffect(() => {
     let timer: any;
@@ -231,7 +234,7 @@ export function CheckStatusModal({
                     ) : isWaitlist ? (
                       <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
                         <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                        <span>ON PLAYER WAITLIST</span>
+                        <span>ON WAITLIST</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
@@ -249,9 +252,9 @@ export function CheckStatusModal({
                       <AlertCircle className="w-6 h-6 text-amber-600" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-black text-slate-900 text-base">You Are on the Player Waitlist</h4>
+                      <h4 className="font-black text-slate-900 text-base">You Are on the Waitlist</h4>
                       <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                        Your registration details are saved. No payment is required right now — if a player slot opens up, the Organizing Committee will notify you on WhatsApp to complete payment.
+                        Your registration details are saved. No payment is required right now — if a slot opens up, the Organizing Committee will notify you on WhatsApp to complete payment.
                       </p>
                     </div>
                   </div>

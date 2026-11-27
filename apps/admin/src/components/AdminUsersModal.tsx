@@ -27,6 +27,7 @@ import {
   deleteAdminUser,
 } from '@/lib/api';
 import { formatFullDateTimeIST } from '@/lib/dateUtils';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface AdminUsersModalProps {
   isOpen: boolean;
@@ -80,6 +81,16 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({ isOpen, onClos
   const [resetTargetUser, setResetTargetUser] = useState<AdminUser | null>(null);
   const [resetPasswordVal, setResetPasswordVal] = useState('');
   const [resetSubmitting, setResetSubmitting] = useState(false);
+
+  useEscapeKey(isOpen, () => {
+    if (resetTargetUser) {
+      setResetTargetUser(null);
+    } else if (isFormOpen) {
+      setIsFormOpen(false);
+    } else {
+      onClose();
+    }
+  });
 
   const loadUsers = async () => {
     setLoading(true);

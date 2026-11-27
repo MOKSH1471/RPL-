@@ -9,5 +9,8 @@ CREATE TABLE IF NOT EXISTS rpl_registration_settings (
 
 INSERT IGNORE INTO rpl_registration_settings (setting_key, setting_value) VALUES
 ('player_registration_mode', 'open'),
-('waitlist_banner_message', 'Player registrations for RPL Season 9 are currently full and accepting Waitlist entries only. Please complete the form below to join the waitlist — we will notify you on WhatsApp with a payment link if a spot opens up. (Spectator registrations are still open!)'),
-('closed_message', 'Player registrations for RPL Season 9 are now closed.');
+('waitlist_banner_message', 'Player registrations for RPL Season 9 are currently full and accepting Waitlist entries only. Please complete the form below to join the waitlist — we will notify you on WhatsApp with a payment link if a spot opens up.'),
+('closed_message', 'Player registrations for RPL Season 9 are now closed.'),
+('spectator_registration_mode', 'open'),
+('spectator_waitlist_banner_message', '90''s Nostalgia Pass (Spectator) registrations for RPL Season 9 are currently full and accepting Waitlist entries only. Please complete the form below to join the waitlist — we will notify you on WhatsApp with a payment link if a spot opens up.'),
+('spectator_closed_message', '90''s Nostalgia Pass (Spectator) registrations for RPL Season 9 are now closed.');

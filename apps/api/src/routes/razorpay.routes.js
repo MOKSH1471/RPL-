@@ -152,20 +152,23 @@ router.post('/razorpay/create-order', async (req, res) => {
       });
     }
 
-    if (!existingReg && !isSpectator) {
+    if (!existingReg) {
       const regSettings = await getRegistrationSettings();
-      if (regSettings.player_registration_mode === 'waitlist') {
+      const activeMode = isSpectator
+        ? (regSettings.spectator_registration_mode || 'open')
+        : (regSettings.player_registration_mode || 'open');
+      if (activeMode === 'waitlist') {
         return res.status(403).json({
           success: false,
           code: 'WAITLIST_ONLY',
-          error: regSettings.waitlist_banner_message,
+          error: isSpectator ? regSettings.spectator_waitlist_banner_message : regSettings.waitlist_banner_message,
         });
       }
-      if (regSettings.player_registration_mode === 'closed') {
+      if (activeMode === 'closed') {
         return res.status(403).json({
           success: false,
           code: 'REGISTRATION_CLOSED',
-          error: regSettings.closed_message,
+          error: isSpectator ? regSettings.spectator_closed_message : regSettings.closed_message,
         });
       }
     }
@@ -663,12 +666,18 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
           const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
           mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
-          const allSelectedSports = Array.from(new Set([
+          let allSelectedSports = Array.from(new Set([
             ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
             ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
             ...Object.keys(mergedSportAnswers),
           ]));
+          if (isSpectator) {
+            allSelectedSports = ['spectator'];
+          } else {
+            allSelectedSports = allSelectedSports.filter((s) => s !== 'spectator');
+          }
           mergedGeneralDetails.selectedSports = allSelectedSports;
+          mergedGeneralDetails.registrationType = isSpectator ? 'spectator' : 'player';
 
           const prevUtrs = String(existingRegs[0].payment_utr || prevGeneral.payment_utr || '').split(',').map(s => s.trim()).filter(Boolean);
           const mergedUtrList = Array.from(new Set([...prevUtrs, razorpay_payment_id]));

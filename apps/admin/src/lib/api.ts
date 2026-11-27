@@ -515,6 +515,9 @@ export interface RegistrationSettings {
   player_registration_mode: 'open' | 'waitlist' | 'closed';
   waitlist_banner_message: string;
   closed_message: string;
+  spectator_registration_mode: 'open' | 'waitlist' | 'closed';
+  spectator_waitlist_banner_message: string;
+  spectator_closed_message: string;
 }
 
 export async function fetchRegistrationSettings(): Promise<{ success: boolean; settings: RegistrationSettings }> {

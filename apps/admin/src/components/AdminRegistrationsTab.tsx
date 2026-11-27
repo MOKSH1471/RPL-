@@ -36,11 +36,24 @@ import {
 } from '@/lib/api';
 import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
+import { useEscapeKey } from '@/lib/useEscapeKey';
+import { normalizeCentreName } from '@/lib/centreUtils';
 
+
+export interface MasterFilterPreset {
+  search?: string;
+  status?: string;
+  sport?: string;
+  acc?: string;
+  regType?: 'all' | 'player' | 'spectator';
+  jersey?: string;
+}
 
 interface AdminRegistrationsTabProps {
   registrations: any[];
   loading: boolean;
+  initialFilterPreset?: MasterFilterPreset | null;
+  onConsumeFilterPreset?: () => void;
   onSelectPlayer: (player: any) => void;
   onRefresh: () => void;
 }
@@ -48,15 +61,32 @@ interface AdminRegistrationsTabProps {
 export function AdminRegistrationsTab({
   registrations,
   loading,
+  initialFilterPreset,
+  onConsumeFilterPreset,
   onSelectPlayer,
   onRefresh,
 }: AdminRegistrationsTabProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sportFilter, setSportFilter] = useState('all');
-  const [accFilter, setAccFilter] = useState('all');
-  const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>('all');
+  const [searchTerm, setSearchTerm] = useState(initialFilterPreset?.search || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(initialFilterPreset?.search || '');
+  const [jerseyFilter, setJerseyFilter] = useState(initialFilterPreset?.jersey || 'all');
+  const [statusFilter, setStatusFilter] = useState(initialFilterPreset?.status || 'all');
+  const [sportFilter, setSportFilter] = useState(initialFilterPreset?.sport || 'all');
+  const [accFilter, setAccFilter] = useState(initialFilterPreset?.acc || 'all');
+  const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>(initialFilterPreset?.regType || 'all');
+
+  React.useEffect(() => {
+    if (initialFilterPreset) {
+      setSearchTerm(initialFilterPreset.search || '');
+      setDebouncedSearch(initialFilterPreset.search || '');
+      setStatusFilter(initialFilterPreset.status || 'all');
+      setSportFilter(initialFilterPreset.sport || 'all');
+      setAccFilter(initialFilterPreset.acc || 'all');
+      setRegTypeFilter(initialFilterPreset.regType || 'all');
+      setJerseyFilter(initialFilterPreset.jersey || 'all');
+      setCurrentPage(1);
+      onConsumeFilterPreset?.();
+    }
+  }, [initialFilterPreset]);
   const [currentPage, setCurrentPage] = useState(1);
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
   const [showModeModal, setShowModeModal] = useState(false);
@@ -64,6 +94,9 @@ export function AdminRegistrationsTab({
     player_registration_mode: 'open',
     waitlist_banner_message: '',
     closed_message: '',
+    spectator_registration_mode: 'open',
+    spectator_waitlist_banner_message: '',
+    spectator_closed_message: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [modeToast, setModeToast] = useState<string | null>(null);
@@ -83,6 +116,8 @@ export function AdminRegistrationsTab({
   React.useEffect(() => {
     loadRegSettings();
   }, []);
+
+  useEscapeKey(showModeModal, () => setShowModeModal(false));
 
   const waitlistCount = React.useMemo(() => {
     return registrations.filter((r) => {
@@ -114,9 +149,14 @@ export function AdminRegistrationsTab({
       const matchPhone = r.mobile?.includes(term);
       const matchEmail = r.email?.toLowerCase().includes(term);
       const matchUtr = r.payment_utr?.toLowerCase().includes(term);
-      const matchCentre = gen.centre?.toLowerCase().includes(term);
+      const normalizedCentre = normalizeCentreName(gen.centre, 'Mumbai').toLowerCase();
+      const matchCentre = gen.centre?.toLowerCase().includes(term) || normalizedCentre.includes(term);
       const matchJerseyName = gen.customJerseyName?.toLowerCase().includes(term);
-      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName) {
+      const nostalgiaRaw = gen.nostalgiaSport || gen.nostalgia_sport || r.sport_answers?.['90s-nostalgia']?.sport;
+      const matchNostalgia = Array.isArray(nostalgiaRaw)
+        ? nostalgiaRaw.join(', ').toLowerCase().includes(term)
+        : String(nostalgiaRaw || '').toLowerCase().includes(term);
+      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName && !matchNostalgia) {
         return false;
       }
     }
@@ -134,7 +174,16 @@ export function AdminRegistrationsTab({
 
     // Sport filter
     if (sportFilter !== 'all') {
-      if (!Array.isArray(sports) || !sports.includes(sportFilter)) return false;
+      if (sportFilter === '90s-nostalgia') {
+        const hasNostalgia =
+          (Array.isArray(sports) && sports.includes('90s-nostalgia')) ||
+          Boolean(gen.nostalgiaSport && gen.nostalgiaSport !== 'None') ||
+          Boolean(gen.nostalgia_sport && gen.nostalgia_sport !== 'None') ||
+          Boolean(r.sport_answers?.['90s-nostalgia']);
+        if (!hasNostalgia) return false;
+      } else if (!Array.isArray(sports) || !sports.includes(sportFilter)) {
+        return false;
+      }
     }
 
     // Participant Type filter (Player vs Spectator)
@@ -146,6 +195,16 @@ export function AdminRegistrationsTab({
     if (accFilter !== 'all') {
       const acc = gen.accommodationRequired || 'No';
       if (acc !== accFilter) return false;
+    }
+
+    // Jersey Size filter
+    if (jerseyFilter !== 'all') {
+      const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+      if (isSpectator && !spectatorHasTshirt) return false;
+      let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
+      if (rawSize === 'XXL') rawSize = '2XL';
+      if (rawSize === 'XXXL') rawSize = '3XL';
+      if (rawSize !== jerseyFilter && !rawSize.startsWith(jerseyFilter)) return false;
     }
 
     return true;
@@ -199,7 +258,9 @@ export function AdminRegistrationsTab({
         setRegSettings(res.settings);
       }
       setShowModeModal(false);
-      setModeToast(`Registration mode updated to "${regSettings.player_registration_mode.toUpperCase()}"!`);
+      setModeToast(
+        `Saved! Players: ${regSettings.player_registration_mode.toUpperCase()} | Spectators: ${regSettings.spectator_registration_mode.toUpperCase()}`
+      );
       setTimeout(() => setModeToast(null), 4000);
     } catch (err: any) {
       alert(err.message || 'Failed to update registration mode');
@@ -240,7 +301,7 @@ export function AdminRegistrationsTab({
       <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-xs font-black uppercase tracking-wider text-slate-500">
-            Player Registration Mode:
+            Live Status:
           </span>
           <span
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
@@ -260,14 +321,37 @@ export function AdminRegistrationsTab({
                   : 'bg-emerald-500'
               }`}
             />
+            🏃 Players:{' '}
             {regSettings.player_registration_mode === 'waitlist'
-              ? 'Players Waitlist Active'
+              ? 'Waitlist'
               : regSettings.player_registration_mode === 'closed'
-              ? 'Players Closed'
-              : 'Open (Normal)'}
+              ? 'Closed'
+              : 'Open'}
           </span>
-          <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-            🎟️ Spectators: Open
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+              regSettings.spectator_registration_mode === 'waitlist'
+                ? 'bg-orange-100 text-orange-900 border-orange-300'
+                : regSettings.spectator_registration_mode === 'closed'
+                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                regSettings.spectator_registration_mode === 'waitlist'
+                  ? 'bg-orange-500'
+                  : regSettings.spectator_registration_mode === 'closed'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500'
+              }`}
+            />
+            🎟️ Spectators:{' '}
+            {regSettings.spectator_registration_mode === 'waitlist'
+              ? 'Waitlist'
+              : regSettings.spectator_registration_mode === 'closed'
+              ? 'Closed'
+              : 'Open'}
           </span>
         </div>
 
@@ -304,10 +388,10 @@ export function AdminRegistrationsTab({
 
       {/* Search & Multi-Filter Controls */}
       <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
 
           {/* Search Input */}
-          <div className="relative w-full md:w-96">
+          <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -317,7 +401,7 @@ export function AdminRegistrationsTab({
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
             />
             {searchTerm && (
               <button
@@ -330,7 +414,7 @@ export function AdminRegistrationsTab({
           </div>
 
           {/* Filter Dropdowns */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-1.5 w-full lg:w-auto">
 
             {/* Participant Type Filter */}
             <select
@@ -339,7 +423,7 @@ export function AdminRegistrationsTab({
                 setRegTypeFilter(e.target.value as 'all' | 'player' | 'spectator');
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="all">All Participants</option>
               <option value="player">🏃 Players Only</option>
@@ -379,7 +463,8 @@ export function AdminRegistrationsTab({
               <option value="carrom">Carrom League</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
-              <option value="spectator">🎟️ 90’s Nostalgia Pass</option>
+              <option value="spectator">🎟️ Spectator (90’s Nostalgia Pass)</option>
+              <option value="90s-nostalgia">✨ 90’s Nostalgia Games (Opted In)</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -395,6 +480,23 @@ export function AdminRegistrationsTab({
               <option value="Yes">Stay Needed (Ashram)</option>
               <option value="No">Self-Arranged</option>
             </select>
+
+            {/* Jersey Size Filter */}
+            <select
+              value={jerseyFilter}
+              onChange={(e) => {
+                setJerseyFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="all">All Jerseys</option>
+              {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((sz) => (
+                <option key={sz} value={sz}>
+                  Size: {sz}
+                </option>
+              ))}
+            </select>
           </div>
 
         </div>
@@ -405,7 +507,7 @@ export function AdminRegistrationsTab({
             <span>
               Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
             </span>
-            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all' || jerseyFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
@@ -414,6 +516,7 @@ export function AdminRegistrationsTab({
                   setSportFilter('all');
                   setAccFilter('all');
                   setRegTypeFilter('all');
+                  setJerseyFilter('all');
                 }}
                 className="text-amber-600 font-bold hover:underline cursor-pointer"
               >
@@ -561,7 +664,7 @@ export function AdminRegistrationsTab({
 
                       {/* 3. Centre & Gender */}
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-800 block">{gen.centre || 'Mumbai'}</span>
+                        <span className="font-bold text-slate-800 block">{normalizeCentreName(gen.centre, 'Mumbai')}</span>
                         <span className="text-[11px] text-slate-400">{gen.gender || 'Male'}</span>
                       </td>
 
@@ -585,7 +688,7 @@ export function AdminRegistrationsTab({
                                 <>
                                   <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
                                     {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
-                                      ? '🏨 Stay (₹3,600)'
+                                      ? '🏨 Stay (₹3,000)'
                                       : `☀️ Day Pass (${dayCount > 1 ? `${dayCount} Days • ` : ''}₹${dayCount * 720})`}
                                   </span>
                                   {isAll3Days && (gen.nostalgiaSport || gen.nostalgia_sport) && (
@@ -913,7 +1016,7 @@ export function AdminRegistrationsTab({
           onClick={() => setShowModeModal(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden"
+            className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -922,8 +1025,8 @@ export function AdminRegistrationsTab({
                   <Sliders className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-black text-base text-slate-900">Player Registration Mode</h3>
-                  <p className="text-xs text-slate-500">Control live Player registration &amp; Waitlist banner (Spectators stay open)</p>
+                  <h3 className="font-black text-base text-slate-900">Registration Mode Controls</h3>
+                  <p className="text-xs text-slate-500">Independently manage Player and Spectator (90&apos;s Nostalgia Pass) forms</p>
                 </div>
               </div>
               <button
@@ -935,38 +1038,85 @@ export function AdminRegistrationsTab({
               </button>
             </div>
 
-            <form onSubmit={handleSaveRegSettings} className="p-5 space-y-4">
-              <div className="grid grid-cols-3 gap-2">
-                {(['open', 'waitlist', 'closed'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setRegSettings({ ...regSettings, player_registration_mode: m })}
-                    className={`py-2.5 px-3 rounded-2xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
-                      regSettings.player_registration_mode === m
-                        ? m === 'waitlist'
-                          ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
-                          : m === 'closed'
-                          ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
-                          : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
-                  </button>
-                ))}
+            <form onSubmit={handleSaveRegSettings} className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+              {/* Section 1: Player Registration */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    🏃 Player Registration
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['open', 'waitlist', 'closed'] as const).map((m) => (
+                    <button
+                      key={`player-${m}`}
+                      type="button"
+                      onClick={() => setRegSettings({ ...regSettings, player_registration_mode: m })}
+                      className={`py-2 px-3 rounded-xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                        regSettings.player_registration_mode === m
+                          ? m === 'waitlist'
+                            ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                            : m === 'closed'
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">
+                    Player Waitlist Banner Message:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={regSettings.waitlist_banner_message}
+                    onChange={(e) => setRegSettings({ ...regSettings, waitlist_banner_message: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed resize-y"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
-                  Waitlist Banner Message (shown on #/register):
-                </label>
-                <textarea
-                  rows={3}
-                  value={regSettings.waitlist_banner_message}
-                  onChange={(e) => setRegSettings({ ...regSettings, waitlist_banner_message: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed"
-                />
+              {/* Section 2: Spectator Registration */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    🎟️ Spectator (90&apos;s Nostalgia Pass)
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['open', 'waitlist', 'closed'] as const).map((m) => (
+                    <button
+                      key={`spec-${m}`}
+                      type="button"
+                      onClick={() => setRegSettings({ ...regSettings, spectator_registration_mode: m })}
+                      className={`py-2 px-3 rounded-xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                        regSettings.spectator_registration_mode === m
+                          ? m === 'waitlist'
+                            ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                            : m === 'closed'
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">
+                    Spectator Waitlist Banner Message:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={regSettings.spectator_waitlist_banner_message}
+                    onChange={(e) => setRegSettings({ ...regSettings, spectator_waitlist_banner_message: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed resize-y"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

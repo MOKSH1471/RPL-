@@ -474,11 +474,21 @@ router.get('/admin/registration/settings', requireAnyPermission(['registrations'
 
 router.put('/admin/registration/settings', requireAnyPermission(['registrations']), async (req, res) => {
   try {
-    const { player_registration_mode, waitlist_banner_message, closed_message } = req.body || {};
+    const {
+      player_registration_mode,
+      waitlist_banner_message,
+      closed_message,
+      spectator_registration_mode,
+      spectator_waitlist_banner_message,
+      spectator_closed_message,
+    } = req.body || {};
     const settings = await updateRegistrationSettings({
       player_registration_mode,
       waitlist_banner_message,
       closed_message,
+      spectator_registration_mode,
+      spectator_waitlist_banner_message,
+      spectator_closed_message,
     });
     res.json({ success: true, settings });
   } catch (error) {
@@ -712,6 +722,9 @@ router.get('/admin/accommodation', requireAnyPermission(['accommodation']), asyn
     const [bookings] = await db.query(`
       SELECT bookingid, cardno, roomno, checkin, checkout, nights, status, updatedBy, createdAt
       FROM ${AASHRAY_DB}.room_booking
+      WHERE checkin >= '2026-12-24'
+        AND checkin <= '2026-12-28'
+        AND LOWER(COALESCE(status, '')) NOT IN ('admin cancelled', 'cancelled', 'checkedout')
       ORDER BY createdAt DESC
     `);
 
@@ -768,7 +781,7 @@ router.get('/admin/accommodation', requireAnyPermission(['accommodation']), asyn
           bookings: userBookings,
         };
       })
-      .filter((r) => r.accommodationRequired === 'Yes' || r.bookings.length > 0);
+      .filter((r) => r.accommodationRequired === 'Yes');
 
     res.json({ success: true, data: accommodationList });
   } catch (error) {
@@ -810,7 +823,7 @@ router.post('/admin/accommodation/assign', requireAnyPermission(['accommodation'
 // 8. Admin Endpoint: Razorpay Transactions & Payment Reconciliation
 router.get('/admin/transactions', requireAnyPermission(['transactions']), async (req, res) => {
   try {
-    const { status, search, limit = 100, offset = 0 } = req.query;
+    const { status, search, limit = 500, offset = 0 } = req.query;
 
     let query = `
       SELECT 
@@ -833,7 +846,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
         r.is_archived,
         r.payment_status AS registration_payment_status
       FROM ${RPL_DB}.rpl_transactions t
-      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      INNER JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
       WHERE 1=1
     `;
     const params = [];
@@ -842,7 +855,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
       query += ` AND (r.is_archived = 1 OR r.email LIKE '%@example.com' OR r.email LIKE '%@test.com' OR JSON_EXTRACT(r.general_details, '$.isArchived') = true)`;
     } else {
       // Exclude archived and test entries by default
-      query += ` AND (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))`;
+      query += ` AND COALESCE(r.is_archived, 0) = 0 AND COALESCE(r.email, '') NOT LIKE '%@example.com' AND COALESCE(r.email, '') NOT LIKE '%@test.com' AND COALESCE(JSON_EXTRACT(r.general_details, '$.isArchived'), false) = false`;
 
       if (status && status !== 'all') {
         if (status === 'failed') {
@@ -861,19 +874,22 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
     }
 
     query += ` ORDER BY t.id DESC LIMIT ? OFFSET ?`;
-    params.push(Number(limit) || 100, Number(offset) || 0);
+    params.push(Number(limit) || 500, Number(offset) || 0);
 
     const [transactions] = await db.query(query, params);
 
-    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions)
+    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions with matching registration)
     const [summaryRows] = await db.query(`
       SELECT 
         t.status, 
         COUNT(*) as count, 
         COALESCE(SUM(t.amount), 0) as total_amount 
       FROM ${RPL_DB}.rpl_transactions t
-      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
-      WHERE (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))
+      INNER JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE COALESCE(r.is_archived, 0) = 0
+        AND COALESCE(r.email, '') NOT LIKE '%@example.com'
+        AND COALESCE(r.email, '') NOT LIKE '%@test.com'
+        AND COALESCE(JSON_EXTRACT(r.general_details, '$.isArchived'), false) = false
       GROUP BY t.status
     `);
 
