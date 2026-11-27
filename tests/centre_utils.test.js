@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeCentreName, aggregateCentresCount } from '../apps/admin/src/lib/centreUtils.ts';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const tsSource = fs.readFileSync(
+  path.resolve(__dirname, '../apps/admin/src/lib/centreUtils.ts'),
+  'utf8'
+);
+const { outputText } = ts.transpileModule(tsSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+});
+const { normalizeCentreName, aggregateCentresCount } = await import(
+  `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
+);
 
 test('normalizeCentreName normalizes spelling, casing, and spacing variants', () => {
   assert.equal(normalizeCentreName('Research centre'), 'Research Centre');
