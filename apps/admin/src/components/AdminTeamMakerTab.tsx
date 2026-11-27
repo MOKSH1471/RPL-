@@ -30,6 +30,8 @@ import {
   deleteCricketTeamFromDb,
 } from '@/lib/cricketApi';
 import { DEFAULT_TEAMS } from '@/lib/cricketMockData';
+import { useEscapeKey } from '@/lib/useEscapeKey';
+import { normalizeCentreName } from '@/lib/centreUtils';
 
 interface AdminTeamMakerTabProps {
   registrations: any[];
@@ -68,6 +70,8 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
 
   // Modal State for New Team
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  useEscapeKey(isCreateModalOpen, () => setIsCreateModalOpen(false));
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamShortName, setNewTeamShortName] = useState('');
   const [newTeamColor, setNewTeamColor] = useState('#D97706');
@@ -108,7 +112,8 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
       .filter((r) => {
         const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
         const isArchived = Boolean(r.is_archived || r.general_details?.isArchived || isTestEmail);
-        if (isArchived) return false;
+        const isWaitlist = String(r.payment_status || '').toLowerCase() === 'waitlist';
+        if (isArchived || isWaitlist) return false;
 
         const gen = r.general_details || {};
         const sports = gen.selectedSports || [];
@@ -149,7 +154,7 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
           registrationId: r.id,
           name: r.full_name || 'Anonymous Player',
           mobile: r.mobile || '',
-          centre: gen.centre || gen.city || 'General',
+          centre: normalizeCentreName(gen.centre || gen.city, 'General'),
           role: role,
           battingStyle: answers.batting_style || answers.battingStyle || 'Right Hand Bat',
           bowlingStyle: answers.bowling_style || answers.bowlingStyle || 'Right Arm Medium',
@@ -457,16 +462,6 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
 
           {/* Global Actions */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleAutoDraft}
-              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer active:scale-95"
-              title="Evenly distribute unassigned registered players across all created teams"
-            >
-              <Shuffle className="w-3.5 h-3.5 text-amber-600" />
-              <span>Auto-Draft</span>
-            </button>
-
             <button
               type="button"
               onClick={handleExportTeams}

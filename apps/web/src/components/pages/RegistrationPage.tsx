@@ -15,10 +15,12 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   reportRazorpayPaymentFailure,
+  fetchRegistrationStatus,
 } from '@/lib/api';
 import { compressImage } from '@/lib/imageCompressor';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { DynamicFieldRenderer } from '@/components/ui/DynamicFieldRenderer';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -369,16 +371,59 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [previousUtrs, setPreviousUtrs] = useState<string[]>([]);
   const [hasPreviouslyPaid, setHasPreviouslyPaid] = useState<boolean>(false);
   const [previouslyPaidExtraTshirt, setPreviouslyPaidExtraTshirt] = useState<boolean>(false);
+  const [previouslyPaidFootballJersey, setPreviouslyPaidFootballJersey] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [showSizeGuideModal, setShowSizeGuideModal] = useState(false);
   const [showSamplePhotoModal, setShowSamplePhotoModal] = useState(false);
+
+  useEscapeKey(showSizeGuideModal, () => setShowSizeGuideModal(false));
+  useEscapeKey(showSamplePhotoModal, () => setShowSamplePhotoModal(false));
   const [isOtherCentre, setIsOtherCentre] = useState(false);
   const [customCentreName, setCustomCentreName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'manual'>('razorpay');
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const [serverWakingHint, setServerWakingHint] = useState(false);
+  const [playerRegMode, setPlayerRegMode] = useState<'open' | 'waitlist' | 'closed'>('open');
+  const [waitlistBannerMsg, setWaitlistBannerMsg] = useState<string>(
+    'Player registrations for RPL Season 9 are currently full and accepting Waitlist entries only. Please complete the form below to join the waitlist — we will notify you on WhatsApp with a payment link if a spot opens up.'
+  );
+  const [closedRegMsg, setClosedRegMsg] = useState<string>(
+    'Player registrations for RPL Season 9 are now closed.'
+  );
+  const [spectatorRegMode, setSpectatorRegMode] = useState<'open' | 'waitlist' | 'closed'>('open');
+  const [spectatorWaitlistBannerMsg, setSpectatorWaitlistBannerMsg] = useState<string>(
+    '90’s Nostalgia Pass (Spectator) registrations for RPL Season 9 are currently full and accepting Waitlist entries only. Please complete the form below to join the waitlist — we will notify you on WhatsApp with a payment link if a spot opens up.'
+  );
+  const [spectatorClosedRegMsg, setSpectatorClosedRegMsg] = useState<string>(
+    '90’s Nostalgia Pass (Spectator) registrations for RPL Season 9 are now closed.'
+  );
   const photoUploadPromiseRef = useRef<Promise<string> | null>(null);
+
+  // Load live registration mode (open | waitlist | closed) & support ?mobile= deep link
+  useEffect(() => {
+    fetchRegistrationStatus()
+      .then((res) => {
+        if (res && res.success) {
+          if (res.player_registration_mode) setPlayerRegMode(res.player_registration_mode);
+          if (res.waitlist_banner_message) setWaitlistBannerMsg(res.waitlist_banner_message);
+          if (res.closed_message) setClosedRegMsg(res.closed_message);
+          if (res.spectator_registration_mode) setSpectatorRegMode(res.spectator_registration_mode);
+          if (res.spectator_waitlist_banner_message) setSpectatorWaitlistBannerMsg(res.spectator_waitlist_banner_message);
+          if (res.spectator_closed_message) setSpectatorClosedRegMsg(res.spectator_closed_message);
+        }
+      })
+      .catch(() => {});
+
+    try {
+      const hashParts = window.location.hash.split('?');
+      const params = new URLSearchParams(hashParts[1] || window.location.search);
+      const mobileParam = (params.get('mobile') || '').replace(/\D/g, '').slice(-10);
+      if (mobileParam.length === 10) {
+        setValue('mobileNumber', mobileParam, { shouldValidate: true });
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let timer: any;
@@ -712,12 +757,13 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const isFootballMultiSport = hasFootball && hasCricket;
   const footballJerseyCost = isFootballMultiSport ? 500 : 0;
 
-  // If returning player already paid for an extra T-shirt previously, do not charge ₹500 again
+  // If returning player already paid for an extra T-shirt or Football jersey previously, do not charge ₹500 again
   const extraTshirtDue = (currentExtraTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
   const spectatorTshirtDue = (currentSpectatorTshirt === 'Yes' && (!isReturningPaidUser || !previouslyPaidExtraTshirt)) ? 500 : 0;
+  const footballJerseyDue = (isFootballMultiSport && (!isReturningPaidUser || !previouslyPaidFootballJersey)) ? 500 : 0;
 
   const spectatorTotalFee = isReturningPaidUser ? spectatorTshirtDue : (spectatorBaseFee + spectatorTshirtCost);
-  const playerTotalFee = isReturningPaidUser ? extraTshirtDue : (playerBaseFee + footballJerseyCost + extraTshirtCost);
+  const playerTotalFee = isReturningPaidUser ? (extraTshirtDue + footballJerseyDue) : (playerBaseFee + footballJerseyCost + extraTshirtCost);
   const totalPayableFee = isSpectator ? spectatorTotalFee : playerTotalFee;
   const cumulativeTotalFee = totalPayableFee;
   const previousPaidAmount = isReturningPaidUser ? (playerBaseFee + (previouslyPaidExtraTshirt ? 500 : 0)) : 0;
@@ -999,6 +1045,9 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
               (isPaid && (gen.extraTshirt === 'Yes' || gen.extra_tshirt === 'Yes' || gen.spectatorTshirt === 'Yes' || gen.spectator_tshirt === 'Yes'))
             );
             setPreviouslyPaidExtraTshirt(prevPaidTshirt);
+            const prevHadCricket = Array.isArray(savedSports) && savedSports.some((s: string) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+            const prevHadFootball = Array.isArray(savedSports) && savedSports.includes('football');
+            setPreviouslyPaidFootballJersey(Boolean(reg.previouslyPaidFootballJersey || (isPaid && prevHadCricket && prevHadFootball)));
 
             // Restore sport answers
             if (sports.cricket) {
@@ -1797,10 +1846,23 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
       delete (sanitizedAnswers as any).nostalgiaSports;
     }
 
+    const isCurrentlyWaitlistedUser =
+      isExistingPlayerRegistration && String(existingPaymentStatus || '').toLowerCase() === 'waitlist';
+    const activeRegMode = isSpectator ? spectatorRegMode : playerRegMode;
+    const activeClosedMsg = isSpectator ? spectatorClosedRegMsg : closedRegMsg;
+    const isNewWaitlistEntry = !isExistingPlayerRegistration && activeRegMode === 'waitlist';
+    const isWaitlistSubmission = isNewWaitlistEntry || isCurrentlyWaitlistedUser;
+    const isClosedForNew = !isExistingPlayerRegistration && activeRegMode === 'closed';
+
+    if (isClosedForNew) {
+      alert(activeClosedMsg || 'Registrations for RPL Season 9 are now closed.');
+      return;
+    }
+
     // =========================================================================
     // 1. ONLINE PAYMENT PATH (RAZORPAY GATEWAY - INSTANT AUTO-APPROVAL)
     // =========================================================================
-    if (totalPayableFee > 0) {
+    if (totalPayableFee > 0 && !isWaitlistSubmission) {
       setIsSubmitting(true);
       setIsRazorpayLoading(true);
 
@@ -1843,6 +1905,7 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
           previouslyPaidSportsCount,
           hasPreviouslyPaid,
           previouslyPaidExtraTshirt,
+          previouslyPaidFootballJersey,
           registrationId: existingRegistrationId || undefined,
           registrationPayload,
         });
@@ -1982,9 +2045,18 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
         if ((result as any)?.registration_id) {
           activeRegistrationId = (result as any).registration_id;
         }
+        if ((result as any)?.payment_status) {
+          fullData.paymentStatus = (result as any).payment_status;
+          (fullData as any).payment_status = (result as any).payment_status;
+        }
       }
     } catch (apiErr: any) {
       console.warn('[RPL Frontend Notice] Direct save notice, local registration recorded:', apiErr);
+    }
+
+    if (isWaitlistSubmission) {
+      fullData.paymentStatus = 'waitlist';
+      (fullData as any).payment_status = 'waitlist';
     }
 
     // Store in localStorage
@@ -2148,6 +2220,58 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                   </span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Waitlist / Closed Mode Banner for Player & Spectator Registrations */}
+          {!submittedData && !isExistingPlayerRegistration && (isSpectator ? spectatorRegMode : playerRegMode) === 'waitlist' && (
+            <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/80 to-amber-50 border-2 border-amber-300 shadow-sm text-left flex items-start gap-3.5 animate-in fade-in slide-in-from-top-3 duration-400">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-200/70 text-amber-950 text-[10px] font-black uppercase tracking-wider">
+                  <span>{isSpectator ? 'Spectator Waitlist Active' : 'Player Waitlist Active'}</span>
+                </div>
+                <p className="text-xs sm:text-sm text-amber-950 font-semibold leading-relaxed">
+                  {isSpectator ? spectatorWaitlistBannerMsg : waitlistBannerMsg}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!submittedData && !isExistingPlayerRegistration && (isSpectator ? spectatorRegMode : playerRegMode) === 'closed' && (
+            <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-rose-50 border-2 border-rose-200 shadow-sm text-left flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 border border-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-900 text-[10px] font-black uppercase tracking-wider">
+                  <span>{isSpectator ? 'Spectator Registrations Closed' : 'Player Registrations Closed'}</span>
+                </div>
+                <p className="text-xs sm:text-sm text-rose-950 font-semibold leading-relaxed">
+                  {isSpectator ? spectatorClosedRegMsg : closedRegMsg} Already registered? Enter your 10-digit mobile number below to view/update your entry.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isExistingPlayerRegistration && existingPaymentStatus === 'waitlist' && (
+            <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-amber-50 border border-amber-300 shadow-sm flex items-start gap-3.5 text-left">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold uppercase tracking-wider">
+                  <span>Status: On Waitlist</span>
+                </div>
+                <h4 className="font-black text-slate-900 text-base">
+                  Welcome back, {getValues('fullName') || 'Participant'}!
+                </h4>
+                <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                  Your entry is currently on the RPL Season 9 Waitlist. You can update your details below anytime — payment will unlock automatically once the Organizing Committee promotes your slot.
+                </p>
+              </div>
             </div>
           )}
 
@@ -4568,7 +4692,11 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
 
                     <div className="flex items-center justify-between sm:justify-start space-x-2 bg-white px-3.5 py-2 rounded-xl border border-amber-300 shadow-xs w-full sm:w-auto shrink-0">
                       <span className="text-xs font-semibold text-slate-600">
-                        {isReturningPaidUser ? 'Amount Due:' : 'Total Payable:'}
+                        {isReturningPaidUser
+                          ? 'Amount Due:'
+                          : ((!isExistingPlayerRegistration && (isSpectator ? spectatorRegMode : playerRegMode) === 'waitlist') || (isExistingPlayerRegistration && String(existingPaymentStatus || '').toLowerCase() === 'waitlist'))
+                            ? 'Fee (If Promoted):'
+                            : 'Total Payable:'}
                       </span>
                       <span className={`text-xl sm:text-2xl font-black font-display ${totalPayableFee === 0 ? 'text-emerald-700' : 'text-amber-800'}`}>
                         ₹{totalPayableFee.toLocaleString('en-IN')}
@@ -4724,8 +4852,10 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </>
                   )}
 
-                  {/* Razorpay Online Payment Checkout Banner */}
-                  {totalPayableFee > 0 && (
+                  {/* Razorpay Online Payment Checkout Banner (Hidden in Waitlist Mode) */}
+                  {totalPayableFee > 0 &&
+                    !((!isExistingPlayerRegistration && (isSpectator ? spectatorRegMode : playerRegMode) === 'waitlist') ||
+                      (isExistingPlayerRegistration && String(existingPaymentStatus || '').toLowerCase() === 'waitlist')) && (
                     <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-emerald-500/10 rounded-2xl border border-amber-300/80 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2 text-amber-900 font-extrabold text-xs sm:text-sm">
@@ -4771,43 +4901,71 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 )}
 
                 {/* Submission Controls & Assurance */}
-                <div className="pt-4 border-t border-emerald-200/80 space-y-4">
-                  <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
-                    <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
-                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
-                      Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
-                    </p>
-                  </div>
+                {(() => {
+                  const activeModeUI = isSpectator ? spectatorRegMode : playerRegMode;
+                  const isWaitlistSubmitUI =
+                    (!isExistingPlayerRegistration && activeModeUI === 'waitlist') ||
+                    (isExistingPlayerRegistration && String(existingPaymentStatus || '').toLowerCase() === 'waitlist');
+                  const isClosedUI = !isExistingPlayerRegistration && activeModeUI === 'closed';
 
-                  {/* Primary Pay Now button */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading}
-                      className="flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-white font-extrabold text-base md:text-lg shadow-lg hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-75 group border border-amber-300/30"
-                    >
-                      {isRazorpayLoading ? (
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          <span>Opening Razorpay Gateway...</span>
+                  return (
+                    <div className="pt-4 border-t border-emerald-200/80 space-y-4">
+                      {isWaitlistSubmitUI ? (
+                        <div className="flex items-start space-x-3 text-amber-950 bg-amber-50 p-3.5 sm:p-4 rounded-2xl border border-amber-300 shadow-2xs">
+                          <Clock className="w-5 h-5 mt-0.5 shrink-0 text-amber-600" />
+                          <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                            <strong>No Payment Required Now:</strong> Your full registration details will be saved to the RPL Season 9 Waitlist. If a slot opens up, the Organizing Committee will notify you on WhatsApp to complete your payment.
+                          </p>
                         </div>
-                      ) : isUploadingReceipt ? (
-                        <span>Uploading Payment Receipt to Drive...</span>
-                      ) : isSubmitting ? (
-                        <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
-                      ) : totalPayableFee > 0 ? (
-                        <>
-                          <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get 90’s Nostalgia Pass' : 'Complete Registration'}</span>
-                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                        </>
                       ) : (
-                        <>
-                          <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get 90’s Nostalgia Pass' : 'Submit Registration')}</span>
-                          <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
-                        </>
+                        <div className="flex items-start space-x-3 text-slate-700 bg-white/80 p-3 sm:p-4 rounded-2xl border border-emerald-200 shadow-2xs">
+                          <ShieldCheck className="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" />
+                          <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                            Upon completing payment and submission, your participant details and selections will be securely saved to the database, and your official Digital Sports Pass will be generated instantly.
+                          </p>
+                        </div>
                       )}
-                    </button>
-                  </div>
+
+                      {/* Primary Pay Now / Join Waitlist button */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <button
+                          type="submit"
+                          disabled={isSubmitting || isUploadingReceipt || isRazorpayLoading || isClosedUI}
+                          className={`flex-1 sm:flex-initial px-8 py-4 min-h-[52px] rounded-2xl text-white font-extrabold text-base md:text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2 cursor-pointer touch-manipulation disabled:opacity-60 disabled:cursor-not-allowed group border ${
+                            isWaitlistSubmitUI
+                              ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 border-amber-400/40'
+                              : 'bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 hover:shadow-orange-500/25 border-amber-300/30'
+                          }`}
+                        >
+                          {isRazorpayLoading ? (
+                            <div className="flex items-center space-x-2">
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              <span>Opening Razorpay Gateway...</span>
+                            </div>
+                          ) : isUploadingReceipt ? (
+                            <span>Uploading Payment Receipt to Drive...</span>
+                          ) : isSubmitting ? (
+                            <span>{isExistingPlayerRegistration ? 'Saving Updates...' : 'Processing Registration...'}</span>
+                          ) : isClosedUI ? (
+                            <span>{isSpectator ? 'Spectator Registrations Closed' : 'Player Registrations Closed'}</span>
+                          ) : isWaitlistSubmitUI ? (
+                            <>
+                              <span>{isExistingPlayerRegistration ? 'Update Waitlist Details' : (isSpectator ? 'Join Spectator Waitlist' : 'Join Player Waitlist')}</span>
+                              <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                            </>
+                          ) : totalPayableFee > 0 ? (
+                            <>
+                              <span>Pay ₹{totalPayableFee} & {isSpectator ? 'Get 90’s Nostalgia Pass' : 'Complete Registration'}</span>
+                              <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                            </>
+                          ) : (
+                            <>
+                              <span>{isExistingPlayerRegistration ? 'Update Registration & Save' : (isSpectator ? 'Get 90’s Nostalgia Pass' : 'Submit Registration')}</span>
+                              <Zap className="w-5 h-5 fill-amber-200 text-amber-200 group-hover:scale-110 transition-transform" />
+                            </>
+                          )}
+                        </button>
+                      </div>
 
                   {/* Server Waking Indicator (Render Free Tier Cold-Start) */}
                   {serverWakingHint && (isSubmitting || isRazorpayLoading) && (
@@ -4817,6 +4975,8 @@ export const RegistrationPage: React.FC<RegistrationPageProps> = ({
                     </div>
                   )}
                 </div>
+                  );
+                })()}
               </InView>
             </div>
 

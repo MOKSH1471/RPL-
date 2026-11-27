@@ -65,6 +65,34 @@ const CoordinatorRow: React.FC<{ name: string; phone?: string }> = ({ name, phon
 );
 
 const FAQ_DATA: FAQItem[] = [
+  // 0. Player Waitlist
+  {
+    id: 'player-waitlist',
+    category: 'registration',
+    question: 'How does the Waitlist work? Do I need to pay while joining the waitlist?',
+    searchableAnswer:
+      'When capacity is full, registrations (Player or Spectator / 90s Nostalgia Pass) may move to Waitlist mode. Joining the waitlist is free and no payment is required upfront. Complete the registration form to submit your details to the waitlist. If a slot opens up, the RPL Organizing Committee will notify you on WhatsApp with a direct link to complete your payment and confirm your pass. You can check your status anytime using Check Pass.',
+    answer: (
+      <div className="space-y-3">
+        <p>
+          When category capacity is full, registrations for <strong>Players</strong> and/or <strong>Spectators (90&apos;s Nostalgia Pass)</strong> switch to <strong>Waitlist Mode</strong>:
+        </p>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-[13px] text-slate-700">
+          <li>
+            <strong>No Payment Required Now:</strong> Joining the waitlist is completely free — simply fill out the registration form and click <em>Join Waitlist</em>.
+          </li>
+          <li>
+            <strong>How Slots Are Confirmed:</strong> If a spot opens up, the Organizing Committee will promote your entry and message you on <strong>WhatsApp</strong> with a direct link to complete your payment.
+          </li>
+          <li>
+            <strong>Check Status Anytime:</strong> Use the <strong>Check Pass</strong> button in the navigation bar to view whether your entry is still on the waitlist or unlocked for payment.
+          </li>
+        </ul>
+      </div>
+    ),
+    tags: ['Waitlist', 'Payment', 'Promotion', 'WhatsApp', 'Player Slots', 'Spectator', 'Check Pass'],
+    important: true,
+  },
   // 1. Registration Confirmation & Fees
   {
     id: 'reg-confirmation',

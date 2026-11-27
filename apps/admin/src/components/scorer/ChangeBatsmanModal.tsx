@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserRoundPlus, CheckCircle2, UserCheck, ArrowLeftRight } from 'lucide-react';
 import { CricketPlayer, LiveBatsman } from '@/types/cricket';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface ChangeBatsmanModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const ChangeBatsmanModal: React.FC<ChangeBatsmanModalProps> = ({
 }) => {
   const [target, setTarget] = useState<'striker' | 'nonStriker'>(initialTarget);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

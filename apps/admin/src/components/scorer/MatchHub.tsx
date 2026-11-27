@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CricketMatch } from '@/types/cricket';
 import { formatOvers } from '@/lib/cricketMockData';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface MatchHubProps {
   matches: CricketMatch[];
@@ -38,6 +39,8 @@ export const MatchHub: React.FC<MatchHubProps> = ({
   onDeleteMatch,
 }) => {
   const [matchToDelete, setMatchToDelete] = useState<CricketMatch | null>(null);
+
+  useEscapeKey(Boolean(matchToDelete), () => setMatchToDelete(null));
 
   const liveCount = matches.filter((m) => m.status === 'live').length;
   const completedCount = matches.filter((m) => m.status === 'completed').length;
@@ -63,17 +66,6 @@ export const MatchHub: React.FC<MatchHubProps> = ({
               : 'Schedule tournament fixtures, conduct tosses, and manage ball-by-ball live scoring'}
           </p>
         </div>
-
-        {!isScorecardAdmin && (
-          <button
-            type="button"
-            onClick={onOpenScheduleWizard}
-            className="self-start md:self-auto px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center space-x-2 cursor-pointer active:scale-95"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Schedule New Match</span>
-          </button>
-        )}
       </div>
 
       {/* ── Match Status Metrics ── */}

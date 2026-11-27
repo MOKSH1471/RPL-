@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, SlidersHorizontal, RotateCcw, Play, Trash2, Lock, ShieldAlert } from 'lucide-react';
 import { CricketMatch } from '@/types/cricket';
 import { createInitialMatch } from '@/lib/cricketMockData';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface NewMatchModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const NewMatchModal: React.FC<NewMatchModalProps> = ({
   const [overs, setOvers] = useState<number>(currentMatch?.oversPerSide || 10);
   const [venue, setVenue] = useState(currentMatch?.venue || 'RPL Main Stadium');
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl'>(currentMatch?.tossDecision || 'bat');
+
+  useEscapeKey(isOpen, onClose);
 
   useEffect(() => {
     if (currentMatch) {

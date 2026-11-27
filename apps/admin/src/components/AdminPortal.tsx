@@ -15,6 +15,9 @@ import {
   LogOut,
   UserCheck,
   MessageSquareHeart,
+  Menu,
+  X,
+  ChevronRight,
 } from 'lucide-react';
 import {
   fetchAdminStats,
@@ -23,7 +26,7 @@ import {
   AdminUser,
 } from '@/lib/api';
 import { AdminDashboardTab } from './AdminDashboardTab';
-import { AdminRegistrationsTab } from './AdminRegistrationsTab';
+import { AdminRegistrationsTab, MasterFilterPreset } from './AdminRegistrationsTab';
 import { AdminAccommodationTab } from './AdminAccommodationTab';
 import { AdminTransactionsTab } from './AdminTransactionsTab';
 import { AdminExportTab } from './AdminExportTab';
@@ -77,6 +80,8 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedPlayer, setSelectedPlayer] = useState<any | null>(null);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [masterFilterPreset, setMasterFilterPreset] = useState<MasterFilterPreset | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const loadData = async (isInitial = false) => {
     setLoading(true);
@@ -192,12 +197,12 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
                   <h1 className="font-extrabold text-sm sm:text-lg text-slate-900 tracking-tight leading-none whitespace-nowrap">
                     RPL Season 9
                   </h1>
-                  <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider border border-amber-300 whitespace-nowrap shrink-0">
+                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px] uppercase tracking-wider border border-amber-300 whitespace-nowrap shrink-0">
                     Admin Portal
                   </span>
                   {currentUser && (
                     <span
-                      className={`px-2 py-0.5 rounded-full font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider border whitespace-nowrap shrink-0 ${
+                      className={`hidden md:inline-block px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase tracking-wider border whitespace-nowrap shrink-0 ${
                         isSuperAdmin
                           ? 'bg-amber-100 text-amber-950 border-amber-400'
                           : isScorerOnly
@@ -223,11 +228,11 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
               <button
                 type="button"
                 onClick={() => setIsUsersModalOpen(true)}
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-2xs cursor-pointer shrink-0"
+                className="hidden sm:flex px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-bold transition-all items-center space-x-1.5 shadow-2xs cursor-pointer shrink-0"
                 title="Manage Admin Accounts, Passwords & Roles"
               >
                 <Shield className="w-3.5 h-3.5 text-amber-600" />
-                <span className="hidden sm:inline">Manage Roles</span>
+                <span>Manage Roles</span>
               </button>
             )}
 
@@ -246,11 +251,11 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
               <button
                 type="button"
                 onClick={onLogout}
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-bold transition-all flex items-center space-x-1.5 border border-slate-200 cursor-pointer shrink-0"
+                className="hidden sm:flex px-3 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-bold transition-all items-center space-x-1.5 border border-slate-200 cursor-pointer shrink-0"
                 title="Sign out of Console"
               >
                 <LogOut className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </button>
             )}
 
@@ -258,156 +263,219 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Live DB</span>
             </div>
+
+            {!isScorerOnly && (
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer shrink-0"
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              >
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
+            )}
           </div>
 
         </div>
 
-        {/* Tab Navigation Ribbon */}
-        {!isScorerOnly && (
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 border-t border-slate-100 flex items-center space-x-2 overflow-x-auto mobile-hide-scrollbar py-2">
-            {canViewDashboard && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'dashboard'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Overview Dashboard</span>
-              </button>
-            )}
+        {/* Desktop Single-Row Tab Navigation (Option 1 — fits all 8 tabs cleanly without scrolling) */}
+        {!isScorerOnly && (() => {
+          const activeRegsCount = registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived).length;
+          const navItems = [
+            { id: 'dashboard' as const, label: 'Overview Dashboard', shortLabel: 'Overview', icon: <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />, visible: canViewDashboard },
+            {
+              id: 'registrations' as const,
+              label: 'Master Registrations',
+              shortLabel: 'Registrations',
+              icon: <Users className="w-3.5 h-3.5 shrink-0" />,
+              badge: activeRegsCount,
+              badgeClass: 'bg-amber-500/20 text-amber-700',
+              visible: canViewRegistrations,
+            },
+            {
+              id: 'accommodation' as const,
+              label: 'Room Allotment',
+              shortLabel: 'Room Allotment',
+              icon: <Bed className="w-3.5 h-3.5 shrink-0" />,
+              badge: accommodationList.length,
+              badgeClass: 'bg-cyan-500/20 text-cyan-800',
+              visible: canViewAccommodation,
+            },
+            { id: 'transactions' as const, label: 'Payments & Audit', shortLabel: 'Payments & Audit', icon: <CreditCard className="w-3.5 h-3.5 shrink-0" />, visible: canViewTransactions },
+            { id: 'exports' as const, label: '1-Click Exports', shortLabel: 'Exports', icon: <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />, visible: canViewExports },
+            { id: 'teams' as const, label: 'Team Maker', shortLabel: 'Team Maker', icon: <Shield className="w-3.5 h-3.5 text-amber-500 shrink-0" />, visible: canViewTeams },
+            { id: 'feedback' as const, label: 'Feedback Center', shortLabel: 'Feedback', icon: <MessageSquareHeart className="w-3.5 h-3.5 text-amber-500 shrink-0" />, visible: canViewFeedback },
+            {
+              id: 'scorer' as const,
+              label: 'Live Scorer',
+              shortLabel: 'Live Scorer',
+              icon: <Activity className="w-3.5 h-3.5 text-emerald-600 shrink-0" />,
+              isScorer: true,
+              visible: canViewScorer,
+            },
+          ].filter((item) => item.visible);
 
-            {canViewRegistrations && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('registrations')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'registrations'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Master Registrations</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 font-mono text-[10px]">
-                  {registrations.filter((r) => !r.is_archived && !r.general_details?.isArchived).length}
-                </span>
-              </button>
-            )}
+          return (
+            <>
+              <div className="hidden lg:flex max-w-7xl mx-auto px-6 lg:px-8 border-t border-slate-100 items-center justify-between gap-1 py-2">
+                {navItems.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveTab(item.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                        item.isScorer
+                          ? isActive
+                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+                            : 'text-slate-700 hover:bg-amber-50 hover:text-amber-900'
+                          : isActive
+                            ? 'bg-slate-900 text-amber-300 shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item.icon}
+                      <span>{item.shortLabel}</span>
+                      {item.badge !== undefined && (
+                        <span
+                          className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
+                            isActive && !item.isScorer
+                              ? 'bg-amber-400/20 text-amber-300'
+                              : item.badgeClass
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {canViewAccommodation && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('accommodation')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'accommodation'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Bed className="w-4 h-4" />
-                <span>Room Allotment</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-800 font-mono text-[10px]">
-                  {accommodationList.length}
-                </span>
-              </button>
-            )}
+              {/* Mobile / Tablet Hamburger Menu Drawer (matches customer-facing site style) */}
+              <AnimatePresence>
+                {mobileMenuOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="lg:hidden fixed inset-0 bg-slate-950/25 backdrop-blur-xs z-30"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.18 }}
+                      className="lg:hidden fixed left-3 right-3 top-[62px] z-40 bg-white rounded-3xl border border-slate-200 shadow-2xl p-3 space-y-1 max-h-[80vh] overflow-y-auto"
+                    >
+                      {navItems.map((item) => {
+                        const isActive = activeTab === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveTab(item.id);
+                              setMobileMenuOpen(false);
+                            }}
+                            className={`w-full px-4 py-3 rounded-2xl text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
+                              item.isScorer
+                                ? isActive
+                                  ? 'bg-amber-500 text-slate-950 font-black'
+                                  : 'text-slate-800 hover:bg-amber-50'
+                                : isActive
+                                  ? 'bg-amber-50 text-slate-900 border border-amber-200/80'
+                                  : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-3">
+                              {isActive && !item.isScorer && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              )}
+                              {item.icon}
+                              <span>{item.label}</span>
+                            </span>
+                            <span className="flex items-center space-x-2">
+                              {item.badge !== undefined && (
+                                <span className={`px-2 py-0.5 rounded-full font-mono text-[11px] ${item.badgeClass}`}>
+                                  {item.badge}
+                                </span>
+                              )}
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            </span>
+                          </button>
+                        );
+                      })}
 
-            {canViewTransactions && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('transactions')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'transactions'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>Payments &amp; Audit</span>
-              </button>
-            )}
-
-            {canViewExports && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('exports')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'exports'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>1-Click Exports</span>
-              </button>
-            )}
-
-            {canViewTeams && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('teams')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'teams'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Shield className="w-4 h-4 text-amber-500" />
-                <span>Team Maker</span>
-              </button>
-            )}
-
-            {canViewFeedback && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('feedback')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'feedback'
-                    ? 'bg-slate-900 text-amber-300 shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <MessageSquareHeart className="w-4 h-4 text-amber-500" />
-                <span>Feedback Center</span>
-              </button>
-            )}
-
-            {canViewScorer && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('scorer')}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 shrink-0 ${
-                  activeTab === 'scorer'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
-                    : 'text-slate-700 hover:bg-amber-50 hover:text-amber-900'
-                }`}
-              >
-                <Activity className="w-4 h-4 text-emerald-600" />
-                <span>Live Scorer</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-slate-900 text-amber-300 font-mono text-[9px] uppercase tracking-wider font-extrabold">
-                  Live
-                </span>
-              </button>
-            )}
-          </div>
-        )}
+                      {(isSuperAdmin || onLogout) && (
+                        <div className="sm:hidden pt-2 mt-2 border-t border-slate-100 space-y-1.5">
+                          {isSuperAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                setIsUsersModalOpen(true);
+                              }}
+                              className="w-full px-4 py-3 rounded-2xl bg-amber-50 text-amber-950 border border-amber-200 text-sm font-bold flex items-center justify-between cursor-pointer"
+                            >
+                              <span className="flex items-center space-x-3">
+                                <Shield className="w-4 h-4 text-amber-600" />
+                                <span>Manage Roles</span>
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-amber-600" />
+                            </button>
+                          )}
+                          {onLogout && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                onLogout();
+                              }}
+                              className="w-full px-4 py-3 rounded-2xl bg-rose-50 text-rose-700 border border-rose-200 text-sm font-bold flex items-center justify-between cursor-pointer"
+                            >
+                              <span className="flex items-center space-x-3">
+                                <LogOut className="w-4 h-4 text-rose-600" />
+                                <span>Logout</span>
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-rose-400" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </>
+          );
+        })()}
       </header>
 
       {/* Main Admin Content Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
 
         {activeTab === 'dashboard' && (
-          <AdminDashboardTab stats={stats} loading={loading} />
+          <AdminDashboardTab
+            stats={stats}
+            registrations={registrations}
+            loading={loading}
+            onNavigateToRegistrations={(preset) => {
+              setMasterFilterPreset(preset);
+              setActiveTab('registrations');
+            }}
+          />
         )}
 
         {activeTab === 'registrations' && (
           <AdminRegistrationsTab
             registrations={registrations}
             loading={loading}
+            initialFilterPreset={masterFilterPreset}
+            onConsumeFilterPreset={() => setMasterFilterPreset(null)}
             onSelectPlayer={(p) => setSelectedPlayer(p)}
             onRefresh={loadData}
           />

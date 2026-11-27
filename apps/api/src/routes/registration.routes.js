@@ -6,8 +6,23 @@ import { processAccommodationBooking } from '../services/roomBookingService.js';
 import { ensureGuestCard } from '../services/guestCardService.js';
 import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
 import logger from '../config/logger.js';
+import { getRegistrationSettings } from '../services/registrationSettingsService.js';
 
 const router = Router();
+
+// Public Endpoint: Get Registration Mode (open / waitlist / closed)
+router.get('/registration/status', async (req, res) => {
+  try {
+    const settings = await getRegistrationSettings();
+    res.json({
+      success: true,
+      ...settings,
+    });
+  } catch (error) {
+    logger.error('[REGISTRATION STATUS ERROR]:', error);
+    res.status(500).json({ success: false, error: 'Failed to load registration status.' });
+  }
+});
 
 // Handle Registration (Dynamic Validation & Atomic Save)
 router.post('/register', async (req, res) => {
@@ -156,6 +171,11 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, errors: validationErrors });
     }
 
+    // Fetch live registration mode settings (open | waitlist | closed)
+    const regSettings = await getRegistrationSettings();
+    const playerMode = regSettings.player_registration_mode || 'open';
+    const spectatorMode = regSettings.spectator_registration_mode || 'open';
+
     // C. Atomic Transaction for Multi-Table Writes (Aashray Standard)
     const connection = await db.getConnection();
     await connection.beginTransaction();
@@ -192,12 +212,22 @@ router.post('/register', async (req, res) => {
 
         const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
         const mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
-        const allSelectedSports = Array.from(new Set([
+        const incomingIsSpectator =
+          cleanGeneralDetails.registrationType === 'spectator' ||
+          (Array.isArray(cleanGeneralDetails.selectedSports) && cleanGeneralDetails.selectedSports.includes('spectator')) ||
+          req.body.sport_id === 'spectator';
+        let allSelectedSports = Array.from(new Set([
           ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
           ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
           ...Object.keys(mergedSportAnswers),
         ]));
+        if (incomingIsSpectator) {
+          allSelectedSports = ['spectator'];
+        } else {
+          allSelectedSports = allSelectedSports.filter((s) => s !== 'spectator');
+        }
         mergedGeneralDetails.selectedSports = allSelectedSports;
+        mergedGeneralDetails.registrationType = incomingIsSpectator ? 'spectator' : 'player';
         const computedSportsCount = Math.max(1, allSelectedSports.length);
         const prevSportsCount = Math.max(1, Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports.length : 1);
         const newlyAddedSportsCount = Math.max(0, computedSportsCount - prevSportsCount);
@@ -260,7 +290,13 @@ router.post('/register', async (req, res) => {
         const isAlreadyPaid = (prevRow.payment_status || '').toLowerCase() === 'approved' || prevReceipts.length > 0 || prevUtrs.length > 0;
         const prevHadExtraTshirt = prevGeneral.extraTshirt === 'Yes';
         const newlyAddedExtraTshirt = !prevHadExtraTshirt && extraTshirtChoice === 'Yes';
-        const incrementalFee = isAlreadyPaid ? (newlyAddedExtraTshirt ? 500 : 0) : computedFee;
+        const prevSelectedSports = Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : [];
+        const prevHadCricket = prevSelectedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+        const prevHadFootball = !isSpectator && prevSelectedSports.includes('football');
+        const newlyAddedFootballMultiSport = isFootballMultiSport && !(prevHadCricket && prevHadFootball);
+        const incrementalFee = isAlreadyPaid
+          ? ((newlyAddedExtraTshirt ? 500 : 0) + (newlyAddedFootballMultiSport ? 500 : 0))
+          : computedFee;
 
         mergedGeneralDetails.totalAmount = computedFee;
         mergedGeneralDetails.calculatedFee = computedFee;
@@ -278,8 +314,11 @@ router.post('/register', async (req, res) => {
         const hasNewSports = newlyAddedSportsCount > 0;
         const incomingStatusIsPending = (req.body.payment_status || '').toLowerCase() === 'pending';
 
-        if (prevRow.payment_status === 'approved') {
+        const prevStatus = String(prevRow.payment_status || 'pending').toLowerCase();
+        if (prevStatus === 'approved') {
           finalPaymentStatus = 'approved';
+        } else if (prevStatus === 'waitlist') {
+          finalPaymentStatus = 'waitlist';
         } else {
           finalPaymentStatus = 'pending';
         }
@@ -306,11 +345,26 @@ router.post('/register', async (req, res) => {
           ]
         );
 
-        logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Fee: ₹${computedFee})`);
+        logger.info(`[RPL Registration UPDATE] Player "${cleanFullName}" updated in rpl_registrations with ID: ${id} (Status: ${finalPaymentStatus}, Fee: ₹${computedFee})`);
       } else {
         id = uuidv4();
         const regType = cleanGeneralDetails.registrationType || (cleanGeneralDetails.selectedSports?.includes('spectator') ? 'spectator' : 'player');
         const isSpectator = regType === 'spectator';
+        const activeMode = isSpectator ? spectatorMode : playerMode;
+        const activeClosedMsg = isSpectator ? regSettings.spectator_closed_message : regSettings.closed_message;
+
+        if (activeMode === 'closed') {
+          await connection.rollback();
+          return res.status(403).json({
+            success: false,
+            code: 'REGISTRATION_CLOSED',
+            error: activeClosedMsg,
+          });
+        }
+
+        const isNewWaitlistEntry = activeMode === 'waitlist';
+        finalPaymentStatus = isNewWaitlistEntry ? 'waitlist' : 'pending';
+
         const accomRequired = cleanGeneralDetails.accommodationRequired || 'No';
         const extraTshirtChoice = isSpectator
           ? (cleanGeneralDetails.spectatorTshirt || cleanGeneralDetails.extraTshirt || 'No')
@@ -345,8 +399,10 @@ router.post('/register', async (req, res) => {
         cleanGeneralDetails.calculatedFee = newFee;
         cleanGeneralDetails.incrementalFee = newFee;
 
-        // Auto-create an Aashray guest card within the transaction
-        if (!cleanGeneralDetails.cardNo) {
+        if (isNewWaitlistEntry) {
+          cleanGeneralDetails.waitlistedAt = new Date().toISOString();
+        } else if (!cleanGeneralDetails.cardNo) {
+          // Auto-create an Aashray guest card within the transaction (skip for waitlist until promoted & paid)
           const guestCardNo = await ensureGuestCard({
             fullName: cleanFullName,
             mobile: mobile10,
@@ -367,7 +423,7 @@ router.post('/register', async (req, res) => {
         await connection.query(
           `INSERT INTO ${RPL_DB}.rpl_registrations 
            (id, full_name, email, mobile, check_in_date, check_out_date, player_photo_url, payment_status, payment_utr, payment_receipt_url, general_details, sport_answers) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
             cleanFullName,
@@ -376,6 +432,7 @@ router.post('/register', async (req, res) => {
             cleanCheckInDate,
             cleanCheckOutDate,
             cleanPhotoUrl,
+            finalPaymentStatus,
             cleanPaymentUtr,
             cleanReceiptUrl,
             JSON.stringify(cleanGeneralDetails),
@@ -383,77 +440,81 @@ router.post('/register', async (req, res) => {
           ]
         );
 
-        logger.info(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Fee: ₹${newFee})`);
+        logger.info(`[RPL Registration SUCCESS] Player "${cleanFullName}" saved to rpl_registrations with ID: ${id} (Status: ${finalPaymentStatus}, Fee: ₹${newFee})`);
       }
 
-      // Record transaction in RPL.rpl_transactions ledger
-      const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
-        ? finalGeneralDetails.selectedSports.join(', ')
-        : (req.body.sport_id || 'Cricket');
-      const isSpectator = finalGeneralDetails.registrationType === 'spectator' || req.body.sport_id === 'spectator' || (Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.includes('spectator'));
-      const txnCategory = isSpectator ? 'spectator' : 'sports';
-      const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
-      const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
-      const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
-      const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
-      const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
-      const hasCricket = parsedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
-      const hasFootball = !isSpectator && parsedSports.includes('football');
-      const isFootballMultiSport = hasFootball && hasCricket;
-      const footballCost = isFootballMultiSport ? 500 : 0;
-      const fallbackFee = defaultBase + footballCost + (finalGeneralDetails.extraTshirt === 'Yes' ? 500 : 0);
-      const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
-        ? finalGeneralDetails.incrementalFee 
-        : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || fallbackFee);
+      if (finalPaymentStatus !== 'waitlist') {
+        // Record transaction in RPL.rpl_transactions ledger
+        const sportsList = Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.length > 0
+          ? finalGeneralDetails.selectedSports.join(', ')
+          : (req.body.sport_id || 'Cricket');
+        const isSpectator = finalGeneralDetails.registrationType === 'spectator' || req.body.sport_id === 'spectator' || (Array.isArray(finalGeneralDetails.selectedSports) && finalGeneralDetails.selectedSports.includes('spectator'));
+        const txnCategory = isSpectator ? 'spectator' : 'sports';
+        const txnStatus = (finalPaymentStatus || 'pending') === 'approved' ? 'completed' : 'pending';
+        const cardNoVal = finalGeneralDetails.cardNo || `GUEST_${mobile10.slice(-6) || 'RPL'}`;
+        const existingFamily = finalGeneralDetails.existingRplFamily || 'No';
+        const defaultBase = existingFamily === 'Yes' ? 3600 : 3900;
+        const parsedSports = Array.isArray(finalGeneralDetails.selectedSports) ? finalGeneralDetails.selectedSports : [];
+        const hasCricket = parsedSports.some((s) => s === 'cricket' || s === 'womens-sports' || s === 'kaccha-pakka');
+        const hasFootball = !isSpectator && parsedSports.includes('football');
+        const isFootballMultiSport = hasFootball && hasCricket;
+        const footballCost = isFootballMultiSport ? 500 : 0;
+        const fallbackFee = defaultBase + footballCost + (finalGeneralDetails.extraTshirt === 'Yes' ? 500 : 0);
+        const finalFeeVal = finalGeneralDetails.incrementalFee !== undefined 
+          ? finalGeneralDetails.incrementalFee 
+          : (finalGeneralDetails.calculatedFee || finalGeneralDetails.totalAmount || fallbackFee);
 
-      await connection.query(
-        `INSERT INTO ${RPL_DB}.rpl_transactions 
-         (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
-         ON DUPLICATE KEY UPDATE 
-           category = VALUES(category),
-           amount = VALUES(amount),
-           upi_ref = VALUES(upi_ref),
-           description = VALUES(description),
-           status = VALUES(status),
-           updatedAt = NOW(),
-           razorpay_order_id = COALESCE(VALUES(razorpay_order_id), razorpay_order_id)`,
-        [
-          cardNoVal,
-          id,
-          txnCategory,
-          finalFeeVal,
-          0,
-          finalGeneralDetails.payment_utr || 'NA',
-          `RPL Season 9 Registration (${sportsList})`,
-          txnStatus,
-          'RPL_APP',
-          req.body.razorpay_order_id || null,
-        ]
-      );
+        if (Number(finalFeeVal) > 0) {
+          await connection.query(
+            `INSERT INTO ${RPL_DB}.rpl_transactions 
+             (cardno, bookingid, category, amount, discount, upi_ref, description, status, updatedBy, createdAt, updatedAt, razorpay_order_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+             ON DUPLICATE KEY UPDATE 
+               category = VALUES(category),
+               amount = VALUES(amount),
+               upi_ref = VALUES(upi_ref),
+               description = VALUES(description),
+               status = VALUES(status),
+               updatedAt = NOW(),
+               razorpay_order_id = COALESCE(VALUES(razorpay_order_id), razorpay_order_id)`,
+            [
+              cardNoVal,
+              id,
+              txnCategory,
+              finalFeeVal,
+              0,
+              finalGeneralDetails.payment_utr || 'NA',
+              `RPL Season 9 Registration (${sportsList})`,
+              txnStatus,
+              'RPL_APP',
+              req.body.razorpay_order_id || null,
+            ]
+          );
+        }
 
-      // Process Room & Meal Booking within the transaction
-      const hasStay = isSpectator
-        ? (finalGeneralDetails.accommodationRequired === 'Yes' || finalGeneralDetails.spectatorOption === 'with-stay')
-        : (finalGeneralDetails.accommodationRequired === 'Yes');
-      const shouldBookMeals = !isSpectator || hasStay;
+        // Process Room & Meal Booking within the transaction
+        const hasStay = isSpectator
+          ? (finalGeneralDetails.accommodationRequired === 'Yes' || finalGeneralDetails.spectatorOption === 'with-stay')
+          : (finalGeneralDetails.accommodationRequired === 'Yes');
+        const shouldBookMeals = !isSpectator || hasStay;
 
-      accommodationResult = await processAccommodationBooking({
-        cardno: finalGeneralDetails.cardNo || null,
-        fullName: cleanFullName,
-        email: cleanEmail,
-        mobile: cleanMobile,
-        centre: finalGeneralDetails.centre || 'Mumbai',
-        gender: finalGeneralDetails.gender || 'Male',
-        checkInDate: cleanCheckInDate,
-        checkOutDate: cleanCheckOutDate,
-        accommodationRequired: hasStay ? 'Yes' : 'No',
-        spectatorOption: finalGeneralDetails.spectatorOption,
-        registrationType: isSpectator ? 'spectator' : 'player',
-        foodPreference: finalGeneralDetails.foodPreference || 'Regular',
-        bookMeals: shouldBookMeals,
-        connection,
-      });
+        accommodationResult = await processAccommodationBooking({
+          cardno: finalGeneralDetails.cardNo || null,
+          fullName: cleanFullName,
+          email: cleanEmail,
+          mobile: cleanMobile,
+          centre: finalGeneralDetails.centre || 'Mumbai',
+          gender: finalGeneralDetails.gender || 'Male',
+          checkInDate: cleanCheckInDate,
+          checkOutDate: cleanCheckOutDate,
+          accommodationRequired: hasStay ? 'Yes' : 'No',
+          spectatorOption: finalGeneralDetails.spectatorOption,
+          registrationType: isSpectator ? 'spectator' : 'player',
+          foodPreference: finalGeneralDetails.foodPreference || 'Regular',
+          bookMeals: shouldBookMeals,
+          connection,
+        });
+      }
 
       // Commit transaction
       await connection.commit();
@@ -473,7 +534,10 @@ router.post('/register', async (req, res) => {
     res.json({
       success: true,
       isUpdate,
-      message: isUpdate ? 'Registration updated successfully' : 'Registration submitted successfully',
+      payment_status: finalPaymentStatus,
+      message: finalPaymentStatus === 'waitlist'
+        ? 'Added to RPL Season 9 Player Waitlist'
+        : (isUpdate ? 'Registration updated successfully' : 'Registration submitted successfully'),
       registration_id: id,
       accommodation: accommodationResult,
     });

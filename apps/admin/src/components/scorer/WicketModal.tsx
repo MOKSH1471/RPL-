@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldAlert, UserCheck, AlertTriangle } from 'lucide-react';
 import { CricketPlayer, WicketType } from '@/types/cricket';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface WicketModalProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ export const WicketModal: React.FC<WicketModalProps> = ({
   const [fielderName, setFielderName] = useState<string>('');
   const [newBatsmanId, setNewBatsmanId] = useState<string>(availableBatsmen[0]?.id || '');
   const [runsOnWicket, setRunsOnWicket] = useState<number>(0);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

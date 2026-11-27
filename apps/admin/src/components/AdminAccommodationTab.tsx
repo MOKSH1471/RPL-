@@ -17,6 +17,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { assignRoomNumber } from '@/lib/api';
+import { normalizeCentreName } from '@/lib/centreUtils';
 
 interface AdminAccommodationTabProps {
   accommodationList: any[];
@@ -410,7 +411,7 @@ export function AdminAccommodationTab({
                                   <User className="w-2.5 h-2.5 text-slate-500" />
                                   <span>{occ.name}</span>
                                   {occ.centre && (
-                                    <span className="text-slate-500 font-normal">({occ.centre})</span>
+                                    <span className="text-slate-500 font-normal">({normalizeCentreName(occ.centre, '')})</span>
                                   )}
                                 </span>
                               ))}
@@ -607,7 +608,7 @@ export function AdminAccommodationTab({
 
                         {/* 2. Centre & Gender Wing */}
                         <td className="py-3.5 px-4">
-                          <span className="font-bold text-slate-800 block">{item.centre}</span>
+                          <span className="font-bold text-slate-800 block">{normalizeCentreName(item.centre, 'Unspecified')}</span>
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase mt-0.5 ${item.gender === 'Female'
                               ? 'bg-pink-100 text-pink-700'

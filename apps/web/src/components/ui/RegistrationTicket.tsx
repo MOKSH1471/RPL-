@@ -94,32 +94,58 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
     }
   };
 
+  const isWaitlist =
+    String((data as any).paymentStatus || (data as any).payment_status || '').toLowerCase() === 'waitlist';
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6 animate-fadeIn">
-      {/* 3D THERMAL RECEIPT DISPENSER - HERO CENTERPIECE AT TOP */}
-      <div
-        ref={receiptContainerRef}
-        className="rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24"
-      >
-        <div className="flex flex-col items-center justify-center text-center mb-4">
-          <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>ENTRY RECORDED • OFFICIAL PASS DISPENSER</span>
+      {isWaitlist ? (
+        <div
+          ref={receiptContainerRef}
+          className="rounded-3xl p-6 sm:p-8 border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-orange-50/70 shadow-xl scroll-mt-24 text-center space-y-4"
+        >
+          <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-xs shadow-2xs">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+            <span>{isSpectator ? 'SPECTATOR WAITLIST • ENTRY RECORDED' : 'PLAYER WAITLIST • ENTRY RECORDED'}</span>
           </div>
-          <h2 className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
-            Registration Saved!
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">
+            You&apos;re on the RPL Season 9 Waitlist!
           </h2>
-          <p className="text-slate-600 text-xs sm:text-sm font-medium mt-0.5">
-            Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your official tournament pass is rolling out below:
+          <p className="text-slate-700 text-xs sm:text-sm font-medium max-w-lg mx-auto leading-relaxed">
+            Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your full registration details have been saved.{' '}
+            <strong className="text-amber-900">No payment is required right now</strong> — if a slot opens up, the Organizing Committee will message you on{' '}
+            <strong className="text-emerald-700">WhatsApp</strong> with a direct link to unlock your payment.
           </p>
+          <div className="inline-block px-4 py-2 rounded-2xl bg-white border border-amber-200 text-xs font-mono text-slate-600 shadow-2xs">
+            Reference ID: <strong className="text-slate-900">{registrationId}</strong>
+          </div>
         </div>
+      ) : (
+        /* 3D THERMAL RECEIPT DISPENSER - HERO CENTERPIECE AT TOP */
+        <div
+          ref={receiptContainerRef}
+          className="rounded-3xl p-5 sm:p-7 border-2 border-emerald-300 bg-white shadow-xl scroll-mt-24"
+        >
+          <div className="flex flex-col items-center justify-center text-center mb-4">
+            <div className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-extrabold text-xs mb-1.5 shadow-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>ENTRY RECORDED • OFFICIAL PASS DISPENSER</span>
+            </div>
+            <h2 className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+              Registration Saved!
+            </h2>
+            <p className="text-slate-600 text-xs sm:text-sm font-medium mt-0.5">
+              Thank you, <strong className="text-slate-950">{data.fullName}</strong>. Your official tournament pass is rolling out below:
+            </p>
+          </div>
 
-        <ReceiptPrinter
-          data={data}
-          registrationId={registrationId}
-          autoPrint={true}
-        />
-      </div>
+          <ReceiptPrinter
+            data={data}
+            registrationId={registrationId}
+            autoPrint={true}
+          />
+        </div>
+      )}
 
       {/* PARTICIPANT DETAILS SUMMARY CARD */}
       <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-6">
@@ -280,30 +306,47 @@ export const RegistrationTicket: React.FC<RegistrationSuccessProps> = ({
       {/* Bottom Information & Action Buttons */}
       <div className="rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-md space-y-4 mb-4 sm:mb-6">
         {/* Official Registration Confirmation Note */}
-        <div className="p-4 rounded-2xl flex flex-col space-y-2.5 text-xs bg-emerald-50/80 border border-emerald-200 text-emerald-900">
-          <div className="flex items-start space-x-3">
-            <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
-            <p className="leading-relaxed">
-              Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
-            </p>
+        {isWaitlist ? (
+          <div className="p-4 rounded-2xl flex flex-col space-y-2.5 text-xs bg-amber-50/80 border border-amber-200 text-amber-950">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+              <p className="leading-relaxed">
+                Your waitlist entry has been recorded. No payment is required now — you will receive your payment link and official WhatsApp group invite if a slot opens up.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-amber-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+              <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+            </div>
           </div>
-          <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+        ) : (
+          <div className="p-4 rounded-2xl flex flex-col space-y-2.5 text-xs bg-emerald-50/80 border border-emerald-200 text-emerald-900">
+            <div className="flex items-start space-x-3">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-600 shrink-0" />
+              <p className="leading-relaxed">
+                Your tournament entry has been successfully recorded in the official database. Join the WhatsApp group below to stay updated on schedules, match fixtures, and tournament kit distribution!
+              </p>
+            </div>
+            <div className="pt-2 border-t border-emerald-200/70 flex items-center space-x-2 text-[11px] font-bold text-amber-900">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+              <span>Tournament Policy: No refund in case of no show or cancellation.</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Action Buttons: Equal Size Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 items-stretch">
-          <a
-            href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center text-center space-x-2"
-          >
-            <MessageCircle className="w-4 h-4 shrink-0" />
-            <span>Join Official WhatsApp Group</span>
-          </a>
+        {/* Action Buttons */}
+        <div className={`grid grid-cols-1 ${isWaitlist ? '' : 'sm:grid-cols-2'} gap-3 pt-2 items-stretch`}>
+          {!isWaitlist && (
+            <a
+              href="https://chat.whatsapp.com/BsJ9WZGzpyaKYEphAOwtPq?s=sw&p=a&mlu=4&ilr=4&iam=0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full h-full min-h-[56px] py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center text-center space-x-2"
+            >
+              <MessageCircle className="w-4 h-4 shrink-0" />
+              <span>Join Official WhatsApp Group</span>
+            </a>
+          )}
 
           <button
             type="button"

@@ -940,28 +940,20 @@ export const ScorerPage: React.FC<ScorerPageProps> = ({
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {viewMode !== 'hub' ? (
-              <button
-                type="button"
-                onClick={() => setViewMode('hub')}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
-                title="Return to Matches Hub"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Matches Hub</span>
-              </button>
-            ) : !isScorecardAdmin ? (
-              <button
-                type="button"
-                onClick={onBackToHome}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
-                title="Return to Admin Dashboard"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Admin Dashboard</span>
-              </button>
-            ) : null}
-            <div className="h-4 w-px bg-slate-200" />
+            {viewMode !== 'hub' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('hub')}
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
+                  title="Return to Matches Hub"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Matches Hub</span>
+                </button>
+                <div className="h-4 w-px bg-slate-200" />
+              </>
+            )}
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-sm tracking-tight text-slate-900">
                 RPL Match Scorer

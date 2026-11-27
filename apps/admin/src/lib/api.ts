@@ -484,7 +484,7 @@ export async function updateRegistration(id: string, updates: Record<string, any
   return data;
 }
 
-export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending') {
+export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending' | 'waitlist') {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/payment`, {
     method: 'POST',
     headers: {
@@ -495,6 +495,53 @@ export async function updatePaymentStatus(id: string, status: 'approved' | 'reje
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Failed to update payment status (Status ${res.status})`);
+  return data;
+}
+
+export async function promoteFromWaitlist(id: string) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/promote`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to promote player (Status ${res.status})`);
+  return data;
+}
+
+export interface RegistrationSettings {
+  player_registration_mode: 'open' | 'waitlist' | 'closed';
+  waitlist_banner_message: string;
+  closed_message: string;
+  spectator_registration_mode: 'open' | 'waitlist' | 'closed';
+  spectator_waitlist_banner_message: string;
+  spectator_closed_message: string;
+}
+
+export async function fetchRegistrationSettings(): Promise<{ success: boolean; settings: RegistrationSettings }> {
+  const res = await fetch(`${API_BASE_URL}/admin/registration/settings`, {
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch registration settings');
+  return data;
+}
+
+export async function updateRegistrationSettings(
+  payload: Partial<RegistrationSettings>
+): Promise<{ success: boolean; settings: RegistrationSettings }> {
+  const res = await fetch(`${API_BASE_URL}/admin/registration/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Failed to update registration settings');
   return data;
 }
 

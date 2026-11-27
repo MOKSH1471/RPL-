@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserRoundPlus, CheckCircle2 } from 'lucide-react';
 import { CricketPlayer, LiveBowler } from '@/types/cricket';
 import { formatOvers } from '@/lib/cricketMockData';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface ChangeBowlerModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export const ChangeBowlerModal: React.FC<ChangeBowlerModalProps> = ({
   onSelectBowler,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

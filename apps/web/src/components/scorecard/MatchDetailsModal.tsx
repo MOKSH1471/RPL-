@@ -4,6 +4,7 @@ import { formatOvers, calculateRunRate, calculateRequiredRunRate } from '@/lib/c
 import { BoundaryStrikeAnimation } from '@/components/ui/SixerStrikeAnimation';
 import { WicketStrikeAnimation } from '@/components/ui/WicketStrikeAnimation';
 import { X, MapPin } from 'lucide-react';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface MatchDetailsModalProps {
   match: CricketMatch | null;
@@ -11,6 +12,7 @@ interface MatchDetailsModalProps {
 }
 
 export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({ match, onClose }) => {
+  useEscapeKey(Boolean(match), onClose);
   if (!match) return null;
 
   const [selectedInningsNum, setSelectedInningsNum] = useState<1 | 2>(

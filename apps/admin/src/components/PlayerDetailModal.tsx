@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
+import { useEscapeKey } from '@/lib/useEscapeKey';
+import { normalizeCentreName } from '@/lib/centreUtils';
 
 
 interface PlayerDetailModalProps {
@@ -196,61 +198,82 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
   );
   const waUrl = `https://wa.me/${waPhone}?text=${waMessage}`;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-auto animate-in fade-in zoom-in-95 duration-200">
+  useEscapeKey(true, onClose);
 
-        {/* Modal Top Header */}
-        <div className="px-6 py-4 border-b border-slate-200/80 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-amber-500/20">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
-                  {player.full_name}
-                </h2>
-                {isSpectator && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-300 flex items-center gap-1">
-                    <Ticket className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>90’s Nostalgia Pass</span>
-                  </span>
-                )}
-                {isArchived ? (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300">
-                    Archived
-                  </span>
-                ) : (
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${player.payment_status === 'approved'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : player.payment_status === 'rejected'
-                        ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                        : 'bg-amber-100 text-amber-800 border border-amber-300'
-                      }`}
-                  >
-                    {player.payment_status || 'pending'}
-                  </span>
-                )}
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-auto animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+
+        {/* Modal Top Header (Mobile-friendly wrapping) */}
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-200/80 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <div className="flex items-start sm:items-center justify-between gap-2.5 w-full sm:w-auto min-w-0">
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold shadow-md shadow-amber-500/20 shrink-0">
+                <User className="w-5 h-5" />
               </div>
-              <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {player.id}</p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h2 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight break-words">
+                    {player.full_name}
+                  </h2>
+                  {isSpectator && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-300 inline-flex items-center gap-1 whitespace-nowrap">
+                      <Ticket className="w-3 h-3 text-indigo-600 shrink-0" />
+                      <span>90’s Nostalgia Pass</span>
+                    </span>
+                  )}
+                  {isArchived ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300 whitespace-nowrap">
+                      Archived
+                    </span>
+                  ) : (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-nowrap ${player.payment_status === 'approved'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : player.payment_status === 'rejected'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : player.payment_status === 'waitlist'
+                            ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}
+                    >
+                      {player.payment_status || 'pending'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 font-mono mt-0.5 truncate">ID: {player.id}</p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="sm:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {/* Archive / Restore Button */}
             <button
               type="button"
               onClick={handleToggleArchiveModal}
               disabled={actionLoading}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${isArchived
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap ${isArchived
                 ? 'bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300'
                 : 'bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700'
                 }`}
               title={isArchived ? 'Restore player to active status' : 'Archive player and release allocations'}
             >
-              {isArchived ? <EyeOff className="w-3.5 h-3.5 text-purple-700" /> : <Eye className="w-3.5 h-3.5" />}
+              {isArchived ? <EyeOff className="w-3.5 h-3.5 text-purple-700 shrink-0" /> : <Eye className="w-3.5 h-3.5 shrink-0" />}
               <span>{isArchived ? 'Restore Active' : 'Archive Player'}</span>
             </button>
 
@@ -258,9 +281,9 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5"
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap"
               >
-                <Edit3 className="w-3.5 h-3.5" />
+                <Edit3 className="w-3.5 h-3.5 shrink-0" />
                 <span>Edit Player</span>
               </button>
             ) : (
@@ -268,9 +291,9 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                 type="button"
                 onClick={handleSaveChanges}
                 disabled={isSaving}
-                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
+                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50 whitespace-nowrap"
               >
-                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : <Save className="w-3.5 h-3.5 shrink-0" />}
                 <span>Save</span>
               </button>
             )}
@@ -278,7 +301,8 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="hidden sm:inline-flex p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -286,7 +310,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6 text-sm text-slate-700">
 
           {/* Archived Warning Banner */}
           {isArchived && (
@@ -307,36 +331,46 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
           )}
 
           {/* Action Ribbon: Verification & Quick WhatsApp */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
                 Payment Verification:
               </span>
-              <div className="flex items-center space-x-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   disabled={actionLoading || player.payment_status === 'approved'}
                   onClick={() => handleQuickPaymentStatus('approved')}
-                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold flex items-center space-x-1 transition-all"
+                  className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold flex items-center space-x-1 transition-all whitespace-nowrap"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                   <span>Approve</span>
                 </button>
                 <button
                   type="button"
                   disabled={actionLoading || player.payment_status === 'rejected'}
                   onClick={() => handleQuickPaymentStatus('rejected')}
-                  className="px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold flex items-center space-x-1 transition-all"
+                  className="px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold flex items-center space-x-1 transition-all whitespace-nowrap"
                 >
-                  <XCircle className="w-3.5 h-3.5" />
+                  <XCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>Reject</span>
                 </button>
-                {player.payment_status !== 'pending' && (
+                {player.payment_status === 'waitlist' && (
                   <button
                     type="button"
                     disabled={actionLoading}
                     onClick={() => handleQuickPaymentStatus('pending')}
-                    className="px-3 py-1 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-all"
+                    className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-extrabold flex items-center space-x-1 transition-all shadow-xs whitespace-nowrap"
+                  >
+                    <span>Promote &amp; Unlock Payment</span>
+                  </button>
+                )}
+                {player.payment_status !== 'pending' && player.payment_status !== 'waitlist' && (
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => handleQuickPaymentStatus('pending')}
+                    className="px-3 py-1 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition-all whitespace-nowrap"
                   >
                     Reset Pending
                   </button>
@@ -344,15 +378,30 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
               </div>
             </div>
 
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>WhatsApp Player</span>
-            </a>
+            <div className="flex items-center gap-2">
+              {player.payment_status === 'pending' && (
+                <a
+                  href={`https://wa.me/${String(player.mobile || '').replace(/\D/g, '').length === 10 ? '91' + String(player.mobile || '').replace(/\D/g, '') : String(player.mobile || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                    `Jai Sadgurudev Vandan! 🙏\n\nHi ${player.full_name}, your slot for RPL Season 9 is now open! Please click the link below to complete your payment and confirm your pass:\nhttps://rpl-s9.vercel.app/#/register?mobile=${String(player.mobile || '').replace(/\D/g, '').slice(-10)}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Send Payment Link</span>
+                </a>
+              )}
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp Player</span>
+              </a>
+            </div>
           </div>
 
           {/* Proof Documents Section: Photo & Payment Receipt */}
@@ -545,7 +594,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                   </div>
                   <div>
                     <span className="text-slate-400 font-medium block">Centre</span>
-                    <span className="font-bold text-slate-900">{gen.centre || 'Mumbai'}</span>
+                    <span className="font-bold text-slate-900">{normalizeCentreName(gen.centre, 'Mumbai')}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-medium block">Gender</span>
@@ -647,7 +696,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     </h3>
                     <span className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-600 text-white">
                       {hasStay
-                        ? '🏨 With Stay (₹3,600)'
+                        ? '🏨 With Stay (₹3,000)'
                         : `☀️ Without Stay / Day Pass (${spectatorDayCount} ${spectatorDayCount === 1 ? 'Day' : 'Days'} • ₹${spectatorDayFee})`}
                     </span>
                   </div>
@@ -841,6 +890,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
                   >
                     <option value="pending">Pending</option>
+                    <option value="waitlist">Waitlist</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
                   </select>

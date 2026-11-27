@@ -19,15 +19,41 @@ import {
   Archive,
   Download,
   Ticket,
+  Sliders,
+  ArrowUpCircle,
+  X,
+  Loader2,
+  Check,
+  Send,
 } from 'lucide-react';
-import { updatePaymentStatus, toggleArchiveRegistration } from '@/lib/api';
+import {
+  updatePaymentStatus,
+  toggleArchiveRegistration,
+  promoteFromWaitlist,
+  fetchRegistrationSettings,
+  updateRegistrationSettings,
+  RegistrationSettings,
+} from '@/lib/api';
 import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
+import { useEscapeKey } from '@/lib/useEscapeKey';
+import { normalizeCentreName } from '@/lib/centreUtils';
 
+
+export interface MasterFilterPreset {
+  search?: string;
+  status?: string;
+  sport?: string;
+  acc?: string;
+  regType?: 'all' | 'player' | 'spectator';
+  jersey?: string;
+}
 
 interface AdminRegistrationsTabProps {
   registrations: any[];
   loading: boolean;
+  initialFilterPreset?: MasterFilterPreset | null;
+  onConsumeFilterPreset?: () => void;
   onSelectPlayer: (player: any) => void;
   onRefresh: () => void;
 }
@@ -35,18 +61,71 @@ interface AdminRegistrationsTabProps {
 export function AdminRegistrationsTab({
   registrations,
   loading,
+  initialFilterPreset,
+  onConsumeFilterPreset,
   onSelectPlayer,
   onRefresh,
 }: AdminRegistrationsTabProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sportFilter, setSportFilter] = useState('all');
-  const [accFilter, setAccFilter] = useState('all');
-  const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>('all');
+  const [searchTerm, setSearchTerm] = useState(initialFilterPreset?.search || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(initialFilterPreset?.search || '');
+  const [jerseyFilter, setJerseyFilter] = useState(initialFilterPreset?.jersey || 'all');
+  const [statusFilter, setStatusFilter] = useState(initialFilterPreset?.status || 'all');
+  const [sportFilter, setSportFilter] = useState(initialFilterPreset?.sport || 'all');
+  const [accFilter, setAccFilter] = useState(initialFilterPreset?.acc || 'all');
+  const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>(initialFilterPreset?.regType || 'all');
+
+  React.useEffect(() => {
+    if (initialFilterPreset) {
+      setSearchTerm(initialFilterPreset.search || '');
+      setDebouncedSearch(initialFilterPreset.search || '');
+      setStatusFilter(initialFilterPreset.status || 'all');
+      setSportFilter(initialFilterPreset.sport || 'all');
+      setAccFilter(initialFilterPreset.acc || 'all');
+      setRegTypeFilter(initialFilterPreset.regType || 'all');
+      setJerseyFilter(initialFilterPreset.jersey || 'all');
+      setCurrentPage(1);
+      onConsumeFilterPreset?.();
+    }
+  }, [initialFilterPreset]);
   const [currentPage, setCurrentPage] = useState(1);
   const [receiptModalPlayer, setReceiptModalPlayer] = useState<any | null>(null);
+  const [showModeModal, setShowModeModal] = useState(false);
+  const [regSettings, setRegSettings] = useState<RegistrationSettings>({
+    player_registration_mode: 'open',
+    waitlist_banner_message: '',
+    closed_message: '',
+    spectator_registration_mode: 'open',
+    spectator_waitlist_banner_message: '',
+    spectator_closed_message: '',
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [modeToast, setModeToast] = useState<string | null>(null);
   const rowsPerPage = 15;
+
+  const loadRegSettings = async () => {
+    try {
+      const res = await fetchRegistrationSettings();
+      if (res && res.settings) {
+        setRegSettings(res.settings);
+      }
+    } catch (err) {
+      console.warn('Failed to load registration settings:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    loadRegSettings();
+  }, []);
+
+  useEscapeKey(showModeModal, () => setShowModeModal(false));
+
+  const waitlistCount = React.useMemo(() => {
+    return registrations.filter((r) => {
+      const gen = r.general_details || {};
+      const isArchived = Boolean(r.is_archived || gen.isArchived);
+      return !isArchived && String(r.payment_status || '').toLowerCase() === 'waitlist';
+    }).length;
+  }, [registrations]);
 
   // Debounce search input by 200ms to maintain smooth 60fps scrolling
   React.useEffect(() => {
@@ -70,9 +149,14 @@ export function AdminRegistrationsTab({
       const matchPhone = r.mobile?.includes(term);
       const matchEmail = r.email?.toLowerCase().includes(term);
       const matchUtr = r.payment_utr?.toLowerCase().includes(term);
-      const matchCentre = gen.centre?.toLowerCase().includes(term);
+      const normalizedCentre = normalizeCentreName(gen.centre, 'Mumbai').toLowerCase();
+      const matchCentre = gen.centre?.toLowerCase().includes(term) || normalizedCentre.includes(term);
       const matchJerseyName = gen.customJerseyName?.toLowerCase().includes(term);
-      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName) {
+      const nostalgiaRaw = gen.nostalgiaSport || gen.nostalgia_sport || r.sport_answers?.['90s-nostalgia']?.sport;
+      const matchNostalgia = Array.isArray(nostalgiaRaw)
+        ? nostalgiaRaw.join(', ').toLowerCase().includes(term)
+        : String(nostalgiaRaw || '').toLowerCase().includes(term);
+      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName && !matchNostalgia) {
         return false;
       }
     }
@@ -90,7 +174,16 @@ export function AdminRegistrationsTab({
 
     // Sport filter
     if (sportFilter !== 'all') {
-      if (!Array.isArray(sports) || !sports.includes(sportFilter)) return false;
+      if (sportFilter === '90s-nostalgia') {
+        const hasNostalgia =
+          (Array.isArray(sports) && sports.includes('90s-nostalgia')) ||
+          Boolean(gen.nostalgiaSport && gen.nostalgiaSport !== 'None') ||
+          Boolean(gen.nostalgia_sport && gen.nostalgia_sport !== 'None') ||
+          Boolean(r.sport_answers?.['90s-nostalgia']);
+        if (!hasNostalgia) return false;
+      } else if (!Array.isArray(sports) || !sports.includes(sportFilter)) {
+        return false;
+      }
     }
 
     // Participant Type filter (Player vs Spectator)
@@ -102,6 +195,16 @@ export function AdminRegistrationsTab({
     if (accFilter !== 'all') {
       const acc = gen.accommodationRequired || 'No';
       if (acc !== accFilter) return false;
+    }
+
+    // Jersey Size filter
+    if (jerseyFilter !== 'all') {
+      const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+      if (isSpectator && !spectatorHasTshirt) return false;
+      let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
+      if (rawSize === 'XXL') rawSize = '2XL';
+      if (rawSize === 'XXXL') rawSize = '3XL';
+      if (rawSize !== jerseyFilter && !rawSize.startsWith(jerseyFilter)) return false;
     }
 
     return true;
@@ -131,6 +234,41 @@ export function AdminRegistrationsTab({
     }
   };
 
+  const handlePromotePlayer = async (player: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Promote "${player.full_name}" from Waitlist?\n\n• Status will change to Pending\n• Razorpay payment will unlock for them\n• You can then send them their payment link on WhatsApp.`)) {
+      return;
+    }
+    try {
+      await promoteFromWaitlist(player.id);
+      setModeToast(`${player.full_name} promoted! Click the amber Send Link icon to WhatsApp them.`);
+      setTimeout(() => setModeToast(null), 5000);
+      onRefresh();
+    } catch (err: any) {
+      alert('Failed to promote player: ' + err.message);
+    }
+  };
+
+  const handleSaveRegSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await updateRegistrationSettings(regSettings);
+      if (res && res.settings) {
+        setRegSettings(res.settings);
+      }
+      setShowModeModal(false);
+      setModeToast(
+        `Saved! Players: ${regSettings.player_registration_mode.toUpperCase()} | Spectators: ${regSettings.spectator_registration_mode.toUpperCase()}`
+      );
+      setTimeout(() => setModeToast(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update registration mode');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleToggleArchive = async (player: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const isCurrentlyArchived = Boolean(player.is_archived || player.general_details?.isArchived);
@@ -150,14 +288,110 @@ export function AdminRegistrationsTab({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 relative">
+
+      {modeToast && (
+        <div className="fixed top-5 right-5 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-700/60 flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{modeToast}</span>
+        </div>
+      )}
+
+      {/* Registration Mode & Waitlist Control Header */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+            Live Status:
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+              regSettings.player_registration_mode === 'waitlist'
+                ? 'bg-orange-100 text-orange-900 border-orange-300'
+                : regSettings.player_registration_mode === 'closed'
+                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                regSettings.player_registration_mode === 'waitlist'
+                  ? 'bg-orange-500'
+                  : regSettings.player_registration_mode === 'closed'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500'
+              }`}
+            />
+            🏃 Players:{' '}
+            {regSettings.player_registration_mode === 'waitlist'
+              ? 'Waitlist'
+              : regSettings.player_registration_mode === 'closed'
+              ? 'Closed'
+              : 'Open'}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+              regSettings.spectator_registration_mode === 'waitlist'
+                ? 'bg-orange-100 text-orange-900 border-orange-300'
+                : regSettings.spectator_registration_mode === 'closed'
+                ? 'bg-rose-100 text-rose-800 border-rose-300'
+                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                regSettings.spectator_registration_mode === 'waitlist'
+                  ? 'bg-orange-500'
+                  : regSettings.spectator_registration_mode === 'closed'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500'
+              }`}
+            />
+            🎟️ Spectators:{' '}
+            {regSettings.spectator_registration_mode === 'waitlist'
+              ? 'Waitlist'
+              : regSettings.spectator_registration_mode === 'closed'
+              ? 'Closed'
+              : 'Open'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter(statusFilter === 'waitlist' ? 'all' : 'waitlist');
+              setCurrentPage(1);
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer border ${
+              statusFilter === 'waitlist'
+                ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
+                : 'bg-orange-50 text-orange-900 border-orange-200 hover:bg-orange-100'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Waitlist ({waitlistCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              loadRegSettings();
+              setShowModeModal(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+          >
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+            <span>Registration Mode</span>
+          </button>
+        </div>
+      </div>
 
       {/* Search & Multi-Filter Controls */}
       <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
 
           {/* Search Input */}
-          <div className="relative w-full md:w-96">
+          <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -167,7 +401,7 @@ export function AdminRegistrationsTab({
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
             />
             {searchTerm && (
               <button
@@ -180,7 +414,7 @@ export function AdminRegistrationsTab({
           </div>
 
           {/* Filter Dropdowns */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-1.5 w-full lg:w-auto">
 
             {/* Participant Type Filter */}
             <select
@@ -189,7 +423,7 @@ export function AdminRegistrationsTab({
                 setRegTypeFilter(e.target.value as 'all' | 'player' | 'spectator');
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="all">All Participants</option>
               <option value="player">🏃 Players Only</option>
@@ -207,6 +441,7 @@ export function AdminRegistrationsTab({
             >
               <option value="all">All Payments</option>
               <option value="pending">Pending Review</option>
+              <option value="waitlist">⏳ Waitlist</option>
               <option value="approved">Approved / Verified</option>
               <option value="rejected">Rejected</option>
               <option value="archived">📦 Archived Records</option>
@@ -228,7 +463,8 @@ export function AdminRegistrationsTab({
               <option value="carrom">Carrom League</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
-              <option value="spectator">🎟️ 90’s Nostalgia Pass</option>
+              <option value="spectator">🎟️ Spectator (90’s Nostalgia Pass)</option>
+              <option value="90s-nostalgia">✨ 90’s Nostalgia Games (Opted In)</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -244,6 +480,23 @@ export function AdminRegistrationsTab({
               <option value="Yes">Stay Needed (Ashram)</option>
               <option value="No">Self-Arranged</option>
             </select>
+
+            {/* Jersey Size Filter */}
+            <select
+              value={jerseyFilter}
+              onChange={(e) => {
+                setJerseyFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="all">All Jerseys</option>
+              {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((sz) => (
+                <option key={sz} value={sz}>
+                  Size: {sz}
+                </option>
+              ))}
+            </select>
           </div>
 
         </div>
@@ -254,7 +507,7 @@ export function AdminRegistrationsTab({
             <span>
               Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
             </span>
-            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all' || jerseyFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
@@ -263,6 +516,7 @@ export function AdminRegistrationsTab({
                   setSportFilter('all');
                   setAccFilter('all');
                   setRegTypeFilter('all');
+                  setJerseyFilter('all');
                 }}
                 className="text-amber-600 font-bold hover:underline cursor-pointer"
               >
@@ -410,7 +664,7 @@ export function AdminRegistrationsTab({
 
                       {/* 3. Centre & Gender */}
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-800 block">{gen.centre || 'Mumbai'}</span>
+                        <span className="font-bold text-slate-800 block">{normalizeCentreName(gen.centre, 'Mumbai')}</span>
                         <span className="text-[11px] text-slate-400">{gen.gender || 'Male'}</span>
                       </td>
 
@@ -434,7 +688,7 @@ export function AdminRegistrationsTab({
                                 <>
                                   <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
                                     {gen.spectatorOption === 'with-stay' || gen.accommodationRequired === 'Yes'
-                                      ? '🏨 Stay (₹3,600)'
+                                      ? '🏨 Stay (₹3,000)'
                                       : `☀️ Day Pass (${dayCount > 1 ? `${dayCount} Days • ` : ''}₹${dayCount * 720})`}
                                   </span>
                                   {isAll3Days && (gen.nostalgiaSport || gen.nostalgia_sport) && (
@@ -524,7 +778,9 @@ export function AdminRegistrationsTab({
                                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                   : player.payment_status === 'rejected'
                                     ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : player.payment_status === 'waitlist'
+                                      ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-300'
                                   }`}
                               >
                                 {player.payment_status || 'pending'}
@@ -599,6 +855,34 @@ export function AdminRegistrationsTab({
                           >
                             <MessageCircle className="w-4 h-4" />
                           </a>
+
+                          {/* Promote from Waitlist Button */}
+                          {!isArchived && player.payment_status === 'waitlist' && (
+                            <button
+                              type="button"
+                              onClick={(e) => handlePromotePlayer(player, e)}
+                              className="p-1.5 rounded-lg text-orange-600 hover:bg-orange-50 transition-colors"
+                              title="Promote from Waitlist (Unlock Payment)"
+                            >
+                              <ArrowUpCircle className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Send WhatsApp Payment Link (for Pending / Promoted players) */}
+                          {!isArchived && (!player.payment_status || player.payment_status === 'pending') && (
+                            <a
+                              href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
+                                `Jai Sadgurudev Vandan! 🙏\n\nHi ${player.full_name}, your slot for RPL Season 9 is open! Please click the link below to complete your payment and confirm your pass:\nhttps://rpl-s9.vercel.app/#/register?mobile=${String(player.mobile || '').replace(/\D/g, '').slice(-10)}`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                              title="Send Payment Link via WhatsApp"
+                            >
+                              <Send className="w-4 h-4" />
+                            </a>
+                          )}
 
                           {/* Quick Approve / Reject (Only for active players) */}
                           {!isArchived && player.payment_status !== 'approved' && (
@@ -723,6 +1007,138 @@ export function AdminRegistrationsTab({
             cardNo: receiptModalPlayer.general_details?.cardNo,
           }}
         />
+      )}
+
+      {/* Registration Mode Settings Modal */}
+      {showModeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          onClick={() => setShowModeModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900">Registration Mode Controls</h3>
+                  <p className="text-xs text-slate-500">Independently manage Player and Spectator (90&apos;s Nostalgia Pass) forms</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModeModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRegSettings} className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+              {/* Section 1: Player Registration */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    🏃 Player Registration
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['open', 'waitlist', 'closed'] as const).map((m) => (
+                    <button
+                      key={`player-${m}`}
+                      type="button"
+                      onClick={() => setRegSettings({ ...regSettings, player_registration_mode: m })}
+                      className={`py-2 px-3 rounded-xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                        regSettings.player_registration_mode === m
+                          ? m === 'waitlist'
+                            ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                            : m === 'closed'
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">
+                    Player Waitlist Banner Message:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={regSettings.waitlist_banner_message}
+                    onChange={(e) => setRegSettings({ ...regSettings, waitlist_banner_message: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed resize-y"
+                  />
+                </div>
+              </div>
+
+              {/* Section 2: Spectator Registration */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    🎟️ Spectator (90&apos;s Nostalgia Pass)
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['open', 'waitlist', 'closed'] as const).map((m) => (
+                    <button
+                      key={`spec-${m}`}
+                      type="button"
+                      onClick={() => setRegSettings({ ...regSettings, spectator_registration_mode: m })}
+                      className={`py-2 px-3 rounded-xl border text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                        regSettings.spectator_registration_mode === m
+                          ? m === 'waitlist'
+                            ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                            : m === 'closed'
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m === 'waitlist' ? '⏳ Waitlist' : m === 'closed' ? '🔒 Closed' : '🟢 Open'}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">
+                    Spectator Waitlist Banner Message:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={regSettings.spectator_waitlist_banner_message}
+                    onChange={(e) => setRegSettings({ ...regSettings, spectator_waitlist_banner_message: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-amber-500 leading-relaxed resize-y"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowModeModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {savingSettings ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  <span>Apply Mode Live</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

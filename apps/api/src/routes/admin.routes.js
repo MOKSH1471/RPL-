@@ -2,6 +2,8 @@ import { Router } from 'express';
 import db, { RPL_DB, AASHRAY_DB } from '../config/db.js';
 import { sanitizeDate } from '../utils/helpers.js';
 import { processAccommodationBooking } from '../services/roomBookingService.js';
+import { ensureGuestCard } from '../services/guestCardService.js';
+import { getRegistrationSettings, updateRegistrationSettings } from '../services/registrationSettingsService.js';
 import { verifyAuth, requireAnyPermission, requireSuperAdmin, requirePasswordChanged } from '../middleware/auth.js';
 
 const router = Router();
@@ -17,6 +19,7 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
     let approved = 0;
     let pending = 0;
     let rejected = 0;
+    let waitlist = 0;
     let archivedCount = 0;
     let accommodationCount = 0;
     let totalRevenue = 0;
@@ -66,6 +69,12 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
         return; // Exclude archived players and test entries from active tallies
       }
 
+      const pStatus = (r.payment_status || 'pending').toLowerCase();
+      if (pStatus === 'waitlist') {
+        waitlist++;
+        return; // Exclude waitlisted entries from confirmed headcount, revenue, jersey, and stay tallies
+      }
+
       const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator')) || r.sport_id === 'spectator';
       if (isSpectator) {
         spectatorsCount++;
@@ -91,7 +100,6 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
       }
       const effectiveFee = Number(r.payment_amount) || calculatedFee;
 
-      const pStatus = (r.payment_status || 'pending').toLowerCase();
       if (pStatus === 'approved') {
         approved++;
         totalRevenue += effectiveFee;
@@ -134,13 +142,14 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
     res.json({
       success: true,
       stats: {
-        totalRegistrations: regs.length - archivedCount,
-        activeRegistrations: regs.length - archivedCount,
+        totalRegistrations: regs.length - archivedCount - waitlist,
+        activeRegistrations: regs.length - archivedCount - waitlist,
         allRegistrationsCount: regs.length,
         playersCount,
         spectatorsCount,
+        waitlistCount: waitlist,
         archivedCount,
-        payment: { approved, pending, rejected, archived: archivedCount },
+        payment: { approved, pending, rejected, waitlist, archived: archivedCount },
         financials: {
           totalRevenue,
           pendingRevenue,
@@ -327,24 +336,164 @@ router.post('/admin/registrations/:id/payment', requireAnyPermission(['registrat
   const { id } = req.params;
   const { status } = req.body;
 
-  if (!['approved', 'rejected', 'pending'].includes(status)) {
+  if (!['approved', 'rejected', 'pending', 'waitlist'].includes(status)) {
     return res.status(400).json({ error: 'Invalid payment status.' });
   }
 
   try {
-    const [result] = await db.query(
-      `UPDATE ${RPL_DB}.rpl_registrations SET payment_status = ? WHERE id = ?`,
-      [status, id]
+    const [existingRows] = await db.query(
+      `SELECT * FROM ${RPL_DB}.rpl_registrations WHERE id = ? LIMIT 1`,
+      [id]
     );
 
-    if (result.affectedRows === 0) {
+    if (existingRows.length === 0) {
       return res.status(404).json({ error: 'Registration not found.' });
     }
+
+    const prevRow = existingRows[0];
+    const prevStatus = String(prevRow.payment_status || 'pending').toLowerCase();
+
+    let gen = {};
+    try {
+      gen = typeof prevRow.general_details === 'string' ? JSON.parse(prevRow.general_details || '{}') : (prevRow.general_details || {});
+    } catch {
+      gen = {};
+    }
+
+    // If manually promoting from waitlist -> approved (e.g. offline cash/UPI), ensure Aashray card + room/meal bookings are created
+    if (prevStatus === 'waitlist' && status === 'approved') {
+      const mobileDigits = String(prevRow.mobile || '').replace(/\D/g, '').slice(-10);
+      const isSpectator = gen.registrationType === 'spectator' || (Array.isArray(gen.selectedSports) && gen.selectedSports.includes('spectator'));
+
+      if (!gen.cardNo && mobileDigits) {
+        try {
+          const cardNo = await ensureGuestCard({
+            fullName: prevRow.full_name,
+            mobile: mobileDigits,
+            email: prevRow.email,
+            gender: gen.gender || 'Male',
+            dob: gen.dateOfBirth || null,
+            centre: gen.centre || 'Mumbai',
+            photoUrl: isSpectator ? null : (prevRow.player_photo_url || null),
+            referrerCardNo: gen.referrerCardNo || null,
+          });
+          if (cardNo) gen.cardNo = cardNo;
+        } catch (cardErr) {
+          console.warn('Manual waitlist approval card creation warning:', cardErr.message);
+        }
+      }
+
+      try {
+        const hasStay = isSpectator
+          ? (gen.accommodationRequired === 'Yes' || gen.spectatorOption === 'with-stay')
+          : (gen.accommodationRequired === 'Yes');
+        const shouldBookMeals = !isSpectator || hasStay;
+        await processAccommodationBooking({
+          cardno: gen.cardNo || null,
+          fullName: prevRow.full_name,
+          email: prevRow.email,
+          mobile: prevRow.mobile,
+          centre: gen.centre || 'Mumbai',
+          gender: gen.gender || 'Male',
+          checkInDate: prevRow.check_in_date || gen.checkInDate || '2026-12-25',
+          checkOutDate: prevRow.check_out_date || gen.checkOutDate || '2026-12-27',
+          accommodationRequired: hasStay ? 'Yes' : 'No',
+          spectatorOption: gen.spectatorOption,
+          registrationType: isSpectator ? 'spectator' : 'player',
+          foodPreference: gen.foodPreference || 'Regular',
+          bookMeals: shouldBookMeals,
+        });
+      } catch (accErr) {
+        console.warn('Manual waitlist approval accommodation warning:', accErr.message);
+      }
+
+      gen.promotedAt = gen.promotedAt || new Date().toISOString();
+    }
+
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_registrations SET payment_status = ?, general_details = ? WHERE id = ?`,
+      [status, JSON.stringify(gen), id]
+    );
 
     res.json({ success: true, message: `Payment status updated to ${status}.` });
   } catch (error) {
     console.error('Error updating payment status:', error);
     res.status(500).json({ error: 'Failed to update payment status' });
+  }
+});
+
+// 4b. Admin Endpoint: Promote Player from Waitlist (waitlist -> pending to unlock Razorpay payment)
+router.post('/admin/registrations/:id/promote', requireAnyPermission(['registrations']), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [existingRows] = await db.query(
+      `SELECT id, full_name, mobile, payment_status, general_details FROM ${RPL_DB}.rpl_registrations WHERE id = ? LIMIT 1`,
+      [id]
+    );
+    if (existingRows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+
+    const row = existingRows[0];
+    let gen = {};
+    try {
+      gen = typeof row.general_details === 'string' ? JSON.parse(row.general_details || '{}') : (row.general_details || {});
+    } catch {
+      gen = {};
+    }
+
+    gen.promotedAt = new Date().toISOString();
+    gen.promotedBy = req.user?.username || 'admin';
+
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_registrations SET payment_status = 'pending', general_details = ? WHERE id = ?`,
+      [JSON.stringify(gen), id]
+    );
+
+    res.json({
+      success: true,
+      message: `${row.full_name} promoted from waitlist! Payment is now unlocked.`,
+      payment_status: 'pending',
+    });
+  } catch (error) {
+    console.error('Error promoting waitlisted player:', error);
+    res.status(500).json({ success: false, error: 'Failed to promote waitlisted player.' });
+  }
+});
+
+// 4c. Admin Endpoints: Registration Mode Settings (open | waitlist | closed)
+router.get('/admin/registration/settings', requireAnyPermission(['registrations', 'dashboard']), async (req, res) => {
+  try {
+    const settings = await getRegistrationSettings();
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Error fetching registration settings:', error);
+    res.status(500).json({ success: false, error: 'Failed to load registration settings.' });
+  }
+});
+
+router.put('/admin/registration/settings', requireAnyPermission(['registrations']), async (req, res) => {
+  try {
+    const {
+      player_registration_mode,
+      waitlist_banner_message,
+      closed_message,
+      spectator_registration_mode,
+      spectator_waitlist_banner_message,
+      spectator_closed_message,
+    } = req.body || {};
+    const settings = await updateRegistrationSettings({
+      player_registration_mode,
+      waitlist_banner_message,
+      closed_message,
+      spectator_registration_mode,
+      spectator_waitlist_banner_message,
+      spectator_closed_message,
+    });
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Error updating registration settings:', error);
+    res.status(400).json({ success: false, error: error.message || 'Failed to update registration settings.' });
   }
 });
 
@@ -573,6 +722,9 @@ router.get('/admin/accommodation', requireAnyPermission(['accommodation']), asyn
     const [bookings] = await db.query(`
       SELECT bookingid, cardno, roomno, checkin, checkout, nights, status, updatedBy, createdAt
       FROM ${AASHRAY_DB}.room_booking
+      WHERE checkin >= '2026-12-24'
+        AND checkin <= '2026-12-28'
+        AND LOWER(COALESCE(status, '')) NOT IN ('admin cancelled', 'cancelled', 'checkedout')
       ORDER BY createdAt DESC
     `);
 
@@ -595,7 +747,8 @@ router.get('/admin/accommodation', requireAnyPermission(['accommodation']), asyn
       } catch (e) {
         gen = {};
       }
-      return !r.is_archived && !gen.isArchived;
+      const pStatus = String(r.payment_status || 'pending').toLowerCase();
+      return !r.is_archived && !gen.isArchived && pStatus !== 'waitlist';
     });
 
     const accommodationList = activeRegs
@@ -628,7 +781,7 @@ router.get('/admin/accommodation', requireAnyPermission(['accommodation']), asyn
           bookings: userBookings,
         };
       })
-      .filter((r) => r.accommodationRequired === 'Yes' || r.bookings.length > 0);
+      .filter((r) => r.accommodationRequired === 'Yes');
 
     res.json({ success: true, data: accommodationList });
   } catch (error) {
@@ -670,7 +823,7 @@ router.post('/admin/accommodation/assign', requireAnyPermission(['accommodation'
 // 8. Admin Endpoint: Razorpay Transactions & Payment Reconciliation
 router.get('/admin/transactions', requireAnyPermission(['transactions']), async (req, res) => {
   try {
-    const { status, search, limit = 100, offset = 0 } = req.query;
+    const { status, search, limit = 500, offset = 0 } = req.query;
 
     let query = `
       SELECT 
@@ -693,7 +846,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
         r.is_archived,
         r.payment_status AS registration_payment_status
       FROM ${RPL_DB}.rpl_transactions t
-      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      INNER JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
       WHERE 1=1
     `;
     const params = [];
@@ -702,7 +855,7 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
       query += ` AND (r.is_archived = 1 OR r.email LIKE '%@example.com' OR r.email LIKE '%@test.com' OR JSON_EXTRACT(r.general_details, '$.isArchived') = true)`;
     } else {
       // Exclude archived and test entries by default
-      query += ` AND (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))`;
+      query += ` AND COALESCE(r.is_archived, 0) = 0 AND COALESCE(r.email, '') NOT LIKE '%@example.com' AND COALESCE(r.email, '') NOT LIKE '%@test.com' AND COALESCE(JSON_EXTRACT(r.general_details, '$.isArchived'), false) = false`;
 
       if (status && status !== 'all') {
         if (status === 'failed') {
@@ -721,19 +874,22 @@ router.get('/admin/transactions', requireAnyPermission(['transactions']), async 
     }
 
     query += ` ORDER BY t.id DESC LIMIT ? OFFSET ?`;
-    params.push(Number(limit) || 100, Number(offset) || 0);
+    params.push(Number(limit) || 500, Number(offset) || 0);
 
     const [transactions] = await db.query(query, params);
 
-    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions)
+    // Summary stats for fast reconciliation badges (calculated ONLY on real active transactions with matching registration)
     const [summaryRows] = await db.query(`
       SELECT 
         t.status, 
         COUNT(*) as count, 
         COALESCE(SUM(t.amount), 0) as total_amount 
       FROM ${RPL_DB}.rpl_transactions t
-      LEFT JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
-      WHERE (r.is_archived IS NULL OR (r.is_archived = 0 AND r.email NOT LIKE '%@example.com' AND r.email NOT LIKE '%@test.com'))
+      INNER JOIN ${RPL_DB}.rpl_registrations r ON t.bookingid = r.id
+      WHERE COALESCE(r.is_archived, 0) = 0
+        AND COALESCE(r.email, '') NOT LIKE '%@example.com'
+        AND COALESCE(r.email, '') NOT LIKE '%@test.com'
+        AND COALESCE(JSON_EXTRACT(r.general_details, '$.isArchived'), false) = false
       GROUP BY t.status
     `);
 

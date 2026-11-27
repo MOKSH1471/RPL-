@@ -7,6 +7,7 @@ import { processAccommodationBooking } from '../services/roomBookingService.js';
 import { ensureGuestCard } from '../services/guestCardService.js';
 import { cleanDomesticPhone } from '../utils/phoneFormatter.js';
 import logger from '../config/logger.js';
+import { getRegistrationSettings } from '../services/registrationSettingsService.js';
 
 const router = Router();
 
@@ -139,6 +140,37 @@ router.post('/razorpay/create-order', async (req, res) => {
 
     if (!targetRegId) {
       targetRegId = uuidv4();
+    }
+
+    // Waitlist & Registration Mode Guardrail: block Razorpay orders for waitlisted or closed player registrations
+    if (existingReg && String(existingReg.payment_status || '').toLowerCase() === 'waitlist') {
+      return res.status(403).json({
+        success: false,
+        code: 'WAITLIST_ONLY',
+        error: 'Your registration is currently on the waitlist. Payment will unlock once the Organizing Committee promotes your slot.',
+        registrationId: targetRegId,
+      });
+    }
+
+    if (!existingReg) {
+      const regSettings = await getRegistrationSettings();
+      const activeMode = isSpectator
+        ? (regSettings.spectator_registration_mode || 'open')
+        : (regSettings.player_registration_mode || 'open');
+      if (activeMode === 'waitlist') {
+        return res.status(403).json({
+          success: false,
+          code: 'WAITLIST_ONLY',
+          error: isSpectator ? regSettings.spectator_waitlist_banner_message : regSettings.waitlist_banner_message,
+        });
+      }
+      if (activeMode === 'closed') {
+        return res.status(403).json({
+          success: false,
+          code: 'REGISTRATION_CLOSED',
+          error: isSpectator ? regSettings.spectator_closed_message : regSettings.closed_message,
+        });
+      }
     }
 
     // Resolve Card Number (Aashray standard card or guest card)
@@ -634,12 +666,18 @@ router.post('/razorpay/verify-payment', async (req, res) => {
 
           const mergedSportAnswers = { ...prevSports, ...cleanSportAnswers };
           mergedGeneralDetails = { ...prevGeneral, ...cleanGeneralDetails };
-          const allSelectedSports = Array.from(new Set([
+          let allSelectedSports = Array.from(new Set([
             ...(Array.isArray(prevGeneral.selectedSports) ? prevGeneral.selectedSports : []),
             ...(Array.isArray(cleanGeneralDetails.selectedSports) ? cleanGeneralDetails.selectedSports : []),
             ...Object.keys(mergedSportAnswers),
           ]));
+          if (isSpectator) {
+            allSelectedSports = ['spectator'];
+          } else {
+            allSelectedSports = allSelectedSports.filter((s) => s !== 'spectator');
+          }
           mergedGeneralDetails.selectedSports = allSelectedSports;
+          mergedGeneralDetails.registrationType = isSpectator ? 'spectator' : 'player';
 
           const prevUtrs = String(existingRegs[0].payment_utr || prevGeneral.payment_utr || '').split(',').map(s => s.trim()).filter(Boolean);
           const mergedUtrList = Array.from(new Set([...prevUtrs, razorpay_payment_id]));

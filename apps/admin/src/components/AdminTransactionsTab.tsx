@@ -18,6 +18,7 @@ import { formatDateTimeIST } from '@/lib/dateUtils';
 export function AdminTransactionsTab() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [baselineSummary, setBaselineSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending' | 'failed' | 'archived'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'sports' | 'spectator'>('all');
@@ -32,8 +33,23 @@ export function AdminTransactionsTab() {
         search: searchTerm || undefined,
       });
       if (res && res.success) {
-        setTransactions(res.transactions || []);
+        const rows = res.transactions || [];
+        setTransactions(rows);
         if (res.summary) setSummary(res.summary);
+        if (statusFilter === 'all' && !searchTerm.trim()) {
+          const nonZero = rows.filter((t: any) => Number(t.amount) > 0);
+          const completed = nonZero.filter((t: any) => t.status === 'completed');
+          const pending = nonZero.filter((t: any) => t.status === 'pending');
+          const failed = nonZero.filter((t: any) => t.status === 'failed' || t.status === 'cancelled');
+          const completedAmt = completed.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+          setBaselineSummary({
+            total_count: nonZero.length,
+            total_completed_amount: completedAmt,
+            completed: { count: completed.length, amount: completedAmt },
+            pending: { count: pending.length, amount: pending.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0) },
+            failed: { count: failed.length, amount: failed.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0) },
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load transactions:', err);
@@ -57,16 +73,21 @@ export function AdminTransactionsTab() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const activeSummary = baselineSummary || summary;
+  const visibleTransactions = transactions.filter(
+    (t) => Number(t.amount) > 0 && (categoryFilter === 'all' || (t.category || 'sports') === categoryFilter)
+  );
+
   return (
     <div className="space-y-6">
       {/* ── Top Reconciliation Metrics ── */}
-      {summary && (
+      {activeSummary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Transactions</p>
-                <h3 className="text-2xl font-black text-slate-800 mt-1">{summary.total_count || 0}</h3>
+                <h3 className="text-2xl font-black text-slate-800 mt-1">{activeSummary.total_count || 0}</h3>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
                 <CreditCard className="w-6 h-6" />
@@ -79,20 +100,20 @@ export function AdminTransactionsTab() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Verified Revenue</p>
-                <h3 className="text-2xl font-black text-emerald-700 mt-1">₹{(summary.total_completed_amount || 0).toLocaleString('en-IN')}</h3>
+                <h3 className="text-2xl font-black text-emerald-700 mt-1">₹{(activeSummary.total_completed_amount || 0).toLocaleString('en-IN')}</h3>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
             </div>
-            <p className="text-xs text-emerald-600 font-medium mt-3">{summary.completed?.count || 0} confirmed payments</p>
+            <p className="text-xs text-emerald-600 font-medium mt-3">{activeSummary.completed?.count || 0} confirmed payments</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm bg-gradient-to-br from-white to-amber-50/40">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-amber-600">Initiated / Pending</p>
-                <h3 className="text-2xl font-black text-amber-700 mt-1">{summary.pending?.count || 0}</h3>
+                <h3 className="text-2xl font-black text-amber-700 mt-1">{activeSummary.pending?.count || 0}</h3>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700">
                 <Clock className="w-6 h-6" />
@@ -105,7 +126,7 @@ export function AdminTransactionsTab() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-rose-600">Failed / Cancelled</p>
-                <h3 className="text-2xl font-black text-rose-700 mt-1">{summary.failed?.count || 0}</h3>
+                <h3 className="text-2xl font-black text-rose-700 mt-1">{activeSummary.failed?.count || 0}</h3>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-700">
                 <AlertCircle className="w-6 h-6" />
@@ -198,16 +219,14 @@ export function AdminTransactionsTab() {
                     Loading transactions...
                   </td>
                 </tr>
-              ) : transactions.filter((t) => categoryFilter === 'all' || (t.category || 'sports') === categoryFilter).length === 0 ? (
+              ) : visibleTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     No transaction records found matching your filters.
                   </td>
                 </tr>
               ) : (
-                transactions
-                  .filter((t) => categoryFilter === 'all' || (t.category || 'sports') === categoryFilter)
-                  .map((tx) => {
+                visibleTransactions.map((tx) => {
                   const isCompleted = tx.status === 'completed';
                   const isPending = tx.status === 'pending';
                   const isFailed = tx.status === 'failed' || tx.status === 'cancelled';
