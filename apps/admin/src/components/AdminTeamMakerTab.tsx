@@ -32,6 +32,7 @@ import {
 import { DEFAULT_TEAMS } from '@/lib/cricketMockData';
 import { useEscapeKey } from '@/lib/useEscapeKey';
 import { normalizeCentreName } from '@/lib/centreUtils';
+import { getHistoricalCricketStats } from '@/lib/cricketStatsUtils';
 
 interface AdminTeamMakerTabProps {
   registrations: any[];
@@ -679,6 +680,20 @@ export function AdminTeamMakerTab({ registrations, loading = false, onRefresh }:
                             </span>
                           )}
                         </div>
+                        {(() => {
+                          const hist = getHistoricalCricketStats(player.registrationId, player.name);
+                          if (!hist) return null;
+                          const parts: string[] = [];
+                          if (hist.batting) parts.push(`${hist.batting.matches}M • ${hist.batting.runs}R (${hist.batting.sr} SR)`);
+                          if (hist.bowling) parts.push(`${hist.bowling.wickets}W (${hist.bowling.eco} Eco)`);
+                          if (hist.fielding && hist.fielding.catches > 0) parts.push(`${hist.fielding.catches}C`);
+                          if (parts.length === 0) return null;
+                          return (
+                            <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-[9px] font-mono font-bold text-amber-900">
+                              S6–S8: {parts.join(' | ')}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 

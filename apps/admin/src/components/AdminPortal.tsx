@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 import {
   fetchAdminStats,
@@ -31,6 +32,7 @@ import { AdminAccommodationTab } from './AdminAccommodationTab';
 import { AdminTransactionsTab } from './AdminTransactionsTab';
 import { AdminExportTab } from './AdminExportTab';
 import { AdminTeamMakerTab } from './AdminTeamMakerTab';
+import { AdminCricketStatsTab } from './AdminCricketStatsTab';
 import { AdminFeedbackTab } from './AdminFeedbackTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
 import { getAllKnownTags } from '@/lib/tagUtils';
@@ -73,7 +75,7 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
     return 'dashboard';
   };
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'scorer' | 'feedback'>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'registrations' | 'accommodation' | 'transactions' | 'exports' | 'teams' | 'stats' | 'scorer' | 'feedback'>(getInitialTab);
   const [stats, setStats] = useState<any>(null);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [accommodationList, setAccommodationList] = useState<any[]>([]);
@@ -296,15 +298,16 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
             {
               id: 'accommodation' as const,
               label: 'Room Allotment',
-              shortLabel: 'Room Allotment',
+              shortLabel: 'Rooms',
               icon: <Bed className="w-3.5 h-3.5 shrink-0" />,
               badge: accommodationList.length,
               badgeClass: 'bg-cyan-500/20 text-cyan-800',
               visible: canViewAccommodation,
             },
-            { id: 'transactions' as const, label: 'Payments & Audit', shortLabel: 'Payments & Audit', icon: <CreditCard className="w-3.5 h-3.5 shrink-0" />, visible: canViewTransactions },
+            { id: 'transactions' as const, label: 'Payments & Audit', shortLabel: 'Payments', icon: <CreditCard className="w-3.5 h-3.5 shrink-0" />, visible: canViewTransactions },
             { id: 'exports' as const, label: '1-Click Exports', shortLabel: 'Exports', icon: <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />, visible: canViewExports },
             { id: 'teams' as const, label: 'Team Maker', shortLabel: 'Team Maker', icon: <Shield className="w-3.5 h-3.5 text-amber-500 shrink-0" />, visible: canViewTeams },
+            { id: 'stats' as const, label: 'Cricket Stats (S6–S8)', shortLabel: 'Cricket Stats', icon: <BarChart3 className="w-3.5 h-3.5 text-amber-500 shrink-0" />, visible: canViewTeams || canViewRegistrations },
             { id: 'feedback' as const, label: 'Feedback Center', shortLabel: 'Feedback', icon: <MessageSquareHeart className="w-3.5 h-3.5 text-amber-500 shrink-0" />, visible: canViewFeedback },
             {
               id: 'scorer' as const,
@@ -326,7 +329,7 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
                       key={item.id}
                       type="button"
                       onClick={() => setActiveTab(item.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
                         item.isScorer
                           ? isActive
                             ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
@@ -506,6 +509,14 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
             registrations={registrations}
             loading={loading}
             onRefresh={loadData}
+          />
+        )}
+
+        {activeTab === 'stats' && (
+          <AdminCricketStatsTab
+            registrations={registrations}
+            loading={loading}
+            onSelectPlayer={(p) => setSelectedPlayer(p)}
           />
         )}
 

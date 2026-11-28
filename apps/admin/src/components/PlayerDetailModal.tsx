@@ -30,6 +30,7 @@ import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { useEscapeKey } from '@/lib/useEscapeKey';
 import { normalizeCentreName } from '@/lib/centreUtils';
 import { PRESET_PLAYER_TAGS, getPlayerTags, getTagBadgeClass } from '@/lib/tagUtils';
+import { getHistoricalCricketStats } from '@/lib/cricketStatsUtils';
 
 
 interface PlayerDetailModalProps {
@@ -807,6 +808,56 @@ export function PlayerDetailModal({ player, availableTags, onClose, onRefresh }:
                   <p className="text-xs text-slate-400 italic">No specific questionnaire answers.</p>
                 )}
               </div>
+
+              {/* Historical RPL Career Stats (S6–S8) */}
+              {(() => {
+                const hist = getHistoricalCricketStats(player);
+                if (!hist) return null;
+                return (
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/60 to-white border border-amber-200/80 shadow-sm space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                        Historical RPL Career Stats (S6–S8 Combined)
+                      </h3>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Matched: {hist.statsName}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-white border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase text-amber-700 block">Batting</span>
+                        {hist.batting ? (
+                          <p className="font-bold text-slate-800 font-mono">
+                            {hist.batting.matches} Mat • {hist.batting.runs} Runs • Avg {hist.batting.avg ?? '-'} • SR {hist.batting.sr} ({hist.batting.fours}×4, {hist.batting.sixes}×6)
+                          </p>
+                        ) : (
+                          <span className="text-slate-400 italic">No batting records</span>
+                        )}
+                      </div>
+                      <div className="p-3 rounded-xl bg-white border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase text-emerald-700 block">Bowling</span>
+                        {hist.bowling ? (
+                          <p className="font-bold text-slate-800 font-mono">
+                            {hist.bowling.wickets} Wkts • {hist.bowling.overs} Ov • Eco {hist.bowling.eco} • SR {hist.bowling.sr ?? '-'} • {hist.bowling.dot_balls} Dots
+                          </p>
+                        ) : (
+                          <span className="text-slate-400 italic">No bowling records</span>
+                        )}
+                      </div>
+                      <div className="p-3 rounded-xl bg-white border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase text-sky-700 block">Fielding</span>
+                        {hist.fielding ? (
+                          <p className="font-bold text-slate-800 font-mono">
+                            {hist.fielding.catches} C • {hist.fielding.caught_behind} CB • {hist.fielding.run_outs} RO • {hist.fielding.stumpings} St • {hist.fielding.caught_and_bowl} C&amp;B
+                          </p>
+                        ) : (
+                          <span className="text-slate-400 italic">No fielding records</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Stay & Accommodation */}
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">

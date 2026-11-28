@@ -5,6 +5,7 @@
 import { formatDateTimeIST } from './dateUtils';
 import { normalizeCentreName } from './centreUtils';
 import { getPlayerTags } from './tagUtils';
+import { getHistoricalCricketStats } from './cricketStatsUtils';
 
 function downloadCSV(csvContent: string, fileName: string) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -198,6 +199,7 @@ export function exportJerseyVendorSheet(registrations: any[]) {
 
 // 3. Export Sport Squad Sheets (Cricket Auction / Badminton / Football - Active Players Only)
 export function exportSportSquadSheet(registrations: any[], sportKey: string, sportTitle: string) {
+  const isCricketSport = sportKey === 'cricket' || sportKey === 'womens-sports' || sportKey === 'kaccha-pakka';
   const headers = [
     'Sr No',
     'Player Name',
@@ -206,6 +208,9 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
     'Gender',
     'Payment Status',
     'Sport Questions & Details',
+    ...(isCricketSport
+      ? ['S6-S8 Matches', 'S6-S8 Runs', 'S6-S8 Bat Avg', 'S6-S8 Bat SR', 'S6-S8 Wickets', 'S6-S8 Bowl Eco', 'S6-S8 Catches']
+      : []),
   ];
 
   const filtered = registrations.filter((r) => {
@@ -245,6 +250,8 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
         .map(([k, v]) => `${k}: ${v}`)
         .join(' | ');
 
+    const hist = isCricketSport ? getHistoricalCricketStats(r) : null;
+
     return [
       idx + 1,
       escapeCSV(r.full_name),
@@ -253,6 +260,17 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
       escapeCSV(gen.gender || ''),
       escapeCSV((r.payment_status || 'pending').toUpperCase()),
       escapeCSV(formattedDetails || 'Standard Entry'),
+      ...(isCricketSport
+        ? [
+            hist?.batting?.matches ?? '-',
+            hist?.batting?.runs ?? '-',
+            hist?.batting?.avg ?? '-',
+            hist?.batting?.sr ?? '-',
+            hist?.bowling?.wickets ?? '-',
+            hist?.bowling?.eco ?? '-',
+            hist?.fielding?.catches ?? '-',
+          ]
+        : []),
     ].join(',');
   });
 
