@@ -63,19 +63,54 @@ export function AdminDashboardTab({ stats, registrations, loading, onNavigateToR
   const longTailCentres = React.useMemo(() => sortedCentres.filter(([, count]) => count < 3), [sortedCentres]);
   const maxCentreCount = sortedCentres[0]?.[1] || 1;
 
-  const jerseyInventory = React.useMemo(() => {
+  const { jerseyInventory, extraTshirtsCount } = React.useMemo(() => {
     const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-    return sizes.map((size) => {
-      const qty =
-        tshirtSizes?.[size] ||
-        (size === '2XL'
-          ? (tshirtSizes?.['2XL'] || 0) + (tshirtSizes?.['XXL'] || 0)
-          : size === '3XL'
-            ? (tshirtSizes?.['3XL'] || 0) + (tshirtSizes?.['XXXL'] || 0)
-            : 0);
-      return { size, qty };
-    });
-  }, [tshirtSizes]);
+    if (registrations && registrations.length > 0) {
+      const counts: Record<string, number> = {};
+      let extraCount = 0;
+      registrations.forEach((r: any) => {
+        const gen = typeof r.general_details === 'string' ? JSON.parse(r.general_details || '{}') : (r.general_details || {});
+        const isTestEmail = Boolean(r.email && (r.email.endsWith('@example.com') || r.email.endsWith('@test.com')));
+        if (r.is_archived || gen.isArchived || isTestEmail) return;
+        if ((r.payment_status || 'pending').toLowerCase() === 'waitlist') return;
+
+        const sel = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+        const isSpectator = gen.registrationType === 'spectator' || sel.includes('spectator') || r.sport_id === 'spectator';
+        const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
+        const playerHasExtra = !isSpectator && gen.extraTshirt === 'Yes';
+        const qty = !isSpectator ? (1 + (playerHasExtra ? 1 : 0)) : (spectatorHasTshirt ? 1 : 0);
+        if (qty <= 0) return;
+        if (playerHasExtra) extraCount++;
+
+        let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
+        if (rawSize === 'XXL') rawSize = '2XL';
+        if (rawSize === 'XXXL') rawSize = '3XL';
+        if (!rawSize) return;
+        const matched = sizes.find((k) => rawSize === k || rawSize.startsWith(k));
+        if (matched) {
+          counts[matched] = (counts[matched] || 0) + qty;
+        }
+      });
+      return {
+        jerseyInventory: sizes.map((size) => ({ size, qty: counts[size] || 0 })),
+        extraTshirtsCount: extraCount,
+      };
+    }
+
+    return {
+      jerseyInventory: sizes.map((size) => {
+        const qty =
+          tshirtSizes?.[size] ||
+          (size === '2XL'
+            ? (tshirtSizes?.['2XL'] || 0) + (tshirtSizes?.['XXL'] || 0)
+            : size === '3XL'
+              ? (tshirtSizes?.['3XL'] || 0) + (tshirtSizes?.['XXXL'] || 0)
+              : 0);
+        return { size, qty };
+      }),
+      extraTshirtsCount: 0,
+    };
+  }, [tshirtSizes, registrations]);
 
   const totalJerseys = React.useMemo(
     () => jerseyInventory.reduce((sum, item) => sum + item.qty, 0),
@@ -407,7 +442,10 @@ export function AdminDashboardTab({ stats, registrations, loading, onNavigateToR
               <h3 className="font-extrabold text-base text-slate-900">Jersey Size Inventory</h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-orange-700 text-xs font-extrabold font-mono">
+              <span
+                className="px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-orange-700 text-xs font-extrabold font-mono"
+                title={extraTshirtsCount > 0 ? `Includes ${extraTshirtsCount} extra T-shirt${extraTshirtsCount > 1 ? 's' : ''}` : undefined}
+              >
                 {totalJerseys} Jerseys
               </span>
               <button
@@ -441,9 +479,8 @@ export function AdminDashboardTab({ stats, registrations, loading, onNavigateToR
                   key={size}
                   onClick={() => onNavigateToRegistrations?.({ jersey: size })}
                   title={`View ${size} jersey participants in Master Registrations`}
-                  className={`w-full text-left px-2 py-1.5 -mx-2 rounded-xl space-y-1 hover:bg-orange-50/70 transition-colors cursor-pointer group ${
-                    qty === 0 ? 'opacity-45' : ''
-                  }`}
+                  className={`w-full text-left px-2 py-1.5 -mx-2 rounded-xl space-y-1 hover:bg-orange-50/70 transition-colors cursor-pointer group ${qty === 0 ? 'opacity-45' : ''
+                    }`}
                 >
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span className="text-slate-700 group-hover:text-orange-700 font-mono transition-colors">{size}</span>

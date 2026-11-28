@@ -59,6 +59,7 @@ router.post('/register', async (req, res) => {
 
     const cleanGeneralDetails = general_details ? { ...general_details } : { ...sanitizedAnswers };
     delete cleanGeneralDetails.photoDataUrl;
+    delete cleanGeneralDetails.tags; // Admin-only field; never allow public form submissions to set or overwrite tags
     if (typeof cleanGeneralDetails.photoPreview === 'string' && cleanGeneralDetails.photoPreview.startsWith('data:')) {
       delete cleanGeneralDetails.photoPreview;
     }

@@ -18,6 +18,7 @@ import {
   exportAccommodationGateList,
   exportTransactionsLedger,
   exportKitDistributionSheet,
+  exportNostalgiaGamesSheet,
 } from '@/lib/exportUtils';
 import { fetchAdminTransactions } from '@/lib/api';
 
@@ -28,6 +29,9 @@ interface AdminExportTabProps {
 
 export function AdminExportTab({ registrations, accommodationList }: AdminExportTabProps) {
   const [isExportingLedger, setIsExportingLedger] = useState(false);
+
+  const archivedCount = registrations.filter((r) => Boolean(r.is_archived || r.general_details?.isArchived)).length;
+  const activeCount = registrations.length - archivedCount;
 
   const handleExportLedger = async () => {
     setIsExportingLedger(true);
@@ -57,7 +61,7 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           </p>
         </div>
         <span className="hidden sm:inline-block px-3 py-1 bg-white border border-amber-300 rounded-full text-xs font-black text-amber-900 shadow-sm">
-          {registrations.length} Total Records
+          {activeCount} Active{archivedCount > 0 ? ` • ${archivedCount} Archived` : ''}
         </span>
       </div>
 
@@ -272,6 +276,69 @@ export function AdminExportTab({ registrations, accommodationList }: AdminExport
           >
             <Download className="w-4 h-4" />
             <span>Download 90’s Nostalgia Pass Roster CSV</span>
+          </button>
+        </div>
+
+        {/* 10. Women's League Squad Sheet */}
+        <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-800 flex items-center justify-center">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <h4 className="font-extrabold text-base text-slate-900">Women’s League Squad Sheet</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Active Women’s League players with category, playing role, experience level, centre, and payment status.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => exportSportSquadSheet(registrations, 'womens-sports', 'Womens_League')}
+            className="w-full py-2.5 rounded-2xl bg-pink-700 hover:bg-pink-800 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download Women’s League CSV</span>
+          </button>
+        </div>
+
+        {/* 11. Kaccha Pakka Cricket League Sheet */}
+        <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <h4 className="font-extrabold text-base text-slate-900">Kaccha Pakka Cricket League Sheet</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Enrolled Kaccha Pakka Cricket League participants with contact info, centre, and payment verification.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => exportSportSquadSheet(registrations, 'kaccha-pakka', 'Kaccha_Pakka_Cricket')}
+            className="w-full py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download Kaccha Pakka CSV</span>
+          </button>
+        </div>
+
+        {/* 12. 90's Nostalgia Games Coordinator Sheet */}
+        <div className="p-6 rounded-3xl bg-white border border-amber-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 bg-gradient-to-br from-white to-amber-50/30">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <h4 className="font-extrabold text-base text-slate-900">90’s Nostalgia Games Coordinator Sheet</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              All participants opted into 90’s Nostalgia Games with individual Yes/No columns for Lemon & Spoon, Relay, Ring, Skipping, and Duckwalk.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => exportNostalgiaGamesSheet(registrations)}
+            className="w-full py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-98 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download 90’s Nostalgia Games CSV</span>
           </button>
         </div>
 

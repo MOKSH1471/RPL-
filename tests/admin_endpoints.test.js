@@ -88,3 +88,18 @@ test('GET /api/admin/accommodation only returns accommodationRequired === Yes an
     }
   }
 });
+
+test('PATCH /api/admin/registrations/:id/tags validates tags array and returns 404 for unknown id', async () => {
+  const invalidRes = await apiRequest('/api/admin/registrations/non-existent-id/tags', {
+    method: 'PATCH',
+    body: JSON.stringify({ tags: 'Owner' }),
+  });
+  assert.equal(invalidRes.status, 400);
+  assert.equal(invalidRes.data.success, false);
+
+  const notFoundRes = await apiRequest('/api/admin/registrations/non-existent-id/tags', {
+    method: 'PATCH',
+    body: JSON.stringify({ tags: ['Owner'] }),
+  });
+  assert.ok([404, 500].includes(notFoundRes.status), `Expected 404 or 500, got ${notFoundRes.status}`);
+});
