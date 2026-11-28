@@ -29,15 +29,17 @@ import { updateRegistration, updatePaymentStatus, toggleArchiveRegistration } fr
 import { getDriveDirectImageUrl } from '@/lib/exportUtils';
 import { useEscapeKey } from '@/lib/useEscapeKey';
 import { normalizeCentreName } from '@/lib/centreUtils';
+import { PRESET_PLAYER_TAGS, getPlayerTags, getTagBadgeClass } from '@/lib/tagUtils';
 
 
 interface PlayerDetailModalProps {
   player: any;
+  availableTags?: string[];
   onClose: () => void;
   onRefresh: () => void;
 }
 
-export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailModalProps) {
+export function PlayerDetailModal({ player, availableTags, onClose, onRefresh }: PlayerDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -114,7 +116,9 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
     payment_status: player.payment_status || 'pending',
     payment_utr: player.payment_utr || '',
     comments: gen.comments || gen.additionalNotes || gen.additional_notes || '',
+    tags: getPlayerTags(player),
   });
+  const [customTagInput, setCustomTagInput] = useState('');
 
   const isArchived = Boolean(player.is_archived || gen.isArchived);
 
@@ -168,6 +172,7 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
         checkOutDate: formData.check_out_date || null,
         comments: formData.comments?.trim() || null,
         additionalNotes: formData.comments?.trim() || null,
+        tags: formData.tags,
       };
 
       await updateRegistration(player.id, {
@@ -605,6 +610,23 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     <span className="font-bold text-slate-900">{gen.dateOfBirth || '-'}</span>
                   </div>
                   <div>
+                    <span className="text-slate-400 font-medium block">Admin Tags</span>
+                    {getPlayerTags(player).length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {getPlayerTags(player).map((tag) => (
+                          <span
+                            key={tag}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${getTagBadgeClass(tag)}`}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-medium italic block mt-0.5">None</span>
+                    )}
+                  </div>
+                  <div>
                     <span className="text-slate-400 font-medium block">
                       {isSpectator ? 'Commemorative T-Shirt' : 'Jersey Size'}
                     </span>
@@ -904,6 +926,67 @@ export function PlayerDetailModal({ player, onClose, onRefresh }: PlayerDetailMo
                     onChange={(e) => setFormData({ ...formData, payment_utr: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
                   />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 mb-1.5">Admin Tags (Multi-Select)</label>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    {Array.from(new Set([...PRESET_PLAYER_TAGS, ...(availableTags || []), ...formData.tags])).map((tag) => {
+                      const active = formData.tags.some((t) => t.toLowerCase() === tag.toLowerCase());
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            const next = active
+                              ? formData.tags.filter((t) => t.toLowerCase() !== tag.toLowerCase())
+                              : [...formData.tags, tag];
+                            setFormData({ ...formData, tags: next });
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                            active
+                              ? `${getTagBadgeClass(tag)} ring-2 ring-amber-400/50`
+                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {active ? '✓ ' : '+ '}
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add custom tag (e.g. Volunteer, VIP)..."
+                      value={customTagInput}
+                      onChange={(e) => setCustomTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const clean = customTagInput.trim();
+                          if (clean && !formData.tags.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+                            setFormData({ ...formData, tags: [...formData.tags, clean] });
+                          }
+                          setCustomTagInput('');
+                        }
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const clean = customTagInput.trim();
+                        if (clean && !formData.tags.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+                          setFormData({ ...formData, tags: [...formData.tags, clean] });
+                        }
+                        setCustomTagInput('');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
 
                 <div>

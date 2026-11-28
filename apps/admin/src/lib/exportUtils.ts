@@ -4,6 +4,7 @@
  */
 import { formatDateTimeIST } from './dateUtils';
 import { normalizeCentreName } from './centreUtils';
+import { getPlayerTags } from './tagUtils';
 
 function downloadCSV(csvContent: string, fileName: string) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -43,6 +44,7 @@ export function exportMasterRegistrations(registrations: any[]) {
     'Registration ID',
     'Record Status',
     'Participant Type',
+    'Tags',
     'Full Name',
     'Mobile Number',
     'Email Address',
@@ -102,6 +104,7 @@ export function exportMasterRegistrations(registrations: any[]) {
       escapeCSV(r.id),
       escapeCSV(isArchived ? 'ARCHIVED' : 'ACTIVE'),
       escapeCSV(participantType),
+      escapeCSV(getPlayerTags(r).join(', ')),
       escapeCSV(r.full_name),
       escapeCSV(r.mobile),
       escapeCSV(r.email),
@@ -255,6 +258,72 @@ export function exportSportSquadSheet(registrations: any[], sportKey: string, sp
 
   const csvContent = [headers.join(','), ...rows].join('\n');
   downloadCSV(csvContent, `RPL9_Squad_${sportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+// 3b. Export 90's Nostalgia Games Coordinator Sheet
+export function exportNostalgiaGamesSheet(registrations: any[]) {
+  const gamesList = [
+    'Lemon & Spoon Race with Book Balancing',
+    'Relay Race',
+    'Ring Race',
+    'Skipping Competition',
+    'Duckwalk Race',
+  ];
+
+  const headers = [
+    'Sr No',
+    'Participant Name',
+    'Type',
+    'Mobile',
+    'Centre',
+    'Gender',
+    'Payment Status',
+    'Selected Games',
+    'Lemon & Spoon',
+    'Relay Race',
+    'Ring Race',
+    'Skipping Competition',
+    'Duckwalk Race',
+  ];
+
+  const filtered = registrations.filter((r) => {
+    const gen = r.general_details || {};
+    const isArchived = Boolean(r.is_archived || gen.isArchived);
+    const isWaitlist = String(r.payment_status || '').toLowerCase() === 'waitlist';
+    if (isArchived || isWaitlist) return false;
+    const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+    const raw = gen.nostalgiaSport || gen.nostalgia_sport || r.sport_answers?.['90s-nostalgia']?.sport;
+    const hasNostalgiaGame = Boolean(raw && raw !== 'None');
+    return hasNostalgiaGame || sports.includes('90s-nostalgia') || Boolean(r.sport_answers?.['90s-nostalgia']);
+  });
+
+  const rows = filtered.map((r, idx) => {
+    const gen = r.general_details || {};
+    const sports = Array.isArray(gen.selectedSports) ? gen.selectedSports : [];
+    const isSpectator = gen.registrationType === 'spectator' || sports.includes('spectator') || r.sport_id === 'spectator';
+    const raw = gen.nostalgiaSport || gen.nostalgia_sport || r.sport_answers?.['90s-nostalgia']?.sport;
+    const selectedGames = Array.isArray(raw)
+      ? raw.map((s: any) => String(s).trim()).filter(Boolean)
+      : raw && raw !== 'None'
+        ? String(raw).split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+    const selectedLower = selectedGames.map((g) => g.toLowerCase());
+
+    return [
+      idx + 1,
+      escapeCSV(r.full_name),
+      escapeCSV(isSpectator ? 'SPECTATOR' : 'PLAYER'),
+      escapeCSV(r.mobile),
+      escapeCSV(normalizeCentreName(gen.centre, '')),
+      escapeCSV(gen.gender || ''),
+      escapeCSV((r.payment_status || 'pending').toUpperCase()),
+      escapeCSV(selectedGames.join('; ') || 'Open'),
+      ...gamesList.map((g) => escapeCSV(selectedLower.includes(g.toLowerCase()) ? 'YES' : 'NO')),
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  downloadCSV(csvContent, `RPL9_90s_Nostalgia_Games_Roster_${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
 // 4. Export Accommodation & Ashram Gate List

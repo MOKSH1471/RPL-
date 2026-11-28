@@ -114,15 +114,18 @@ router.get('/admin/stats', requireAnyPermission(['dashboard']), async (req, res)
         accommodationCount++;
       }
 
-      // Only count T-shirt for players, or spectators who opted in (+₹500)
+      // Count base jersey + extra T-shirt for players, or opted-in T-shirt (+₹500) for spectators
       const spectatorHasTshirt = gen.spectatorTshirt === 'Yes' || gen.extraTshirt === 'Yes';
-      if (!isSpectator || spectatorHasTshirt) {
+      const jerseyQty = !isSpectator
+        ? (1 + (gen.extraTshirt === 'Yes' ? 1 : 0))
+        : (spectatorHasTshirt ? 1 : 0);
+      if (jerseyQty > 0) {
         let rawSize = (gen.tshirtSize || '').trim().toUpperCase();
         if (rawSize === 'XXL') rawSize = '2XL';
         if (rawSize === 'XXXL') rawSize = '3XL';
         if (rawSize) {
           const matchedSizeKey = Object.keys(tshirtSizes).find((k) => rawSize === k || rawSize.startsWith(k)) || 'Other';
-          tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + 1;
+          tshirtSizes[matchedSizeKey] = (tshirtSizes[matchedSizeKey] || 0) + jerseyQty;
         }
       }
 
@@ -328,6 +331,57 @@ router.patch('/admin/registrations/:id', requireAnyPermission(['registrations'])
   } catch (error) {
     console.error('Error updating player details:', error);
     res.status(500).json({ success: false, error: error.message || 'Failed to update player details.' });
+  }
+});
+
+// 3b. Admin Endpoint: Quick Update Registration Tags (Owner, Player, RC Staff, School, Custom)
+router.patch('/admin/registrations/:id/tags', requireAnyPermission(['registrations']), async (req, res) => {
+  const { id } = req.params;
+  const { tags } = req.body;
+
+  if (!Array.isArray(tags)) {
+    return res.status(400).json({ success: false, error: 'tags must be an array of strings.' });
+  }
+
+  try {
+    const [existing] = await db.query(
+      `SELECT id, general_details FROM ${RPL_DB}.rpl_registrations WHERE id = ?`,
+      [id]
+    );
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+
+    let gen = {};
+    try {
+      const raw = existing[0].general_details;
+      gen = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+    } catch {
+      gen = {};
+    }
+
+    const seen = new Set();
+    const cleanTags = [];
+    for (const item of tags) {
+      const clean = String(item || '').trim().slice(0, 40);
+      if (!clean) continue;
+      const key = clean.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      cleanTags.push(clean);
+    }
+
+    gen.tags = cleanTags;
+
+    await db.query(
+      `UPDATE ${RPL_DB}.rpl_registrations SET general_details = ? WHERE id = ?`,
+      [JSON.stringify(gen), id]
+    );
+
+    res.json({ success: true, tags: cleanTags });
+  } catch (error) {
+    console.error('Error updating registration tags:', error);
+    res.status(500).json({ success: false, error: 'Failed to update tags.' });
   }
 });
 

@@ -33,6 +33,7 @@ import { AdminExportTab } from './AdminExportTab';
 import { AdminTeamMakerTab } from './AdminTeamMakerTab';
 import { AdminFeedbackTab } from './AdminFeedbackTab';
 import { PlayerDetailModal } from './PlayerDetailModal';
+import { getAllKnownTags } from '@/lib/tagUtils';
 import { ScorerPage } from './scorer/ScorerPage';
 import { AdminUsersModal } from './AdminUsersModal';
 
@@ -528,6 +529,7 @@ export function AdminPortal({ currentUser, onLogout }: AdminPortalProps) {
       {selectedPlayer && (
         <PlayerDetailModal
           player={selectedPlayer}
+          availableTags={getAllKnownTags(registrations)}
           onClose={() => setSelectedPlayer(null)}
           onRefresh={async () => {
             await loadData();

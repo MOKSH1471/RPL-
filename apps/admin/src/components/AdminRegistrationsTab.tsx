@@ -25,6 +25,9 @@ import {
   Loader2,
   Check,
   Send,
+  Tag,
+  Plus,
+  MessageSquare,
 } from 'lucide-react';
 import {
   updatePaymentStatus,
@@ -32,12 +35,14 @@ import {
   promoteFromWaitlist,
   fetchRegistrationSettings,
   updateRegistrationSettings,
+  updateRegistrationTags,
   RegistrationSettings,
 } from '@/lib/api';
 import { getDriveDirectImageUrl, exportMasterRegistrations } from '@/lib/exportUtils';
 import { ReceiptPrinterModal } from '@/components/ui/ReceiptPrinterModal';
 import { useEscapeKey } from '@/lib/useEscapeKey';
 import { normalizeCentreName } from '@/lib/centreUtils';
+import { getPlayerTags, getTagBadgeClass, getAllKnownTags } from '@/lib/tagUtils';
 
 
 export interface MasterFilterPreset {
@@ -73,6 +78,13 @@ export function AdminRegistrationsTab({
   const [sportFilter, setSportFilter] = useState(initialFilterPreset?.sport || 'all');
   const [accFilter, setAccFilter] = useState(initialFilterPreset?.acc || 'all');
   const [regTypeFilter, setRegTypeFilter] = useState<'all' | 'player' | 'spectator'>(initialFilterPreset?.regType || 'all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [activeTagPopoverId, setActiveTagPopoverId] = useState<string | null>(null);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [savingTagId, setSavingTagId] = useState<string | null>(null);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesSearch, setNotesSearch] = useState('');
+  useEscapeKey(showNotesModal, () => setShowNotesModal(false));
 
   React.useEffect(() => {
     if (initialFilterPreset) {
@@ -156,7 +168,8 @@ export function AdminRegistrationsTab({
       const matchNostalgia = Array.isArray(nostalgiaRaw)
         ? nostalgiaRaw.join(', ').toLowerCase().includes(term)
         : String(nostalgiaRaw || '').toLowerCase().includes(term);
-      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName && !matchNostalgia) {
+      const matchTag = getPlayerTags(r).some((t) => t.toLowerCase().includes(term));
+      if (!matchName && !matchPhone && !matchEmail && !matchUtr && !matchCentre && !matchJerseyName && !matchNostalgia && !matchTag) {
         return false;
       }
     }
@@ -205,6 +218,16 @@ export function AdminRegistrationsTab({
       if (rawSize === 'XXL') rawSize = '2XL';
       if (rawSize === 'XXXL') rawSize = '3XL';
       if (rawSize !== jerseyFilter && !rawSize.startsWith(jerseyFilter)) return false;
+    }
+
+    // Admin Tag filter
+    if (tagFilter !== 'all') {
+      const playerTags = getPlayerTags(r);
+      if (tagFilter === 'untagged') {
+        if (playerTags.length > 0) return false;
+      } else if (!playerTags.some((t) => t.toLowerCase() === tagFilter.toLowerCase())) {
+        return false;
+      }
     }
 
     return true;
@@ -391,7 +414,7 @@ export function AdminRegistrationsTab({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
 
           {/* Search Input */}
-          <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
+          <div className="relative w-full lg:w-44 xl:w-52 shrink-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -463,8 +486,8 @@ export function AdminRegistrationsTab({
               <option value="carrom">Carrom League</option>
               <option value="womens-sports">Women's League</option>
               <option value="kaccha-pakka">Kaccha Pakka Cricket League</option>
-              <option value="spectator">🎟️ Spectator (90’s Nostalgia Pass)</option>
-              <option value="90s-nostalgia">✨ 90’s Nostalgia Games (Opted In)</option>
+              <option value="spectator">Spectator Pass</option>
+              <option value="90s-nostalgia">90's Nostalgia Games</option>
             </select>
 
             {/* Accommodation Filter */}
@@ -488,12 +511,30 @@ export function AdminRegistrationsTab({
                 setJerseyFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="all">All Jerseys</option>
               {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((sz) => (
                 <option key={sz} value={sz}>
                   Size: {sz}
+                </option>
+              ))}
+            </select>
+
+            {/* Admin Tag Filter */}
+            <select
+              value={tagFilter}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 max-w-[130px]"
+            >
+              <option value="all">All Tags</option>
+              <option value="untagged">Untagged</option>
+              {getAllKnownTags(registrations).map((tag) => (
+                <option key={tag} value={tag}>
+                  Tag: {tag}
                 </option>
               ))}
             </select>
@@ -507,7 +548,7 @@ export function AdminRegistrationsTab({
             <span>
               Showing <strong className="text-slate-900 font-bold">{filtered.length}</strong> matching participants
             </span>
-            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all' || jerseyFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || sportFilter !== 'all' || accFilter !== 'all' || regTypeFilter !== 'all' || jerseyFilter !== 'all' || tagFilter !== 'all') && (
               <button
                 type="button"
                 onClick={() => {
@@ -517,6 +558,7 @@ export function AdminRegistrationsTab({
                   setAccFilter('all');
                   setRegTypeFilter('all');
                   setJerseyFilter('all');
+                  setTagFilter('all');
                 }}
                 className="text-amber-600 font-bold hover:underline cursor-pointer"
               >
@@ -525,16 +567,38 @@ export function AdminRegistrationsTab({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => exportMasterRegistrations(filtered)}
-            disabled={filtered.length === 0}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Download visible filtered registrations as CSV"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Quick Export CSV ({filtered.length})</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setNotesSearch('');
+                setShowNotesModal(true);
+              }}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="View all notes written by registrants"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
+              <span>
+                Notes ({registrations.filter((r) => {
+                  const gen = r.general_details || {};
+                  const isArch = Boolean(r.is_archived || gen.isArchived);
+                  const note = String(gen.comments || gen.additionalNotes || gen.additional_notes || '').trim();
+                  return !isArch && note.length > 0;
+                }).length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => exportMasterRegistrations(filtered)}
+              disabled={filtered.length === 0}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Download visible filtered registrations as CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Quick Export CSV ({filtered.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -650,6 +714,130 @@ export function AdminRegistrationsTab({
                             <span className="text-[10px] text-slate-400 font-mono">
                               {player.id.slice(0, 8)}...
                             </span>
+
+                            {/* Admin Tags & 1-Click Inline Tag Popover */}
+                            <div
+                              className="relative flex flex-wrap items-center gap-1 mt-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {getPlayerTags(player).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold border ${getTagBadgeClass(tag)}`}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCustomTagInput('');
+                                  setActiveTagPopoverId(activeTagPopoverId === player.id ? null : player.id);
+                                }}
+                                title="Add or edit admin tags"
+                                className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 hover:bg-amber-100 text-slate-600 hover:text-amber-900 border border-slate-200 inline-flex items-center gap-0.5 cursor-pointer transition-colors"
+                              >
+                                <Tag className="w-2.5 h-2.5" />
+                                <span>Tag</span>
+                              </button>
+
+                              {activeTagPopoverId === player.id && (
+                                <div
+                                  className="absolute left-0 top-full mt-1.5 z-40 w-60 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 space-y-2.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                                      Manage Tags
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveTagPopoverId(null)}
+                                      className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {getAllKnownTags(registrations).map((tag) => {
+                                      const currentTags = getPlayerTags(player);
+                                      const active = currentTags.some((t) => t.toLowerCase() === tag.toLowerCase());
+                                      return (
+                                        <button
+                                          key={tag}
+                                          type="button"
+                                          disabled={savingTagId === player.id}
+                                          onClick={async () => {
+                                            const nextTags = active
+                                              ? currentTags.filter((t) => t.toLowerCase() !== tag.toLowerCase())
+                                              : [...currentTags, tag];
+                                            try {
+                                              setSavingTagId(player.id);
+                                              await updateRegistrationTags(player.id, nextTags);
+                                              onRefresh();
+                                            } catch (err: any) {
+                                              alert(err.message || 'Failed to update tags');
+                                            } finally {
+                                              setSavingTagId(null);
+                                            }
+                                          }}
+                                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer disabled:opacity-50 ${
+                                            active
+                                              ? `${getTagBadgeClass(tag)} ring-1 ring-amber-400`
+                                              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                          }`}
+                                        >
+                                          {active ? '✓ ' : '+ '}
+                                          {tag}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+
+                                  <form
+                                    className="flex items-center gap-1.5 pt-1 border-t border-slate-100"
+                                    onSubmit={async (e) => {
+                                      e.preventDefault();
+                                      const clean = customTagInput.trim();
+                                      if (!clean) return;
+                                      const currentTags = getPlayerTags(player);
+                                      if (currentTags.some((t) => t.toLowerCase() === clean.toLowerCase())) {
+                                        setCustomTagInput('');
+                                        return;
+                                      }
+                                      try {
+                                        setSavingTagId(player.id);
+                                        await updateRegistrationTags(player.id, [...currentTags, clean]);
+                                        setCustomTagInput('');
+                                        onRefresh();
+                                      } catch (err: any) {
+                                        alert(err.message || 'Failed to add tag');
+                                      } finally {
+                                        setSavingTagId(null);
+                                      }
+                                    }}
+                                  >
+                                    <input
+                                      type="text"
+                                      placeholder="Custom tag..."
+                                      value={customTagInput}
+                                      onChange={(e) => setCustomTagInput(e.target.value)}
+                                      className="flex-1 min-w-0 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                    />
+                                    <button
+                                      type="submit"
+                                      disabled={savingTagId === player.id || !customTagInput.trim()}
+                                      className="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold inline-flex items-center gap-0.5 cursor-pointer disabled:opacity-40"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>Add</span>
+                                    </button>
+                                  </form>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -1140,6 +1328,124 @@ export function AdminRegistrationsTab({
           </div>
         </div>
       )}
+
+      {/* All Registrant Notes Modal */}
+      {showNotesModal && (() => {
+        const notesList = registrations
+          .filter((r) => {
+            const gen = r.general_details || {};
+            const isArch = Boolean(r.is_archived || gen.isArchived);
+            const note = String(gen.comments || gen.additionalNotes || gen.additional_notes || '').trim();
+            if (isArch || !note) return false;
+            if (!notesSearch.trim()) return true;
+            const term = notesSearch.toLowerCase();
+            return (
+              r.full_name?.toLowerCase().includes(term) ||
+              r.mobile?.includes(term) ||
+              normalizeCentreName(gen.centre, '').toLowerCase().includes(term) ||
+              note.toLowerCase().includes(term)
+            );
+          })
+          .map((r) => {
+            const gen = r.general_details || {};
+            return {
+              player: r,
+              note: String(gen.comments || gen.additionalNotes || gen.additional_notes || '').trim(),
+              centre: normalizeCentreName(gen.centre, 'Mumbai'),
+            };
+          });
+
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setShowNotesModal(false)}
+          >
+            <div
+              className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50/60 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900">
+                      Registrant Notes ({notesList.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      All comments and special requests submitted by participants
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowNotesModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="px-6 py-3 border-b border-slate-100 shrink-0">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search notes by name, phone, centre, or note text..."
+                    value={notesSearch}
+                    onChange={(e) => setNotesSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-3">
+                {notesList.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-400 font-medium">
+                    No registrant notes found.
+                  </div>
+                ) : (
+                  notesList.map(({ player, note, centre }) => (
+                    <div
+                      key={player.id}
+                      onClick={() => {
+                        setShowNotesModal(false);
+                        onSelectPlayer(player);
+                      }}
+                      className="p-4 rounded-2xl border border-slate-200/90 hover:border-amber-300 hover:bg-amber-50/30 transition-all cursor-pointer space-y-2"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm text-slate-900">{player.full_name}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                            {centre}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                              player.payment_status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : player.payment_status === 'rejected'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {player.payment_status || 'pending'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-500">{player.mobile}</span>
+                      </div>
+                      <p className="text-xs text-slate-700 bg-amber-50/70 border border-amber-200/70 rounded-xl px-3 py-2 leading-relaxed whitespace-pre-wrap">
+                        {note}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

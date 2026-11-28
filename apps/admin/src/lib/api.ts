@@ -484,6 +484,20 @@ export async function updateRegistration(id: string, updates: Record<string, any
   return data;
 }
 
+export async function updateRegistrationTags(id: string, tags: string[]) {
+  const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/tags`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ tags }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Failed to update tags (Status ${res.status})`);
+  return data;
+}
+
 export async function updatePaymentStatus(id: string, status: 'approved' | 'rejected' | 'pending' | 'waitlist') {
   const res = await fetch(`${API_BASE_URL}/admin/registrations/${id}/payment`, {
     method: 'POST',
